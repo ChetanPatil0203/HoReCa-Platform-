@@ -13,6 +13,26 @@ import AdminDashboardScreen from '../screens/common/AdminDashboardScreen';
 
 const Stack = createNativeStackNavigator();
 
+const getAuthenticatedScreen = (userRole) => {
+  switch (userRole) {
+    case 'owner':
+      return <Stack.Screen name="OwnerFlow" component={OwnerNavigator} />;
+    case 'vendor':
+      return <Stack.Screen name="VendorFlow" component={VendorNavigator} />;
+    case 'serviceProvider':
+      return <Stack.Screen name="ServiceProviderFlow" component={ServiceProviderNavigator} />;
+    case 'manpower':
+      return <Stack.Screen name="ManpowerFlow" component={ManpowerNavigator} />;
+    case 'marketing':
+      return <Stack.Screen name="MarketingFlow" component={MarketingNavigator} />;
+    case 'admin':
+    case 'superadmin':
+      return <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />;
+    default:
+      return <Stack.Screen name="Auth" component={AuthNavigator} />;
+  }
+};
+
 export default function AppNavigator() {
   const { userToken, userRole, isLoading } = useContext(AuthContext);
 
@@ -26,32 +46,10 @@ export default function AppNavigator() {
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {userToken === null ? (
-        // Unauthenticated Flow
-        <Stack.Screen name="Auth" component={AuthNavigator} />
-      ) : (
-        // Authenticated Flows by Role
-        <>
-          {userRole === 'owner' && (
-            <Stack.Screen name="OwnerFlow" component={OwnerNavigator} />
-          )}
-          {userRole === 'vendor' && (
-            <Stack.Screen name="VendorFlow" component={VendorNavigator} />
-          )}
-          {userRole === 'serviceProvider' && (
-            <Stack.Screen name="ServiceProviderFlow" component={ServiceProviderNavigator} />
-          )}
-          {userRole === 'manpower' && (
-            <Stack.Screen name="ManpowerFlow" component={ManpowerNavigator} />
-          )}
-          {userRole === 'marketing' && (
-            <Stack.Screen name="MarketingFlow" component={MarketingNavigator} />
-          )}
-          {userRole === 'admin' && (
-            <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
-          )}
-        </>
-      )}
+      {userToken === null
+        ? <Stack.Screen name="Auth" component={AuthNavigator} />
+        : getAuthenticatedScreen(userRole)
+      }
     </Stack.Navigator>
   );
 }

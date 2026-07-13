@@ -1,6 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import MarketingDashboardScreen from '../screens/marketingPartner/MarketingDashboardScreen';
+import MarketingDashboardScreen from '../screens/vendor/marketingPartner/MarketingDashboardScreen';
 
 const Stack = createNativeStackNavigator();
 

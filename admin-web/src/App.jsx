@@ -3,17 +3,23 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 
 import AdminLayout from './layouts/AdminLayout';
 import Login from './pages/auth/Login';
-import Dashboard from './pages/dashboard/Dashboard';
-import OwnersList from './pages/owners/OwnersList';
-import VendorsList from './pages/vendors/VendorsList';
-import ServiceProvidersList from './pages/serviceProviders/ServiceProvidersList';
-import ManpowerAgentsList from './pages/manpowerAgents/ManpowerAgentsList';
-import MarketingPartnersList from './pages/marketingPartners/MarketingPartnersList';
-import CategoriesList from './pages/categories/CategoriesList';
-import UsersList from './pages/users/UsersList';
-import OrdersList from './pages/orders/OrdersList';
-import Reports from './pages/reports/Reports';
-import Settings from './pages/settings/Settings';
+import Dashboard from './pages/superadminDashboard/Dashboard';
+import Verification from './pages/superadminVerification/Verification';
+import Horeca from './pages/superadminHoreca/Horeca';
+import Vendors from './pages/superadminVendors/Vendors';
+import Complaints from './pages/superadminComplaints/Complaints';
+import Analytics from './pages/superadminAnalytics/Analytics';
+import Limits from './pages/superadminLimits/Limits';
+import Profile from './pages/superadminProfile/Profile';
+
+// Simple Route Guard for demo purposes
+function ProtectedRoute({ children }) {
+  const user = localStorage.getItem('hrchub_user');
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  return <AdminLayout>{children}</AdminLayout>;
+}
 
 export default function App() {
   return (
@@ -22,28 +28,19 @@ export default function App() {
         {/* Auth Route */}
         <Route path="/login" element={<Login />} />
 
-        {/* Admin Dashboard Protected Routes Layout */}
-        <Route 
-          path="/*" 
-          element={
-            <AdminLayout>
-              <Routes>
-                <Route path="dashboard" element={<Dashboard />} />
-                <Route path="owners" element={<OwnersList />} />
-                <Route path="vendors" element={<VendorsList />} />
-                <Route path="service-providers" element={<ServiceProvidersList />} />
-                <Route path="manpower-agents" element={<ManpowerAgentsList />} />
-                <Route path="marketing-partners" element={<MarketingPartnersList />} />
-                <Route path="categories" element={<CategoriesList />} />
-                <Route path="users" element={<UsersList />} />
-                <Route path="orders" element={<OrdersList />} />
-                <Route path="reports" element={<Reports />} />
-                <Route path="settings" element={<Settings />} />
-                <Route path="*" element={<Navigate to="dashboard" replace />} />
-              </Routes>
-            </AdminLayout>
-          } 
-        />
+        {/* Protected Super Admin Dashboard Routes */}
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/verification" element={<ProtectedRoute><Verification /></ProtectedRoute>} />
+        <Route path="/horeca" element={<ProtectedRoute><Horeca /></ProtectedRoute>} />
+        <Route path="/vendors" element={<ProtectedRoute><Vendors /></ProtectedRoute>} />
+        <Route path="/complaints" element={<ProtectedRoute><Complaints /></ProtectedRoute>} />
+        <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+        <Route path="/limits" element={<ProtectedRoute><Limits /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+
+        {/* Fallback routing */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Router>
   );

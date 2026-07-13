@@ -1,6 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import ProviderDashboardScreen from '../screens/serviceProvider/ProviderDashboardScreen';
+import ProviderDashboardScreen from '../screens/vendor/serviceProvider/ProviderDashboardScreen';
 
 const Stack = createNativeStackNavigator();
 
