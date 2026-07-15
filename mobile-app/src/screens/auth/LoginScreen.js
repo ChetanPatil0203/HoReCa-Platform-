@@ -19,9 +19,9 @@ export default function LoginScreen({ navigation }) {
   const DEMO_ACCOUNTS = [
     { label: "Hotel Owner Demo", email: "owner@themeridian.com", role: "owner" },
     { label: "Raw Material Vendor", email: "vendor@metrofresh.com", role: "vendor", vendorType: "raw-material" },
-    { label: "Manpower Agency Vendor", email: "vendor@elitemanpower.com", role: "vendor", vendorType: "manpower" },
-    { label: "Service Provider Vendor", email: "vendor@proclean.com", role: "vendor", vendorType: "service" },
-    { label: "Marketing Agency Vendor", email: "vendor@brandcraft.com", role: "vendor", vendorType: "marketing" },
+    { label: "Manpower Agency Vendor", email: "vendor@elitemanpower.com", role: "manpower", vendorType: "manpower" },
+    { label: "Service Provider Vendor", email: "vendor@proclean.com", role: "serviceProvider", vendorType: "service" },
+    { label: "Marketing Agency Vendor", email: "vendor@brandcraft.com", role: "marketing", vendorType: "marketing" },
   ];
 
   const handleLogin = () => {
@@ -124,17 +124,17 @@ export default function LoginScreen({ navigation }) {
               />
               <PrimaryButton 
                 title="Login as Manpower Vendor" 
-                onPress={() => login('vendor', 'mock-jwt-token', 'manpower')} 
+                onPress={() => login('manpower', 'mock-jwt-token', 'manpower')} 
                 style={{ backgroundColor: '#2563EB' }}
               />
               <PrimaryButton 
                 title="Login as Service Provider Vendor" 
-                onPress={() => login('vendor', 'mock-jwt-token', 'service')} 
+                onPress={() => login('serviceProvider', 'mock-jwt-token', 'service')} 
                 style={{ backgroundColor: '#10B981' }}
               />
               <PrimaryButton 
                 title="Login as Marketing Vendor" 
-                onPress={() => login('vendor', 'mock-jwt-token', 'marketing')} 
+                onPress={() => login('marketing', 'mock-jwt-token', 'marketing')} 
                 style={{ backgroundColor: '#8B5CF6' }}
               />
             </View>

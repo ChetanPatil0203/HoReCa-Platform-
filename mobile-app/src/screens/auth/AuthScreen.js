@@ -134,11 +134,11 @@ export default function AuthScreen({ navigation }) {
     if (emailLower === 'admin@hrchub.in') {
        login('superadmin', 'mock-token');
     } else if (emailLower.includes('manpower') || emailLower.includes('elitemanpower')) {
-       login('vendor', 'mock-token', 'manpower');
+       login('manpower', 'mock-token', 'manpower');
     } else if (emailLower.includes('service') || emailLower.includes('proclean')) {
-       login('vendor', 'mock-token', 'service');
+       login('serviceProvider', 'mock-token', 'service');
     } else if (emailLower.includes('marketing') || emailLower.includes('brandcraft') || emailLower.includes('marking')) {
-       login('vendor', 'mock-token', 'marketing');
+       login('marketing', 'mock-token', 'marketing');
     } else if (emailLower.includes('vendor')) {
        login('vendor', 'mock-token', 'raw-material');
     } else {
@@ -287,17 +287,17 @@ export default function AuthScreen({ navigation }) {
           />
           <PrimaryButton 
              title="Login as Manpower Vendor" 
-             onPress={() => login('vendor', 'mock-jwt-token', 'manpower')} 
+             onPress={() => login('manpower', 'mock-jwt-token', 'manpower')} 
              style={{ backgroundColor: '#2563EB' }}
           />
           <PrimaryButton 
              title="Login as Service Provider Vendor" 
-             onPress={() => login('vendor', 'mock-jwt-token', 'service')} 
+             onPress={() => login('serviceProvider', 'mock-jwt-token', 'service')} 
              style={{ backgroundColor: '#10B981' }}
           />
           <PrimaryButton 
              title="Login as Marketing Vendor" 
-             onPress={() => login('vendor', 'mock-jwt-token', 'marketing')} 
+             onPress={() => login('marketing', 'mock-jwt-token', 'marketing')} 
              style={{ backgroundColor: '#8B5CF6' }}
           />
        </View>

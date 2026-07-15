@@ -1,0 +1,474 @@
+import React, { useState } from 'react';
+import {
+  View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity,
+  useWindowDimensions, Modal, SafeAreaView, Platform
+} from 'react-native';
+import {
+  Search, Filter, Users, User, RefreshCw, AlertCircle, MapPin, 
+  Star, ShoppingBag, MessageSquare, MoreVertical, FileText, Gift, XCircle,
+  Building, Phone, Mail, FileCheck, Package
+} from 'lucide-react-native';
+
+const NAVY = '#081A3A';
+const GOLD = '#D4AF37';
+
+const SUMMARY_DATA = [
+  { label: 'Total Clients', value: '45', icon: Users, color: '#3B82F6' },
+  { label: 'Active', value: '38', icon: User, color: '#10B981' },
+  { label: 'Repeat', value: '32', icon: RefreshCw, color: '#8B5CF6' },
+  { label: 'Outstanding', value: '₹1.2L', icon: AlertCircle, color: '#EF4444' },
+];
+
+const CHIPS = ['All', 'Hotel', 'Restaurant', 'Cafe', 'Catering'];
+
+const MOCK_CLIENTS = [
+  {
+    id: "CLI-001", name: "The Meridian Grand", initials: "MG", type: "Hotel", location: "Downtown, Metro City",
+    rating: "4.9", orders: 124, ltv: "₹24.5L", outstanding: "₹45,000", tag: "VIP"
+  },
+  {
+    id: "CLI-002", name: "Café Zephyr", initials: "CZ", type: "Cafe", location: "Westside Hub",
+    rating: "4.7", orders: 56, ltv: "₹8.2L", outstanding: "₹0", tag: "Regular"
+  },
+  {
+    id: "CLI-003", name: "Azure Palace", initials: "AP", type: "Hotel", location: "Azure Coast",
+    rating: "4.5", orders: 12, ltv: "₹3.4L", outstanding: "₹60,000", tag: "New"
+  }
+];
+
+export default function RawMaterialClientsPage() {
+  const { width } = useWindowDimensions();
+  const [activeFilter, setActiveFilter] = useState('All');
+  const [clients, setClients] = useState(MOCK_CLIENTS);
+  
+  const [menuVisibleId, setMenuVisibleId] = useState(null);
+  
+  // Profile Modal
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
+
+  const filteredClients = activeFilter === 'All' 
+    ? clients 
+    : clients.filter(c => c.type === activeFilter);
+
+  const getTagColor = (tag) => {
+    switch (tag) {
+      case 'VIP': return { bg: '#FEF3C7', text: '#F59E0B' };
+      case 'New': return { bg: '#DBEAFE', text: '#3B82F6' };
+      default: return { bg: '#F1F5F9', text: '#64748B' };
+    }
+  };
+
+  const openProfile = (client) => {
+    setSelectedClient(client);
+    setProfileModalVisible(true);
+  };
+
+  const renderClientCard = ({ item }) => {
+    const tagColors = getTagColor(item.tag);
+
+    return (
+      <View style={styles.card}>
+        {/* Header */}
+        <View style={styles.cardHeader}>
+          <View style={styles.headerLeft}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{item.initials}</Text>
+            </View>
+            <View style={styles.titleContainer}>
+              <Text style={styles.clientName} numberOfLines={1}>{item.name}</Text>
+              <View style={styles.typeRow}>
+                <Building size={12} color="#64748B" />
+                <Text style={styles.typeText}>{item.type}</Text>
+              </View>
+            </View>
+          </View>
+          <TouchableOpacity 
+            style={styles.menuIconBtn}
+            onPress={() => setMenuVisibleId(menuVisibleId === item.id ? null : item.id)}
+          >
+            <MoreVertical size={20} color="#64748B" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Floating Menu */}
+        {menuVisibleId === item.id && (
+          <View style={styles.floatingMenu}>
+            <TouchableOpacity style={styles.menuItem}>
+              <Gift size={16} color="#475569" style={styles.menuItemIcon} />
+              <Text style={styles.menuItemText}>Create Offer</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.menuItem}>
+              <FileText size={16} color="#475569" style={styles.menuItemIcon} />
+              <Text style={styles.menuItemText}>Download Statement</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Body */}
+        <View style={styles.cardBody}>
+          <View style={styles.infoRow}>
+            <MapPin size={14} color="#64748B" />
+            <Text style={styles.infoText} numberOfLines={1}>{item.location}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Star size={14} color="#F59E0B" />
+            <Text style={styles.infoText}>{item.rating} Rating</Text>
+          </View>
+          
+          <View style={styles.statsGrid}>
+            <View style={styles.statCol}>
+              <Text style={styles.statLabel}>Total Orders</Text>
+              <Text style={styles.statValue}>{item.orders}</Text>
+            </View>
+            <View style={styles.statCol}>
+              <Text style={styles.statLabel}>Lifetime Value</Text>
+              <Text style={styles.statValuePrimary}>{item.ltv}</Text>
+            </View>
+            <View style={styles.statCol}>
+              <Text style={styles.statLabel}>Outstanding</Text>
+              <Text style={[styles.statValue, item.outstanding !== "₹0" && {color: '#EF4444'}]}>{item.outstanding}</Text>
+            </View>
+          </View>
+
+          <View style={[styles.tagBadge, { backgroundColor: tagColors.bg }]}>
+            <Text style={[styles.tagText, { color: tagColors.text }]}>{item.tag}</Text>
+          </View>
+        </View>
+
+        {/* Actions */}
+        <View style={styles.cardFooter}>
+          <TouchableOpacity style={styles.btnPrimary} onPress={() => openProfile(item)}>
+            <Text style={styles.btnPrimaryText}>View Profile</Text>
+          </TouchableOpacity>
+          
+          <View style={styles.secondaryActions}>
+            <TouchableOpacity style={styles.btnIconOutline}>
+              <ShoppingBag size={18} color={NAVY} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.btnIconOutline}>
+              <MessageSquare size={18} color={NAVY} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Clients</Text>
+          <View style={styles.headerActions}>
+            <TouchableOpacity style={styles.iconBtn}>
+              <Search size={20} color={NAVY} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconBtn}>
+              <Filter size={20} color={NAVY} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Summary Cards */}
+        <View style={styles.summaryContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.summaryScroll}>
+            {SUMMARY_DATA.map((item, idx) => (
+              <View key={idx} style={styles.summaryCard}>
+                <View style={[styles.summaryIconBox, { backgroundColor: item.color + '15' }]}>
+                  <item.icon size={20} color={item.color} />
+                </View>
+                <Text style={styles.summaryValue}>{item.value}</Text>
+                <Text style={styles.summaryLabel}>{item.label}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Filter Chips */}
+        <View style={styles.chipsContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsScroll}>
+            {CHIPS.map(chip => (
+              <TouchableOpacity 
+                key={chip} 
+                style={[styles.chip, activeFilter === chip && styles.activeChip]}
+                onPress={() => setActiveFilter(chip)}
+              >
+                <Text style={[styles.chipText, activeFilter === chip && styles.activeChipText]}>
+                  {chip}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* List */}
+        <FlatList
+          data={filteredClients}
+          keyExtractor={item => item.id}
+          renderItem={renderClientCard}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Users size={48} color="#CBD5E1" />
+              <Text style={styles.emptyText}>No clients found.</Text>
+            </View>
+          }
+        />
+
+        {/* Client Profile Modal */}
+        <Modal visible={profileModalVisible} animationType="slide">
+          <SafeAreaView style={styles.modalSafeArea}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Client Profile</Text>
+              <TouchableOpacity onPress={() => setProfileModalVisible(false)}>
+                <XCircle size={24} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            {selectedClient && (
+              <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                
+                {/* Header Info */}
+                <View style={styles.profileHeaderBox}>
+                  <View style={styles.avatarLarge}>
+                    <Text style={styles.avatarLargeText}>{selectedClient.initials}</Text>
+                  </View>
+                  <Text style={styles.profileName}>{selectedClient.name}</Text>
+                  <Text style={styles.profileType}>{selectedClient.type} • {selectedClient.location}</Text>
+                  <View style={[styles.tagBadge, { backgroundColor: getTagColor(selectedClient.tag).bg, alignSelf: 'center', marginTop: 8 }]}>
+                    <Text style={[styles.tagText, { color: getTagColor(selectedClient.tag).text }]}>{selectedClient.tag}</Text>
+                  </View>
+                </View>
+
+                {/* Contacts */}
+                <View style={styles.sectionCard}>
+                  <Text style={styles.sectionTitle}>Contacts</Text>
+                  <View style={styles.contactRow}>
+                    <Phone size={16} color="#64748B" />
+                    <Text style={styles.contactText}>+91 98765 43210 (Manager)</Text>
+                  </View>
+                  <View style={styles.contactRow}>
+                    <Mail size={16} color="#64748B" />
+                    <Text style={styles.contactText}>orders@{selectedClient.name.toLowerCase().replace(/\s/g, '')}.com</Text>
+                  </View>
+                </View>
+
+                {/* Orders Summary */}
+                <View style={styles.sectionCard}>
+                  <Text style={styles.sectionTitle}>Order History</Text>
+                  <View style={styles.historyGrid}>
+                    <View style={styles.historyCol}>
+                      <Text style={styles.historyLabel}>Total Orders</Text>
+                      <Text style={styles.historyVal}>{selectedClient.orders}</Text>
+                    </View>
+                    <View style={styles.historyCol}>
+                      <Text style={styles.historyLabel}>Last Order</Text>
+                      <Text style={styles.historyVal}>12 Jul 2026</Text>
+                    </View>
+                    <View style={styles.historyCol}>
+                      <Text style={styles.historyLabel}>Avg Value</Text>
+                      <Text style={styles.historyVal}>₹19,500</Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity style={styles.linkBtn}>
+                    <Text style={styles.linkText}>View All Orders</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Frequent Products */}
+                <View style={styles.sectionCard}>
+                  <Text style={styles.sectionTitle}>Frequently Ordered</Text>
+                  <View style={styles.freqItem}>
+                    <Package size={16} color="#64748B" />
+                    <Text style={styles.freqText}>Premium Basmati Rice</Text>
+                    <Text style={styles.freqQty}>80% of orders</Text>
+                  </View>
+                  <View style={styles.freqItem}>
+                    <Package size={16} color="#64748B" />
+                    <Text style={styles.freqText}>Extra Virgin Olive Oil</Text>
+                    <Text style={styles.freqQty}>45% of orders</Text>
+                  </View>
+                </View>
+
+                {/* Payments & Invoices */}
+                <View style={styles.sectionCard}>
+                  <Text style={styles.sectionTitle}>Payments & Invoices</Text>
+                  <View style={styles.paymentRow}>
+                    <Text style={styles.paymentLabel}>Outstanding Amount</Text>
+                    <Text style={[styles.paymentVal, selectedClient.outstanding !== "₹0" && {color: '#EF4444'}]}>{selectedClient.outstanding}</Text>
+                  </View>
+                  <View style={styles.paymentRow}>
+                    <Text style={styles.paymentLabel}>Payment Terms</Text>
+                    <Text style={styles.paymentValText}>Net 30</Text>
+                  </View>
+                  <TouchableOpacity style={styles.linkBtn}>
+                    <Text style={styles.linkText}>View Statements</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={{height: 40}} />
+              </ScrollView>
+            )}
+          </SafeAreaView>
+        </Modal>
+
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: '#F8FAFC' },
+  container: { flex: 1 },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  headerTitle: { fontSize: 20, fontWeight: 'bold', color: NAVY },
+  headerActions: { flexDirection: 'row' },
+  iconBtn: { padding: 8, marginLeft: 8 },
+  summaryContainer: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  summaryScroll: { paddingHorizontal: 16 },
+  summaryCard: {
+    backgroundColor: '#F8FAFC',
+    padding: 16,
+    borderRadius: 12,
+    marginRight: 12,
+    width: 140,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  summaryIconBox: {
+    width: 40, height: 40, borderRadius: 10,
+    justifyContent: 'center', alignItems: 'center', marginBottom: 12,
+  },
+  summaryValue: { fontSize: 20, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
+  summaryLabel: { fontSize: 13, color: '#64748B' },
+  chipsContainer: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  chipsScroll: { paddingHorizontal: 16 },
+  chip: {
+    paddingHorizontal: 16, paddingVertical: 8,
+    borderRadius: 20, backgroundColor: '#F1F5F9', marginRight: 8,
+  },
+  activeChip: { backgroundColor: NAVY },
+  chipText: { fontSize: 13, color: '#64748B', fontWeight: '500' },
+  activeChipText: { color: '#FFFFFF' },
+  listContent: { padding: 16, paddingBottom: 80 },
+  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
+  emptyText: { marginTop: 16, color: '#94A3B8', fontSize: 15 },
+  card: {
+    backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16,
+    marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
+  },
+  cardHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12,
+  },
+  headerLeft: { flexDirection: 'row', flex: 1 },
+  avatar: {
+    width: 44, height: 44, borderRadius: 22, backgroundColor: NAVY,
+    justifyContent: 'center', alignItems: 'center', marginRight: 12,
+  },
+  avatarText: { color: GOLD, fontWeight: 'bold', fontSize: 16 },
+  titleContainer: { flex: 1, justifyContent: 'center' },
+  clientName: { fontSize: 16, fontWeight: '600', color: NAVY, marginBottom: 4 },
+  typeRow: { flexDirection: 'row', alignItems: 'center' },
+  typeText: { fontSize: 12, color: '#64748B', marginLeft: 4 },
+  menuIconBtn: { padding: 4 },
+  floatingMenu: {
+    position: 'absolute', top: 40, right: 16, backgroundColor: '#FFFFFF',
+    borderRadius: 8, padding: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1, shadowRadius: 8, elevation: 5, zIndex: 10, minWidth: 180,
+  },
+  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8 },
+  menuItemIcon: { marginRight: 8 },
+  menuItemText: { fontSize: 14, color: '#334155', fontWeight: '500' },
+  cardBody: { marginBottom: 16 },
+  infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  infoText: { fontSize: 13, color: '#475569', marginLeft: 8 },
+  statsGrid: {
+    flexDirection: 'row', backgroundColor: '#F8FAFC', borderRadius: 8,
+    padding: 12, marginVertical: 12,
+  },
+  statCol: { flex: 1 },
+  statLabel: { fontSize: 10, color: '#64748B', marginBottom: 4 },
+  statValuePrimary: { fontSize: 14, fontWeight: 'bold', color: '#10B981' },
+  statValue: { fontSize: 14, fontWeight: '600', color: NAVY },
+  tagBadge: {
+    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, alignSelf: 'flex-start',
+  },
+  tagText: { fontSize: 11, fontWeight: 'bold' },
+  cardFooter: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 16 },
+  btnPrimary: {
+    flex: 1, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0',
+    paddingVertical: 12, borderRadius: 8, alignItems: 'center', marginRight: 8,
+  },
+  btnPrimaryText: { color: NAVY, fontWeight: '600', fontSize: 14 },
+  secondaryActions: { flexDirection: 'row' },
+  btnIconOutline: {
+    width: 44, height: 44, borderRadius: 8, borderWidth: 1, borderColor: '#E2E8F0',
+    justifyContent: 'center', alignItems: 'center', marginLeft: 8,
+  },
+  
+  // Profile Modal
+  modalSafeArea: { flex: 1, backgroundColor: '#F8FAFC' },
+  modalHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    padding: 16, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#F1F5F9',
+  },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY },
+  modalBody: { padding: 16 },
+  profileHeaderBox: {
+    alignItems: 'center', backgroundColor: '#FFFFFF', padding: 24, borderRadius: 12,
+    marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
+  },
+  avatarLarge: {
+    width: 80, height: 80, borderRadius: 40, backgroundColor: NAVY,
+    justifyContent: 'center', alignItems: 'center', marginBottom: 12,
+  },
+  avatarLargeText: { color: GOLD, fontSize: 28, fontWeight: 'bold' },
+  profileName: { fontSize: 20, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
+  profileType: { fontSize: 14, color: '#64748B' },
+  sectionCard: {
+    backgroundColor: '#FFFFFF', padding: 16, borderRadius: 12, marginBottom: 16,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05,
+    shadowRadius: 4, elevation: 1,
+  },
+  sectionTitle: { fontSize: 14, fontWeight: 'bold', color: '#94A3B8', textTransform: 'uppercase', marginBottom: 12 },
+  contactRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  contactText: { marginLeft: 12, fontSize: 14, color: '#334155' },
+  historyGrid: { flexDirection: 'row', backgroundColor: '#F8FAFC', borderRadius: 8, padding: 12, marginBottom: 12 },
+  historyCol: { flex: 1 },
+  historyLabel: { fontSize: 11, color: '#64748B', marginBottom: 4 },
+  historyVal: { fontSize: 14, fontWeight: 'bold', color: NAVY },
+  linkBtn: { paddingVertical: 8, alignItems: 'center', borderTopWidth: 1, borderTopColor: '#F1F5F9', marginTop: 4 },
+  linkText: { color: '#3B82F6', fontWeight: '500', fontSize: 14 },
+  freqItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  freqText: { flex: 1, marginLeft: 12, fontSize: 14, color: '#334155' },
+  freqQty: { fontSize: 12, color: '#64748B' },
+  paymentRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
+  paymentLabel: { fontSize: 14, color: '#475569' },
+  paymentVal: { fontSize: 15, fontWeight: 'bold', color: NAVY },
+  paymentValText: { fontSize: 14, fontWeight: '600', color: NAVY },
+});

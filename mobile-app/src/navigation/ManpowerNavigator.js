@@ -1,16 +1,15 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import ManpowerDashboardScreen from '../screens/vendor/manpowerAgent/ManpowerDashboardScreen';
+import ManpowerDashboard from '../screens/vendor/manpowerAgent/ManpowerDashboard';
 
 const Stack = createNativeStackNavigator();
 
 export default function ManpowerNavigator() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen 
         name="ManpowerDashboard" 
-        component={ManpowerDashboardScreen} 
-        options={{ title: 'Manpower Dashboard' }} 
+        component={ManpowerDashboard} 
       />
     </Stack.Navigator>
   );

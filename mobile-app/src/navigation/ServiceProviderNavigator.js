@@ -1,16 +1,15 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import ProviderDashboardScreen from '../screens/vendor/serviceProvider/ProviderDashboardScreen';
+import ProviderDashboard from '../screens/vendor/serviceProvider/ProviderDashboard';
 
 const Stack = createNativeStackNavigator();
 
 export default function ServiceProviderNavigator() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen 
         name="ProviderDashboard" 
-        component={ProviderDashboardScreen} 
-        options={{ title: 'Service Provider Dashboard' }} 
+        component={ProviderDashboard} 
       />
     </Stack.Navigator>
   );
