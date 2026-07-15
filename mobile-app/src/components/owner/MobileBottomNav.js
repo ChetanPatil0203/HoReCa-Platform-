@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Platform } from 'react-native';
 import { LayoutDashboard, ShoppingCart, Truck, User } from 'lucide-react-native';
 import { colors } from '../../theme/colors';
 
@@ -14,7 +14,8 @@ export default function MobileBottomNav({ activePage, onNavigate }) {
   const MARKET_SUBS = ["raw-material", "manpower", "service", "marketing"];
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
       {TABS.map((item) => {
         const Icon = item.icon;
         
@@ -26,7 +27,10 @@ export default function MobileBottomNav({ activePage, onNavigate }) {
         return (
           <TouchableOpacity 
             key={item.key} 
-            style={styles.tabItem} 
+            style={[
+              styles.tabItem, 
+              isActive && styles.tabItemActive
+            ]}
             onPress={() => onNavigate(item.key)}
           >
             <Icon 
@@ -43,25 +47,34 @@ export default function MobileBottomNav({ activePage, onNavigate }) {
           </TouchableOpacity>
         );
       })}
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
   container: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
     height: 60,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    paddingHorizontal: 8,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
+    marginHorizontal: 4,
+    borderRadius: 12,
+  },
+  tabItemActive: {
+    backgroundColor: 'rgba(8, 26, 58, 0.06)', // Soft navy background
   },
   tabLabel: {
     fontSize: 8,

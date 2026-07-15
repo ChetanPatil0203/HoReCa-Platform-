@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { View, Text, StyleSheet, Platform, useWindowDimensions, TouchableOpacity, Image } from 'react-native';
-import { Menu, Bell, Search, User } from 'lucide-react-native';
-import RawMaterialSidebar from './RawMaterialSidebar';
+import { Menu, Bell, Search, User, LayoutDashboard, Activity, Truck, Briefcase, DollarSign, BarChart2, Package, HelpCircle, Settings } from 'lucide-react-native';
+import RoleBasedMobileDrawer from '../../../components/navigation/RoleBasedMobileDrawer';
 import { AuthContext } from '../../../context/AuthContext';
 import { colors } from '../../../theme/colors';
 
@@ -58,15 +58,41 @@ export default function RawMaterialDashboard() {
     }
   };
 
+  const navItems = [
+    { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { key: "requests", label: "Orders", icon: Activity, badge: 3 },
+    { key: "inventory", label: "Inventory", icon: Package, exclusive: true },
+    { key: "deliveries", label: "Deliveries", icon: Truck },
+    { key: "clients", label: "Clients", icon: Briefcase },
+    { key: "revenue", label: "Revenue", icon: DollarSign },
+    { key: "analytics", label: "Analytics", icon: BarChart2 },
+  ];
+
+  const bottomNavItems = [
+    { key: "support", label: "Support", icon: HelpCircle },
+    { key: "settings", label: "Settings", icon: Settings },
+  ];
+
+  const profileData = {
+    initials: "MF",
+    name: "Metro Fresh",
+    role: "Raw Material Supplier",
+    badge: "VENDOR"
+  };
+
   return (
     <View style={styles.container}>
-      <RawMaterialSidebar
+      <RoleBasedMobileDrawer
         activePage={activePage}
-        setActivePage={setActivePage}
+        onNavigate={setActivePage}
         isMobile={isMobile}
         mobileMenuOpen={mobileMenuOpen}
         setMobileMenuOpen={setMobileMenuOpen}
         onLogout={logout}
+        navItems={navItems}
+        bottomNavItems={bottomNavItems}
+        profile={profileData}
+        panelTitle="VENDOR OPERATIONS"
       />
 
       <View style={styles.mainContent}>

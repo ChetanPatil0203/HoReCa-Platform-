@@ -12,8 +12,8 @@ const KPI_DATA = [
 ];
 
 const REVENUE_DATA = [
-  { month: "Jan", revenue: 0.4 }, { month: "Feb", revenue: 0.5 }, 
-  { month: "Mar", revenue: 0.7 }, { month: "Apr", revenue: 0.8 }, 
+  { month: "Jan", revenue: 0.4 }, { month: "Feb", revenue: 0.5 },
+  { month: "Mar", revenue: 0.7 }, { month: "Apr", revenue: 0.8 },
   { month: "May", revenue: 0.9 }, { month: "Jun", revenue: 1.2 }
 ];
 
@@ -37,13 +37,13 @@ export default function MarketingDashboardScreen() {
   }, []);
 
   const maxRev = Math.max(...REVENUE_DATA.map(d => d.revenue));
-  
+
   const filteredOrders = orders.filter(o => o.category === 'marketing');
   const displayOrders = filteredOrders.length > 0 ? filteredOrders : RECENT_ORDERS;
-  
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      
+
       {/* Welcome Banner */}
       <View style={[styles.welcomeBanner, { backgroundColor: "#F5F3FF", borderColor: "#DDD6FE" }]}>
         <View style={[styles.bannerIconBox, { backgroundColor: "#F5F3FF", borderColor: "#DDD6FE", shadowColor: "#8B5CF6" }]}>
@@ -88,7 +88,7 @@ export default function MarketingDashboardScreen() {
             </View>
             <TouchableOpacity><Text style={[styles.viewAllText, { color: "#8B5CF6" }]}>View All →</Text></TouchableOpacity>
           </View>
-          
+
           <View style={styles.chartBars}>
             {REVENUE_DATA.map((d, i) => {
               const pct = (d.revenue / maxRev) * 100;

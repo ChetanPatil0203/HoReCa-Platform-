@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform } from 'react-native';
-import { 
+import {
   LayoutDashboard, Activity, Truck, Building2,
   DollarSign, BarChart2, User, Settings, LogOut,
   HelpCircle, Package, Menu, X, Users, Wrench, Megaphone
@@ -24,7 +24,7 @@ const NAV_BOTTOM = [
 
 export default function VendorSidebar({ activePage, setActivePage, isMobile, mobileMenuOpen, setMobileMenuOpen, onLogout }) {
   const { vendorType } = useContext(AuthContext);
-  
+
   const filteredNav = NAV.map(item => {
     if (item.key === 'requests') {
       if (vendorType !== 'raw-material') return { ...item, label: "Feed Wall", badge: null };
@@ -62,7 +62,7 @@ export default function VendorSidebar({ activePage, setActivePage, isMobile, mob
         <Text style={[styles.navText, isActive && styles.navTextActive]} numberOfLines={1}>
           {item.label}
         </Text>
-        
+
         {item.exclusive && !isActive && (
           <View style={styles.rawBadge}>
             <Text style={styles.rawBadgeText}>RAW</Text>
@@ -84,7 +84,7 @@ export default function VendorSidebar({ activePage, setActivePage, isMobile, mob
         <View style={styles.brandHeader}>
           <Image source={require('../../assets/HoReCa_Logo.png')} style={styles.logo} resizeMode="cover" />
           <View style={styles.brandTextCol}>
-            <Text style={styles.brandTitle}><Text style={{color: '#D4AF37'}}>HRC</Text> HUB</Text>
+            <Text style={styles.brandTitle}><Text style={{ color: '#D4AF37' }}>HRC</Text> HUB</Text>
             <Text style={styles.brandSubtitle}>VENDOR OPERATIONS</Text>
             <View style={styles.separator}>
               <View style={styles.sepLine} />
@@ -103,22 +103,22 @@ export default function VendorSidebar({ activePage, setActivePage, isMobile, mob
         <View style={styles.profileCard}>
           <View style={styles.avatarBox}>
             <Text style={styles.avatarInitials}>
-              {vendorType === 'raw-material' ? 'MF' : 
-               vendorType === 'manpower' ? 'EM' : 
-               vendorType === 'service' ? 'PC' : 'BC'}
+              {vendorType === 'raw-material' ? 'MF' :
+                vendorType === 'manpower' ? 'EM' :
+                  vendorType === 'service' ? 'PC' : 'BC'}
             </Text>
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.profileThe}>The</Text>
             <Text style={styles.profileName} numberOfLines={1}>
-              {vendorType === 'raw-material' ? 'Metro Fresh' : 
-               vendorType === 'manpower' ? 'Elite Manpower' : 
-               vendorType === 'service' ? 'ProClean Services' : 'BrandCraft Agency'}
+              {vendorType === 'raw-material' ? 'Metro Fresh' :
+                vendorType === 'manpower' ? 'Elite Manpower' :
+                  vendorType === 'service' ? 'ProClean Services' : 'BrandCraft Agency'}
             </Text>
             <Text style={styles.profileRole} numberOfLines={1}>
-              {vendorType === 'raw-material' ? 'Raw Material Supplier' : 
-               vendorType === 'manpower' ? 'Manpower Agency' : 
-               vendorType === 'service' ? 'Service Provider' : 'Marketing Agency'}
+              {vendorType === 'raw-material' ? 'Raw Material Supplier' :
+                vendorType === 'manpower' ? 'Manpower Agency' :
+                  vendorType === 'service' ? 'Service Provider' : 'Marketing Agency'}
             </Text>
           </View>
           <View style={styles.vendorBadge}>

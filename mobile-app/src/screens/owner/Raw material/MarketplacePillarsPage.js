@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { Package, Users, Wrench, Megaphone, ArrowRight, ShoppingCart, Star } from 'lucide-react-native';
-import { colors } from '../../../theme/colors';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, useWindowDimensions, Platform } from 'react-native';
+import { Package, Users, Wrench, Megaphone, Search, ArrowRight, Star, Clock, Heart, ShieldCheck, ChevronRight, CheckCircle } from 'lucide-react-native';
 
 const PILLARS = [
   {
@@ -12,9 +11,8 @@ const PILLARS = [
     color: "#D97706",
     bg: "#FFFBEB",
     badge: "800+ Suppliers",
-    badgeBg: "#FEF3C7",
-    badgeColor: "#D97706",
     stats: ["Same-day delivery", "FSSAI certified"],
+    cta: "Browse Products"
   },
   {
     key: "manpower",
@@ -24,21 +22,19 @@ const PILLARS = [
     color: "#2563EB",
     bg: "#EFF6FF",
     badge: "300+ Agencies",
-    badgeBg: "#DBEAFE",
-    badgeColor: "#1D4ED8",
     stats: ["Background verified", "On-demand hiring"],
+    cta: "Explore Manpower"
   },
   {
     key: "service",
     icon: Wrench,
     label: "Service Providers",
-    desc: "Connect with deep cleaning, FSSAI compliance, and repair vendors.",
+    desc: "Connect with deep cleaning, compliance, and repair vendors.",
     color: "#059669",
     bg: "#ECFDF5",
     badge: "200+ Services",
-    badgeBg: "#D1FAE5",
-    badgeColor: "#065F46",
     stats: ["Certified contractors", "Emergency support"],
+    cta: "Explore Services"
   },
   {
     key: "marketing",
@@ -48,127 +44,224 @@ const PILLARS = [
     color: "#7C3AED",
     bg: "#F5F3FF",
     badge: "150+ Agencies",
-    badgeBg: "#EDE9FE",
-    badgeColor: "#5B21B6",
     stats: ["Social media", "Influencer network"],
+    cta: "Explore Marketing"
   },
 ];
 
+const RECENTLY_USED = [
+  { label: "Fresh Dairy", icon: Package, color: "#D97706", bg: "#FFFBEB" },
+  { label: "Deep Clean", icon: Wrench, color: "#059669", bg: "#ECFDF5" },
+  { label: "Wait Staff", icon: Users, color: "#2563EB", bg: "#EFF6FF" },
+  { label: "Promo Ads", icon: Megaphone, color: "#7C3AED", bg: "#F5F3FF" },
+];
+
+const RECOMMENDED = [
+  { title: "Premium Exec Chefs", subtitle: "Top rated manpower", badge: "Manpower" },
+  { title: "FSSAI Consultants", subtitle: "Certified legal aid", badge: "Service" },
+  { title: "Organic Veggies", subtitle: "Farm-to-table", badge: "Raw Material" },
+];
+
 export default function MarketplacePillarsPage({ onNavigate }) {
+  const { width } = useWindowDimensions();
+  const isNarrow = width < 360;
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Page Header */}
-      <View style={styles.header}>
-        <View style={styles.titleRow}>
-          <ShoppingCart size={20} color="#1E40AF" />
-          <Text style={styles.titleText}>Marketplace</Text>
-        </View>
-        <Text style={styles.subText}>Select a category to browse suppliers and place orders</Text>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <Search size={18} color="#64748B" />
+        <TextInput 
+          style={styles.searchInput} 
+          placeholder="Search products, agencies or services..." 
+          placeholderTextColor="#94A3B8"
+        />
       </View>
 
-      {/* Trust Bar */}
-      <View style={styles.trustBar}>
-        <View style={styles.starsRow}>
-          {[...Array(5)].map((_, i) => (
-            <Star key={i} size={12} fill="#F59E0B" color="#F59E0B" />
-          ))}
-        </View>
-        <Text style={styles.trustText}>
-          <Text style={{ fontWeight: 'bold', color: '#1E293B' }}>1,500+</Text> active HoReCa businesses trust HRCHUB
-        </Text>
+      {/* Hero Banner */}
+      <View style={styles.heroBanner}>
+        <Text style={styles.heroTitle}>Everything your HoReCa business needs</Text>
+        <Text style={styles.heroSub}>Raw materials, trained staff, trusted services and marketing agencies in one place.</Text>
       </View>
 
-      {/* 2x2 Pillar Grid */}
-      <View style={styles.grid}>
-        {PILLARS.map((pillar) => {
-          const Icon = pillar.icon;
-          return (
-            <TouchableOpacity
-              key={pillar.key}
-              style={styles.card}
-              onPress={() => onNavigate(pillar.key)}
-            >
-              <View style={[styles.accentBar, { backgroundColor: pillar.color }]} />
-              
-              <View style={styles.cardContent}>
-                <View style={styles.cardHeader}>
-                  <View style={[styles.iconBox, { backgroundColor: pillar.bg }]}>
-                    <Icon size={20} color={pillar.color} />
-                  </View>
-                  <View style={[styles.badge, { backgroundColor: pillar.badgeBg }]}>
-                    <Text style={[styles.badgeText, { color: pillar.badgeColor }]}>{pillar.badge}</Text>
-                  </View>
+      {/* Recently Used */}
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>Recently Used</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recentScroll}>
+          {RECENTLY_USED.map((item, idx) => {
+            const Icon = item.icon;
+            return (
+              <TouchableOpacity key={idx} style={styles.recentItem}>
+                <View style={[styles.recentIconBox, { backgroundColor: item.bg }]}>
+                  <Icon size={20} color={item.color} />
                 </View>
+                <Text style={styles.recentLabel} numberOfLines={1}>{item.label}</Text>
+              </TouchableOpacity>
+            )
+          })}
+        </ScrollView>
+      </View>
 
-                <Text style={styles.cardLabel}>{pillar.label}</Text>
-                <Text style={styles.cardDesc} numberOfLines={2}>{pillar.desc}</Text>
+      {/* Urgent Requirement Banner */}
+      <View style={styles.urgentBanner}>
+        <View style={{flex: 1}}>
+          <Text style={styles.urgentTitle}>Urgent Requirement?</Text>
+          <Text style={styles.urgentSub}>Need staff, a service or marketing support urgently?</Text>
+        </View>
+        <TouchableOpacity style={styles.urgentBtn}>
+          <Text style={styles.urgentBtnText}>Post Now</Text>
+        </TouchableOpacity>
+      </View>
 
-                <View style={styles.statsStrip}>
-                  {pillar.stats.map((s) => (
-                    <View key={s} style={styles.statLine}>
-                      <View style={[styles.statDot, { backgroundColor: pillar.color }]} />
-                      <Text style={styles.statText} numberOfLines={1}>{s}</Text>
+      {/* Categories */}
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>Marketplace Categories</Text>
+        <View style={styles.grid}>
+          {PILLARS.map((pillar) => {
+            const Icon = pillar.icon;
+            return (
+              <TouchableOpacity
+                key={pillar.key}
+                activeOpacity={0.85}
+                style={[styles.card, isNarrow && { width: '100%' }]}
+                onPress={() => onNavigate(pillar.key)}
+              >
+                <View style={[styles.accentBar, { backgroundColor: pillar.color }]} />
+                
+                <View style={styles.cardContent}>
+                  <View style={styles.cardHeader}>
+                    <View style={styles.iconAndLabel}>
+                      <View style={[styles.iconBox, { backgroundColor: pillar.bg }]}>
+                        <Icon size={22} color={pillar.color} />
+                      </View>
+                      <View>
+                        <Text style={styles.cardLabel}>{pillar.label}</Text>
+                        <Text style={styles.badgeText}>{pillar.badge}</Text>
+                      </View>
                     </View>
-                  ))}
-                </View>
+                  </View>
 
-                <View style={styles.exploreRow}>
-                  <Text style={[styles.exploreText, { color: pillar.color }]}>Explore</Text>
-                  <ArrowRight size={12} color={pillar.color} />
+                  <Text style={styles.cardDesc} numberOfLines={2}>{pillar.desc}</Text>
+
+                  <View style={styles.statsStrip}>
+                    {pillar.stats.map((s, idx) => (
+                      <View key={idx} style={styles.statLine}>
+                        <CheckCircle size={12} color={pillar.color} />
+                        <Text style={styles.statText} numberOfLines={1}>{s}</Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+                
+                <View style={[styles.ctaButton, { backgroundColor: pillar.bg }]}>
+                  <Text style={[styles.ctaText, { color: pillar.color }]}>{pillar.cta}</Text>
+                  <ArrowRight size={14} color={pillar.color} />
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
 
-      {/* Quick Stats Strip */}
-      <View style={styles.quickStatsRow}>
-        {[
-          { label: "Active Vendors", value: "1,800+" },
-          { label: "Orders Today", value: "340+" },
-          { label: "Avg. Rating", value: "4.8 ★" },
-        ].map((s) => (
-          <View key={s.label} style={styles.quickStatCard}>
-            <Text style={styles.quickStatValue}>{s.value}</Text>
-            <Text style={styles.quickStatLabel}>{s.label}</Text>
-          </View>
-        ))}
+      {/* Recommended For You */}
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>Recommended for You</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recommendScroll}>
+          {RECOMMENDED.map((rec, idx) => (
+            <TouchableOpacity key={idx} style={styles.recommendCard}>
+              <Text style={styles.recBadge}>{rec.badge}</Text>
+              <Text style={styles.recTitle} numberOfLines={1}>{rec.title}</Text>
+              <Text style={styles.recSub} numberOfLines={1}>{rec.subtitle}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Trust Strip */}
+      <View style={styles.trustStrip}>
+        <ShieldCheck size={18} color="#059669" />
+        <Text style={styles.trustStripText}>
+          <Text style={styles.trustBold}>1,800+</Text> Verified Vendors  •  <Text style={styles.trustBold}>340+</Text> Daily Orders  •  <Text style={styles.trustBold}>4.8</Text> Avg Rating
+        </Text>
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6' },
-  header: { marginBottom: 16 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  titleText: { fontSize: 20, fontWeight: '800', color: '#1E293B' },
-  subText: { fontSize: 13, color: '#64748B' },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
   
-  trustBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, padding: 12, marginBottom: 16, gap: 8 },
-  starsRow: { flexDirection: 'row', gap: 2 },
-  trustText: { fontSize: 11, color: '#64748B' },
+  searchContainer: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff',
+    marginHorizontal: 16, marginTop: 12, marginBottom: 16,
+    paddingHorizontal: 12, height: 44, borderRadius: 12,
+    borderWidth: 1, borderColor: '#E2E8F0',
+  },
+  searchInput: { flex: 1, marginLeft: 8, fontSize: 14, color: '#1E293B' },
 
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12, marginBottom: 20 },
+  heroBanner: {
+    backgroundColor: '#081A3A', marginHorizontal: 16, padding: 20, borderRadius: 16,
+    marginBottom: 24,
+  },
+  heroTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginBottom: 8, lineHeight: 24 },
+  heroSub: { color: '#B8C6E3', fontSize: 13, lineHeight: 18 },
+
+  sectionContainer: { marginBottom: 24 },
+  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#1E293B', marginLeft: 16, marginBottom: 12 },
+
+  recentScroll: { paddingHorizontal: 16, gap: 16 },
+  recentItem: { alignItems: 'center', width: 68 },
+  recentIconBox: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  recentLabel: { fontSize: 11, color: '#475569', textAlign: 'center', fontWeight: '500' },
+
+  urgentBanner: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF2F2',
+    marginHorizontal: 16, padding: 16, borderRadius: 12, marginBottom: 24,
+    borderWidth: 1, borderColor: '#FECACA'
+  },
+  urgentTitle: { fontSize: 14, fontWeight: 'bold', color: '#991B1B', marginBottom: 4 },
+  urgentSub: { fontSize: 12, color: '#B91C1C', paddingRight: 8 },
+  urgentBtn: {
+    backgroundColor: '#DC2626', paddingHorizontal: 12, height: 36,
+    borderRadius: 8, alignItems: 'center', justifyContent: 'center'
+  },
+  urgentBtnText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
+
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingHorizontal: 16, gap: 12 },
   card: { width: '48%', backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', overflow: 'hidden' },
-  accentBar: { height: 3, width: '100%' },
-  cardContent: { padding: 12, gap: 8, flex: 1 },
+  accentBar: { height: 4, width: '100%' },
+  cardContent: { padding: 14, gap: 10, flex: 1 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  iconBox: { width: 36, height: 36, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  badge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 20 },
-  badgeText: { fontSize: 8, fontWeight: 'bold' },
-  cardLabel: { fontSize: 13, fontWeight: 'bold', color: '#1E293B' },
-  cardDesc: { fontSize: 11, color: '#64748B', lineHeight: 14 },
-  statsStrip: { gap: 4, marginTop: 4 },
+  iconAndLabel: { flexDirection: 'column', gap: 10 },
+  iconBox: { width: 44, height: 44, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  cardLabel: { fontSize: 15, fontWeight: 'bold', color: '#0F172A' },
+  badgeText: { fontSize: 11, fontWeight: '600', color: '#64748B', marginTop: 2 },
+  
+  cardDesc: { fontSize: 12, color: '#475569', lineHeight: 16 },
+  statsStrip: { gap: 6, marginTop: 4 },
   statLine: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  statDot: { width: 4, height: 4, borderRadius: 2 },
-  statText: { fontSize: 10, color: '#64748B' },
-  exploreRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
-  exploreText: { fontSize: 11, fontWeight: 'bold' },
+  statText: { fontSize: 11, color: '#334155' },
+  
+  ctaButton: { 
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', 
+    gap: 6, paddingVertical: 12, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)'
+  },
+  ctaText: { fontSize: 13, fontWeight: 'bold' },
 
-  quickStatsRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8, marginBottom: 40 },
-  quickStatCard: { flex: 1, backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, padding: 12, alignItems: 'center' },
-  quickStatValue: { fontSize: 14, fontWeight: '800', color: '#1E40AF', marginBottom: 2 },
-  quickStatLabel: { fontSize: 10, color: '#94A3B8', textAlign: 'center' }
+  recommendScroll: { paddingHorizontal: 16, gap: 12 },
+  recommendCard: { 
+    width: 160, backgroundColor: '#fff', padding: 12, borderRadius: 12,
+    borderWidth: 1, borderColor: '#E2E8F0'
+  },
+  recBadge: { fontSize: 9, fontWeight: 'bold', color: '#D4AF37', textTransform: 'uppercase', marginBottom: 6 },
+  recTitle: { fontSize: 14, fontWeight: 'bold', color: '#1E293B', marginBottom: 2 },
+  recSub: { fontSize: 11, color: '#64748B' },
+
+  trustStrip: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#ECFDF5', marginHorizontal: 16, paddingVertical: 12, paddingHorizontal: 8,
+    borderRadius: 8, borderWidth: 1, borderColor: '#A7F3D0', gap: 8
+  },
+  trustStripText: { fontSize: 10, color: '#065F46' },
+  trustBold: { fontWeight: 'bold' }
 });

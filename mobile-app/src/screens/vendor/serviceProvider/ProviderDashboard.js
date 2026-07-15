@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { View, Text, StyleSheet, Platform, useWindowDimensions, TouchableOpacity, Image } from 'react-native';
-import { Menu, Bell, Search, User } from 'lucide-react-native';
-import ProviderSidebar from './ProviderSidebar';
+import { Menu, Bell, Search, User, LayoutDashboard, Activity, Wrench, Briefcase, Users, DollarSign, HelpCircle, Settings } from 'lucide-react-native';
+import RoleBasedMobileDrawer from '../../../components/navigation/RoleBasedMobileDrawer';
 import { AuthContext } from '../../../context/AuthContext';
 import { colors } from '../../../theme/colors';
 
@@ -49,15 +49,41 @@ export default function ProviderDashboard() {
     }
   };
 
+  const navItems = [
+    { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { key: "requests", label: "Requests", icon: Activity, badge: 2 },
+    { key: "services", label: "Services", icon: Wrench },
+    { key: "jobs", label: "Jobs", icon: Briefcase },
+    { key: "team", label: "Team", icon: Users },
+    { key: "revenue", label: "Revenue", icon: DollarSign },
+    { key: "notifications", label: "Notifications", icon: Bell },
+  ];
+
+  const bottomNavItems = [
+    { key: "support", label: "Support", icon: HelpCircle },
+    { key: "settings", label: "Settings", icon: Settings },
+  ];
+
+  const profileData = {
+    initials: "PC",
+    name: "ProClean Services",
+    role: "Service Provider",
+    badge: "AGENCY"
+  };
+
   return (
     <View style={styles.container}>
-      <ProviderSidebar
+      <RoleBasedMobileDrawer
         activePage={activePage}
-        setActivePage={setActivePage}
+        onNavigate={setActivePage}
         isMobile={isMobile}
         mobileMenuOpen={mobileMenuOpen}
         setMobileMenuOpen={setMobileMenuOpen}
         onLogout={logout}
+        navItems={navItems}
+        bottomNavItems={bottomNavItems}
+        profile={profileData}
+        panelTitle="VENDOR OPERATIONS"
       />
 
       <View style={styles.mainContent}>

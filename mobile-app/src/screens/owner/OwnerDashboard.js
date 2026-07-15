@@ -1,10 +1,10 @@
 import React, { useState, useContext } from 'react';
 import { View, StyleSheet, SafeAreaView, useWindowDimensions, ScrollView, TouchableOpacity, Text, Platform, Image } from 'react-native';
-import { Menu, ArrowLeft, Bell, ChefHat } from 'lucide-react-native';
+import { Menu, ArrowLeft, Bell, ChefHat, LayoutDashboard, Package, Users, Wrench, Megaphone, BarChart2, Clock, Truck, Settings, HelpCircle } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors } from '../../theme/colors';
 
-import Sidebar from '../../components/owner/Sidebar';
+import RoleBasedMobileDrawer from '../../components/navigation/RoleBasedMobileDrawer';
 import Topbar from '../../components/owner/Topbar';
 import MobileBottomNav from '../../components/owner/MobileBottomNav';
 
@@ -86,42 +86,46 @@ export default function OwnerDashboard() {
     }
   };
 
+  const navItems = [
+    { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { key: "raw-material", label: "Raw Material", icon: Package },
+    { key: "manpower", label: "Manpower", icon: Users },
+    { key: "service", label: "Service Providers", icon: Wrench },
+    { key: "marketing", label: "Marketing", icon: Megaphone },
+    { key: "order-tracking", label: "Order Tracking", icon: Truck },
+    { key: "history", label: "History", icon: Clock },
+    { key: "analytics", label: "Analytics", icon: BarChart2 },
+  ];
+
+  const bottomNavItems = [
+    { key: "support", label: "Support", icon: HelpCircle },
+    { key: "settings", label: "Settings", icon: Settings },
+  ];
+
+  const profileData = {
+    initials: user?.name ? user.name.substring(0,2).toUpperCase() : "AD",
+    name: user?.name || "Admin User",
+    role: "System Administrator",
+    badge: "OWNER"
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         
-        {/* Desktop Sidebar */}
-        {isLargeScreen && (
-          <Sidebar 
-            activePage={activePage} 
-            onNavigate={setActivePage} 
-            onLogout={logout} 
-            user={user} 
-          />
-        )}
-
-        {/* Mobile Drawer Overlay */}
-        {!isLargeScreen && mobileMenuOpen && (
-          <View style={styles.drawerOverlay}>
-            <View style={styles.drawerSidebar}>
-              <Sidebar 
-                activePage={activePage} 
-                onNavigate={(page) => {
-                  setActivePage(page);
-                  setMobileMenuOpen(false);
-                }} 
-                onLogout={logout} 
-                user={user} 
-              />
-            </View>
-            <TouchableOpacity 
-              style={styles.drawerBackdrop} 
-              activeOpacity={1} 
-              onPress={() => setMobileMenuOpen(false)} 
-            />
-          </View>
-        )}
-
+        <RoleBasedMobileDrawer
+          activePage={activePage}
+          onNavigate={setActivePage}
+          isMobile={!isLargeScreen}
+          mobileMenuOpen={mobileMenuOpen}
+          setMobileMenuOpen={setMobileMenuOpen}
+          onLogout={logout}
+          navItems={navItems}
+          bottomNavItems={bottomNavItems}
+          profile={profileData}
+          panelTitle="ADMIN OPERATIONS"
+        />
+        
         {/* Main Content Area */}
         <View style={styles.mainContent}>
           {/* Desktop/Tablet Topbar */}

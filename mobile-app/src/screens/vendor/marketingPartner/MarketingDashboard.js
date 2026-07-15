@@ -1,55 +1,78 @@
 import React, { useState, useContext } from 'react';
 import { View, Text, StyleSheet, Platform, useWindowDimensions, TouchableOpacity, Image } from 'react-native';
-import { Menu, Bell, Search, User, LayoutDashboard, Activity, Truck, Users, DollarSign, HelpCircle, Settings } from 'lucide-react-native';
-import RoleBasedMobileDrawer from '../../../components/navigation/RoleBasedMobileDrawer';
+import { Menu, Bell, Search, User, LayoutDashboard, Mail, Megaphone, Briefcase, DollarSign, FolderOpen, HelpCircle, Settings } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
 import { colors } from '../../../theme/colors';
 
-import ManpowerDashboardHome from './ManpowerDashboardHome';
-import ManpowerDirectRequestsPage from './ManpowerDirectRequestsPage';
-import ManpowerCandidatesPage from './ManpowerCandidatesPage';
-import ManpowerDeploymentsPage from './ManpowerDeploymentsPage';
-import ManpowerRevenuePage from './ManpowerRevenuePage';
-import ManpowerNotificationsPage from './ManpowerNotificationsPage';
-import ManpowerSettingsPage from './ManpowerSettingsPage';
-import ManpowerSupportPage from './ManpowerSupportPage';
+import RoleBasedMobileDrawer from '../../../components/navigation/RoleBasedMobileDrawer';
+import MarketingDashboardHome from './MarketingDashboardHome';
+import MarketingRequestsScreen from './MarketingRequestsScreen';
+import MarketingProposalForm from './MarketingProposalForm';
+import MarketingCampaignsScreen from './MarketingCampaignsScreen';
+import MarketingCreativeApprovalScreen from './MarketingCreativeApprovalScreen';
+import MarketingTeamScreen from './MarketingTeamScreen';
+import MarketingPortfolioScreen from './MarketingPortfolioScreen';
+import MarketingRevenueScreen from './MarketingRevenueScreen';
+import MarketingNotificationsScreen from './MarketingNotificationsScreen';
+import MarketingSettingsScreen from './MarketingSettingsScreen';
+import MarketingSupportScreen from './MarketingSupportScreen';
 
-export default function ManpowerDashboard() {
+export default function MarketingDashboard() {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || (Platform.OS !== 'web');
   const { logout } = useContext(AuthContext);
 
   const [activePage, setActivePage] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [selectedRequirement, setSelectedRequirement] = useState(null);
+  const [selectedCampaign, setSelectedCampaign] = useState(null);
+
+  const handleSendProposal = (req) => {
+    setSelectedRequirement(req);
+    setActivePage('send_proposal');
+  };
+
+  const handleUploadCreative = (camp) => {
+    setSelectedCampaign(camp);
+    setActivePage('upload_creative');
+  };
 
   const renderActivePage = () => {
     switch (activePage) {
-      case "dashboard": 
-        return <ManpowerDashboardHome />;
-      case "requests": 
-        return <ManpowerDirectRequestsPage />;
-      case "inventory": 
-        return <ManpowerCandidatesPage />;
-      case "deliveries": 
-        return <ManpowerDeploymentsPage />;
-      case "revenue": 
-        return <ManpowerRevenuePage />;
+      case "dashboard":
+        return <MarketingDashboardHome setActivePage={setActivePage} handleSendProposal={handleSendProposal} />;
+      case "requests":
+        return <MarketingRequestsScreen setActivePage={setActivePage} handleSendProposal={handleSendProposal} />;
+      case "send_proposal":
+        return <MarketingProposalForm setActivePage={setActivePage} requirement={selectedRequirement} />;
+      case "campaigns":
+        return <MarketingCampaignsScreen setActivePage={setActivePage} handleUploadCreative={handleUploadCreative} />;
+      case "upload_creative":
+        return <MarketingCreativeApprovalScreen setActivePage={setActivePage} campaign={selectedCampaign} />;
+      case "team":
+        return <MarketingTeamScreen setActivePage={setActivePage} />;
+      case "portfolio":
+        return <MarketingPortfolioScreen setActivePage={setActivePage} />;
+      case "revenue":
+        return <MarketingRevenueScreen setActivePage={setActivePage} />;
       case "notifications":
-        return <ManpowerNotificationsPage />;
-      case "support": 
-        return <ManpowerSupportPage />;
-      case "settings": 
-        return <ManpowerSettingsPage />;
+        return <MarketingNotificationsScreen setActivePage={setActivePage} />;
+      case "settings":
+        return <MarketingSettingsScreen setActivePage={setActivePage} />;
+      case "support":
+        return <MarketingSupportScreen setActivePage={setActivePage} />;
       default: return <View style={styles.placeholder}><Text style={styles.placeholderText}>{activePage} Under Construction</Text></View>;
     }
   };
 
   const navItems = [
     { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { key: "requests", label: "Requests", icon: Activity, badge: 1 },
-    { key: "inventory", label: "Candidates", icon: Users },
-    { key: "deliveries", label: "Deployments", icon: Truck },
+    { key: "requests", label: "Requests", icon: Mail },
+    { key: "campaigns", label: "Campaigns", icon: Megaphone },
+    { key: "portfolio", label: "Portfolio", icon: FolderOpen },
+    { key: "team", label: "Team", icon: Briefcase },
     { key: "revenue", label: "Revenue", icon: DollarSign },
+    { key: "notifications", label: "Notifications", icon: Bell },
   ];
 
   const bottomNavItems = [
@@ -58,17 +81,17 @@ export default function ManpowerDashboard() {
   ];
 
   const profileData = {
-    initials: "EM",
-    name: "Elite Manpower",
-    role: "Manpower Agency",
+    initials: "BC",
+    name: "BrandCraft",
+    role: "Marketing Agency",
     badge: "AGENCY"
   };
 
   return (
     <View style={styles.container}>
-      <RoleBasedMobileDrawer 
-        activePage={activePage} 
-        onNavigate={setActivePage} 
+      <RoleBasedMobileDrawer
+        activePage={activePage}
+        onNavigate={setActivePage}
         isMobile={isMobile}
         mobileMenuOpen={mobileMenuOpen}
         setMobileMenuOpen={setMobileMenuOpen}
@@ -78,7 +101,7 @@ export default function ManpowerDashboard() {
         profile={profileData}
         panelTitle="VENDOR OPERATIONS"
       />
-      
+
       <View style={styles.mainContent}>
         {/* Top Navbar */}
         {isMobile ? (
@@ -89,7 +112,7 @@ export default function ManpowerDashboard() {
 
             <View style={styles.mobileLogoContainer}>
               <View style={styles.mobileLogoIconBox}>
-                <Image source={require('../../../assets/HoReCa_Logo.png')} style={{width: 18, height: 18, resizeMode: 'contain'}} />
+                <Image source={require('../../../assets/HoReCa_Logo.png')} style={{ width: 18, height: 18, resizeMode: 'contain' }} />
               </View>
               <Text style={styles.mobileLogoText}>
                 HRC<Text style={{ color: '#D4AF37' }}>HUB</Text>
@@ -110,7 +133,7 @@ export default function ManpowerDashboard() {
           <View style={styles.topNav}>
             <View style={styles.searchBox}>
               <Search size={16} color={colors.muted} />
-              <Text style={styles.searchText}>Search candidates...</Text>
+              <Text style={styles.searchText}>Search marketing tools...</Text>
             </View>
 
             <View style={styles.navRight}>
@@ -135,7 +158,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F8FAFC',
   },
   mainContent: {
     flex: 1,
@@ -145,31 +168,25 @@ const styles = StyleSheet.create({
     height: 70,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: '#E2E8F0',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 24,
   },
-  menuBtn: {
-    padding: 8,
-    marginLeft: -8,
-  },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 40,
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
     width: 300,
   },
   searchText: {
-    color: colors.muted,
-    fontSize: 13,
+    color: '#94A3B8',
     marginLeft: 8,
+    fontSize: 14,
   },
   navRight: {
     flexDirection: 'row',
@@ -177,34 +194,73 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: 8,
     position: 'relative',
   },
   notificationDot: {
     position: 'absolute',
-    top: 10,
-    right: 12,
+    top: 8,
+    right: 8,
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: '#EF4444',
     borderWidth: 2,
-    borderColor: '#F8FAFC',
+    borderColor: '#fff',
   },
-  avatarBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: 'rgba(96, 165, 250, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(96, 165, 250, 0.3)',
+  mobileBar: {
+    height: 60,
+    backgroundColor: '#081A3A',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+  },
+  mobileMenuBtn: {
+    padding: 8,
+    marginLeft: -8,
+  },
+  mobileLogoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  mobileLogoIconBox: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 4,
+    marginRight: 8,
+  },
+  mobileLogoText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  mobileRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  mobileIconBtn: {
+    padding: 4,
+    position: 'relative',
+  },
+  mobileNotificationDot: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+    borderWidth: 2,
+    borderColor: '#081A3A',
+  },
+  mobileAvatarBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#D4AF37',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -217,65 +273,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   placeholderText: {
-    color: colors.muted,
     fontSize: 18,
-    fontWeight: 'bold',
-  },
-  mobileBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    height: 60,
-    backgroundColor: '#081A3A',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
-  },
-  mobileMenuBtn: {
-    padding: 6,
-  },
-  mobileLogoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  mobileLogoIconBox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mobileLogoText: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: '#fff',
-  },
-  mobileRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  mobileIconBtn: {
-    padding: 6,
-    position: 'relative',
-  },
-  mobileNotificationDot: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#EF4444',
-  },
-  mobileAvatarBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    color: '#94A3B8',
+  }
 });
