@@ -7,12 +7,12 @@ import { ALL_REQUIREMENTS } from '../../../constants/manpowerData';
 const GOLD = '#D97706';
 const BLUE = '#2563EB';
 
-const TABS = ['All', 'Active', 'Responses', 'Interviewing', 'Filled', 'Closed'];
+const TABS = ['All', 'Active', 'Responses', 'Shortlisted', 'Filled', 'Closed'];
 
 const STATUS_COLORS = {
   'Active': { bg: '#DBEAFE', text: BLUE },
   'Responses': { bg: '#FEF3C7', text: GOLD },
-  'Interviewing': { bg: '#F3E8FF', text: '#9333EA' },
+  'Shortlisted': { bg: '#F3E8FF', text: '#9333EA' },
   'Filled': { bg: '#DCFCE7', text: '#16A34A' },
   'Closed': { bg: '#F1F5F9', text: '#64748B' }
 };

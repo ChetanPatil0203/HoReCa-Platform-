@@ -10,7 +10,6 @@ import {
 } from 'lucide-react-native';
 
 import SubmissionDetailsModal from '../../../components/vendor/manpowerAgent/SubmissionDetailsModal';
-import InterviewDetailsModal from '../../../components/vendor/manpowerAgent/InterviewDetailsModal';
 
 const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
@@ -19,7 +18,7 @@ const SUMMARY_METRICS = [
   { label: "New Broadcasts", value: "24", icon: Briefcase, color: "#3B82F6" },
   { label: "Available Candidates", value: "85", icon: Users, color: "#10B981" },
   { label: "Candidates Submitted", value: "142", icon: FileText, color: "#8B5CF6" },
-  { label: "Upcoming Interviews", value: "8", icon: Calendar, color: "#F59E0B" },
+  { label: "Shortlisted Candidates", value: "8", icon: Users, color: "#F59E0B" },
   { label: "Active Deployments", value: "56", icon: CheckCircle, color: "#10B981" },
   { label: "Replacement Requests", value: "2", icon: AlertTriangle, color: "#EF4444" },
   { label: "Monthly Revenue", value: "₹4.2L", icon: DollarSign, color: "#10B981" },
@@ -50,7 +49,7 @@ const MOCK_BROADCASTS = [
 ];
 
 const MOCK_SUBMISSIONS = [
-  { id: "SUB-01", name: "Rahul Sharma", role: "Head Chef", business: "The Grand Taj", date: "14 Jul 2026", status: "Interview Scheduled" },
+  { id: "SUB-01", name: "Rahul Sharma", role: "Head Chef", business: "The Grand Taj", date: "14 Jul 2026", status: "Shortlisted" },
   { id: "SUB-02", name: "Priya Desai", role: "Barista", business: "Cafe Mocha", date: "13 Jul 2026", status: "Shortlisted" },
   { id: "SUB-03", name: "Amit Kumar", role: "Steward", business: "Olive Bar", date: "12 Jul 2026", status: "Viewed" },
 ];
@@ -74,9 +73,6 @@ export default function ManpowerDashboardHome() {
 
   const [selectedSub, setSelectedSub] = useState(null);
   const [subModalVisible, setSubModalVisible] = useState(false);
-  
-  const [selectedInterview, setSelectedInterview] = useState(null);
-  const [interviewModalVisible, setInterviewModalVisible] = useState(false);
 
   const filters = ["All", "New", "Urgent", "Saved", "Responded", "Closed"];
 
@@ -87,7 +83,6 @@ export default function ManpowerDashboardHome() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Interview Scheduled': return '#8B5CF6';
       case 'Shortlisted': return '#F59E0B';
       case 'Selected': return '#10B981';
       case 'Rejected': return '#EF4444';
@@ -99,31 +94,15 @@ export default function ManpowerDashboardHome() {
   };
 
   const handleSubmissionClick = (sub) => {
-    if (sub.status === 'Interview Scheduled') {
-      setSelectedInterview({
-        candidateName: sub.name,
-        business: sub.business,
-        role: sub.role,
-        reqId: "REQ-901",
-        date: sub.date,
-        time: "11:00 AM",
-        mode: "In Person",
-        location: "Hotel Lobby",
-        ownerNotes: "Please bring hard copy of resume.",
-        status: "Scheduled"
-      });
-      setInterviewModalVisible(true);
-    } else {
-      setSelectedSub({
-        candidateName: sub.name,
-        role: sub.role,
-        business: sub.business,
-        date: sub.date,
-        status: sub.status,
-        note: "Candidate is highly experienced."
-      });
-      setSubModalVisible(true);
-    }
+    setSelectedSub({
+      candidateName: sub.name,
+      role: sub.role,
+      business: sub.business,
+      date: sub.date,
+      status: sub.status,
+      note: "Candidate is highly experienced."
+    });
+    setSubModalVisible(true);
   };
 
   return (
@@ -426,11 +405,6 @@ export default function ManpowerDashboardHome() {
         visible={subModalVisible} 
         onClose={() => setSubModalVisible(false)} 
         submission={selectedSub} 
-      />
-      <InterviewDetailsModal 
-        visible={interviewModalVisible} 
-        onClose={() => setInterviewModalVisible(false)} 
-        interview={selectedInterview} 
       />
     </View>
   );

@@ -6,7 +6,7 @@ import { colors } from '../../../theme/colors';
 const GOLD = '#D97706';
 const BLUE = '#2563EB';
 
-export default function CandidateProfilePage({ candidate, onBack, onScheduleInterview }) {
+export default function CandidateProfilePage({ candidate, onBack }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
 
@@ -123,14 +123,19 @@ export default function CandidateProfilePage({ candidate, onBack, onScheduleInte
           </View>
 
           {/* Actions */}
-          <View style={[styles.actionsRow, isMobile && { flexDirection: 'column' }]}>
-            <TouchableOpacity style={styles.primaryBtn} onPress={() => onScheduleInterview(candidate)}>
-              <Calendar size={18} color="#fff" />
-              <Text style={styles.primaryBtnText}>Schedule Interview</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.secondaryBtn}>
+          <View style={[styles.actionsRow, isMobile && { flexWrap: 'wrap' }]}>
+            <TouchableOpacity style={[styles.secondaryBtn, { minWidth: '45%' }]}>
               <CheckCircle size={18} color="#16A34A" />
               <Text style={[styles.secondaryBtnText, { color: '#16A34A' }]}>Shortlist</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.secondaryBtn, { minWidth: '45%', backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }]}>
+              <Text style={[styles.secondaryBtnText, { color: BLUE }]}>Select</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.secondaryBtn, { minWidth: '45%', backgroundColor: '#FFFBEB', borderColor: '#FDE68A' }]}>
+              <Text style={[styles.secondaryBtnText, { color: '#D97706' }]}>Hold</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.secondaryBtn, { minWidth: '45%', backgroundColor: '#FEF2F2', borderColor: '#FECACA' }]}>
+              <Text style={[styles.secondaryBtnText, { color: '#DC2626' }]}>Reject</Text>
             </TouchableOpacity>
           </View>
 
@@ -186,7 +191,7 @@ const styles = StyleSheet.create({
   docItem: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: '#F8FAFC', borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0' },
   docText: { flex: 1, fontSize: 14, fontWeight: '600', color: '#0F172A', marginLeft: 12 },
 
-  actionsRow: { flexDirection: 'row', gap: 16 },
+  actionsRow: { flexDirection: 'row', gap: 16, flexWrap: 'wrap' },
   primaryBtn: { flex: 2, flexDirection: 'row', justifyContent: 'center', gap: 8, backgroundColor: BLUE, paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
   primaryBtnText: { color: '#fff', fontSize: 15, fontWeight: '800' },
   secondaryBtn: { flex: 1, flexDirection: 'row', justifyContent: 'center', gap: 8, backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#BBF7D0', paddingVertical: 16, borderRadius: 12, alignItems: 'center' },

@@ -8,9 +8,10 @@ import Verification from './pages/superadminVerification/Verification';
 import Horeca from './pages/superadminHoreca/Horeca';
 import Vendors from './pages/superadminVendors/Vendors';
 import Complaints from './pages/superadminComplaints/Complaints';
-import Analytics from './pages/superadminAnalytics/Analytics';
-import Limits from './pages/superadminLimits/Limits';
+import Team from './pages/superadminTeam/Team';
+
 import Profile from './pages/superadminProfile/Profile';
+import Limits from './pages/superadminLimits/Limits';
 
 // Simple Route Guard for demo purposes
 function ProtectedRoute({ children }) {
@@ -34,7 +35,7 @@ export default function App() {
         <Route path="/horeca" element={<ProtectedRoute><Horeca /></ProtectedRoute>} />
         <Route path="/vendors" element={<ProtectedRoute><Vendors /></ProtectedRoute>} />
         <Route path="/complaints" element={<ProtectedRoute><Complaints /></ProtectedRoute>} />
-        <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+        <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
         <Route path="/limits" element={<ProtectedRoute><Limits /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 

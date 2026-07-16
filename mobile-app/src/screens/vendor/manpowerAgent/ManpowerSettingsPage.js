@@ -32,7 +32,7 @@ const MOCK_DOCS = [
 export default function ManpowerSettingsPage() {
   const [profileData, setProfileData] = useState(MOCK_PROFILE);
   const [notifPrefs, setNotifPrefs] = useState({
-    broadcasts: true, directReqs: true, interviews: true, selections: true, replacements: true, payments: true, system: true
+    broadcasts: true, directReqs: true, selections: true, replacements: true, payments: true, system: true
   });
 
   const [activeModal, setActiveModal] = useState(null); // 'Profile', 'Documents', 'Notifications'
@@ -220,14 +220,7 @@ export default function ManpowerSettingsPage() {
               </View>
               <View style={styles.divider} />
 
-              <View style={styles.toggleRow}>
-                <View style={styles.toggleInfo}>
-                  <Text style={styles.toggleTitle}>Interview Updates</Text>
-                  <Text style={styles.toggleSub}>Reschedules, results and feedback.</Text>
-                </View>
-                <Switch value={notifPrefs.interviews} onValueChange={v => setNotifPrefs({...notifPrefs, interviews: v})} trackColor={{ false: '#CBD5E1', true: '#10B981' }} thumbColor="#fff" />
-              </View>
-              <View style={styles.divider} />
+
 
               <View style={styles.toggleRow}>
                 <View style={styles.toggleInfo}>

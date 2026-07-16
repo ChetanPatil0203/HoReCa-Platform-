@@ -1,7 +1,7 @@
 export const MANPOWER_SUMMARY = {
   activeRequirements: 3,
   agencyResponses: 12,
-  interviewsScheduled: 5,
+  shortlistedCandidates: 5,
   selectedStaff: 8
 };
 
@@ -44,7 +44,7 @@ export const ALL_REQUIREMENTS = [
     joiningDate: '01 Sep 2026',
     postedDate: '1 Week Ago',
     responses: 2,
-    status: 'Interviewing'
+    status: 'Shortlisted'
   },
   {
     id: 'REQ-080',
@@ -107,27 +107,6 @@ export const ALL_RESPONSES = [
 ];
 
 export const RECENT_RESPONSES = ALL_RESPONSES.slice(0, 2);
-
-export const UPCOMING_INTERVIEWS = [
-  {
-    id: 'INT-301',
-    candidateName: 'Rajesh Kumar',
-    role: 'Head Chef',
-    agency: 'Elite Staffing Co.',
-    date: 'Tomorrow',
-    time: '11:00 AM',
-    type: 'In-person'
-  },
-  {
-    id: 'INT-302',
-    candidateName: 'Priya Sharma',
-    role: 'Wait Staff',
-    agency: 'HospitalityHR',
-    date: 'Tomorrow',
-    time: '02:00 PM',
-    type: 'Video Call'
-  }
-];
 
 export const TOP_AGENCIES = [
   {

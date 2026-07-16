@@ -1,25 +1,29 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldCheck, X, FileText, AlertCircle, Check, Terminal } from 'lucide-react';
+import { ShieldCheck, X, FileText, AlertCircle, Check, Terminal, Eye, UserPlus, Clock, MessageSquare, AlertTriangle, FileBadge, CheckCircle, Navigation, MapPin, Building, Info, FileImage } from 'lucide-react';
 import { mockDb } from '../../utils/mockDb';
 
 export default function Verification() {
   const [kycSubmissions, setKycSubmissions] = useState([]);
   const [selectedKycId, setSelectedKycId] = useState('');
-  const [verificationFilter, setVerificationFilter] = useState('All');
-  const [verificationMainTab, setVerificationMainTab] = useState('HoReCa');
-  const [verificationCategoryFilter, setVerificationCategoryFilter] = useState('All');
-  const [showRejectDropdown, setShowRejectDropdown] = useState(false);
+  
+  const TABS = ['HoReCa Owners', 'Raw Material Vendors', 'Manpower Agencies', 'Service Providers', 'Marketing Agencies'];
+  const STATUSES = ['All', 'Pending', 'Under Review', 'Changes Requested', 'Approved', 'Rejected'];
+
+  const [activeTab, setActiveTab] = useState(TABS[0]);
+  const [activeStatus, setActiveStatus] = useState(STATUSES[0]);
+  
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
+  
+  // Confirmation Modal State
+  const [confirmAction, setConfirmAction] = useState(null); // { action: 'Approve' | 'Reject' | 'Request Changes', kycId }
+  const [actionReason, setActionReason] = useState('');
 
   // Load submissions from mockDb
   useEffect(() => {
     const list = mockDb.getKYC();
     setKycSubmissions(list);
-    if (list.length > 0) {
-      setSelectedKycId(list[0].id);
-    }
   }, []);
 
   const showToast = (message, type = 'success') => {
@@ -31,33 +35,84 @@ export default function Verification() {
   };
 
   const activeKyc = useMemo(() => {
-    return kycSubmissions.find((k) => k.id === selectedKycId) || kycSubmissions[0];
+    return kycSubmissions.find((k) => k.id === selectedKycId);
   }, [kycSubmissions, selectedKycId]);
 
-  const handleApproveKYC = (id) => {
-    const updated = kycSubmissions.map((k) => (k.id === id ? { ...k, status: "Approved" } : k));
+  const filteredSubmissions = useMemo(() => {
+    return kycSubmissions.filter(k => {
+      const matchTab = k.entityType === activeTab;
+      const matchStatus = activeStatus === 'All' || k.status === activeStatus;
+      return matchTab && matchStatus;
+    });
+  }, [kycSubmissions, activeTab, activeStatus]);
+
+  const executeAction = () => {
+    if (!confirmAction) return;
+    if (!actionReason.trim()) {
+      showToast("Reason is required to perform this action.", "error");
+      return;
+    }
+
+    const updated = kycSubmissions.map((k) => {
+      if (k.id === confirmAction.kycId) {
+        const newHistory = [...(k.history || []), { status: confirmAction.action, date: new Date().toLocaleDateString(), reason: actionReason }];
+        return { ...k, status: confirmAction.action, notes: actionReason, history: newHistory };
+      }
+      return k;
+    });
+
     setKycSubmissions(updated);
     mockDb.saveKYC(updated);
-    showToast(`Profile approved and deployed successfully for ${kycSubmissions.find((k) => k.id === id)?.businessName}`, "success");
+    showToast(`Profile ${confirmAction.action} successfully!`, "success");
+    setConfirmAction(null);
+    setActionReason('');
     
-    // dispatch storage event for layout updates
     window.dispatchEvent(new Event('storage'));
   };
 
-  const handleRejectKYC = (id, reason) => {
-    const updated = kycSubmissions.map((k) => (k.id === id ? { ...k, status: "Rejected", rejectionReason: reason } : k));
-    setKycSubmissions(updated);
-    mockDb.saveKYC(updated);
-    setShowRejectDropdown(false);
-    showToast(`Rejected Profile: ${kycSubmissions.find((k) => k.id === id)?.businessName} (${reason})`, "error");
-    
-    // dispatch storage event
-    window.dispatchEvent(new Event('storage'));
+  const handleQuickAction = (id, action) => {
+    if (action === 'Assign Reviewer') {
+      const updated = kycSubmissions.map(k => k.id === id ? { ...k, adminAssigned: 'Current Admin' } : k);
+      setKycSubmissions(updated);
+      mockDb.saveKYC(updated);
+      showToast("Reviewer assigned.", "success");
+    } else if (action === 'Put Under Review') {
+      const updated = kycSubmissions.map(k => k.id === id ? { ...k, status: 'Under Review' } : k);
+      setKycSubmissions(updated);
+      mockDb.saveKYC(updated);
+      showToast("Application moved to Under Review.", "info");
+    }
+  };
+
+  const renderRoleSpecificDocs = (kyc) => {
+    if (!kyc) return null;
+    const docs = [];
+    if (kyc.entityType === 'HoReCa Owners') {
+      docs.push({ title: 'FSSAI License', val: kyc.fssaiNumber || 'Verified' });
+      docs.push({ title: 'Business Licence', val: kyc.businessLicense || 'Verified' });
+    } else if (kyc.entityType === 'Raw Material Vendors') {
+      docs.push({ title: 'FSSAI License', val: kyc.fssaiNumber || 'Verified' });
+      docs.push({ title: 'Warehouse Details', val: kyc.warehouseDetails || 'Uploaded' });
+      docs.push({ title: 'Product Categories', val: kyc.productCategories || 'Listed' });
+    } else if (kyc.entityType === 'Manpower Agencies') {
+      docs.push({ title: 'Labour Licence', val: kyc.labourLicence || 'Verified' });
+      docs.push({ title: 'Agency Registration', val: kyc.agencyRegistration || 'Verified' });
+      docs.push({ title: 'Replacement Policy', val: kyc.replacementPolicy || 'Uploaded' });
+    } else if (kyc.entityType === 'Service Providers') {
+      docs.push({ title: 'Service Certifications', val: kyc.serviceCertifications || 'Verified' });
+      docs.push({ title: 'Team Details', val: kyc.teamDetails || 'Verified' });
+      docs.push({ title: 'Coverage Areas', val: kyc.coverageAreas || 'Verified' });
+    } else if (kyc.entityType === 'Marketing Agencies') {
+      docs.push({ title: 'Agency Registration', val: kyc.agencyRegistration || 'Verified' });
+      docs.push({ title: 'Portfolio', val: kyc.portfolio || 'Uploaded' });
+      docs.push({ title: 'Services', val: kyc.services || 'Listed' });
+    }
+    return docs;
   };
 
   return (
-    <div className="flex flex-col gap-6 animate-fadeIn">
-      {/* Toast Overlay inside verification page */}
+    <div className="flex flex-col gap-6 animate-fadeIn pb-8">
+      {/* Toast Overlay */}
       <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-2 max-w-sm w-full">
         <AnimatePresence>
           {toasts.map((toast) => (
@@ -67,7 +122,8 @@ export default function Verification() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               className={`flex items-start gap-3 p-4 rounded-xl border shadow-xl bg-white backdrop-blur-md ${
-                toast.type === "success" ? "border-emerald-500/20 text-emerald-800" : "border-rose-500/20 text-rose-800"
+                toast.type === "success" ? "border-emerald-500/20 text-emerald-800" : 
+                toast.type === "error" ? "border-rose-500/20 text-rose-800" : "border-blue-500/20 text-blue-800"
               }`}
             >
               <div className="flex-1 text-xs font-semibold leading-relaxed mt-0.5">{toast.message}</div>
@@ -79,300 +135,383 @@ export default function Verification() {
         </AnimatePresence>
       </div>
 
+      <div className="bg-white border border-slate-200/60 shadow-sm rounded-2xl p-5">
+        <h1 className="text-xl font-black text-slate-800 tracking-tight">Verification Center</h1>
+        <p className="text-xs text-slate-400 mt-1 font-medium">Manage KYC, onboarding and credential validation.</p>
+      </div>
+
       {/* Tabs Header */}
       <div className="flex flex-col gap-4 border-b border-slate-200 pb-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center gap-1 bg-[#F3F4F6] border border-slate-200/60 p-1 rounded-xl">
-            {["HoReCa", "Vendor"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => {
-                  setVerificationMainTab(tab);
-                  setVerificationCategoryFilter("All");
-                }}
-                className={`text-[11px] font-bold px-4 py-1.5 rounded-lg transition-all active:scale-[0.97] ${
-                  verificationMainTab === tab
-                    ? "bg-white text-blue-700 shadow-sm border border-slate-200/30"
-                    : "text-slate-400 hover:text-slate-600"
-                }`}
-              >
-                {tab} Profile Verifications
-              </button>
-            ))}
-          </div>
-
-          <div className="flex gap-2">
-            <button className="px-4 py-2 border border-slate-200/80 bg-white hover:bg-slate-50 text-slate-600 text-xs font-bold rounded-xl shadow-sm transition-colors flex items-center gap-1.5">
-              <Terminal className="w-3.5 h-3.5" />
-              <span>History Logs</span>
+        {/* Entity Tabs */}
+        <div className="flex gap-2 flex-wrap">
+          {TABS.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-[12px] font-bold rounded-xl transition-all border ${
+                activeTab === tab
+                  ? "bg-blue-600 border-blue-600 text-white shadow-sm"
+                  : "bg-white border-slate-200/80 text-slate-500 hover:bg-slate-50"
+              }`}
+            >
+              {tab}
             </button>
-          </div>
+          ))}
         </div>
 
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          {/* Sub-Category Filter */}
-          <div className="flex gap-2 flex-wrap">
-            {(verificationMainTab === "HoReCa"
-              ? ["All", "Hotel", "Restaurant", "Cafe"]
-              : ["All", "Raw Material", "Manpower", "Marketing", "Service Provider"]
-            ).map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setVerificationCategoryFilter(cat)}
-                className={`px-3 py-1.5 text-[11px] font-bold rounded-xl border transition-all ${
-                  verificationCategoryFilter === cat
-                    ? "bg-blue-50 border-blue-200 text-blue-700 shadow-sm"
-                    : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-
-          {/* Status Filter */}
-          <div className="flex gap-2">
-            {["All", "Pending", "Approved", "Rejected"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setVerificationFilter(tab)}
-                className={`px-3 py-1.5 text-[11px] font-bold rounded-xl transition-all ${
-                  verificationFilter === tab
-                    ? "bg-slate-800 text-white shadow-sm"
-                    : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
+        {/* Status Filters */}
+        <div className="flex gap-2 flex-wrap mt-2">
+          {STATUSES.map((status) => (
+            <button
+              key={status}
+              onClick={() => setActiveStatus(status)}
+              className={`px-3 py-1.5 text-[11px] font-bold rounded-xl transition-all border ${
+                activeStatus === status
+                  ? "bg-slate-800 border-slate-800 text-white shadow-sm"
+                  : "bg-slate-100 border-transparent text-slate-500 hover:bg-slate-200"
+              }`}
+            >
+              {status}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Panel Grid Split */}
-      <div className="flex flex-col gap-6 items-start w-full">
-        {/* Full Width Pane: Requests Queue */}
-        <div className="bg-white border border-slate-200/60 shadow-sm rounded-2xl p-4 flex flex-col gap-3 min-h-[500px] w-full">
-          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2">Verification Queue</h4>
-
-          <div className="flex flex-col gap-2 overflow-y-auto max-h-[460px]" style={{ scrollbarWidth: "none" }}>
-            {kycSubmissions
-              .filter(k => {
-                const isVendor = k.type === "Vendor";
-                if (verificationMainTab === "HoReCa" && isVendor) return false;
-                if (verificationMainTab === "Vendor" && !isVendor) return false;
-
-                const matchCategory = verificationCategoryFilter === "All" ||
-                  (verificationMainTab === "HoReCa" ? k.type === verificationCategoryFilter : k.vendorCategory === verificationCategoryFilter);
-                
-                const matchStatus = verificationFilter === "All" || k.status === verificationFilter;
-
-                return matchCategory && matchStatus;
-              })
-              .map((sub) => {
-                const isSelected = selectedKycId === sub.id;
-                return (
-                  <div
-                    key={sub.id}
-                    onClick={() => { setSelectedKycId(sub.id); setShowRejectDropdown(false); }}
-                    className={`p-3.5 rounded-xl border text-left cursor-pointer transition-all hover:border-blue-400 flex items-center gap-3 ${
-                      isSelected ? "bg-blue-50/40 border-blue-400 shadow-sm" : "bg-white border-slate-100 hover:shadow-sm"
-                    }`}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start gap-2">
-                        <h4 className="text-xs font-extrabold text-slate-800 truncate">{sub.businessName}</h4>
-                        <span className={`text-[8px] font-black px-2 py-0.5 rounded-full border ${
-                          sub.status === "Approved" ? "bg-emerald-50 border-emerald-200/40 text-emerald-700" :
-                          sub.status === "Rejected" ? "bg-rose-50 border-rose-200/40 text-rose-700" :
-                          "bg-amber-50 border-amber-200/40 text-amber-700"
-                        }`}>
-                          {sub.status}
-                        </span>
+      {/* Verification List (Desktop List View) */}
+      <div className="bg-white border border-slate-200/60 shadow-sm rounded-2xl overflow-hidden w-full overflow-x-auto">
+        <table className="w-full text-left border-collapse min-w-[1000px]">
+          <thead>
+            <tr className="bg-slate-50 border-b border-slate-200/80 text-[10px] uppercase tracking-wider text-slate-500">
+              <th className="p-4 font-bold">App ID</th>
+              <th className="p-4 font-bold">Business Name</th>
+              <th className="p-4 font-bold">Owner / City</th>
+              <th className="p-4 font-bold">Docs %</th>
+              <th className="p-4 font-bold">Risk</th>
+              <th className="p-4 font-bold">Status</th>
+              <th className="p-4 font-bold">Assigned</th>
+              <th className="p-4 font-bold text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredSubmissions.length > 0 ? (
+              filteredSubmissions.map((sub) => (
+                <tr key={sub.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                  <td className="p-4">
+                    <span className="text-[10px] font-mono font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md">{sub.id}</span>
+                  </td>
+                  <td className="p-4">
+                    <div className="text-xs font-bold text-slate-800">{sub.businessName}</div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">{sub.entityType}</div>
+                  </td>
+                  <td className="p-4">
+                    <div className="text-xs font-semibold text-slate-700">{sub.proprietor}</div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">{sub.location}</div>
+                  </td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-500" style={{ width: sub.documentCompletion || '100%' }}></div>
                       </div>
-                      <div className="flex justify-between text-[10px] text-slate-400 font-semibold mt-3">
-                        <span>{sub.type} · {sub.location}</span>
-                        <span className="font-normal font-mono">{sub.dateSubmitted.split(",")[0]}</span>
-                      </div>
+                      <span className="text-[10px] font-bold text-slate-600">{sub.documentCompletion || '100%'}</span>
                     </div>
-                    <div className="flex-shrink-0">
+                  </td>
+                  <td className="p-4">
+                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded flex w-min items-center gap-1 ${
+                      sub.riskFlag === 'High' ? 'bg-rose-50 text-rose-700' :
+                      sub.riskFlag === 'Medium' ? 'bg-amber-50 text-amber-700' :
+                      'bg-emerald-50 text-emerald-700'
+                    }`}>
+                      {sub.riskFlag === 'High' && <AlertTriangle size={10} />}
+                      {sub.riskFlag || 'Low'}
+                    </span>
+                  </td>
+                  <td className="p-4">
+                    <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full border ${
+                      sub.status === "Approved" ? "bg-emerald-50 border-emerald-200/40 text-emerald-700" :
+                      sub.status === "Rejected" ? "bg-rose-50 border-rose-200/40 text-rose-700" :
+                      sub.status === "Under Review" ? "bg-blue-50 border-blue-200/40 text-blue-700" :
+                      sub.status === "Changes Requested" ? "bg-amber-50 border-amber-200/40 text-amber-700" :
+                      "bg-slate-50 border-slate-200/40 text-slate-700"
+                    }`}>
+                      {sub.status}
+                    </span>
+                  </td>
+                  <td className="p-4">
+                    <span className="text-[11px] font-semibold text-slate-600">{sub.adminAssigned || 'Unassigned'}</span>
+                  </td>
+                  <td className="p-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
+                        onClick={() => {
                           setSelectedKycId(sub.id);
-                          setShowRejectDropdown(false);
                           setIsViewModalOpen(true);
                         }}
-                        className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-colors ${
-                          isSelected ? "bg-blue-600 text-white shadow-sm" : "bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-100"
-                        }`}
+                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-transparent hover:border-blue-100"
+                        title="View Application"
                       >
-                        View
+                        <Eye size={16} />
                       </button>
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-        </div>
-
-        {/* Right Pane Details Modal */}
-        <AnimatePresence>
-          {isViewModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-              <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsViewModalOpen(false)} />
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="bg-white border border-slate-200/60 shadow-2xl rounded-2xl p-6 w-full max-w-4xl flex flex-col justify-between relative z-10 max-h-[90vh] overflow-y-auto"
-              >
-                <button
-                  onClick={() => setIsViewModalOpen(false)}
-                  className="absolute top-4 right-4 p-1.5 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors"
-                >
-                  <X size={16} strokeWidth={2.5} />
-                </button>
-
-                {activeKyc ? (
-                  <>
-                    <div className="flex flex-col gap-6 mt-2">
-                      <div className="flex justify-between items-start border-b border-slate-100 pb-4 pr-8">
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[9px] font-mono font-bold bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-full self-start">
-                            {activeKyc.id}
-                          </span>
-                          <h3 className="font-black text-slate-800 text-lg mt-1.5">{activeKyc.businessName}</h3>
-                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Submitted: {activeKyc.dateSubmitted}</p>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-[10px] text-slate-400 font-bold uppercase block tracking-wider">Vetting status</span>
-                          <span className={`text-[10px] font-extrabold px-3 py-1 rounded-full border inline-block mt-1.5 ${
-                            activeKyc.status === "Approved" ? "bg-emerald-50 border-emerald-200/40 text-emerald-700" :
-                            activeKyc.status === "Rejected" ? "bg-rose-50 border-rose-200/40 text-rose-700" :
-                            "bg-amber-50 border-amber-200/40 text-amber-700"
-                          }`}>
-                            {activeKyc.status}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-slate-50/50 border border-slate-200/50 rounded-xl p-3.5">
-                          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Proprietor Name</span>
-                          <span className="text-xs font-bold text-slate-700 mt-1 block">{activeKyc.proprietor}</span>
-                          <span className="text-[10px] text-slate-400 font-medium block mt-0.5">{activeKyc.location}, India</span>
-                        </div>
-                        <div className="bg-slate-50/50 border border-slate-200/50 rounded-xl p-3.5">
-                          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Merchant Category</span>
-                          <span className="text-xs font-bold text-slate-700 mt-1 block">{activeKyc.type} Portal</span>
-                          <span className="text-[10px] text-slate-400 font-medium block mt-0.5">Standard Trading License</span>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Verification Documents</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          {[
-                            { title: "FSSAI License", num: activeKyc.fssaiNumber },
-                            { title: "PAN Card", num: activeKyc.panNumber },
-                            { title: "GST Certificate", num: activeKyc.gstinNumber }
-                          ].map((doc, idx) => (
-                            <div key={idx} className="border border-slate-200/60 rounded-xl p-3.5 bg-[#F3F4F6] flex flex-col justify-between items-start relative hover:border-blue-400 transition-colors">
-                              <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 shadow-sm mb-3">
-                                <FileText className="w-4 h-4" />
-                              </div>
-                              <div>
-                                <span className="text-[10px] font-extrabold text-slate-700 block">{doc.title}</span>
-                                <span className="text-[8px] font-mono text-slate-400 block mt-1 break-all">{doc.num}</span>
-                              </div>
-                              <span className="absolute top-3.5 right-3.5 flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {activeKyc.status === "Rejected" && activeKyc.rejectionReason && (
-                        <div className="p-4 bg-rose-50 border border-rose-100 rounded-xl text-xs text-rose-800 font-semibold flex items-center gap-2">
-                          <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
-                          <span>Rejection Reason: {activeKyc.rejectionReason}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="border-t border-slate-100 pt-5 mt-6 flex items-center justify-end gap-3 relative z-30">
                       <button
-                        onClick={() => showToast("Request details sent to merchant.", "info")}
-                        className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-bold rounded-xl shadow-sm transition-colors"
+                        onClick={() => handleQuickAction(sub.id, 'Assign Reviewer')}
+                        className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-100"
+                        title="Assign Reviewer"
                       >
-                        Request Info
+                        <UserPlus size={16} />
                       </button>
-
-                      <div className="relative">
-                        <button
-                          onClick={() => {
-                            if (activeKyc.status === "Pending") setShowRejectDropdown(!showRejectDropdown);
-                          }}
-                          disabled={activeKyc.status !== "Pending"}
-                          className="px-4 py-2 border border-rose-200 hover:bg-rose-50 text-rose-600 text-xs font-bold rounded-xl shadow-sm transition-colors disabled:opacity-40"
-                        >
-                          Reject Profile
-                        </button>
-                        <AnimatePresence>
-                          {showRejectDropdown && (
-                            <>
-                              <div className="fixed inset-0 z-40" onClick={() => setShowRejectDropdown(false)} />
-                              <motion.div
-                                initial={{ opacity: 0, scale: 0.95, y: 5 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95, y: 5 }}
-                                className="absolute right-0 bottom-full mb-2 w-60 bg-white border border-slate-200/60 rounded-xl shadow-xl z-50 p-2 text-left"
-                              >
-                                <span className="block px-3 py-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 mb-1">
-                                  Select Rejection Reason
-                                </span>
-                                {[
-                                  "Invalid FSSAI License Format",
-                                  "GSTIN Verification Mismatch",
-                                  "Blurry License Documentation",
-                                  "Owner Verification Mismatch"
-                                ].map((reason) => (
-                                  <button
-                                    key={reason}
-                                    onClick={() => handleRejectKYC(activeKyc.id, reason)}
-                                    className="w-full text-left px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-800 rounded-lg transition-colors"
-                                  >
-                                    {reason}
-                                  </button>
-                                ))}
-                              </motion.div>
-                            </>
-                          )}
-                        </AnimatePresence>
-                      </div>
-
                       <button
-                        onClick={() => handleApproveKYC(activeKyc.id)}
-                        disabled={activeKyc.status !== "Pending"}
-                        className="px-4 py-2 bg-[#1E40AF] hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm transition-colors disabled:opacity-40"
+                        onClick={() => handleQuickAction(sub.id, 'Put Under Review')}
+                        className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors border border-transparent hover:border-amber-100"
+                        title="Put Under Review"
                       >
-                        Approve & Deploy
+                        <Clock size={16} />
                       </button>
                     </div>
-                  </>
-                ) : (
-                  <div className="flex items-center justify-center h-full text-slate-400 text-xs py-20">
-                    Select a request to inspect credentials
-                  </div>
-                )}
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="8" className="p-8 text-center text-slate-400 text-xs font-medium">
+                  No applications found for the selected filters.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
+
+      {/* Details Modal */}
+      <AnimatePresence>
+        {isViewModalOpen && activeKyc && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsViewModalOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-[#F8FAFC] shadow-2xl rounded-2xl w-full max-w-5xl flex flex-col relative z-10 max-h-[90vh] overflow-hidden"
+            >
+              {/* Modal Header */}
+              <div className="bg-white px-6 py-4 border-b border-slate-200 flex justify-between items-center flex-shrink-0">
+                <div className="flex items-center gap-4">
+                  <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md">
+                    {activeKyc.id}
+                  </span>
+                  <div>
+                    <h2 className="font-black text-slate-800 text-lg">{activeKyc.businessName}</h2>
+                    <span className="text-[10px] text-slate-500 font-semibold">{activeKyc.entityType}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className={`text-[10px] font-extrabold px-3 py-1 rounded-full border ${
+                    activeKyc.status === "Approved" ? "bg-emerald-50 border-emerald-200/40 text-emerald-700" :
+                    activeKyc.status === "Rejected" ? "bg-rose-50 border-rose-200/40 text-rose-700" :
+                    "bg-amber-50 border-amber-200/40 text-amber-700"
+                  }`}>
+                    {activeKyc.status}
+                  </span>
+                  <button onClick={() => setIsViewModalOpen(false)} className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 transition-colors">
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Body */}
+              <div className="flex-1 overflow-y-auto p-6" style={{ scrollbarWidth: "thin" }}>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  
+                  {/* Left Column: Info & Details */}
+                  <div className="lg:col-span-2 flex flex-col gap-6">
+                    {/* Basic Info */}
+                    <div className="bg-white p-5 rounded-xl border border-slate-200/60 shadow-sm">
+                      <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <Info size={14} /> Business & Owner Information
+                      </h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Proprietor / Contact</span>
+                          <span className="text-xs font-bold text-slate-700 mt-1 block">{activeKyc.proprietor}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Submitted Date</span>
+                          <span className="text-xs font-bold text-slate-700 mt-1 block">{activeKyc.dateSubmitted}</span>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Address & City</span>
+                          <span className="text-xs font-bold text-slate-700 mt-1 block flex items-center gap-1">
+                            <MapPin size={12} className="text-slate-400" /> {activeKyc.location}, India
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Common & Role Specific Documents */}
+                    <div className="bg-white p-5 rounded-xl border border-slate-200/60 shadow-sm">
+                      <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <FileBadge size={14} /> Documentation
+                      </h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {/* Common */}
+                        {[
+                          { title: "PAN Card", val: activeKyc.panNumber || 'Verified' },
+                          { title: "GST Certificate", val: activeKyc.gstinNumber || 'Verified' },
+                          { title: "Business Reg.", val: 'Verified' }
+                        ].map((doc, idx) => (
+                          <div key={`c-${idx}`} className="border border-slate-100 rounded-lg p-3 bg-slate-50 flex flex-col">
+                            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">{doc.title}</span>
+                            <span className="text-[11px] font-bold text-slate-700 mt-1 block truncate">{doc.val}</span>
+                          </div>
+                        ))}
+                        {/* Role Specific */}
+                        {renderRoleSpecificDocs(activeKyc).map((doc, idx) => (
+                          <div key={`rs-${idx}`} className="border border-blue-100 rounded-lg p-3 bg-blue-50/30 flex flex-col">
+                            <span className="text-[9px] text-blue-500 font-bold uppercase tracking-wider block">{doc.title}</span>
+                            <span className="text-[11px] font-bold text-slate-700 mt-1 block truncate">{doc.val}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Uploaded Images */}
+                    <div className="bg-white p-5 rounded-xl border border-slate-200/60 shadow-sm">
+                      <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <FileImage size={14} /> Uploaded Media
+                      </h4>
+                      <div className="flex gap-3 overflow-x-auto">
+                        {[1, 2, 3].map(i => (
+                          <div key={i} className="w-24 h-24 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center flex-shrink-0 text-slate-400">
+                            <FileImage size={24} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Status, Notes, Checklist */}
+                  <div className="flex flex-col gap-6">
+                    {/* Checklist */}
+                    <div className="bg-white p-5 rounded-xl border border-slate-200/60 shadow-sm">
+                      <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Verification Checklist</h4>
+                      <div className="flex flex-col gap-2">
+                        {['Identity Proof Verified', 'Business Address Matched', 'Tax Details Validated', 'Risk Assessment Clear'].map((item, idx) => (
+                          <label key={idx} className="flex items-center gap-2 text-xs font-semibold text-slate-600 cursor-pointer">
+                            <input type="checkbox" className="rounded text-blue-600 focus:ring-blue-500 bg-slate-100 border-slate-300 w-3.5 h-3.5" defaultChecked={idx < 2} />
+                            {item}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Internal Notes */}
+                    <div className="bg-amber-50 p-5 rounded-xl border border-amber-200/60 shadow-sm">
+                      <h4 className="text-[11px] font-bold text-amber-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <MessageSquare size={14} /> Internal Notes
+                      </h4>
+                      <p className="text-xs text-amber-900 font-medium whitespace-pre-wrap">
+                        {activeKyc.notes || 'No internal notes added yet.'}
+                      </p>
+                      <button className="mt-3 text-[10px] font-bold text-amber-700 hover:text-amber-800 underline">
+                        + Add / Edit Note
+                      </button>
+                    </div>
+
+                    {/* Status History */}
+                    <div className="bg-white p-5 rounded-xl border border-slate-200/60 shadow-sm flex-1">
+                      <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-4">Status History</h4>
+                      <div className="flex flex-col gap-4 relative">
+                        <div className="absolute left-1.5 top-2 bottom-2 w-px bg-slate-200 z-0"></div>
+                        {activeKyc.history && activeKyc.history.length > 0 ? (
+                          activeKyc.history.map((hist, idx) => (
+                            <div key={idx} className="flex items-start gap-3 relative z-10">
+                              <div className="w-3 h-3 rounded-full bg-slate-200 border-2 border-white mt-1"></div>
+                              <div>
+                                <div className="text-[11px] font-bold text-slate-700">{hist.status}</div>
+                                <div className="text-[9px] text-slate-400">{hist.date}</div>
+                                {hist.reason && <div className="text-[10px] text-slate-500 mt-0.5 italic">"{hist.reason}"</div>}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-[10px] text-slate-400 italic pl-6">No history available.</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Modal Footer Actions */}
+              <div className="bg-white border-t border-slate-200 p-4 flex items-center justify-between flex-shrink-0">
+                <div className="text-[10px] font-semibold text-slate-400 flex items-center gap-1.5">
+                  <UserPlus size={14} /> Assigned to: <span className="text-slate-700">{activeKyc.adminAssigned || 'Unassigned'}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => setConfirmAction({ action: 'Changes Requested', kycId: activeKyc.id })}
+                    className="px-4 py-2 border border-amber-200 text-amber-600 bg-amber-50 hover:bg-amber-100 text-xs font-bold rounded-xl transition-colors"
+                  >
+                    Request Changes
+                  </button>
+                  <button 
+                    onClick={() => setConfirmAction({ action: 'Rejected', kycId: activeKyc.id })}
+                    className="px-4 py-2 border border-rose-200 text-rose-600 bg-rose-50 hover:bg-rose-100 text-xs font-bold rounded-xl transition-colors"
+                  >
+                    Reject
+                  </button>
+                  <button 
+                    onClick={() => setConfirmAction({ action: 'Approved', kycId: activeKyc.id })}
+                    className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition-colors"
+                  >
+                    Approve
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Action Confirmation Dialog */}
+      <AnimatePresence>
+        {confirmAction && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setConfirmAction(null)} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm relative z-10"
+            >
+              <h3 className="text-lg font-black text-slate-800 mb-2">Confirm {confirmAction.action}</h3>
+              <p className="text-xs text-slate-500 mb-4">Please provide a reason or note for this final action. This will be recorded in the history.</p>
+              <textarea
+                value={actionReason}
+                onChange={(e) => setActionReason(e.target.value)}
+                placeholder="Enter reason or internal note here..."
+                className="w-full border border-slate-300 rounded-xl p-3 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] resize-none mb-4"
+              />
+              <div className="flex gap-3 justify-end">
+                <button 
+                  onClick={() => { setConfirmAction(null); setActionReason(''); }}
+                  className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={executeAction}
+                  className={`px-4 py-2 text-xs font-bold text-white rounded-lg transition-colors ${
+                    confirmAction.action === 'Approved' ? 'bg-emerald-600 hover:bg-emerald-700' :
+                    confirmAction.action === 'Rejected' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-amber-600 hover:bg-amber-700'
+                  }`}
+                >
+                  Confirm {confirmAction.action}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

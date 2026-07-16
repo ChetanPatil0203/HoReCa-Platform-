@@ -15,11 +15,7 @@ const MOCK_NOTIFICATIONS = [
     message: "JW Marriott has shortlisted Vikram Singh for Sous Chef.",
     date: "1 hour ago", read: false, icon: User, color: "#10B981"
   },
-  {
-    id: "NOT-003", type: "Interviews", title: "Interview Scheduled",
-    message: "Interview for Neha Gupta at Starbucks is scheduled on 20 Jul.",
-    date: "3 hours ago", read: false, icon: Calendar, color: "#8B5CF6"
-  },
+
   {
     id: "NOT-004", type: "Deployments", title: "Joining Reminder",
     message: "Rahul Sharma is scheduled to join The Grand Taj tomorrow.",
@@ -37,7 +33,7 @@ const MOCK_NOTIFICATIONS = [
   }
 ];
 
-const FILTERS = ['All', 'Requirements', 'Candidates', 'Interviews', 'Deployments', 'Payments', 'System'];
+const FILTERS = ['All', 'Requirements', 'Candidates', 'Deployments', 'Payments', 'System'];
 
 export default function ManpowerNotificationsPage() {
   const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);

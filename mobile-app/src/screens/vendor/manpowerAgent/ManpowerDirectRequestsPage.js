@@ -71,7 +71,7 @@ export default function ManpowerDirectRequestsPage() {
 
   const [requests, setRequests] = useState(INITIAL_REQUESTS);
   const [activeFilter, setActiveFilter] = useState("All");
-  const filters = ["All", "New", "Accepted", "Candidates Sent", "Interviewing", "Filled", "Declined", "Expired"];
+  const filters = ["All", "New", "Accepted", "Candidates Sent", "Shortlisted", "Filled", "Declined", "Expired"];
 
   // Modals state
   const [selectedReq, setSelectedReq] = useState(null);
@@ -153,7 +153,7 @@ export default function ManpowerDirectRequestsPage() {
         {renderSummaryCard("New", requests.filter(r => r.status === 'New').length, "#3B82F6")}
         {renderSummaryCard("Accepted", requests.filter(r => r.status === 'Accepted').length, "#F59E0B")}
         {renderSummaryCard("Sent", requests.filter(r => r.status === 'Candidates Sent').length, "#8B5CF6")}
-        {renderSummaryCard("Interviewing", 0, "#10B981")}
+        {renderSummaryCard("Shortlisted", 0, "#10B981")}
         {renderSummaryCard("Filled", 0, "#10B981")}
         {renderSummaryCard("Declined", requests.filter(r => r.status === 'Declined').length, "#EF4444")}
       </ScrollView>

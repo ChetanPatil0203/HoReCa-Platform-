@@ -16,7 +16,12 @@ import {
   LogOut,
   ChevronRight,
   Menu,
-  ShieldAlert
+  ShieldAlert,
+  ShoppingCart,
+  ClipboardCheck,
+  Tags,
+  Users,
+  Shield
 } from 'lucide-react';
 import HrcHubLogo from '../assets/HoReCa_Logo.png';
 
@@ -61,10 +66,10 @@ export default function AdminLayout({ children }) {
       { path: '/verification', label: 'Verification', icon: ShieldCheck, count: pendingVerificationCount },
       { path: '/horeca', label: 'HoReCa Directory', icon: Building2 },
       { path: '/vendors', label: 'Vendor Network', icon: Network },
-      { path: '/complaints', label: 'Complaint & Support', icon: Inbox, count: activeTicketsCount },
-      { path: '/analytics', label: 'Analytics & Audits', icon: BarChart3 },
+      { path: '/complaints', label: 'Complaints & Support', icon: Inbox, count: activeTicketsCount },
       { path: '/limits', label: 'Status & Limits', icon: ToggleRight },
-      { path: '/profile', label: 'Profile', icon: UserCheck }
+      { path: '/team', label: 'Admin Team', icon: Users },
+      { path: '/profile', label: 'Profile & Security', icon: Shield }
     ];
 
     return (

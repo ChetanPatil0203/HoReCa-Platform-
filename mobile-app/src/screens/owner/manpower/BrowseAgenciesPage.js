@@ -71,9 +71,9 @@ export default function BrowseAgenciesPage({ onBack, onViewAgency }) {
           </View>
 
           {/* ── Agencies Grid ── */}
-          <View style={[styles.agenciesGrid, isMobile && { flexDirection: 'column' }]}>
+          <View style={[styles.agenciesGrid, isMobile && { flexWrap: 'wrap' }]}>
             {filteredAgencies.map(agency => (
-              <View key={agency.id} style={[styles.agencyCard, !isMobile && { width: '48%' }]}>
+              <View key={agency.id} style={[styles.agencyCard, isMobile ? { flex: 1, minWidth: 160, padding: 16 } : { width: '48%' }]}>
                 
                 <View style={styles.cardHeader}>
                   <View style={styles.agencyLogo}>

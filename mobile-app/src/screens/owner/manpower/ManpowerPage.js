@@ -4,7 +4,7 @@ import {
   Users, Search, Star, Clock, FileText, Check, Phone, ShieldCheck, User, CirclePlus, ArrowRight, TriangleAlert, MessageSquare, ChevronRight
 } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
-import { MANPOWER_SUMMARY, FREQUENT_ROLES, RECENT_REQUIREMENTS, RECENT_RESPONSES, UPCOMING_INTERVIEWS, TOP_AGENCIES } from '../../../constants/manpowerData';
+import { MANPOWER_SUMMARY, FREQUENT_ROLES, RECENT_REQUIREMENTS, RECENT_RESPONSES, TOP_AGENCIES } from '../../../constants/manpowerData';
 import PostRequirementPage from './PostRequirementPage';
 import MyRequirementsPage from './MyRequirementsPage';
 import AgencyResponsesPage from './AgencyResponsesPage';
@@ -13,7 +13,7 @@ import AgencyProfilePage from './AgencyProfilePage';
 import DirectRequirementPage from './DirectRequirementPage';
 import AvailableStaffPage from './AvailableStaffPage';
 import CandidateProfilePage from './CandidateProfilePage';
-import InterviewPage from './InterviewPage';
+
 import SelectedStaffPage from './SelectedStaffPage';
 import ReplacementRequestPage from './ReplacementRequestPage';
 
@@ -28,7 +28,7 @@ export default function ManpowerPage() {
   const [selectedRequirement, setSelectedRequirement] = useState(null);
   const [selectedAgency, setSelectedAgency] = useState(null);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
-  const [selectedInterview, setSelectedInterview] = useState(null);
+
   const [selectedEmployee, setSelectedEmployee] = useState(null);
 
   // Helper to map icon names from mock data to actual imported components
@@ -126,21 +126,7 @@ export default function ManpowerPage() {
     return (
       <CandidateProfilePage 
         candidate={selectedCandidate}
-        onBack={() => setCurrentView('availableStaff')}
-        onScheduleInterview={(cand) => {
-          setSelectedCandidate(cand);
-          setCurrentView('interview');
-        }}
-      />
-    );
-  }
-
-  if (currentView === 'interview') {
-    return (
-      <InterviewPage 
-        interview={selectedInterview}
-        candidate={selectedCandidate}
-        onBack={() => setCurrentView('candidateProfile')}
+        onBack={() => setCurrentView('home')}
       />
     );
   }
@@ -179,24 +165,9 @@ export default function ManpowerPage() {
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 60 }}>
         <View style={[styles.contentLayout, !isMobile && styles.contentLayoutWeb]}>
 
-          {/* ── Urgent Banner ── */}
-          <View style={styles.urgentBanner}>
-            <View style={styles.urgentBannerLeft}>
-              <View style={styles.urgentIconBox}>
-                <TriangleAlert size={20} color="#DC2626" />
-              </View>
-              <View>
-                <Text style={styles.urgentTitle}>Need Staff Immediately?</Text>
-                <Text style={styles.urgentDesc}>Broadcast urgent requirements to all top agencies instantly.</Text>
-              </View>
-            </View>
-            <TouchableOpacity style={styles.urgentBtn} onPress={() => setCurrentView('postRequirement')}>
-              <Text style={styles.urgentBtnText}>Post Urgent Requirement</Text>
-            </TouchableOpacity>
-          </View>
 
           {/* ── Top Summary Cards ── */}
-          <View style={[styles.summaryGrid, isMobile && { flexDirection: 'column' }]}>
+          <View style={[styles.summaryGrid, isMobile && { flexWrap: 'wrap' }]}>
             <View style={styles.summaryCard}>
               <View style={styles.summaryIconBox}>
                 <FileText size={20} color={GOLD} />
@@ -212,14 +183,14 @@ export default function ManpowerPage() {
               <Text style={styles.summaryValue}>{MANPOWER_SUMMARY.agencyResponses}</Text>
               <Text style={styles.summaryLabel}>Agency Responses</Text>
             </View>
-
             <View style={styles.summaryCard}>
               <View style={[styles.summaryIconBox, { backgroundColor: '#F3E8FF' }]}>
-                <Clock size={20} color="#9333EA" />
+                <Users size={20} color="#9333EA" />
               </View>
-              <Text style={styles.summaryValue}>{MANPOWER_SUMMARY.interviewsScheduled}</Text>
-              <Text style={styles.summaryLabel}>Interviews Scheduled</Text>
+              <Text style={styles.summaryValue}>{MANPOWER_SUMMARY.shortlistedCandidates}</Text>
+              <Text style={styles.summaryLabel}>Shortlisted Candidates</Text>
             </View>
+
 
             <TouchableOpacity style={styles.summaryCard} onPress={() => setCurrentView('selectedStaff')}>
               <View style={[styles.summaryIconBox, { backgroundColor: '#DCFCE7' }]}>
@@ -231,27 +202,27 @@ export default function ManpowerPage() {
           </View>
 
           {/* ── Quick Actions ── */}
-          <View style={[styles.actionsRow, isMobile && { flexDirection: 'column' }]}>
-            <TouchableOpacity style={styles.primaryActionCard} onPress={() => setCurrentView('postRequirement')}>
+          <View style={styles.actionsRow}>
+            <TouchableOpacity style={[styles.primaryActionCard, isMobile && { padding: 16 }]} onPress={() => setCurrentView('postRequirement')}>
               <View style={styles.primaryActionHeader}>
                 <View style={styles.primaryActionIconBox}>
                   <CirclePlus size={24} color="#fff" />
                 </View>
-                <ArrowRight size={20} color="rgba(255,255,255,0.8)" />
+                {!isMobile && <ArrowRight size={20} color="rgba(255,255,255,0.8)" />}
               </View>
-              <Text style={styles.primaryActionTitle}>Post Requirement</Text>
-              <Text style={styles.primaryActionDesc}>Share your staffing needs with our network of verified agencies.</Text>
+              <Text style={[styles.primaryActionTitle, isMobile && { fontSize: 15, marginBottom: 0 }]} numberOfLines={2}>Post Requirement</Text>
+              {!isMobile && <Text style={styles.primaryActionDesc}>Share your staffing needs with our network of verified agencies.</Text>}
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.secondaryActionCard} onPress={() => setCurrentView('browseAgencies')}>
+            <TouchableOpacity style={[styles.secondaryActionCard, isMobile && { padding: 16 }]} onPress={() => setCurrentView('browseAgencies')}>
               <View style={styles.secondaryActionHeader}>
                 <View style={styles.secondaryActionIconBox}>
                   <Search size={24} color={BLUE} />
                 </View>
-                <ArrowRight size={20} color={BLUE} />
+                {!isMobile && <ArrowRight size={20} color={BLUE} />}
               </View>
-              <Text style={styles.secondaryActionTitle}>Browse Agencies</Text>
-              <Text style={styles.secondaryActionDesc}>Explore top-rated manpower agencies and view their available staff.</Text>
+              <Text style={[styles.secondaryActionTitle, isMobile && { fontSize: 15, marginBottom: 0 }]} numberOfLines={2}>Browse Agencies</Text>
+              {!isMobile && <Text style={styles.secondaryActionDesc}>Explore top-rated manpower agencies and view their available staff.</Text>}
             </TouchableOpacity>
           </View>
 
@@ -307,85 +278,6 @@ export default function ManpowerPage() {
                 </View>
               ))}
             </View>
-
-            {/* ── Recent Agency Responses ── */}
-            <View style={styles.colHalf}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Agency Responses</Text>
-                <TouchableOpacity><Text style={styles.viewAllText}>View All</Text></TouchableOpacity>
-              </View>
-              {RECENT_RESPONSES.map(res => (
-                <View key={res.id} style={styles.responseCard}>
-                  <View style={styles.resHeader}>
-                    <View style={styles.resAvatar}>
-                      <Text style={styles.resAvatarText}>{res.agencyName.charAt(0)}</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <View style={styles.resNameRow}>
-                        <Text style={styles.resName}>{res.agencyName}</Text>
-                        {res.verified && <ShieldCheck size={14} color="#16A34A" style={{ marginLeft: 4 }} />}
-                      </View>
-                      <Text style={styles.resFor}>For: {res.role}</Text>
-                    </View>
-                    <View style={styles.resRatingRow}>
-                      <Star size={12} color={GOLD} fill={GOLD} />
-                      <Text style={styles.resRating}>{res.rating}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.resDetails}>
-                    <Text style={styles.resDetailText}><Text style={styles.boldText}>{res.candidatesOffered}</Text> Candidates</Text>
-                    <Text style={styles.resDetailText}>Charge: <Text style={styles.boldText}>{res.serviceCharge}</Text></Text>
-                  </View>
-                  <TouchableOpacity 
-                    style={styles.resBtn}
-                    onPress={() => setCurrentView('availableStaff')}
-                  >
-                    <Text style={styles.resBtnText}>Review Candidates</Text>
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          {/* ── Upcoming Interviews ── */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Upcoming Interviews</Text>
-              <TouchableOpacity><Text style={styles.viewAllText}>View All</Text></TouchableOpacity>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.interviewsScroll}>
-              {UPCOMING_INTERVIEWS.map(int => (
-                <View key={int.id} style={styles.interviewCard}>
-                  <View style={styles.intTop}>
-                    <View style={styles.intAvatar}>
-                      <User size={20} color="#94A3B8" />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.intName}>{int.candidateName}</Text>
-                      <Text style={styles.intRole}>{int.role}</Text>
-                    </View>
-                    <View style={styles.intTypeBadge}>
-                      <Text style={styles.intTypeText}>{int.type}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.intBottom}>
-                    <View>
-                      <Text style={styles.intTime}>{int.date} at {int.time}</Text>
-                      <Text style={styles.intAgency}>Via {int.agency}</Text>
-                    </View>
-                    <TouchableOpacity 
-                      style={styles.intActionBtn}
-                      onPress={() => {
-                        setSelectedInterview(int);
-                        setCurrentView('interview');
-                      }}
-                    >
-                      <Text style={styles.intActionBtnText}>Manage</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              ))}
-            </ScrollView>
           </View>
 
           {/* ── Top Rated Agencies ── */}
@@ -466,7 +358,7 @@ const styles = StyleSheet.create({
 
   // Summary
   summaryGrid: { flexDirection: 'row', gap: 16 },
-  summaryCard: { flex: 1, backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border },
+  summaryCard: { flex: 1, minWidth: '46%', backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border },
   summaryIconBox: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#FFFBEB', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
   summaryValue: { fontSize: 28, fontWeight: '900', color: '#0F172A', marginBottom: 4 },
   summaryLabel: { fontSize: 13, color: '#64748B', fontWeight: '500' },
@@ -529,9 +421,6 @@ const styles = StyleSheet.create({
   resBtn: { paddingVertical: 10, borderRadius: 8, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: colors.border, alignItems: 'center' },
   resBtnText: { fontSize: 13, fontWeight: '700', color: '#0F172A' },
 
-  // Interview Card
-  interviewsScroll: { gap: 16, paddingRight: 16 },
-  interviewCard: { width: 300, backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.border },
   intTop: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 16 },
   intAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   intName: { fontSize: 15, fontWeight: '800', color: '#0F172A' },
