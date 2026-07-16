@@ -53,9 +53,9 @@ export default function BrowseAgenciesPage({ onBack, onViewProfile }) {
           <View style={[styles.searchFilterContainer, isMobile && { flexDirection: 'column' }]}>
             <View style={styles.searchBox}>
               <Search size={20} color="#64748B" style={styles.searchIcon} />
-              <TextInput 
-                style={styles.searchInput} 
-                placeholder="Search agencies by name, service, or location..." 
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search agencies by name, service, or location..."
                 placeholderTextColor="#94A3B8"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -70,8 +70,8 @@ export default function BrowseAgenciesPage({ onBack, onViewProfile }) {
           {/* Quick Filters */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickFiltersScroll} contentContainerStyle={{ paddingRight: 16 }}>
             {filters.map(f => (
-              <TouchableOpacity 
-                key={f} 
+              <TouchableOpacity
+                key={f}
                 style={[styles.quickFilterChip, activeFilter === f && styles.quickFilterChipActive]}
                 onPress={() => setActiveFilter(f)}
               >
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
   pageTitle: { fontSize: 24, fontWeight: '900', color: NAVY, marginBottom: 4 },
   pageSubtitle: { fontSize: 14, color: '#64748B' },
-  
+
   scroll: { flex: 1 },
   contentLayout: { padding: 16, gap: 24 },
   contentLayoutWeb: { padding: 32, maxWidth: 1200, alignSelf: 'center', width: '100%', gap: 32 },

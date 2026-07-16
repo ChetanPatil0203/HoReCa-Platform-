@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
-import { 
-  Megaphone, MonitorPlay, Radio, Presentation, FileText, CheckCircle, Clock, 
+import {
+  Megaphone, MonitorPlay, Radio, Presentation, FileText, CheckCircle, Clock,
   ArrowRight, MapPin, Star, ShieldCheck, Target, BarChart2, Briefcase, Zap, PlusCircle
 } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
@@ -87,8 +87,8 @@ function SearchIconMock(props) {
 // REUSABLE COMPONENTS
 // =====================================
 
-const SummaryCard = ({ title, value, icon: Icon, bgColor, iconColor }) => (
-  <View style={styles.summaryCard}>
+const SummaryCard = ({ title, value, icon: Icon, bgColor, iconColor, customStyle }) => (
+  <View style={[styles.summaryCard, customStyle]}>
     <View style={[styles.summaryIconBox, { backgroundColor: bgColor }]}>
       <Icon size={20} color={iconColor} />
     </View>
@@ -101,12 +101,12 @@ const CampaignRequestCard = ({ request }) => (
   <View style={styles.requestCard}>
     <View style={styles.requestHeader}>
       <Text style={styles.requestTitle}>{request.title}</Text>
-      <View style={[styles.statusBadge, 
-        request.status === 'Completed' ? styles.statusSuccess : 
+      <View style={[styles.statusBadge,
+      request.status === 'Completed' ? styles.statusSuccess :
         request.status === 'Active' ? styles.statusPrimary : styles.statusWarning
       ]}>
-        <Text style={[styles.statusText, 
-          request.status === 'Completed' ? styles.statusSuccessText : 
+        <Text style={[styles.statusText,
+        request.status === 'Completed' ? styles.statusSuccessText :
           request.status === 'Active' ? styles.statusPrimaryText : styles.statusWarningText
         ]}>{request.status}</Text>
       </View>
@@ -168,7 +168,7 @@ export default function MarketingPage() {
 
   if (currentView === 'onlineBroadcast') {
     return (
-      <OnlineBroadcastPage 
+      <OnlineBroadcastPage
         onBack={() => setCurrentView('home')}
         onViewCampaigns={() => setCurrentView('home')} // Link to 'myCampaigns' when it is built
       />
@@ -177,7 +177,7 @@ export default function MarketingPage() {
 
   if (currentView === 'offlineBroadcast') {
     return (
-      <OfflineBroadcastPage 
+      <OfflineBroadcastPage
         onBack={() => setCurrentView('home')}
         onViewRequests={() => setCurrentView('campaignRequests')}
       />
@@ -186,7 +186,7 @@ export default function MarketingPage() {
 
   if (currentView === 'campaignRequests') {
     return (
-      <CampaignRequestsPage 
+      <CampaignRequestsPage
         onBack={() => setCurrentView('home')}
         onViewResponses={(req) => {
           setSelectedRequest(req);
@@ -202,7 +202,7 @@ export default function MarketingPage() {
 
   if (currentView === 'agencyResponses') {
     return (
-      <AgencyResponsesPage 
+      <AgencyResponsesPage
         request={selectedRequest}
         onBack={() => setCurrentView('campaignRequests')}
         onCompare={() => setCurrentView('compareAgencies')}
@@ -216,7 +216,7 @@ export default function MarketingPage() {
 
   if (currentView === 'compareAgencies') {
     return (
-      <CompareAgenciesPage 
+      <CompareAgenciesPage
         onBack={() => setCurrentView('agencyResponses')}
         onAccept={(agency) => {
           // Success/Home link placeholder
@@ -228,7 +228,7 @@ export default function MarketingPage() {
 
   if (currentView === 'trackCampaign') {
     return (
-      <TrackCampaignPage 
+      <TrackCampaignPage
         campaign={selectedRequest}
         onBack={() => setCurrentView('campaignRequests')}
         onReview={() => setCurrentView('campaignReview')}
@@ -239,7 +239,7 @@ export default function MarketingPage() {
 
   if (currentView === 'campaignReview') {
     return (
-      <CampaignReviewPage 
+      <CampaignReviewPage
         onBack={() => setCurrentView('trackCampaign')}
         onHome={() => setCurrentView('home')}
       />
@@ -248,7 +248,7 @@ export default function MarketingPage() {
 
   if (currentView === 'browseAgencies') {
     return (
-      <BrowseAgenciesPage 
+      <BrowseAgenciesPage
         onBack={() => setCurrentView('home')}
         onViewProfile={(agency) => {
           setSelectedAgency(agency);
@@ -260,7 +260,7 @@ export default function MarketingPage() {
 
   if (currentView === 'agencyProfile') {
     return (
-      <AgencyProfilePage 
+      <AgencyProfilePage
         agency={selectedAgency}
         onBack={() => setCurrentView('browseAgencies')}
         onSendRequirement={(agency) => {
@@ -273,7 +273,7 @@ export default function MarketingPage() {
 
   if (currentView === 'agencyDirectReq') {
     return (
-      <AgencyDirectReqPage 
+      <AgencyDirectReqPage
         agency={selectedAgency}
         onBack={() => setCurrentView('agencyProfile')}
         onHome={() => setCurrentView('home')}
@@ -295,16 +295,16 @@ export default function MarketingPage() {
         <View style={[styles.contentLayout, !isMobile && styles.contentLayoutWeb]}>
 
           {/* ── Top Summary Cards ── */}
-          <View style={[styles.summaryGrid, isMobile && { flexDirection: 'column' }]}>
-            <SummaryCard title="Active Campaigns" value={SUMMARY_STATS.activeCampaigns} icon={Megaphone} bgColor="#FFFBEB" iconColor={GOLD} />
-            <SummaryCard title="Agency Responses" value={SUMMARY_STATS.agencyResponses} icon={FileText} bgColor="#EFF6FF" iconColor="#2563EB" />
-            <SummaryCard title="Running Campaigns" value={SUMMARY_STATS.runningCampaigns} icon={BarChart2} bgColor="#F3E8FF" iconColor="#9333EA" />
-            <SummaryCard title="Completed Campaigns" value={SUMMARY_STATS.completedCampaigns} icon={CheckCircle} bgColor="#DCFCE7" iconColor="#16A34A" />
+          <View style={[styles.summaryGrid, isMobile && { flexWrap: 'wrap' }]}>
+            <SummaryCard customStyle={isMobile && { flexBasis: '46%', flexGrow: 1 }} title="Active Campaigns" value={SUMMARY_STATS.activeCampaigns} icon={Megaphone} bgColor="#FFFBEB" iconColor={GOLD} />
+            <SummaryCard customStyle={isMobile && { flexBasis: '46%', flexGrow: 1 }} title="Agency Responses" value={SUMMARY_STATS.agencyResponses} icon={FileText} bgColor="#EFF6FF" iconColor="#2563EB" />
+            <SummaryCard customStyle={isMobile && { flexBasis: '46%', flexGrow: 1 }} title="Running Campaigns" value={SUMMARY_STATS.runningCampaigns} icon={BarChart2} bgColor="#F3E8FF" iconColor="#9333EA" />
+            <SummaryCard customStyle={isMobile && { flexBasis: '46%', flexGrow: 1 }} title="Completed Campaigns" value={SUMMARY_STATS.completedCampaigns} icon={CheckCircle} bgColor="#DCFCE7" iconColor="#16A34A" />
           </View>
 
           {/* ── Quick Actions ── */}
           <View style={[styles.actionsRow, isMobile && { flexDirection: 'column' }]}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.primaryActionCard}
               onPress={() => setCurrentView('onlineBroadcast')}
             >
@@ -318,7 +318,7 @@ export default function MarketingPage() {
               <Text style={styles.primaryActionDesc}>Run digital marketing campaigns.</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.secondaryActionCard}
               onPress={() => setCurrentView('offlineBroadcast')}
             >
@@ -335,7 +335,7 @@ export default function MarketingPage() {
 
           {/* ── Two Column Layout for Grids ── */}
           <View style={[styles.twoColGrid, isMobile && { flexDirection: 'column' }]}>
-            
+
             {/* Left Column */}
             <View style={styles.colHalf}>
               {/* Recent Campaign Requests */}
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
   pageHeaderMobile: { paddingHorizontal: 16, paddingVertical: 16 },
   pageTitle: { fontSize: 24, fontWeight: '900', color: NAVY, marginBottom: 4 },
   pageSubtitle: { fontSize: 14, color: '#64748B' },
-  
+
   scroll: { flex: 1 },
   contentLayout: { padding: 16, gap: 24 },
   contentLayoutWeb: { padding: 32, maxWidth: 1200, alignSelf: 'center', width: '100%', gap: 32 },

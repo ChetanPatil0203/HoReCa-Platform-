@@ -62,18 +62,18 @@ export default function AgencyDirectReqPage({ agency, onBack, onHome }) {
 
           {/* Form Container */}
           <View style={styles.formCard}>
-            
+
             <View style={styles.formRow}>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Campaign Type</Text>
                 <View style={styles.inputWrapper}>
                   <LayoutList size={16} color="#64748B" style={styles.inputIcon} />
-                  <TextInput 
-                    style={styles.input} 
-                    placeholder="e.g. Social Media Management" 
+                  <TextInput
+                    style={styles.input}
+                    placeholder="e.g. Social Media Management"
                     placeholderTextColor="#94A3B8"
                     value={formData.campaignType}
-                    onChangeText={(t) => setFormData({...formData, campaignType: t})}
+                    onChangeText={(t) => setFormData({ ...formData, campaignType: t })}
                   />
                 </View>
               </View>
@@ -84,12 +84,12 @@ export default function AgencyDirectReqPage({ agency, onBack, onHome }) {
                 <Text style={styles.label}>Budget Range</Text>
                 <View style={styles.inputWrapper}>
                   <DollarSign size={16} color="#64748B" style={styles.inputIcon} />
-                  <TextInput 
-                    style={styles.input} 
-                    placeholder="e.g. ₹20,000 - ₹50,000 / month" 
+                  <TextInput
+                    style={styles.input}
+                    placeholder="e.g. ₹20,000 - ₹50,000 / month"
                     placeholderTextColor="#94A3B8"
                     value={formData.budget}
-                    onChangeText={(t) => setFormData({...formData, budget: t})}
+                    onChangeText={(t) => setFormData({ ...formData, budget: t })}
                   />
                 </View>
               </View>
@@ -98,12 +98,12 @@ export default function AgencyDirectReqPage({ agency, onBack, onHome }) {
                 <Text style={styles.label}>Campaign Duration</Text>
                 <View style={styles.inputWrapper}>
                   <Calendar size={16} color="#64748B" style={styles.inputIcon} />
-                  <TextInput 
-                    style={styles.input} 
-                    placeholder="e.g. 3 Months, Ongoing" 
+                  <TextInput
+                    style={styles.input}
+                    placeholder="e.g. 3 Months, Ongoing"
                     placeholderTextColor="#94A3B8"
                     value={formData.duration}
-                    onChangeText={(t) => setFormData({...formData, duration: t})}
+                    onChangeText={(t) => setFormData({ ...formData, duration: t })}
                   />
                 </View>
               </View>
@@ -112,13 +112,13 @@ export default function AgencyDirectReqPage({ agency, onBack, onHome }) {
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Detailed Description</Text>
               <View style={[styles.inputWrapper, { height: 120, alignItems: 'flex-start', paddingVertical: 12 }]}>
-                <TextInput 
-                  style={[styles.input, { height: '100%', textAlignVertical: 'top' }]} 
-                  placeholder="Describe your goals, audience, and any specific requirements..." 
+                <TextInput
+                  style={[styles.input, { height: '100%', textAlignVertical: 'top' }]}
+                  placeholder="Describe your goals, audience, and any specific requirements..."
                   placeholderTextColor="#94A3B8"
                   multiline
                   value={formData.description}
-                  onChangeText={(t) => setFormData({...formData, description: t})}
+                  onChangeText={(t) => setFormData({ ...formData, description: t })}
                 />
               </View>
             </View>
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
   pageTitle: { fontSize: 24, fontWeight: '900', color: NAVY, marginBottom: 4 },
   pageSubtitle: { fontSize: 14, color: '#64748B' },
-  
+
   scroll: { flex: 1 },
   contentLayout: { padding: 16, gap: 24 },
   contentLayoutWeb: { padding: 32, maxWidth: 800, alignSelf: 'center', width: '100%', gap: 32 },

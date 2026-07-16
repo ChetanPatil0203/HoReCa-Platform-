@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
 import { 
   Wrench, FileText, MessageSquare, Clock, CheckCircle, 
-  PlusCircle, Search, ArrowRight, MapPin, Star, ShieldCheck, 
-  AlertTriangle, Hammer, Zap, Droplets, Wind
+  PlusCircle, Search, ArrowRight, Activity, MapPin, ShieldCheck, Star, Zap, Droplets, Hammer, Wind
 } from 'lucide-react-native';
 import { colors } from '../../theme/colors';
 import BroadcastRequirementPage from './Service_provider/BroadcastRequirementPage';
@@ -38,39 +37,18 @@ const RECENT_REQUESTS = [
   { id: 'REQ-003', title: 'Plumbing Repair', category: 'Plumbing', status: 'Completed', responses: 2, date: '11 Jun, 09:00 AM' }
 ];
 
-const UPCOMING_SERVICES = [
-  { id: 'SRV-001', title: 'Monthly Pest Control', provider: 'SafeGuard Solutions', date: 'Tomorrow, 08:00 AM', type: 'Scheduled' },
-  { id: 'SRV-002', title: 'AC Filter Replacement', provider: 'CoolBreeze HVAC', date: '15 Jul, 11:30 AM', type: 'Maintenance' }
-];
-
-const PREFERRED_PROVIDERS = [
-  { id: 'PRV-001', name: 'SafeGuard Solutions', category: 'Pest Control', rating: 4.9, jobs: 45, verified: true },
-  { id: 'PRV-002', name: 'ProClean Services', category: 'Cleaning', rating: 4.8, jobs: 112, verified: true }
-];
-
 const TOP_RATED_PROVIDERS = [
   { id: 'PRV-003', name: 'Elite Fixers', category: 'General Repair', rating: 5.0, jobs: 89, verified: true },
   { id: 'PRV-004', name: 'CoolBreeze HVAC', category: 'Maintenance', rating: 4.7, jobs: 34, verified: true }
 ];
 
-const CATEGORIES = [
-  { id: 'CAT-1', name: 'Cleaning', icon: Droplets },
-  { id: 'CAT-2', name: 'Electrical', icon: Zap },
-  { id: 'CAT-3', name: 'Plumbing', icon: Hammer },
-  { id: 'CAT-4', name: 'HVAC', icon: Wind }
-];
-
-const EMERGENCY_SERVICES = [
-  { id: 'EMG-1', title: 'Power Outage', timeToResolve: 'Under 30 mins' },
-  { id: 'EMG-2', title: 'Water Leak', timeToResolve: 'Under 45 mins' }
-];
 
 // =====================================
 // REUSABLE COMPONENTS
 // =====================================
 
-const SummaryCard = ({ title, value, icon: Icon, bgColor, iconColor }) => (
-  <View style={styles.summaryCard}>
+const SummaryCard = ({ title, value, icon: Icon, bgColor, iconColor, customStyle }) => (
+  <View style={[styles.summaryCard, customStyle]}>
     <View style={[styles.summaryIconBox, { backgroundColor: bgColor }]}>
       <Icon size={20} color={iconColor} />
     </View>
@@ -126,17 +104,6 @@ const ProviderCard = ({ provider }) => (
   </View>
 );
 
-const CategoryCard = ({ category }) => {
-  const Icon = category.icon;
-  return (
-    <TouchableOpacity style={styles.categoryCard}>
-      <View style={styles.categoryIconBox}>
-        <Icon size={24} color={NAVY} />
-      </View>
-      <Text style={styles.categoryName}>{category.name}</Text>
-    </TouchableOpacity>
-  );
-};
 
 // =====================================
 // MAIN SCREEN
@@ -286,149 +253,72 @@ export default function ServicePage() {
         <View style={[styles.contentLayout, !isMobile && styles.contentLayoutWeb]}>
 
           {/* ── Top Summary Cards ── */}
-          <View style={[styles.summaryGrid, isMobile && { flexDirection: 'column' }]}>
-            <SummaryCard title="Active Requests" value={SUMMARY_STATS.activeRequests} icon={FileText} bgColor="#FFFBEB" iconColor={GOLD} />
-            <SummaryCard title="Provider Responses" value={SUMMARY_STATS.providerResponses} icon={MessageSquare} bgColor="#EFF6FF" iconColor="#2563EB" />
-            <SummaryCard title="Scheduled Services" value={SUMMARY_STATS.scheduledServices} icon={Clock} bgColor="#F3E8FF" iconColor="#9333EA" />
-            <SummaryCard title="Completed Services" value={SUMMARY_STATS.completedServices} icon={CheckCircle} bgColor="#DCFCE7" iconColor="#16A34A" />
+          <View style={[styles.summaryGrid, isMobile && { flexWrap: 'wrap' }]}>
+            <SummaryCard customStyle={isMobile && { flexBasis: '46%', flexGrow: 1 }} title="Active Requirements" value={SUMMARY_STATS.activeRequests} icon={FileText} bgColor="#FFFBEB" iconColor={GOLD} />
+            <SummaryCard customStyle={isMobile && { flexBasis: '46%', flexGrow: 1 }} title="Provider Responses" value={SUMMARY_STATS.providerResponses} icon={MessageSquare} bgColor="#EFF6FF" iconColor="#2563EB" />
+            <SummaryCard customStyle={isMobile && { flexBasis: '46%', flexGrow: 1 }} title="Scheduled Services" value={SUMMARY_STATS.scheduledServices} icon={Clock} bgColor="#F3E8FF" iconColor="#9333EA" />
+            <SummaryCard customStyle={isMobile && { flexBasis: '46%', flexGrow: 1 }} title="Completed Services" value={SUMMARY_STATS.completedServices} icon={CheckCircle} bgColor="#DCFCE7" iconColor="#16A34A" />
           </View>
 
           {/* ── Quick Actions ── */}
-          <View style={[styles.actionsRow, isMobile && { flexDirection: 'column' }]}>
+          <View style={[styles.actionsRow, isMobile && { flexDirection: 'row' }]}>
             <TouchableOpacity 
-              style={styles.primaryActionCard}
+              style={[styles.primaryActionCard, isMobile && { padding: 16 }]}
               onPress={() => setCurrentView('broadcast')}
             >
-              <View style={styles.actionHeader}>
+              <View style={[styles.actionHeader, isMobile && { marginBottom: 12 }]}>
                 <View style={styles.primaryIconBox}>
                   <PlusCircle size={24} color="#fff" />
                 </View>
                 <ArrowRight size={20} color="rgba(255,255,255,0.8)" />
               </View>
-              <Text style={styles.primaryActionTitle}>Post Requirement</Text>
-              <Text style={styles.primaryActionDesc}>Broadcast requirement to all eligible service providers.</Text>
+              <Text style={[styles.primaryActionTitle, isMobile && { fontSize: 16, marginBottom: 0 }]}>Post Requirement</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
-              style={styles.secondaryActionCard}
+              style={[styles.secondaryActionCard, isMobile && { padding: 16 }]}
               onPress={() => setCurrentView('browseProviders')}
             >
-              <View style={styles.actionHeader}>
+              <View style={[styles.actionHeader, isMobile && { marginBottom: 12 }]}>
                 <View style={styles.secondaryIconBox}>
                   <Search size={24} color={NAVY} />
                 </View>
                 <ArrowRight size={20} color={NAVY} />
               </View>
-              <Text style={styles.secondaryActionTitle}>Browse Providers</Text>
-              <Text style={styles.secondaryActionDesc}>Browse trusted service providers and send a direct requirement.</Text>
+              <Text style={[styles.secondaryActionTitle, isMobile && { fontSize: 16, marginBottom: 0 }]}>Browse Providers</Text>
             </TouchableOpacity>
           </View>
 
-          {/* ── Two Column Layout for Grids ── */}
-          <View style={[styles.twoColGrid, isMobile && { flexDirection: 'column' }]}>
+          {/* ── Single Column Sections ── */}
+          <View style={styles.sectionsContainer}>
             
-            {/* Left Column */}
-            <View style={styles.colHalf}>
-              {/* Recent Service Requests */}
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Recent Service Requests</Text>
-                  <TouchableOpacity onPress={() => setCurrentView('requests')}><Text style={styles.viewAllText}>View All</Text></TouchableOpacity>
-                </View>
+            {/* Recent Service Requests */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Recent Requirements</Text>
+                <TouchableOpacity onPress={() => setCurrentView('requests')}><Text style={styles.viewAllText}>View All</Text></TouchableOpacity>
+              </View>
+              <View style={styles.cardsList}>
                 {RECENT_REQUESTS.map(req => <ServiceRequestCard key={req.id} request={req} />)}
               </View>
-
-              {/* Emergency Services */}
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Emergency Services</Text>
-                </View>
-                <View style={styles.emergencyContainer}>
-                  {EMERGENCY_SERVICES.map(emg => (
-                    <TouchableOpacity key={emg.id} style={styles.emergencyCard}>
-                      <View style={styles.emergencyIcon}>
-                        <AlertTriangle size={20} color="#DC2626" />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.emergencyTitle}>{emg.title}</Text>
-                        <Text style={styles.emergencyMeta}>{emg.timeToResolve}</Text>
-                      </View>
-                      <ArrowRight size={16} color="#DC2626" />
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-
-              {/* ── Preferred Service Providers ── */}
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Preferred Service Providers</Text>
-                  <TouchableOpacity onPress={() => setCurrentView('browseProviders')}><Text style={styles.viewAllText}>View All</Text></TouchableOpacity>
-                </View>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
-                  {PREFERRED_PROVIDERS.map(provider => (
-                    <TouchableOpacity key={provider.id} onPress={() => { setSelectedProvider(provider); setCurrentView('providerProfile'); }}>
-                      <ProviderCard provider={provider} />
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
             </View>
 
-            {/* Right Column */}
-            <View style={styles.colHalf}>
-              {/* Upcoming Services */}
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Upcoming Services</Text>
-                  <TouchableOpacity><Text style={styles.viewAllText}>View All</Text></TouchableOpacity>
-                </View>
-                {UPCOMING_SERVICES.map(srv => (
-                  <View key={srv.id} style={styles.upcomingCard}>
-                    <View style={styles.upcomingTop}>
-                      <View style={styles.upcomingIcon}>
-                        <Wrench size={20} color={NAVY} />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.upcomingTitle}>{srv.title}</Text>
-                        <Text style={styles.upcomingProvider}>{srv.provider}</Text>
-                      </View>
-                    </View>
-                    <View style={styles.upcomingBottom}>
-                      <Text style={styles.upcomingDate}>{srv.date}</Text>
-                      <View style={styles.upcomingBadge}>
-                        <Text style={styles.upcomingBadgeText}>{srv.type}</Text>
-                      </View>
-                    </View>
-                  </View>
+            {/* ── Top Rated Providers ── */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Top Rated Providers</Text>
+                <TouchableOpacity onPress={() => setCurrentView('browseProviders')}><Text style={styles.viewAllText}>View All</Text></TouchableOpacity>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
+                {TOP_RATED_PROVIDERS.map(provider => (
+                  <TouchableOpacity key={provider.id} onPress={() => { setSelectedProvider(provider); setCurrentView('providerProfile'); }}>
+                    <ProviderCard provider={provider} />
+                  </TouchableOpacity>
                 ))}
-              </View>
-
-              {/* Popular Service Categories */}
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Popular Service Categories</Text>
-                </View>
-                <View style={styles.categoriesGrid}>
-                  {CATEGORIES.map(cat => <CategoryCard key={cat.id} category={cat} />)}
-                </View>
-              </View>
-
-              {/* ── Top Rated Providers ── */}
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Top Rated Providers</Text>
-                  <TouchableOpacity onPress={() => setCurrentView('browseProviders')}><Text style={styles.viewAllText}>View All</Text></TouchableOpacity>
-                </View>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
-                  {TOP_RATED_PROVIDERS.map(provider => (
-                    <TouchableOpacity key={provider.id} onPress={() => { setSelectedProvider(provider); setCurrentView('providerProfile'); }}>
-                      <ProviderCard provider={provider} />
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
+              </ScrollView>
             </View>
+
+
 
           </View>
 
@@ -471,14 +361,13 @@ const styles = StyleSheet.create({
   secondaryActionTitle: { fontSize: 20, fontWeight: '800', color: NAVY, marginBottom: 8 },
   secondaryActionDesc: { fontSize: 14, color: '#64748B', lineHeight: 20 },
 
-  // Sections & Grids
-  twoColGrid: { flexDirection: 'row', gap: 24 },
-  colHalf: { flex: 1, gap: 24 },
+  // Sections
+  sectionsContainer: { gap: 24, marginTop: 8 },
   section: { gap: 16 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   sectionTitle: { fontSize: 18, fontWeight: '800', color: NAVY },
   viewAllText: { fontSize: 14, fontWeight: '600', color: '#2563EB' },
-  horizontalScroll: { gap: 16, paddingRight: 16 },
+  cardsList: { gap: 12 },
 
   // Service Request Card
   requestCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.border },
@@ -497,29 +386,7 @@ const styles = StyleSheet.create({
   viewBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: colors.border },
   viewBtnText: { fontSize: 12, fontWeight: '700', color: NAVY },
 
-  // Upcoming Services
-  upcomingCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.border },
-  upcomingTop: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 },
-  upcomingIcon: { width: 40, height: 40, borderRadius: 8, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  upcomingTitle: { fontSize: 15, fontWeight: '800', color: NAVY },
-  upcomingProvider: { fontSize: 13, color: '#64748B', marginTop: 2 },
-  upcomingBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
-  upcomingDate: { fontSize: 13, fontWeight: '700', color: NAVY },
-  upcomingBadge: { backgroundColor: '#F8FAFC', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: colors.border },
-  upcomingBadgeText: { fontSize: 11, fontWeight: '600', color: '#475569' },
-
-  // Emergency Services
-  emergencyContainer: { gap: 12 },
-  emergencyCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF2F2', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#FECACA' },
-  emergencyIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  emergencyTitle: { fontSize: 15, fontWeight: '800', color: '#991B1B' },
-  emergencyMeta: { fontSize: 12, color: '#DC2626', marginTop: 2 },
-
-  // Category Grid
-  categoriesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  categoryCard: { flex: 1, minWidth: '45%', backgroundColor: '#fff', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center' },
-  categoryIconBox: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#F8FAFC', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  categoryName: { fontSize: 13, fontWeight: '700', color: NAVY },
+  horizontalScroll: { gap: 16, paddingRight: 16 },
 
   // Provider Card
   providerCard: { width: 240, backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.border },
