@@ -6,8 +6,8 @@ const NAVY = '#081A3A';
 
 const MOCK_NOTIFICATIONS = [
   {
-    id: "NOT-001", type: "Requirements", title: "New Direct Request",
-    message: "Olive Bar has sent a direct request for a Bartender.",
+    id: "NOT-001", type: "Requirements", title: "New Job Requirement",
+    message: "Olive Bar has sent a job requirement for a Bartender.",
     date: "Just now", read: false, icon: Briefcase, color: "#3B82F6"
   },
   {
@@ -17,7 +17,7 @@ const MOCK_NOTIFICATIONS = [
   },
 
   {
-    id: "NOT-004", type: "Deployments", title: "Joining Reminder",
+    id: "NOT-004", type: "Staff Records", title: "Joining Reminder",
     message: "Rahul Sharma is scheduled to join The Grand Taj tomorrow.",
     date: "1 day ago", read: true, icon: CheckCircle, color: "#F59E0B"
   },
@@ -33,7 +33,7 @@ const MOCK_NOTIFICATIONS = [
   }
 ];
 
-const FILTERS = ['All', 'Requirements', 'Candidates', 'Deployments', 'Payments', 'System'];
+const FILTERS = ['All', 'Requirements', 'Candidates', 'Staff Records', 'Payments', 'System'];
 
 export default function ManpowerNotificationsPage() {
   const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
@@ -142,7 +142,7 @@ export default function ManpowerNotificationsPage() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: { padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16,  padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   headerTitleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: NAVY, marginLeft: 8 },
   headerSub: { fontSize: 13, color: '#64748B' },

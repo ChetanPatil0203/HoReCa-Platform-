@@ -135,7 +135,7 @@ export default function CreateDeploymentModal({ visible, onClose, interviewData,
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16,  flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
   closeBtn: { padding: 4 },
   title: { fontSize: 16, fontWeight: 'bold', color: '#1E293B' },
   

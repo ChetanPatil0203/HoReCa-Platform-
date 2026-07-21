@@ -204,7 +204,7 @@ export default function ManpowerSettingsPage() {
             <View style={styles.menuGroup}>
               <View style={styles.toggleRow}>
                 <View style={styles.toggleInfo}>
-                  <Text style={styles.toggleTitle}>Broadcast Requirements</Text>
+                  <Text style={styles.toggleTitle}>General Job Requirements</Text>
                   <Text style={styles.toggleSub}>New job postings from hotels & cafes.</Text>
                 </View>
                 <Switch value={notifPrefs.broadcasts} onValueChange={v => setNotifPrefs({...notifPrefs, broadcasts: v})} trackColor={{ false: '#CBD5E1', true: '#10B981' }} thumbColor="#fff" />
@@ -213,7 +213,7 @@ export default function ManpowerSettingsPage() {
               
               <View style={styles.toggleRow}>
                 <View style={styles.toggleInfo}>
-                  <Text style={styles.toggleTitle}>Direct Requests</Text>
+                  <Text style={styles.toggleTitle}>Private Job Requirements</Text>
                   <Text style={styles.toggleSub}>Exclusive private requests sent to you.</Text>
                 </View>
                 <Switch value={notifPrefs.directReqs} onValueChange={v => setNotifPrefs({...notifPrefs, directReqs: v})} trackColor={{ false: '#CBD5E1', true: '#10B981' }} thumbColor="#fff" />
@@ -224,7 +224,7 @@ export default function ManpowerSettingsPage() {
 
               <View style={styles.toggleRow}>
                 <View style={styles.toggleInfo}>
-                  <Text style={styles.toggleTitle}>Selection & Deployment</Text>
+                  <Text style={styles.toggleTitle}>Selection & Staff Records</Text>
                   <Text style={styles.toggleSub}>Alerts when candidates are selected.</Text>
                 </View>
                 <Switch value={notifPrefs.selections} onValueChange={v => setNotifPrefs({...notifPrefs, selections: v})} trackColor={{ false: '#CBD5E1', true: '#10B981' }} thumbColor="#fff" />
@@ -261,7 +261,7 @@ export default function ManpowerSettingsPage() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: { padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16,  padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   headerTitleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: NAVY, marginLeft: 8 },
   headerSub: { fontSize: 13, color: '#64748B' },

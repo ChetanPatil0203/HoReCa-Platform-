@@ -183,7 +183,7 @@ export default function VendorDeliveriesPage() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FAFAFA' },
-  header: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16,  paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   pageTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
   pageSubtitle: { fontSize: 12, color: colors.muted, marginTop: 4 },
   

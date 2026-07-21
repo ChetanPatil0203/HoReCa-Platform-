@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions, Image , Alert} from 'react-native';
 import { ArrowLeft, Star, ShieldCheck, MapPin, Briefcase, Award, CheckCircle, Image as ImageIcon, Send } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 
@@ -128,7 +128,7 @@ export default function AgencyProfilePage({ agency, onBack, onSendRequirement })
               <View style={styles.sectionCard}>
                 <View style={styles.sectionHeaderFlex}>
                   <Text style={styles.sectionTitle}>Portfolio Gallery</Text>
-                  <TouchableOpacity><Text style={styles.linkText}>View All</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => Alert.alert('Coming Soon', 'This feature is under development.')}><Text style={styles.linkText}>View All</Text></TouchableOpacity>
                 </View>
                 <View style={styles.galleryGrid}>
                   {[1,2,3,4].map(i => (

@@ -403,7 +403,7 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 40,
   },
-  header: {
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16, 
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

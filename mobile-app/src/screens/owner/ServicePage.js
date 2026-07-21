@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
 import { 
   Wrench, FileText, MessageSquare, Clock, CheckCircle, 
-  PlusCircle, Search, ArrowRight, Activity, MapPin, ShieldCheck, Star, Zap, Droplets, Hammer, Wind
+  PlusCircle, Search, ArrowRight, Activity, MapPin, ShieldCheck, Star, Zap, Droplets, Hammer, Wind, Package
 } from 'lucide-react-native';
 import { colors } from '../../theme/colors';
 import BroadcastRequirementPage from './Service_provider/BroadcastRequirementPage';
@@ -212,6 +212,10 @@ export default function ServicePage() {
           setSelectedProvider(provider);
           setCurrentView('providerProfile');
         }}
+        onSendRequest={(provider) => {
+          setSelectedProvider(provider);
+          setCurrentView('directRequirement');
+        }}
       />
     );
   }
@@ -243,9 +247,14 @@ export default function ServicePage() {
     <View style={styles.wrapper}>
       {/* ── Header ── */}
       <View style={[styles.pageHeader, isMobile && styles.pageHeaderMobile]}>
-        <View>
+        <View style={{ flex: 1, paddingRight: 12 }}>
           <Text style={styles.pageTitle}>Service Providers</Text>
           <Text style={styles.pageSubtitle}>Manage your facility maintenance and service providers</Text>
+        </View>
+        <View style={styles.headerIcons}>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => setCurrentView('requests')}>
+            <Package size={20} color="#0F172A" />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -333,10 +342,21 @@ export default function ServicePage() {
 // =====================================
 const styles = StyleSheet.create({
   wrapper: { flex: 1, backgroundColor: LIGHT_BG },
-  pageHeader: { paddingHorizontal: 20, paddingVertical: 24, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: colors.border },
+  pageHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 24, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: colors.border },
   pageHeaderMobile: { paddingHorizontal: 16, paddingVertical: 16 },
   pageTitle: { fontSize: 24, fontWeight: '900', color: NAVY, marginBottom: 4 },
   pageSubtitle: { fontSize: 14, color: '#64748B' },
+  headerIcons: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   
   scroll: { flex: 1 },
   contentLayout: { padding: 16, gap: 24 },

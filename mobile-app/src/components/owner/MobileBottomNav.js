@@ -1,12 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Platform } from 'react-native';
-import { LayoutDashboard, ShoppingCart, Truck, User } from 'lucide-react-native';
+import { LayoutDashboard, ShoppingCart, Truck, User, Clock } from 'lucide-react-native';
 import { colors } from '../../theme/colors';
 
 const TABS = [
   { key: "dashboard", label: "Home", icon: LayoutDashboard },
-  { key: "marketplace", label: "Marketplace", icon: ShoppingCart },
   { key: "order-tracking", label: "Tracking", icon: Truck },
+  { key: "history", label: "History", icon: Clock },
   { key: "profile", label: "Profile", icon: User },
 ];
 
@@ -19,10 +19,8 @@ export default function MobileBottomNav({ activePage, onNavigate }) {
       {TABS.map((item) => {
         const Icon = item.icon;
         
-        // Marketplace tab should remain active if any of its sub-categories are active
-        const isActive = item.key === "marketplace"
-          ? activePage === "marketplace" || MARKET_SUBS.includes(activePage)
-          : activePage === item.key;
+        // Tracking tab could remain active for tracking sub-pages if necessary
+        const isActive = activePage === item.key;
 
         return (
           <TouchableOpacity 

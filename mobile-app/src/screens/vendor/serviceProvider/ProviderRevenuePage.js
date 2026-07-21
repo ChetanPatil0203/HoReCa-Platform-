@@ -148,7 +148,7 @@ export default function ProviderRevenuePage() {
                 <Text style={styles.btnPrimaryGoldText}>Mark Paid</Text>
               </TouchableOpacity>
             ) : (
-              <TouchableOpacity style={styles.btnOutline}>
+              <TouchableOpacity style={styles.btnOutline} onPress={() => Alert.alert('Coming Soon', 'This feature is under development.')}>
                 <Text style={styles.btnOutlineText}>View Receipt</Text>
               </TouchableOpacity>
             )}
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16, 
     paddingHorizontal: 16,
     paddingVertical: 16,
     backgroundColor: '#FFFFFF',

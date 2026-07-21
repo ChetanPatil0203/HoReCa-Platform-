@@ -1,17 +1,14 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  useWindowDimensions, Modal, SafeAreaView, FlatList, Platform, TextInput
+  Modal, SafeAreaView, FlatList, TextInput
 } from 'react-native';
 import {
-  Briefcase, Users, FileText, Calendar, Clock, Star, MapPin, 
-  Search, Filter, X, CheckCircle, Save, XCircle, 
-  AlertTriangle, User, Lock, Send, DollarSign,
-  AlertCircle, ChevronDown
+  Briefcase, Users, Calendar, MapPin, 
+  Search, X, CheckCircle, Send, DollarSign, Building, ChevronRight
 } from 'lucide-react-native';
 
 const NAVY = '#081A3A';
-const GOLD = '#D4AF37';
 
 const INITIAL_REQUESTS = [
   {
@@ -65,29 +62,44 @@ const DECLINE_REASONS = [
   "Other"
 ];
 
-export default function ManpowerDirectRequestsPage() {
-  const { width } = useWindowDimensions();
-  const isSmallMobile = width < 380;
-
+export default function ManpowerDirectRequestsPage({ initialAction }) {
   const [requests, setRequests] = useState(INITIAL_REQUESTS);
   const [activeFilter, setActiveFilter] = useState("All");
-  const filters = ["All", "New", "Accepted", "Candidates Sent", "Shortlisted", "Filled", "Declined", "Expired"];
+  const [searchQuery, setSearchQuery] = useState("");
+  const filters = ["All", "New", "Accepted", "Candidates Sent", "Closed", "Declined"];
 
   // Modals state
   const [selectedReq, setSelectedReq] = useState(null);
   const [detailsVisible, setDetailsVisible] = useState(false);
   const [declineVisible, setDeclineVisible] = useState(false);
   const [sendCandVisible, setSendCandVisible] = useState(false);
-
-  // Send Candidates State
   const [selectedCands, setSelectedCands] = useState([]);
 
   // Toast
   const [toastMsg, setToastMsg] = useState("");
 
+  React.useEffect(() => {
+    if (initialAction === 'submit-candidates' && INITIAL_REQUESTS.length > 0) {
+      setSelectedReq(INITIAL_REQUESTS[0]);
+      setSelectedCands([]);
+      setSendCandVisible(true);
+    }
+  }, [initialAction]);
+
   const showToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(""), 3000);
+  };
+
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'New': return '#3B82F6';
+      case 'Accepted': return '#F59E0B';
+      case 'Candidates Sent': return '#8B5CF6';
+      case 'Closed': return '#10B981';
+      case 'Declined': return '#EF4444';
+      default: return '#64748B';
+    }
   };
 
   const handleAccept = (reqId) => {
@@ -127,9 +139,17 @@ export default function ManpowerDirectRequestsPage() {
     showToast("Candidates submitted successfully.");
   };
 
-  const filteredRequests = requests.filter(r => activeFilter === "All" || r.status === activeFilter);
+  const filteredRequests = requests.filter(r => {
+    const matchesTab = activeFilter === "All" || r.status === activeFilter;
+    const q = searchQuery.toLowerCase();
+    const matchesSearch = !q || 
+      r.id.toLowerCase().includes(q) || 
+      r.role.toLowerCase().includes(q) || 
+      r.businessName.toLowerCase().includes(q);
+    return matchesTab && matchesSearch;
+  });
 
-  const renderSummaryCard = (label, count, color) => (
+  const renderSummary = (label, count, color) => (
     <View style={styles.summaryCard}>
       <Text style={[styles.summaryCount, { color }]}>{count}</Text>
       <Text style={styles.summaryLabel}>{label}</Text>
@@ -138,405 +158,330 @@ export default function ManpowerDirectRequestsPage() {
 
   return (
     <View style={styles.container}>
-      
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTitleRow}>
-          <Lock size={22} color={NAVY} />
-          <Text style={styles.headerTitle}>Direct Requests</Text>
+          <Briefcase size={24} color={NAVY} />
+          <Text style={styles.headerTitle}>Job Requirements</Text>
         </View>
-        <Text style={styles.headerSub}>Private manpower requirements sent only to your agency.</Text>
+        <Text style={styles.headerSub}>View and manage job requirements from businesses.</Text>
       </View>
 
-      {/* Summary Row */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.summaryScroll} contentContainerStyle={styles.summaryScrollContent}>
-        {renderSummaryCard("New", requests.filter(r => r.status === 'New').length, "#3B82F6")}
-        {renderSummaryCard("Accepted", requests.filter(r => r.status === 'Accepted').length, "#F59E0B")}
-        {renderSummaryCard("Sent", requests.filter(r => r.status === 'Candidates Sent').length, "#8B5CF6")}
-        {renderSummaryCard("Shortlisted", 0, "#10B981")}
-        {renderSummaryCard("Filled", 0, "#10B981")}
-        {renderSummaryCard("Declined", requests.filter(r => r.status === 'Declined').length, "#EF4444")}
-      </ScrollView>
+      {/* Summary */}
+      <View style={styles.summarySection}>
+        {renderSummary("New", requests.filter(r => r.status === 'New').length, "#3B82F6")}
+        {renderSummary("Accepted", requests.filter(r => r.status === 'Accepted').length, "#F59E0B")}
+        {renderSummary("Sent", requests.filter(r => r.status === 'Candidates Sent').length, "#8B5CF6")}
+      </View>
 
-      {/* Filters */}
-      <View style={styles.filterSection}>
+      {/* Search Bar */}
+      <View style={styles.searchSection}>
         <View style={styles.searchBox}>
-          <Search size={16} color="#64748B" />
-          <TextInput placeholder="Search by ID, Business, Role..." style={styles.searchInput} placeholderTextColor="#94A3B8" />
+          <Search size={18} color="#94A3B8" />
+          <TextInput 
+            style={styles.searchInput} 
+            placeholder="Search by ID, Business, Role..." 
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
         </View>
+      </View>
+
+      {/* Tabs */}
+      <View style={styles.tabSection}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
-          {filters.map(f => (
-            <TouchableOpacity key={f} style={[styles.filterChip, activeFilter === f && styles.filterChipActive]} onPress={() => setActiveFilter(f)}>
-              <Text style={[styles.filterChipText, activeFilter === f && styles.filterChipTextActive]}>{f}</Text>
+          {filters.map(tab => (
+            <TouchableOpacity key={tab} style={[styles.filterChip, activeFilter === tab && styles.filterChipActive]} onPress={() => setActiveFilter(tab)}>
+              <Text style={[styles.filterChipText, activeFilter === tab && styles.filterChipTextActive]}>{tab}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       </View>
 
-      {/* Requests List */}
+      {/* List */}
       <FlatList
         data={filteredRequests}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        ListEmptyComponent={() => (
+          <View style={styles.emptyBox}>
+            <Text style={styles.emptyTitle}>No job requirements found</Text>
+            <Text style={styles.emptyDesc}>Requirements will appear here when businesses post them or send them to you.</Text>
+          </View>
+        )}
         renderItem={({item}) => (
-          <View style={styles.reqCard}>
-            {/* Private Badge */}
-            <View style={styles.privateBadgeRow}>
-              <Lock size={12} color="#8B5CF6" />
-              <Text style={styles.privateBadgeText}>Sent only to Elite Manpower Services</Text>
-            </View>
-
-            <View style={styles.reqHeader}>
-              <View style={styles.reqHeaderLeft}>
-                <Text style={styles.reqRole}>{item.role}</Text>
-                <View style={styles.reqBusinessRow}>
-                  <Briefcase size={12} color="#64748B" />
-                  <Text style={styles.reqBusiness}>{item.businessName}</Text>
-                  {item.verified && <CheckCircle size={12} color="#10B981" style={{marginLeft: 4}}/>}
+          <View style={styles.recordCard}>
+            <View style={styles.recordHeader}>
+              <View style={styles.recordAvatar}><Text style={styles.recordAvatarText}>{item.role.charAt(0)}</Text></View>
+              <View style={styles.recordHeaderInfo}>
+                <View>
+                  <Text style={styles.recordName}>{item.role}</Text>
+                  <Text style={styles.recordSub}>ID: {item.id}</Text>
                 </View>
-                <Text style={styles.reqId}>ID: {item.id} • Sent {item.sentTime}</Text>
-              </View>
-              <View style={[styles.statusBadge, { backgroundColor: item.status === 'New' ? '#EFF6FF' : item.status === 'Declined' ? '#FEF2F2' : '#F0FDF4' }]}>
-                <Text style={[styles.statusBadgeText, { color: item.status === 'New' ? '#2563EB' : item.status === 'Declined' ? '#DC2626' : '#16A34A' }]}>{item.status}</Text>
-              </View>
-            </View>
-
-            <View style={styles.reqDetailsGrid}>
-              <View style={styles.reqDetailItem}>
-                <Users size={14} color="#64748B" />
-                <Text style={styles.reqDetailText}>{item.count} Staff</Text>
-              </View>
-              <View style={styles.reqDetailItem}>
-                <Briefcase size={14} color="#64748B" />
-                <Text style={styles.reqDetailText}>{item.experience}</Text>
-              </View>
-              <View style={styles.reqDetailItem}>
-                <DollarSign size={14} color="#64748B" />
-                <Text style={styles.reqDetailText}>{item.salary}</Text>
-              </View>
-              <View style={styles.reqDetailItem}>
-                <MapPin size={14} color="#64748B" />
-                <Text style={styles.reqDetailText}>{item.location}</Text>
-              </View>
-            </View>
-
-            <View style={styles.reqFooter}>
-              {item.urgency === 'High' && (
-                <View style={styles.urgentBadge}>
-                  <Text style={styles.urgentBadgeText}>URGENT</Text>
+                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '15' }]}>
+                  <Text style={[styles.statusBadgeText, { color: getStatusColor(item.status) }]}>{item.status}</Text>
                 </View>
-              )}
-              <View style={styles.reqActionRow}>
-                <TouchableOpacity style={styles.secondaryBtnOutline} onPress={() => { setSelectedReq(item); setDetailsVisible(true); }}>
-                  <Text style={styles.secondaryBtnText}>View Details</Text>
+              </View>
+            </View>
+
+            <View style={styles.recordBody}>
+              <View style={styles.infoRow}><Building size={14} color="#64748B" /><Text style={styles.infoText}>{item.businessName}</Text></View>
+              <View style={styles.infoRow}><MapPin size={14} color="#64748B" /><Text style={styles.infoText}>{item.location}</Text></View>
+              <View style={styles.infoRow}><Users size={14} color="#64748B" /><Text style={styles.infoText}>{item.count} Staff Needed</Text></View>
+              <View style={styles.infoRow}><DollarSign size={14} color="#64748B" /><Text style={styles.infoText}>{item.salary}</Text></View>
+            </View>
+
+            <View style={styles.recordFooter}>
+              <TouchableOpacity style={styles.viewDetailsBtn} onPress={() => { setSelectedReq(item); setDetailsVisible(true); }}>
+                <Text style={styles.viewDetailsText}>View Details</Text>
+                <ChevronRight size={16} color={NAVY} />
+              </TouchableOpacity>
+              
+              {item.status === 'New' && (
+                <TouchableOpacity style={[styles.primaryBtn, {paddingVertical: 8, paddingHorizontal: 16, flex: 0}]} onPress={() => handleAccept(item.id)}>
+                  <Text style={styles.primaryBtnText}>Accept</Text>
                 </TouchableOpacity>
-
-                {item.status === 'New' && (
-                  <>
-                    <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: '#10B981' }]} onPress={() => handleAccept(item.id)}>
-                      <Text style={styles.primaryBtnText}>Accept</Text>
-                    </TouchableOpacity>
-                  </>
-                )}
-                {item.status === 'Accepted' && (
-                  <TouchableOpacity style={styles.primaryBtn} onPress={() => handleSendCandidatesOpen(item)}>
-                    <Text style={styles.primaryBtnText}>Send Candidates</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
+              )}
             </View>
           </View>
         )}
       />
 
-      {/* Toast */}
-      {toastMsg ? (
-        <View style={styles.toastContainer}>
-          <Text style={styles.toastText}>{toastMsg}</Text>
-        </View>
-      ) : null}
-
-
-      {/* Decline Bottom Sheet */}
-      <Modal visible={declineVisible} transparent animationType="slide" onRequestClose={() => setDeclineVisible(false)}>
-        <View style={styles.bottomSheetOverlay}>
-          <TouchableOpacity style={styles.bottomSheetBackdrop} onPress={() => setDeclineVisible(false)} />
-          <View style={styles.bottomSheetContent}>
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>Decline Request</Text>
-              <TouchableOpacity onPress={() => setDeclineVisible(false)}><X size={20} color="#1E293B" /></TouchableOpacity>
+      {/* View Details Modal */}
+      <Modal visible={detailsVisible} animationType="fade" transparent={true} onRequestClose={() => setDetailsVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.popupCard}>
+            <View style={styles.popupHeader}>
+              <Text style={styles.popupTitle}>Requirement Details</Text>
+              <TouchableOpacity onPress={() => setDetailsVisible(false)} style={styles.modalCloseBtn}><X size={20} color="#1E293B" /></TouchableOpacity>
             </View>
-            <Text style={styles.sheetSub}>Please select a reason for declining this request.</Text>
             
-            <View style={{marginTop: 16}}>
-              {DECLINE_REASONS.map((reason, idx) => (
-                <TouchableOpacity key={idx} style={styles.reasonBtn} onPress={() => submitDecline(reason)}>
-                  <Text style={styles.reasonText}>{reason}</Text>
-                </TouchableOpacity>
-              ))}
+            <ScrollView style={{padding: 16, maxHeight: 500}} showsVerticalScrollIndicator={false}>
+              {selectedReq && (
+                <>
+                  <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 20}}>
+                     <View style={[styles.recordAvatar, {width: 48, height: 48, borderRadius: 24}]}><Text style={[styles.recordAvatarText, {fontSize: 20}]}>{selectedReq.role.charAt(0)}</Text></View>
+                     <View style={{marginLeft: 12}}>
+                       <Text style={[styles.recordName, {fontSize: 18}]}>{selectedReq.role}</Text>
+                       <Text style={styles.recordSub}>{selectedReq.businessName}</Text>
+                     </View>
+                  </View>
+
+                  <View style={styles.detailGrid}>
+                     <View style={styles.detailItem}><Users size={16} color="#64748B" /><View style={styles.detailTextWrapper}><Text style={styles.detailLabel}>Staff Required</Text><Text style={styles.detailValue}>{selectedReq.count}</Text></View></View>
+                     <View style={styles.detailItem}><DollarSign size={16} color="#64748B" /><View style={styles.detailTextWrapper}><Text style={styles.detailLabel}>Salary</Text><Text style={styles.detailValue}>{selectedReq.salary}</Text></View></View>
+                     <View style={styles.detailItem}><Briefcase size={16} color="#64748B" /><View style={styles.detailTextWrapper}><Text style={styles.detailLabel}>Experience</Text><Text style={styles.detailValue}>{selectedReq.experience}</Text></View></View>
+                     <View style={styles.detailItem}><MapPin size={16} color="#64748B" /><View style={styles.detailTextWrapper}><Text style={styles.detailLabel}>Location</Text><Text style={styles.detailValue}>{selectedReq.location}</Text></View></View>
+                     <View style={styles.detailItem}><Calendar size={16} color="#64748B" /><View style={styles.detailTextWrapper}><Text style={styles.detailLabel}>Joining</Text><Text style={styles.detailValue}>{selectedReq.joining}</Text></View></View>
+                  </View>
+
+                  <View style={{marginBottom: 20}}>
+                    <Text style={styles.sectionHeading}>Description</Text>
+                    <Text style={styles.descText}>{selectedReq.desc}</Text>
+                  </View>
+                  
+                  <View style={{marginBottom: 20}}>
+                    <Text style={styles.sectionHeading}>Skills Required</Text>
+                    <View style={styles.skillsWrap}>
+                      {selectedReq.skills.map((s, idx) => (
+                        <View key={idx} style={styles.skillPill}><Text style={styles.skillText}>{s}</Text></View>
+                      ))}
+                    </View>
+                  </View>
+
+                  <View style={styles.statusSection}>
+                    <Text style={styles.statusSectionTitle}>Current Status</Text>
+                    <View style={[styles.statusBadge, { alignSelf: 'flex-start', backgroundColor: getStatusColor(selectedReq.status) + '15' }]}>
+                      <Text style={[styles.statusBadgeText, { color: getStatusColor(selectedReq.status) }]}>{selectedReq.status}</Text>
+                    </View>
+                  </View>
+                  
+                  <View style={styles.modalActions}>
+                    {selectedReq.status === 'New' && (
+                      <>
+                        <TouchableOpacity style={[styles.secondaryBtn, {borderColor: '#FECACA', borderWidth: 1}]} onPress={() => handleDeclineSelect(selectedReq)}>
+                          <Text style={[styles.secondaryBtnText, {color: '#DC2626'}]}>Decline</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.primaryBtn} onPress={() => handleAccept(selectedReq.id)}>
+                          <Text style={styles.primaryBtnText}>Accept Request</Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
+                    {selectedReq.status === 'Accepted' && (
+                      <TouchableOpacity style={[styles.primaryBtn, {width: '100%'}]} onPress={() => handleSendCandidatesOpen(selectedReq)}>
+                        <Text style={styles.primaryBtnText}>Send Candidates</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Decline Bottom Sheet (Popup style) */}
+      <Modal visible={declineVisible} transparent animationType="fade" onRequestClose={() => setDeclineVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.popupCard}>
+            <View style={styles.popupHeader}>
+              <Text style={styles.popupTitle}>Decline Request</Text>
+              <TouchableOpacity onPress={() => setDeclineVisible(false)} style={styles.modalCloseBtn}><X size={20} color="#1E293B" /></TouchableOpacity>
             </View>
+            <ScrollView style={{padding: 16}} showsVerticalScrollIndicator={false}>
+              <Text style={styles.sheetSub}>Please select a reason for declining this request.</Text>
+              <View style={{marginTop: 16, marginBottom: 24}}>
+                {DECLINE_REASONS.map((reason, idx) => (
+                  <TouchableOpacity key={idx} style={styles.reasonBtn} onPress={() => submitDecline(reason)}>
+                    <Text style={styles.reasonText}>{reason}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
 
       {/* Send Candidates Modal */}
       <Modal visible={sendCandVisible} animationType="slide" transparent={false} onRequestClose={() => setSendCandVisible(false)}>
-        <SafeAreaView style={styles.modalFullContainer}>
-          <View style={styles.modalHeader}>
+        <SafeAreaView style={{flex: 1, backgroundColor: '#F8FAFC'}}>
+          <View style={[styles.popupHeader, {backgroundColor: '#fff'}]}>
             <TouchableOpacity onPress={() => setSendCandVisible(false)} style={styles.modalCloseBtn}>
               <X size={24} color="#1E293B" />
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Select Candidates</Text>
+            <Text style={styles.popupTitle}>Select Candidates</Text>
             <View style={{width: 40}} />
           </View>
-
-          <View style={styles.candidateListWrapper}>
-            <Text style={styles.candMatchText}>Showing candidates matching: {selectedReq?.role}</Text>
-            
-            <FlatList
-              data={MOCK_CANDIDATES.filter(c => selectedReq && c.role.includes(selectedReq.role.split(' ')[1] || selectedReq.role))}
-              keyExtractor={c => c.id}
-              contentContainerStyle={{padding: 16}}
-              renderItem={({item}) => (
-                <TouchableOpacity style={[styles.candCard, selectedCands.includes(item.id) && styles.candCardSelected]} onPress={() => toggleCandidate(item.id)}>
-                  <View style={[styles.checkbox, selectedCands.includes(item.id) && styles.checkboxSelected]}>
-                    {selectedCands.includes(item.id) && <CheckCircle size={14} color="#fff" />}
-                  </View>
-                  <View style={styles.candAvatar}><User size={16} color="#64748B" /></View>
-                  <View style={styles.candInfo}>
-                    <Text style={styles.candName}>{item.name}</Text>
-                    <Text style={styles.candDesc}>{item.role} • {item.experience} • {item.salary}</Text>
-                    <Text style={styles.candLoc}>{item.location}</Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-            />
+          
+          <View style={styles.candMatchTextContainer}>
+             <Text style={styles.candMatchText}>Select candidates to send for {selectedReq?.role} @ {selectedReq?.businessName}</Text>
           </View>
 
-          <View style={styles.sendFormWrapper}>
-            <Text style={styles.inputLabel}>Agency Note (Optional)</Text>
-            <TextInput style={styles.inputArea} placeholder="E.g. These candidates are ready to join immediately..." multiline />
-            
-            <TouchableOpacity style={[styles.primaryBtnLarge, selectedCands.length === 0 && { opacity: 0.5 }]} onPress={submitCandidates} disabled={selectedCands.length === 0}>
-              <Text style={styles.primaryBtnLargeText}>Send {selectedCands.length > 0 ? selectedCands.length : ''} Candidates</Text>
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      </Modal>
-
-      {/* Details Modal */}
-      <Modal visible={detailsVisible} animationType="slide" transparent={false} onRequestClose={() => setDetailsVisible(false)}>
-        <SafeAreaView style={styles.modalFullContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setDetailsVisible(false)} style={styles.modalCloseBtn}>
-              <X size={24} color="#1E293B" />
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>Request Details</Text>
-            <View style={{width: 40}} />
-          </View>
-
-          {selectedReq && (
-            <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-              <View style={styles.privateBadgeRowLarge}>
-                <Lock size={14} color="#8B5CF6" />
-                <Text style={styles.privateBadgeTextLarge}>Sent only to your agency</Text>
-              </View>
-
-              <View style={styles.reqHeaderLeft}>
-                <Text style={[styles.reqRole, { fontSize: 22, marginTop: 12 }]}>{selectedReq.role}</Text>
-                <View style={styles.reqBusinessRow}>
-                  <Briefcase size={14} color="#64748B" />
-                  <Text style={styles.reqBusiness}>{selectedReq.businessName} ({selectedReq.type})</Text>
+          <FlatList
+            data={MOCK_CANDIDATES}
+            keyExtractor={c => c.id}
+            contentContainerStyle={{padding: 16}}
+            renderItem={({item}) => (
+              <TouchableOpacity style={[styles.candCard, selectedCands.includes(item.id) && styles.candCardSelected]} onPress={() => toggleCandidate(item.id)}>
+                <View style={[styles.checkbox, selectedCands.includes(item.id) && styles.checkboxSelected]}>
+                  {selectedCands.includes(item.id) && <CheckCircle size={14} color="#fff" />}
                 </View>
-                <Text style={styles.reqId}>ID: {selectedReq.id} • Posted {selectedReq.sentTime}</Text>
-              </View>
-
-              <View style={styles.divider} />
-
-              <Text style={styles.sectionSubtitleBold}>Job Description</Text>
-              <Text style={styles.modalDesc}>{selectedReq.desc}</Text>
-
-              {selectedReq.notes ? (
-                <View style={styles.notesBox}>
-                  <Text style={styles.notesLabel}>Owner's Note to You:</Text>
-                  <Text style={styles.notesText}>{selectedReq.notes}</Text>
+                <View style={styles.candInfo}>
+                  <Text style={styles.candName}>{item.name}</Text>
+                  <Text style={styles.candDesc}>{item.role} • {item.experience} • {item.salary}</Text>
                 </View>
-              ) : null}
-
-              <View style={styles.tagsContainer}>
-                {selectedReq.skills.map(s => (
-                  <View key={s} style={styles.tagBadge}>
-                    <Text style={styles.tagText}>{s}</Text>
-                  </View>
-                ))}
-              </View>
-
-              <View style={styles.divider} />
-              
-              <Text style={styles.sectionSubtitleBold}>Key Requirements</Text>
-              <View style={styles.specGrid}>
-                <View style={styles.specItem}>
-                  <Text style={styles.specLabel}>Staff Count</Text>
-                  <Text style={styles.specVal}>{selectedReq.count}</Text>
-                </View>
-                <View style={styles.specItem}>
-                  <Text style={styles.specLabel}>Experience</Text>
-                  <Text style={styles.specVal}>{selectedReq.experience}</Text>
-                </View>
-                <View style={styles.specItem}>
-                  <Text style={styles.specLabel}>Salary Range</Text>
-                  <Text style={styles.specVal}>{selectedReq.salary}</Text>
-                </View>
-                <View style={styles.specItem}>
-                  <Text style={styles.specLabel}>Shift</Text>
-                  <Text style={styles.specVal}>{selectedReq.shift}</Text>
-                </View>
-                <View style={styles.specItem}>
-                  <Text style={styles.specLabel}>Joining</Text>
-                  <Text style={styles.specVal}>{selectedReq.joining}</Text>
-                </View>
-                <View style={styles.specItem}>
-                  <Text style={styles.specLabel}>Food/Accom.</Text>
-                  <Text style={styles.specVal}>{selectedReq.food} / {selectedReq.accommodation}</Text>
-                </View>
-              </View>
-            </ScrollView>
-          )}
-
-          <View style={styles.modalFooter}>
-            {selectedReq?.status === 'New' && (
-              <>
-                <TouchableOpacity style={styles.dangerBtnOutline} onPress={() => handleDeclineSelect(selectedReq)}>
-                  <Text style={styles.dangerBtnText}>Decline</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.primaryBtnLarge, { backgroundColor: '#10B981', flex: 1.5 }]} onPress={() => handleAccept(selectedReq.id)}>
-                  <Text style={styles.primaryBtnLargeText}>Accept Request</Text>
-                </TouchableOpacity>
-              </>
-            )}
-            {selectedReq?.status === 'Accepted' && (
-              <TouchableOpacity style={styles.primaryBtnLarge} onPress={() => handleSendCandidatesOpen(selectedReq)}>
-                <Text style={styles.primaryBtnLargeText}>Send Candidates</Text>
               </TouchableOpacity>
             )}
-            {selectedReq?.status !== 'New' && selectedReq?.status !== 'Accepted' && (
-               <Text style={styles.statusFooterText}>Status: {selectedReq?.status}</Text>
-            )}
+          />
+
+          <View style={styles.sendFormWrapper}>
+            <TouchableOpacity style={[styles.primaryBtnLarge, selectedCands.length === 0 && {opacity: 0.5}]} onPress={submitCandidates} disabled={selectedCands.length === 0}>
+              <Send size={18} color="#fff" style={{marginRight: 8}}/>
+              <Text style={styles.primaryBtnLargeText}>Send {selectedCands.length} Candidates</Text>
+            </TouchableOpacity>
           </View>
         </SafeAreaView>
       </Modal>
 
+      {/* Toast */}
+      {toastMsg ? <View style={styles.toastContainer}><Text style={styles.toastText}>{toastMsg}</Text></View> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: { padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  headerTitleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', color: NAVY, marginLeft: 8 },
-  headerSub: { fontSize: 13, color: '#64748B' },
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16,  padding: 16, paddingTop: 20, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  headerTitleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  headerTitle: { fontSize: 22, fontWeight: 'bold', color: NAVY, marginLeft: 8 },
+  headerSub: { fontSize: 13, color: '#64748B', lineHeight: 20 },
 
-  summaryScroll: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9', maxHeight: 80 },
-  summaryScrollContent: { padding: 16, gap: 12 },
-  summaryCard: { backgroundColor: '#F8FAFC', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
-  summaryCount: { fontSize: 18, fontWeight: 'bold' },
-  summaryLabel: { fontSize: 11, color: '#64748B' },
+  summarySection: { flexDirection: 'row', padding: 16, gap: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  summaryCard: { flex: 1, backgroundColor: '#fff', paddingVertical: 12, paddingHorizontal: 8, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' },
+  summaryCount: { fontSize: 24, fontWeight: 'bold' },
+  summaryLabel: { fontSize: 12, color: '#64748B', marginTop: 4, fontWeight: '500' },
 
-  filterSection: { padding: 16 },
-  searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 12, height: 44, marginBottom: 12 },
-  searchInput: { flex: 1, marginLeft: 8, fontSize: 14, color: '#1E293B', height: '100%' },
+  searchSection: { padding: 16, paddingBottom: 0 },
+  searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 12, height: 44 },
+  searchInput: { flex: 1, marginLeft: 8, fontSize: 14, color: '#1E293B' },
+
+  tabSection: { padding: 16 },
   chipScroll: { gap: 8 },
-  filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0' },
+  filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' },
   filterChipActive: { backgroundColor: NAVY, borderColor: NAVY },
-  filterChipText: { fontSize: 13, color: '#64748B', fontWeight: '500' },
+  filterChipText: { fontSize: 13, color: '#475569', fontWeight: '500' },
   filterChipTextActive: { color: '#fff' },
 
-  listContent: { padding: 16, paddingBottom: 40 },
-  reqCard: { backgroundColor: '#fff', borderRadius: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0', overflow: 'hidden' },
-  privateBadgeRow: { backgroundColor: '#F3E8FF', paddingHorizontal: 16, paddingVertical: 8, flexDirection: 'row', alignItems: 'center' },
-  privateBadgeText: { fontSize: 11, color: '#7E22CE', fontWeight: 'bold', marginLeft: 6 },
+  listContent: { padding: 16, paddingTop: 0, paddingBottom: 120 },
   
-  reqHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 16 },
-  reqHeaderLeft: { flex: 1 },
-  reqRole: { fontSize: 18, fontWeight: 'bold', color: '#1E293B', marginBottom: 4 },
-  reqBusinessRow: { flexDirection: 'row', alignItems: 'center' },
-  reqBusiness: { fontSize: 13, color: '#475569', marginLeft: 6, fontWeight: '500' },
-  reqId: { fontSize: 12, color: '#94A3B8', marginTop: 4 },
-  
+  recordCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
+  recordHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  recordAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' },
+  recordAvatarText: { fontSize: 16, fontWeight: 'bold', color: '#3B82F6' },
+  recordHeaderInfo: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginLeft: 12 },
+  recordName: { fontSize: 16, fontWeight: 'bold', color: '#1E293B' },
+  recordSub: { fontSize: 12, color: '#64748B', marginTop: 2 },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   statusBadgeText: { fontSize: 11, fontWeight: 'bold' },
 
-  reqDetailsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingHorizontal: 16, marginBottom: 16 },
-  reqDetailItem: { flexDirection: 'row', alignItems: 'center', width: '45%' },
-  reqDetailText: { fontSize: 13, color: '#475569', marginLeft: 8 },
+  recordBody: { marginBottom: 16, gap: 8 },
+  infoRow: { flexDirection: 'row', alignItems: 'center' },
+  infoText: { fontSize: 13, color: '#475569', marginLeft: 8 },
 
-  reqFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#F1F5F9', padding: 16 },
-  urgentBadge: { backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  urgentBadgeText: { fontSize: 10, color: '#DC2626', fontWeight: 'bold' },
-  reqActionRow: { flexDirection: 'row', gap: 8, flex: 1, justifyContent: 'flex-end' },
-  secondaryBtnOutline: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: '#E2E8F0' },
-  secondaryBtnText: { color: '#475569', fontSize: 13, fontWeight: '600' },
-  primaryBtn: { backgroundColor: NAVY, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, justifyContent: 'center' },
-  primaryBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  recordFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 16 },
+  viewDetailsBtn: { flexDirection: 'row', alignItems: 'center' },
+  viewDetailsText: { fontSize: 14, fontWeight: '600', color: NAVY, marginRight: 4 },
 
-  bottomSheetOverlay: { flex: 1, justifyContent: 'flex-end' },
-  bottomSheetBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
-  bottomSheetContent: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 40 },
-  sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  sheetTitle: { fontSize: 18, fontWeight: 'bold', color: '#1E293B' },
-  sheetSub: { fontSize: 14, color: '#64748B' },
-  reasonBtn: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  reasonText: { fontSize: 15, color: '#334155' },
+  emptyBox: { alignItems: 'center', justifyContent: 'center', padding: 32, backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', borderStyle: 'dashed' },
+  emptyTitle: { fontSize: 16, fontWeight: 'bold', color: '#1E293B', marginBottom: 8, textAlign: 'center' },
+  emptyDesc: { fontSize: 13, color: '#64748B', textAlign: 'center', lineHeight: 20 },
 
-  modalFullContainer: { flex: 1, backgroundColor: '#F8FAFC' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 16 },
+  popupCard: { backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden' },
+  popupHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  popupTitle: { fontSize: 16, fontWeight: 'bold', color: '#1E293B' },
   modalCloseBtn: { padding: 4 },
-  modalTitle: { fontSize: 16, fontWeight: 'bold', color: '#1E293B' },
-  
-  modalContent: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  privateBadgeRowLarge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3E8FF', padding: 12, borderRadius: 8, marginBottom: 12 },
-  privateBadgeTextLarge: { fontSize: 13, color: '#7E22CE', fontWeight: 'bold', marginLeft: 8 },
-  divider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 20 },
-  sectionSubtitleBold: { fontSize: 16, fontWeight: 'bold', color: '#1E293B', marginBottom: 12 },
-  modalDesc: { fontSize: 14, color: '#475569', lineHeight: 22, marginBottom: 16 },
-  notesBox: { backgroundColor: '#FFFBEB', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#FEF3C7', marginBottom: 16 },
-  notesLabel: { fontSize: 13, fontWeight: 'bold', color: '#D97706', marginBottom: 4 },
-  notesText: { fontSize: 14, color: '#92400E', fontStyle: 'italic' },
-  
-  tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tagBadge: { backgroundColor: '#F1F5F9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
-  tagText: { fontSize: 12, color: '#475569', fontWeight: '500' },
-  
-  specGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, paddingBottom: 40 },
-  specItem: { width: '45%' },
-  specLabel: { fontSize: 12, color: '#94A3B8', marginBottom: 4 },
-  specVal: { fontSize: 14, color: '#1E293B', fontWeight: '500' },
 
-  modalFooter: { flexDirection: 'row', padding: 16, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#E2E8F0', gap: 12 },
-  dangerBtnOutline: { flex: 1, borderWidth: 1, borderColor: '#FECACA', paddingVertical: 14, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  dangerBtnText: { color: '#DC2626', fontSize: 14, fontWeight: 'bold' },
-  primaryBtnLarge: { flex: 1, backgroundColor: NAVY, paddingVertical: 14, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  primaryBtnLargeText: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
-  statusFooterText: { flex: 1, textAlign: 'center', fontSize: 16, fontWeight: 'bold', color: '#64748B', paddingVertical: 14 },
+  detailGrid: { backgroundColor: '#F8FAFC', borderRadius: 12, padding: 16, gap: 16, marginBottom: 20 },
+  detailItem: { flexDirection: 'row', alignItems: 'center' },
+  detailTextWrapper: { marginLeft: 12 },
+  detailLabel: { fontSize: 12, color: '#64748B', marginBottom: 2 },
+  detailValue: { fontSize: 14, color: '#1E293B', fontWeight: '500' },
 
-  candidateListWrapper: { flex: 1 },
-  candMatchText: { padding: 16, paddingBottom: 0, fontSize: 13, color: '#64748B' },
-  candCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', padding: 12, borderRadius: 12, marginBottom: 8, borderWidth: 1, borderColor: '#E2E8F0' },
+  sectionHeading: { fontSize: 14, fontWeight: 'bold', color: '#1E293B', marginBottom: 8 },
+  descText: { fontSize: 13, color: '#475569', lineHeight: 20 },
+  
+  skillsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  skillPill: { backgroundColor: '#F1F5F9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
+  skillText: { fontSize: 12, color: '#475569', fontWeight: '500' },
+
+  statusSection: { marginBottom: 24, paddingHorizontal: 4 },
+  statusSectionTitle: { fontSize: 14, fontWeight: 'bold', color: '#1E293B', marginBottom: 8 },
+
+  modalActions: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  secondaryBtn: { flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: '#fff', alignItems: 'center' },
+  secondaryBtnText: { fontSize: 13, fontWeight: '600', color: '#475569' },
+  primaryBtn: { flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center' },
+  primaryBtnText: { fontSize: 13, fontWeight: 'bold', color: '#fff' },
+
+  sheetSub: { fontSize: 13, color: '#64748B', marginBottom: 12 },
+  reasonBtn: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  reasonText: { fontSize: 14, color: '#1E293B' },
+
+  candMatchTextContainer: { padding: 16, paddingBottom: 0 },
+  candMatchText: { fontSize: 14, color: '#64748B', fontWeight: '500' },
+  candCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', padding: 16, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0' },
   candCardSelected: { borderColor: NAVY, backgroundColor: '#F8FAFC' },
-  checkbox: { width: 20, height: 20, borderRadius: 4, borderWidth: 1, borderColor: '#CBD5E1', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  checkbox: { width: 20, height: 20, borderRadius: 4, borderWidth: 1, borderColor: '#CBD5E1', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
   checkboxSelected: { backgroundColor: NAVY, borderColor: NAVY },
-  candAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   candInfo: { flex: 1 },
-  candName: { fontSize: 15, fontWeight: 'bold', color: '#1E293B' },
-  candDesc: { fontSize: 12, color: '#64748B', marginTop: 2 },
-  candLoc: { fontSize: 11, color: '#94A3B8', marginTop: 2 },
-
+  candName: { fontSize: 16, fontWeight: 'bold', color: '#1E293B' },
+  candDesc: { fontSize: 13, color: '#64748B', marginTop: 2 },
   sendFormWrapper: { backgroundColor: '#fff', padding: 16, borderTopWidth: 1, borderTopColor: '#E2E8F0' },
-  inputLabel: { fontSize: 13, fontWeight: 'bold', color: '#475569', marginBottom: 8 },
-  inputArea: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, padding: 12, height: 80, textAlignVertical: 'top', marginBottom: 16, color: '#1E293B' },
+  primaryBtnLarge: { flexDirection: 'row', backgroundColor: NAVY, paddingVertical: 14, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  primaryBtnLargeText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
 
-  toastContainer: { position: 'absolute', bottom: 40, alignSelf: 'center', backgroundColor: '#1E293B', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 5 },
+  toastContainer: { position: 'absolute', bottom: 100, alignSelf: 'center', backgroundColor: '#1E293B', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24, elevation: 5 },
   toastText: { color: '#fff', fontSize: 14, fontWeight: '600' }
 });

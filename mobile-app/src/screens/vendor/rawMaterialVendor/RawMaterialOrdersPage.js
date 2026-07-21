@@ -73,14 +73,27 @@ export default function RawMaterialOrdersPage() {
   const getStatusColor = (status) => {
     switch (status) {
       case 'New': return '#3B82F6';
-      case 'Accepted': return '#6366F1';
-      case 'Processing': return '#8B5CF6';
-      case 'Packed': return '#F59E0B';
-      case 'Ready to Dispatch': return '#F97316';
-      case 'Out for Delivery': return '#14B8A6';
+      case 'Accepted': return '#10B981';
+      case 'Processing': return '#F59E0B';
+      case 'Packed': return '#8B5CF6';
+      case 'Ready to Dispatch': return '#D4AF37';
+      case 'Out for Delivery': return '#3B82F6';
       case 'Delivered': return '#10B981';
       case 'Cancelled': return '#EF4444';
       default: return '#64748B';
+    }
+  };
+
+  const getNextActionText = (status) => {
+    switch(status) {
+      case 'New': return 'Accept Order';
+      case 'Accepted': return 'Start Processing';
+      case 'Processing': return 'Mark Packed';
+      case 'Packed': return 'Ready for Dispatch';
+      case 'Ready to Dispatch': return 'Create / Assign Delivery';
+      case 'Out for Delivery': return 'View Delivery';
+      case 'Delivered': return 'View Order Details';
+      default: return 'Update Status';
     }
   };
 
@@ -110,9 +123,15 @@ export default function RawMaterialOrdersPage() {
 
   const renderOrderCard = ({ item }) => {
     const isNew = item.status === 'New';
+    const actionText = getNextActionText(item.status);
+    const isViewOnly = item.status === 'Out for Delivery' || item.status === 'Delivered' || item.status === 'Cancelled';
 
     return (
-      <View style={styles.orderCard}>
+      <TouchableOpacity 
+        style={styles.orderCard} 
+        activeOpacity={0.7}
+        onPress={() => handleAction(item, 'details')}
+      >
         <View style={styles.cardHeader}>
           <Text style={styles.orderId}>{item.id}</Text>
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '15' }]}>
@@ -130,7 +149,7 @@ export default function RawMaterialOrdersPage() {
 
           <View style={styles.productRow}>
             <View style={styles.productThumb}>
-              <Package size={20} color="#94A3B8" />
+              <Package size={20} color={GOLD} />
             </View>
             <View style={styles.productInfo}>
               <Text style={styles.productName} numberOfLines={1}>{item.product}</Text>
@@ -143,36 +162,48 @@ export default function RawMaterialOrdersPage() {
 
           <View style={styles.metaRow}>
             <Text style={styles.metaText}>Delivery: {item.deliveryDate}</Text>
-            <Text style={[styles.metaText, item.paymentStatus === 'Paid' ? { color: '#10B981' } : { color: '#F59E0B' }]}>
-              Payment: {item.paymentStatus}
-            </Text>
+            <Text style={styles.metaText}>Payment: {item.paymentStatus}</Text>
           </View>
         </View>
 
         <View style={styles.cardFooter}>
           {isNew ? (
             <View style={[styles.actionRow, isSmallScreen && { flexDirection: 'column' }]}>
-              <TouchableOpacity style={[styles.btnOutline, isSmallScreen && { marginBottom: 8, width: '100%' }]} onPress={() => handleAction(item, 'reject')}>
-                <Text style={styles.btnOutlineText}>Reject</Text>
+              <TouchableOpacity 
+                style={[styles.btnReject, isSmallScreen && { marginBottom: 8, width: '100%' }]} 
+                onPress={() => handleAction(item, 'reject')}
+              >
+                <Text style={styles.btnRejectText}>Reject</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.btnPrimary, isSmallScreen && { width: '100%' }]} onPress={() => handleAction(item, 'update_status')}>
-                <Text style={styles.btnPrimaryText}>Accept Order</Text>
+              <TouchableOpacity 
+                style={[styles.btnPrimary, isSmallScreen && { width: '100%' }]} 
+                onPress={() => handleAction(item, 'update_status')}
+              >
+                <Text style={styles.btnPrimaryText}>{actionText}</Text>
               </TouchableOpacity>
             </View>
           ) : (
-            <View style={[styles.actionRow, isSmallScreen && { flexDirection: 'column' }]}>
-              <TouchableOpacity style={[styles.btnOutline, isSmallScreen && { marginBottom: 8, width: '100%' }]} onPress={() => handleAction(item, 'details')}>
-                <Text style={styles.btnOutlineText}>Details</Text>
-              </TouchableOpacity>
-              {item.status !== 'Delivered' && item.status !== 'Cancelled' && (
-                <TouchableOpacity style={[styles.btnPrimary, isSmallScreen && { width: '100%' }]} onPress={() => handleAction(item, 'update_status')}>
-                  <Text style={styles.btnPrimaryText}>Update Status</Text>
+            <View style={styles.actionRow}>
+              {!isViewOnly && (
+                <TouchableOpacity 
+                  style={[styles.btnPrimary, { width: '100%' }]} 
+                  onPress={() => handleAction(item, 'update_status')}
+                >
+                  <Text style={styles.btnPrimaryText}>{actionText}</Text>
+                </TouchableOpacity>
+              )}
+              {isViewOnly && (
+                <TouchableOpacity 
+                  style={[styles.btnOutline, { width: '100%' }]} 
+                  onPress={() => handleAction(item, 'details')}
+                >
+                  <Text style={styles.btnOutlineText}>{actionText}</Text>
                 </TouchableOpacity>
               )}
             </View>
           )}
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -185,10 +216,10 @@ export default function RawMaterialOrdersPage() {
           <Text style={styles.headerTitle}>Orders</Text>
           <View style={styles.headerActions}>
             <TouchableOpacity style={styles.iconBtn}>
-              <Search size={20} color={NAVY} />
+              <Search size={22} color={NAVY} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconBtn}>
-              <Filter size={20} color={NAVY} />
+              <Filter size={22} color={NAVY} />
             </TouchableOpacity>
           </View>
         </View>
@@ -290,13 +321,17 @@ export default function RawMaterialOrdersPage() {
                     </TouchableOpacity>
                   </View>
 
-                  <TouchableOpacity style={styles.btnPrimaryLarge} onPress={() => {
+                  <TouchableOpacity style={styles.btnPrimaryLargeModal} onPress={() => {
                     setDetailsModalVisible(false);
-                    setTimeout(() => {
-                      handleAction(selectedOrder, 'update_status');
-                    }, 300);
+                    if (selectedOrder.status !== 'Delivered' && selectedOrder.status !== 'Cancelled') {
+                      setTimeout(() => {
+                        handleAction(selectedOrder, 'update_status');
+                      }, 300);
+                    }
                   }}>
-                    <Text style={styles.btnPrimaryText}>Update Status</Text>
+                    <Text style={styles.btnPrimaryText}>
+                      {selectedOrder.status !== 'Delivered' && selectedOrder.status !== 'Cancelled' ? 'Update Status' : 'Close'}
+                    </Text>
                   </TouchableOpacity>
 
                   <View style={{ height: 40 }} />
@@ -330,7 +365,7 @@ export default function RawMaterialOrdersPage() {
                       value={reason}
                       onChangeText={setReason}
                     />
-                    <TouchableOpacity style={[styles.btnPrimaryLarge, { backgroundColor: '#EF4444' }]} onPress={() => setActionSheetVisible(false)}>
+                    <TouchableOpacity style={[styles.btnPrimaryLargeModal, { backgroundColor: '#EF4444' }]} onPress={() => setActionSheetVisible(false)}>
                       <Text style={styles.btnPrimaryText}>Confirm Rejection</Text>
                     </TouchableOpacity>
                   </>
@@ -341,14 +376,14 @@ export default function RawMaterialOrdersPage() {
                       {['Accepted', 'Processing', 'Packed', 'Ready to Dispatch', 'Out for Delivery', 'Delivered'].map(s => (
                         <TouchableOpacity
                           key={s}
-                          style={[styles.statusOptionBtn, newStatus === s && { backgroundColor: NAVY }]}
+                          style={[styles.statusOptionBtn, newStatus === s && { backgroundColor: GOLD }]}
                           onPress={() => setNewStatus(s)}
                         >
                           <Text style={[styles.statusOptionText, newStatus === s && { color: '#FFFFFF' }]}>{s}</Text>
                         </TouchableOpacity>
                       ))}
                     </View>
-                    <TouchableOpacity style={styles.btnPrimaryLarge} onPress={handleUpdateStatus}>
+                    <TouchableOpacity style={styles.btnPrimaryLargeModal} onPress={handleUpdateStatus}>
                       <Text style={styles.btnPrimaryText}>Update</Text>
                     </TouchableOpacity>
                   </>
@@ -366,20 +401,22 @@ export default function RawMaterialOrdersPage() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFFFF',
   },
   container: {
     flex: 1,
+    backgroundColor: '#F8FAFC',
   },
-  header: {
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16, 
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
+    zIndex: 10,
   },
   headerTitle: {
     fontSize: 20,
@@ -410,12 +447,12 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   activeChip: {
-    backgroundColor: NAVY,
+    backgroundColor: GOLD,
   },
   chipText: {
     fontSize: 13,
-    color: '#64748B',
-    fontWeight: '500',
+    color: NAVY,
+    fontWeight: '600',
   },
   activeChipText: {
     color: '#FFFFFF',
@@ -436,13 +473,15 @@ const styles = StyleSheet.create({
   },
   orderCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
     elevation: 2,
   },
   cardHeader: {
@@ -450,19 +489,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-    paddingBottom: 12,
   },
   orderId: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: 'bold',
     color: NAVY,
   },
   statusBadge: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 8,
+    borderRadius: 12,
   },
   statusText: {
     fontSize: 11,
@@ -477,9 +513,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   clientName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1E293B',
+    fontSize: 15,
+    fontWeight: '700',
+    color: NAVY,
     marginRight: 8,
   },
   busTypeBadge: {
@@ -491,11 +527,12 @@ const styles = StyleSheet.create({
   busTypeText: {
     fontSize: 10,
     color: '#64748B',
+    fontWeight: '600',
   },
   productRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FFFBEB',
     padding: 12,
     borderRadius: 8,
     marginBottom: 12,
@@ -504,7 +541,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 8,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#FEF3C7',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -514,7 +551,7 @@ const styles = StyleSheet.create({
   },
   productName: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
     color: NAVY,
   },
   productQty: {
@@ -537,26 +574,28 @@ const styles = StyleSheet.create({
   metaText: {
     fontSize: 12,
     color: '#64748B',
+    fontWeight: '500',
   },
   cardFooter: {
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-    paddingTop: 12,
+    borderTopColor: '#F8FAFC',
+    paddingTop: 16,
   },
   actionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: 12,
   },
-  btnOutline: {
+  btnReject: {
     flex: 1,
     paddingVertical: 12,
     borderWidth: 1,
     borderColor: '#EF4444',
+    backgroundColor: '#FFFFFF',
     borderRadius: 8,
     alignItems: 'center',
-    marginRight: 8,
   },
-  btnOutlineText: {
+  btnRejectText: {
     color: '#EF4444',
     fontWeight: '600',
     fontSize: 14,
@@ -564,7 +603,7 @@ const styles = StyleSheet.create({
   btnPrimary: {
     flex: 1,
     paddingVertical: 12,
-    backgroundColor: NAVY,
+    backgroundColor: GOLD,
     borderRadius: 8,
     alignItems: 'center',
   },
@@ -573,8 +612,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
-  btnFull: {
-    width: '100%',
+  btnOutline: {
     paddingVertical: 12,
     backgroundColor: '#F8FAFC',
     borderWidth: 1,
@@ -582,7 +620,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
-  btnFullText: {
+  btnOutlineText: {
     color: NAVY,
     fontWeight: '600',
     fontSize: 14,
@@ -711,10 +749,10 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: NAVY,
   },
-  btnPrimaryLarge: {
+  btnPrimaryLargeModal: {
     width: '100%',
     paddingVertical: 16,
-    backgroundColor: NAVY,
+    backgroundColor: GOLD,
     borderRadius: 12,
     alignItems: 'center',
   },

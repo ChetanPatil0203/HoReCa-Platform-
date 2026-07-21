@@ -202,7 +202,7 @@ export default function ManpowerRevenuePage() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: { padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16,  padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   headerTitleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: NAVY, marginLeft: 8 },
   headerSub: { fontSize: 13, color: '#64748B' },

@@ -249,7 +249,7 @@ const fd = StyleSheet.create({
     width: 320, backgroundColor: '#fff', flex: 1,
     ...Platform.select({ web: { boxShadow: '-4px 0 24px rgba(0,0,0,0.12)' } }),
   },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: colors.border },
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16,  flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: colors.border },
   title: { fontSize: 17, fontWeight: '800', color: '#0F172A' },
   closeBtn: { padding: 4 },
   section: { padding: 20, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },

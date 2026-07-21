@@ -92,7 +92,7 @@ export default function ProfileSettingsPage({ user }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F3F4F6' },
-  header: { marginBottom: 16 },
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16,  marginBottom: 16 },
   headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
   titleText: { fontSize: 20, fontWeight: '800', color: '#1E293B' },
   subText: { fontSize: 13, color: '#64748B' },

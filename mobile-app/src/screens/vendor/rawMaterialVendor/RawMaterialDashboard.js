@@ -1,6 +1,6 @@
-import React, { useState, useContext } from 'react';
-import { View, Text, StyleSheet, Platform, useWindowDimensions, TouchableOpacity, Image } from 'react-native';
-import { Menu, Bell, Search, User, LayoutDashboard, Activity, Truck, Briefcase, DollarSign, BarChart2, Package, HelpCircle, Settings } from 'lucide-react-native';
+import React, { useState, useContext, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, Platform, useWindowDimensions, TouchableOpacity, Image, Animated, Easing, TouchableWithoutFeedback } from 'react-native';
+import { Menu, Bell, Search, User, LayoutDashboard, Activity, Truck, Briefcase, DollarSign, BarChart2, Package, HelpCircle, Settings, Home, ClipboardList, Plus, PackagePlus, PackageSearch } from 'lucide-react-native';
 import RoleBasedMobileDrawer from '../../../components/navigation/RoleBasedMobileDrawer';
 import { AuthContext } from '../../../context/AuthContext';
 import { colors } from '../../../theme/colors';
@@ -8,17 +8,18 @@ import { colors } from '../../../theme/colors';
 import RawMaterialDashboardHome from './RawMaterialDashboardHome';
 import RawMaterialOrdersPage from './RawMaterialOrdersPage';
 import RawMaterialDeliveriesPage from './RawMaterialDeliveriesPage';
-import RawMaterialClientsPage from './RawMaterialClientsPage';
 import RawMaterialRevenuePage from './RawMaterialRevenuePage';
 import RawMaterialInventoryPage from './RawMaterialInventoryPage';
-import RawMaterialAnalyticsPage from './RawMaterialAnalyticsPage';
 
 // Supporting Pages
-import RawMaterialReviewsPage from './RawMaterialReviewsPage';
 import RawMaterialNotificationsPage from './RawMaterialNotificationsPage';
-import RawMaterialDocumentsPage from './RawMaterialDocumentsPage';
 import RawMaterialSettingsPage from './RawMaterialSettingsPage';
 import RawMaterialSupportPage from './RawMaterialSupportPage';
+
+const PRIMARY = '#0B1736';
+const ACCENT = '#6C4CF6';
+const BG = '#F8FAFC';
+const WHITE = '#FFFFFF';
 
 export default function RawMaterialDashboard() {
   const { width } = useWindowDimensions();
@@ -27,45 +28,60 @@ export default function RawMaterialDashboard() {
 
   const [activePage, setActivePage] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [filterState, setFilterState] = useState(null);
+  const [initialAction, setInitialAction] = useState(null);
+
+  // Radial Menu State
+  const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
+  const animation = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(animation, {
+      toValue: isPlusMenuOpen ? 1 : 0,
+      duration: 250,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: true,
+    }).start();
+  }, [isPlusMenuOpen]);
+
+  const navigateTo = (page, filter = null, action = null) => {
+    setFilterState(filter);
+    setInitialAction(action);
+    setActivePage(page);
+    setIsPlusMenuOpen(false);
+  };
 
   const renderActivePage = () => {
     switch (activePage) {
       case "dashboard":
-        return <RawMaterialDashboardHome />;
+        return <RawMaterialDashboardHome onNavigate={navigateTo} />;
       case "requests":
-        return <RawMaterialOrdersPage />;
+        return <RawMaterialOrdersPage initialFilter={filterState} />;
       case "deliveries":
-        return <RawMaterialDeliveriesPage />;
-      case "clients":
-        return <RawMaterialClientsPage />;
+        return <RawMaterialDeliveriesPage initialFilter={filterState} />;
       case "revenue":
         return <RawMaterialRevenuePage />;
-      case "analytics":
-        return <RawMaterialAnalyticsPage />;
       case "inventory":
-        return <RawMaterialInventoryPage />;
-      case "reviews":
-        return <RawMaterialReviewsPage />;
+        return <RawMaterialInventoryPage initialFilter={filterState} initialAction={initialAction} />;
       case "notifications":
         return <RawMaterialNotificationsPage />;
-      case "documents":
-        return <RawMaterialDocumentsPage />;
       case "settings":
         return <RawMaterialSettingsPage />;
       case "support":
         return <RawMaterialSupportPage />;
+      case "profile":
+        return <View style={styles.placeholder}><Text style={styles.placeholderText}>Vendor Profile Page</Text></View>;
       default: return <View style={styles.placeholder}><Text style={styles.placeholderText}>{activePage} Under Construction</Text></View>;
     }
   };
 
   const navItems = [
     { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { key: "requests", label: "Orders", icon: Activity, badge: 3 },
-    { key: "inventory", label: "Inventory", icon: Package, exclusive: true },
+    { key: "requests", label: "Orders", icon: Activity },
+    { key: "inventory", label: "Inventory", icon: Package },
     { key: "deliveries", label: "Deliveries", icon: Truck },
-    { key: "clients", label: "Clients", icon: Briefcase },
     { key: "revenue", label: "Revenue", icon: DollarSign },
-    { key: "analytics", label: "Analytics", icon: BarChart2 },
+    { key: "notifications", label: "Notifications", icon: Bell },
   ];
 
   const bottomNavItems = [
@@ -79,6 +95,44 @@ export default function RawMaterialDashboard() {
     role: "Raw Material Supplier",
     badge: "VENDOR"
   };
+
+  const togglePlusMenu = () => setIsPlusMenuOpen(!isPlusMenuOpen);
+
+  // Animation styles for radial menu
+  const rotation = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '45deg']
+  });
+
+  const bgOpacity = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1]
+  });
+
+  const action1TranslateY = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [20, -55]
+  });
+
+  const action1TranslateX = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -55]
+  });
+
+  const action2TranslateY = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [20, -55]
+  });
+
+  const action2TranslateX = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 55]
+  });
+
+  const actionScale = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1]
+  });
 
   return (
     <View style={styles.container}>
@@ -96,43 +150,25 @@ export default function RawMaterialDashboard() {
       />
 
       <View style={styles.mainContent}>
-        {/* Top Navbar */}
-        {isMobile ? (
+        {/* Mobile Top Header */}
+        {isMobile && (
           <View style={styles.mobileBar}>
             <TouchableOpacity style={styles.mobileMenuBtn} onPress={() => setMobileMenuOpen(true)}>
-              <Menu size={20} color="#fff" />
+              <Menu size={24} color="#fff" />
             </TouchableOpacity>
 
-            <View style={styles.mobileLogoContainer}>
-              <View style={styles.mobileLogoIconBox}>
-                <Image source={require('../../../assets/HoReCa_Logo.png')} style={{ width: 18, height: 18, resizeMode: 'contain' }} />
-              </View>
-              <Text style={styles.mobileLogoText}>
-                HRC<Text style={{ color: '#D4AF37' }}>HUB</Text>
-              </Text>
+            <View style={styles.mobileHeaderCenter}>
+              <Text style={{ color: '#D4AF37', fontSize: 18, fontWeight: 'bold', letterSpacing: 1 }}>HRC HUB</Text>
             </View>
 
             <View style={styles.mobileRight}>
-              <TouchableOpacity style={styles.mobileIconBtn}>
-                <Bell size={18} color="#fff" />
+              <TouchableOpacity style={styles.mobileIconBtn} onPress={() => navigateTo('notifications')}>
+                <Bell size={20} color="#fff" />
                 <View style={styles.mobileNotificationDot} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.mobileAvatarBtn}>
-                <User size={16} color="#081A3A" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
-          <View style={styles.topNav}>
-            <View style={styles.searchBox}>
-              <Search size={16} color={colors.muted} />
-              <Text style={styles.searchText}>Search orders, clients...</Text>
-            </View>
-
-            <View style={styles.navRight}>
-              <TouchableOpacity style={styles.iconBtn}>
-                <Bell size={20} color={colors.sub} />
-                <View style={styles.notificationDot} />
+              <TouchableOpacity style={styles.mobileAvatarBtn} onPress={() => navigateTo('profile')}>
+                <Text style={styles.avatarText}>MF</Text>
+                <View style={styles.onlineIndicator} />
               </TouchableOpacity>
             </View>
           </View>
@@ -142,156 +178,112 @@ export default function RawMaterialDashboard() {
         <View style={styles.pageArea}>
           {renderActivePage()}
         </View>
+
+        {/* Custom Mobile Bottom Navigation */}
+        {isMobile && (
+          <View style={styles.bottomNavWrapper}>
+            {/* Radial Menu Overlay & Actions */}
+            {isPlusMenuOpen && (
+              <TouchableWithoutFeedback onPress={() => setIsPlusMenuOpen(false)}>
+                <Animated.View style={[styles.radialOverlay, { opacity: bgOpacity }]} />
+              </TouchableWithoutFeedback>
+            )}
+            
+            <Animated.View style={[styles.radialAction, { opacity: actionScale, transform: [{ translateX: action1TranslateX }, { translateY: action1TranslateY }, { scale: actionScale }] }]}>
+              <TouchableOpacity style={styles.radialActionBtn} onPress={() => navigateTo('inventory', null, null)}>
+                <PackageSearch size={22} color={PRIMARY} />
+              </TouchableOpacity>
+              <View style={styles.radialLabelBox}>
+                <Text style={styles.radialLabelTitle}>Manage Inventory</Text>
+              </View>
+            </Animated.View>
+
+            <Animated.View style={[styles.radialAction, { opacity: actionScale, transform: [{ translateX: action2TranslateX }, { translateY: action2TranslateY }, { scale: actionScale }] }]}>
+              <TouchableOpacity style={styles.radialActionBtn} onPress={() => navigateTo('inventory', null, 'add-product')}>
+                <PackagePlus size={22} color={PRIMARY} />
+              </TouchableOpacity>
+              <View style={styles.radialLabelBox}>
+                <Text style={styles.radialLabelTitle}>Add Product</Text>
+              </View>
+            </Animated.View>
+
+            {/* Nav Bar */}
+            <View style={styles.bottomNav}>
+              <TouchableOpacity style={styles.bottomNavItem} onPress={() => navigateTo('dashboard')}>
+                <Home size={24} color={activePage === 'dashboard' ? ACCENT : '#94A3B8'} />
+                <Text style={[styles.bottomNavText, activePage === 'dashboard' && styles.bottomNavTextActive]}>Home</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.bottomNavItem} onPress={() => navigateTo('requests')}>
+                <ClipboardList size={24} color={activePage === 'requests' ? ACCENT : '#94A3B8'} />
+                <Text style={[styles.bottomNavText, activePage === 'requests' && styles.bottomNavTextActive]}>Orders</Text>
+              </TouchableOpacity>
+              
+              {/* Center Plus Button Spacer */}
+              <View style={styles.centerButtonSpacer} />
+              
+              <TouchableOpacity style={styles.bottomNavItem} onPress={() => navigateTo('deliveries')}>
+                <Truck size={24} color={activePage === 'deliveries' ? ACCENT : '#94A3B8'} />
+                <Text style={[styles.bottomNavText, activePage === 'deliveries' && styles.bottomNavTextActive]}>Deliveries</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.bottomNavItem} onPress={() => navigateTo('profile')}>
+                <User size={24} color={activePage === 'profile' ? ACCENT : '#94A3B8'} />
+                <Text style={[styles.bottomNavText, activePage === 'profile' && styles.bottomNavTextActive]}>Profile</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Center Plus Button */}
+            <TouchableOpacity style={styles.centerPlusButton} onPress={togglePlusMenu} activeOpacity={0.8}>
+              <Animated.View style={{ transform: [{ rotate: rotation }] }}>
+                <Plus size={32} color={WHITE} />
+              </Animated.View>
+            </TouchableOpacity>
+
+          </View>
+        )}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    flexDirection: 'row',
-    backgroundColor: '#F3F4F6',
-  },
-  mainContent: {
-    flex: 1,
-    flexDirection: 'column',
-  },
-  topNav: {
-    height: 70,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-  },
-  menuBtn: {
-    padding: 8,
-    marginLeft: -8,
-  },
-  searchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 40,
-    width: 300,
-  },
-  searchText: {
-    color: colors.muted,
-    fontSize: 13,
-    marginLeft: 8,
-  },
-  navRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  notificationDot: {
-    position: 'absolute',
-    top: 10,
-    right: 12,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#EF4444',
-    borderWidth: 2,
-    borderColor: '#F8FAFC',
-  },
-  avatarBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: 'rgba(96, 165, 250, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(96, 165, 250, 0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pageArea: {
-    flex: 1,
-  },
-  placeholder: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  placeholderText: {
-    color: colors.muted,
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
+  container: { flex: 1, flexDirection: 'row', backgroundColor: BG },
+  mainContent: { flex: 1, flexDirection: 'column' },
+  pageArea: { flex: 1 },
+  placeholder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  placeholderText: { color: '#94A3B8', fontSize: 18, fontWeight: 'bold' },
+  
   mobileBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    height: 60,
-    backgroundColor: '#081A3A',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
+    height: 70,
+    backgroundColor: PRIMARY,
+    paddingTop: Platform.OS === 'ios' ? 20 : 0,
   },
-  mobileMenuBtn: {
-    padding: 6,
-  },
-  mobileLogoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  mobileLogoIconBox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mobileLogoText: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: '#fff',
-  },
-  mobileRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  mobileIconBtn: {
-    padding: 6,
-    position: 'relative',
-  },
-  mobileNotificationDot: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#EF4444',
-  },
-  mobileAvatarBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  mobileMenuBtn: { padding: 6, zIndex: 10 },
+  mobileHeaderCenter: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  greetingText: { color: '#B8C6E3', fontSize: 10, letterSpacing: 0.5 },
+  vendorNameText: { color: WHITE, fontSize: 16, fontWeight: 'bold', marginVertical: 2 },
+  vendorRoleText: { color: '#D4AF37', fontSize: 10, fontWeight: '600', textTransform: 'uppercase' },
+  mobileRight: { flexDirection: 'row', alignItems: 'center', gap: 12, zIndex: 10 },
+  mobileIconBtn: { padding: 4, position: 'relative' },
+  mobileNotificationDot: { position: 'absolute', top: 4, right: 6, width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444', borderWidth: 1, borderColor: PRIMARY },
+  mobileAvatarBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: WHITE, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  avatarText: { color: PRIMARY, fontSize: 12, fontWeight: 'bold' },
+  onlineIndicator: { position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: 5, backgroundColor: '#10B981', borderWidth: 2, borderColor: WHITE },
+
+  bottomNavWrapper: { position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 50 },
+  radialOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 1000, backgroundColor: 'rgba(11, 23, 54, 0.4)' },
+  radialAction: { position: 'absolute', bottom: 30, left: '50%', marginLeft: -55, alignItems: 'center', width: 110 },
+  radialActionBtn: { width: 54, height: 54, borderRadius: 27, backgroundColor: WHITE, alignItems: 'center', justifyContent: 'center', shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 5 },
+  radialLabelBox: { backgroundColor: WHITE, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, marginTop: 8, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
+  radialLabelTitle: { fontSize: 11, fontWeight: 'bold', color: PRIMARY, textAlign: 'center' },
+  
+  bottomNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: WHITE, height: 65, paddingHorizontal: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 10, paddingBottom: Platform.OS === 'ios' ? 15 : 0 },
+  bottomNavItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  bottomNavText: { fontSize: 10, color: '#94A3B8', marginTop: 4, fontWeight: '500' },
+  bottomNavTextActive: { color: ACCENT, fontWeight: '600' },
+  centerButtonSpacer: { width: 60 },
+  centerPlusButton: { position: 'absolute', bottom: Platform.OS === 'ios' ? 25 : 15, left: '50%', marginLeft: -28, width: 56, height: 56, borderRadius: 28, backgroundColor: ACCENT, alignItems: 'center', justifyContent: 'center', shadowColor: ACCENT, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 8 },
 });

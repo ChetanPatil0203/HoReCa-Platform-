@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Image } from 'react-native';
-import { LayoutDashboard, Package, Users, Wrench, Megaphone, BarChart2, Clock, User, Settings, LogOut, HelpCircle, ShoppingCart, Truck } from 'lucide-react-native';
+import { LayoutDashboard, Package, Users, Wrench, Megaphone, BarChart2, Clock, User, Settings, LogOut, HelpCircle, ShoppingCart, Truck, ShieldCheck } from 'lucide-react-native';
 import { typography } from '../../theme/typography';
 
 const NAV_PRIMARY = [
@@ -9,6 +9,7 @@ const NAV_PRIMARY = [
   { key: "manpower", label: "Manpower", icon: Users },
   { key: "service", label: "Service Providers", icon: Wrench },
   { key: "marketing", label: "Marketing", icon: Megaphone },
+  { key: "compliance", label: "Compliance", icon: ShieldCheck },
   { key: "order-tracking", label: "Order Tracking", icon: Truck },
   { key: "history", label: "History", icon: Clock },
   { key: "analytics", label: "Analytics", icon: BarChart2 },

@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  header: {
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16, 
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

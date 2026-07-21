@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   View, Text, StyleSheet, ScrollView, Platform, 
   TouchableOpacity, useWindowDimensions, SafeAreaView, FlatList 
-} from 'react-native';
+, Alert} from 'react-native';
 import { 
   Activity, Star, Briefcase, FileText, TrendingUp, 
   Clock, MapPin, AlertCircle, Calendar, CheckCircle, 
@@ -112,7 +112,7 @@ export default function ProviderDashboardHome() {
         </View>
       </View>
       <View style={[styles.feedFooter, isSmallScreen && { flexDirection: 'column' }]}>
-        <TouchableOpacity style={[styles.btnOutline, isSmallScreen && { marginBottom: 8, width: '100%' }]}>
+        <TouchableOpacity style={[styles.btnOutline, isSmallScreen && { marginBottom: 8, width: '100%' }]} onPress={() => Alert.alert('Coming Soon', 'This feature is under development.')}>
           <Text style={styles.btnOutlineText}>View Details</Text>
         </TouchableOpacity>
         <View style={[styles.actionBtns, isSmallScreen && { width: '100%' }]}>

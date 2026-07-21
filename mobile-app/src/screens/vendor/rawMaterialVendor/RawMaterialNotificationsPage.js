@@ -87,7 +87,7 @@ export default function RawMaterialNotificationsPage() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#F8FAFC' },
   container: { flex: 1 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16,  flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: NAVY },
   markReadBtn: { flexDirection: 'row', alignItems: 'center' },
   markReadText: { fontSize: 13, color: NAVY, fontWeight: '500', marginLeft: 4 },

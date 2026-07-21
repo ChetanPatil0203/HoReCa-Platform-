@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   useWindowDimensions, Modal, SafeAreaView, Platform
-} from 'react-native';
+, Alert} from 'react-native';
 import {
   Download, Filter, IndianRupee, TrendingUp, Clock, AlertCircle, 
   ArrowUpRight, ArrowDownRight, CheckCircle, FileText, XCircle, Package
@@ -94,7 +94,7 @@ export default function RawMaterialRevenuePage() {
           <View style={styles.sectionCard}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Revenue Trend</Text>
-              <TouchableOpacity><Text style={styles.linkText}>Details</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => Alert.alert('Coming Soon', 'This feature is under development.')}><Text style={styles.linkText}>Details</Text></TouchableOpacity>
             </View>
             
             <View style={styles.mockChartContainer}>
@@ -244,7 +244,7 @@ export default function RawMaterialRevenuePage() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#F8FAFC' },
   container: { flex: 1 },
-  header: {
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16, 
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#FFFFFF',
     borderBottomWidth: 1, borderBottomColor: '#F1F5F9',

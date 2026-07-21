@@ -28,7 +28,7 @@ const MOCK_INVENTORY = [
   }
 ];
 
-export default function RawMaterialInventoryPage() {
+export default function RawMaterialInventoryPage({ initialAction, initialFilter }) {
   const { width } = useWindowDimensions();
 
   const [products, setProducts] = useState(MOCK_INVENTORY);
@@ -42,6 +42,13 @@ export default function RawMaterialInventoryPage() {
   const [stockActionType, setStockActionType] = useState('Add'); // Add, Reduce, Set
   const [stockValue, setStockValue] = useState('');
   const [menuVisibleId, setMenuVisibleId] = useState(null);
+
+  React.useEffect(() => {
+    if (initialAction === 'add-product') {
+      setAddProductModalVisible(true);
+      setAddStep(1);
+    }
+  }, [initialAction]);
 
   const getStatusColor = (status) => {
     if (status === 'In Stock') return '#10B981';
@@ -102,21 +109,6 @@ export default function RawMaterialInventoryPage() {
     const newAvailable = newCurrent - selectedProduct.reservedStock;
     const newStatus = getStatusText(newAvailable);
 
-    // 7. Add a stock history record.
-    const historyRecord = {
-      productId: selectedProduct.id,
-      productName: selectedProduct.name,
-      updateType: stockActionType,
-      previousStock: selectedProduct.currentStock,
-      updatedStock: newCurrent,
-      quantityChanged: qty,
-      reason: 'Manual Update',
-      batchNumber: '-',
-      expiryDate: selectedProduct.expiry,
-      dateTime: new Date().toISOString()
-    };
-    console.log("Stock History Record Added:", historyRecord);
-
     // Update products state
     const updatedProducts = products.map(p => {
       if (p.id === selectedProduct.id) {
@@ -144,15 +136,12 @@ export default function RawMaterialInventoryPage() {
   const outOfStock = products.filter(p => p.availableStock === 0).length;
   const lowStock = products.filter(p => p.availableStock > 0 && p.availableStock <= 20).length;
   const inStock = products.filter(p => p.availableStock > 20).length;
-  const inventoryValue = products.reduce((acc, p) => acc + (p.currentStock * p.wholesalePrice), 0);
-  const formattedValue = `₹${(inventoryValue / 100000).toFixed(1)}L`;
 
   const summaryData = [
     { label: 'Total SKUs', value: totalSkus, icon: Package, color: '#3B82F6' },
     { label: 'In Stock', value: inStock, icon: CheckCircle, color: '#10B981' },
     { label: 'Low Stock', value: lowStock, icon: AlertTriangle, color: '#F59E0B' },
-    { label: 'Out of Stock', value: outOfStock, icon: AlertCircle, color: '#EF4444' },
-    { label: 'Inventory Value', value: formattedValue, icon: TrendingUp, color: '#14B8A6' },
+    { label: 'Out of Stock', value: outOfStock, icon: AlertCircle, color: '#EF4444' }
   ];
 
   const renderProductCard = ({ item }) => {
@@ -179,15 +168,19 @@ export default function RawMaterialInventoryPage() {
           <View style={styles.floatingMenu}>
             <TouchableOpacity style={styles.menuItem}>
               <Edit size={16} color="#475569" style={styles.menuItemIcon} />
-              <Text style={styles.menuItemText}>Edit Details</Text>
+              <Text style={styles.menuItemText}>Edit Product</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.menuItem} onPress={() => openUpdateStock(item)}>
+              <Package size={16} color="#475569" style={styles.menuItemIcon} />
+              <Text style={styles.menuItemText}>Update Stock</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.menuItem}>
               <History size={16} color="#475569" style={styles.menuItemIcon} />
-              <Text style={styles.menuItemText}>Stock History</Text>
+              <Text style={styles.menuItemText}>View History</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.menuItem}>
               <Archive size={16} color="#EF4444" style={styles.menuItemIcon} />
-              <Text style={[styles.menuItemText, {color: '#EF4444'}]}>Archive Product</Text>
+              <Text style={[styles.menuItemText, {color: '#EF4444'}]}>Deactivate Product</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -210,18 +203,18 @@ export default function RawMaterialInventoryPage() {
             </View>
             <View style={styles.stockCol}>
               <Text style={styles.stockLabel}>Reserved</Text>
-              <Text style={styles.stockValue}>{item.reservedStock} {item.unit}</Text>
+              <Text style={styles.stockValueReserved}>{item.reservedStock} {item.unit}</Text>
             </View>
             <View style={styles.stockCol}>
               <Text style={styles.stockLabel}>Total</Text>
-              <Text style={styles.stockValue}>{item.currentStock} {item.unit}</Text>
+              <Text style={styles.stockValueTotal}>{item.currentStock} {item.unit}</Text>
             </View>
           </View>
 
           <View style={styles.metaInfoRow}>
-            <Text style={styles.metaText}>Wholesale: <Text style={styles.metaBold}>₹{item.wholesalePrice}/{item.unit}</Text></Text>
-            <Text style={styles.metaText}>MOQ: <Text style={styles.metaBold}>{item.moq}</Text></Text>
-            <Text style={styles.metaText}>Expiry: <Text style={styles.metaBold}>{item.expiry}</Text></Text>
+            <Text style={styles.metaText}>Wholesale <Text style={styles.metaBold}>₹{item.wholesalePrice}/{item.unit}</Text></Text>
+            <Text style={styles.metaText}>MOQ <Text style={styles.metaBold}>{item.moq}</Text></Text>
+            <Text style={styles.metaText}>Expiry <Text style={styles.metaBold}>{item.expiry}</Text></Text>
           </View>
         </View>
 
@@ -244,10 +237,10 @@ export default function RawMaterialInventoryPage() {
           <Text style={styles.headerTitle}>Inventory Control</Text>
           <View style={styles.headerActions}>
             <TouchableOpacity style={styles.iconBtn}>
-              <Search size={20} color={NAVY} />
+              <Search size={22} color={NAVY} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconBtn}>
-              <Filter size={20} color={NAVY} />
+              <Filter size={22} color={NAVY} />
             </TouchableOpacity>
           </View>
         </View>
@@ -260,43 +253,45 @@ export default function RawMaterialInventoryPage() {
           </View>
         )}
 
-        {/* Top Action Bar */}
-        <View style={styles.topActionBar}>
-          <TouchableOpacity style={styles.btnAddProduct} onPress={() => { setAddStep(1); setAddProductModalVisible(true); }}>
-            <Plus size={18} color="#FFFFFF" />
-            <Text style={styles.btnAddProductText}>Add Product</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Summary Cards */}
-        <View style={styles.summaryContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.summaryScroll}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          {/* Summary Cards Grid */}
+          <View style={styles.summaryGrid}>
             {summaryData.map((item, idx) => (
               <View key={idx} style={styles.summaryCard}>
                 <View style={[styles.summaryIconBox, { backgroundColor: item.color + '15' }]}>
                   <item.icon size={20} color={item.color} />
                 </View>
-                <Text style={styles.summaryValue}>{item.value}</Text>
-                <Text style={styles.summaryLabel}>{item.label}</Text>
+                <View>
+                  <Text style={styles.summaryValue}>{item.value}</Text>
+                  <Text style={styles.summaryLabel}>{item.label}</Text>
+                </View>
               </View>
             ))}
-          </ScrollView>
-        </View>
+          </View>
 
-        {/* Product List */}
-        <FlatList
-          data={products}
-          keyExtractor={item => item.id}
-          renderItem={renderProductCard}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Package size={48} color="#CBD5E1" />
-              <Text style={styles.emptyText}>No products found.</Text>
-            </View>
-          }
-        />
+          {/* Add Product Action */}
+          <View style={styles.addActionContainer}>
+            <TouchableOpacity style={styles.btnAddProduct} onPress={() => {
+              setAddStep(1);
+              setAddProductModalVisible(true);
+            }}>
+              <Plus size={20} color="#FFFFFF" />
+              <Text style={styles.btnAddProductText}>Add Product</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Product List */}
+          <View style={styles.listContainer}>
+            {products.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Package size={48} color="#CBD5E1" />
+                <Text style={styles.emptyText}>No products found.</Text>
+              </View>
+            ) : (
+              products.map(p => <React.Fragment key={p.id}>{renderProductCard({item: p})}</React.Fragment>)
+            )}
+          </View>
+        </ScrollView>
 
         {/* Multi-step Add Product Modal */}
         <Modal visible={addProductModalVisible} animationType="slide">
@@ -467,11 +462,11 @@ export default function RawMaterialInventoryPage() {
                   ) : null}
 
                   <TouchableOpacity 
-                    style={[styles.btnPrimaryLarge, !isValid && {backgroundColor: '#94A3B8'}]} 
+                    style={[styles.btnPrimaryLargeModal, !isValid && {backgroundColor: '#E2E8F0'}]} 
                     disabled={!isValid} 
                     onPress={handleUpdateStock}
                   >
-                    <Text style={styles.btnPrimaryText}>{stockActionType} Stock</Text>
+                    <Text style={[styles.btnPrimaryText, !isValid && {color: '#94A3B8'}]}>{stockActionType} Stock</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -485,17 +480,18 @@ export default function RawMaterialInventoryPage() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#F8FAFC' },
-  container: { flex: 1 },
-  header: {
+  safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16, 
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
+    zIndex: 10,
   },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: NAVY },
   headerActions: { flexDirection: 'row' },
@@ -506,64 +502,81 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center'
   },
   toastText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 14 },
-  topActionBar: {
+  
+  scrollContent: { paddingBottom: 100 },
+  
+  summaryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     padding: 16,
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  summaryCard: {
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderRadius: 16,
+    padding: 16,
+    width: '48%',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 1,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+  },
+  summaryIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  summaryValue: { fontSize: 22, fontWeight: 'bold', color: NAVY, marginBottom: 2 },
+  summaryLabel: { fontSize: 13, color: '#64748B', fontWeight: '500' },
+  
+  addActionContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
   btnAddProduct: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: GOLD,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    shadowColor: GOLD,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   btnAddProductText: {
     color: '#FFFFFF',
-    fontWeight: 'bold',
+    fontWeight: '700',
     marginLeft: 8,
-    fontSize: 16,
+    fontSize: 15,
   },
-  summaryContainer: {
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  summaryScroll: { paddingHorizontal: 16 },
-  summaryCard: {
-    backgroundColor: '#F8FAFC',
-    padding: 16,
-    borderRadius: 12,
-    marginRight: 12,
-    width: 140,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  summaryIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  summaryValue: { fontSize: 20, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
-  summaryLabel: { fontSize: 13, color: '#64748B' },
-  listContent: { padding: 16, paddingBottom: 80 },
+  
+  listContainer: { paddingHorizontal: 16 },
   emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
   emptyText: { marginTop: 16, color: '#94A3B8', fontSize: 15 },
+  
   productCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
     elevation: 2,
   },
   cardHeader: {
@@ -579,30 +592,33 @@ const styles = StyleSheet.create({
   imagePlaceholder: {
     width: 48,
     height: 48,
-    borderRadius: 8,
-    backgroundColor: '#F1F5F9',
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   titleContainer: { flex: 1, justifyContent: 'center' },
-  productName: { fontSize: 16, fontWeight: '600', color: NAVY, marginBottom: 4 },
-  skuText: { fontSize: 12, color: '#64748B' },
+  productName: { fontSize: 16, fontWeight: '700', color: NAVY, marginBottom: 4 },
+  skuText: { fontSize: 12, color: '#64748B', fontWeight: '500' },
   menuIconBtn: { padding: 4 },
+  
   floatingMenu: {
     position: 'absolute',
     top: 40,
     right: 16,
     backgroundColor: '#FFFFFF',
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-    zIndex: 10,
-    minWidth: 150,
+    shadowRadius: 12,
+    elevation: 8,
+    zIndex: 20,
+    minWidth: 160,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   menuItem: {
     flexDirection: 'row',
@@ -610,52 +626,57 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 8,
   },
-  menuItemIcon: { marginRight: 8 },
+  menuItemIcon: { marginRight: 10 },
   menuItemText: { fontSize: 14, color: '#334155', fontWeight: '500' },
-  cardBody: { marginBottom: 16 },
+  
+  cardBody: { marginBottom: 12 },
   badgeRow: { flexDirection: 'row', marginBottom: 16 },
   categoryBadge: {
-    backgroundColor: '#F1F5F9',
-    paddingHorizontal: 8,
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 4,
+    borderRadius: 6,
     marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
-  categoryText: { fontSize: 11, color: '#475569', fontWeight: '500' },
+  categoryText: { fontSize: 11, color: '#475569', fontWeight: '600' },
   statusBadge: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 4,
+    borderRadius: 6,
   },
   statusText: { fontSize: 11, fontWeight: '600' },
+  
   stockGrid: {
     flexDirection: 'row',
     backgroundColor: '#F8FAFC',
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 12,
     marginBottom: 16,
   },
   stockCol: { flex: 1 },
-  stockLabel: { fontSize: 11, color: '#64748B', marginBottom: 4 },
-  stockValuePrimary: { fontSize: 16, fontWeight: 'bold', color: '#10B981' },
-  stockValue: { fontSize: 15, fontWeight: '600', color: NAVY },
+  stockLabel: { fontSize: 11, color: '#64748B', marginBottom: 4, fontWeight: '500' },
+  stockValuePrimary: { fontSize: 15, fontWeight: 'bold', color: '#10B981' },
+  stockValueReserved: { fontSize: 15, fontWeight: '600', color: NAVY },
+  stockValueTotal: { fontSize: 15, fontWeight: '700', color: NAVY },
+  
   metaInfoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
   },
-  metaText: { fontSize: 12, color: '#64748B', marginBottom: 4, width: '48%' },
+  metaText: { fontSize: 13, color: '#64748B', marginBottom: 6, width: '48%' },
   metaBold: { fontWeight: '600', color: NAVY },
-  cardFooter: { borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 16 },
+  
+  cardFooter: { paddingTop: 4 },
   btnPrimary: {
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    backgroundColor: GOLD,
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
   },
-  btnPrimaryText: { color: NAVY, fontWeight: '600', fontSize: 14 },
+  btnPrimaryText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
   
   // Modals
   modalSafeArea: { flex: 1, backgroundColor: '#FFFFFF' },
@@ -703,15 +724,16 @@ const styles = StyleSheet.create({
   btnOutlineText: { color: '#475569', fontWeight: '600', fontSize: 15 },
   btnPrimarySave: {
     flex: 1,
-    backgroundColor: NAVY,
+    backgroundColor: GOLD,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
   },
-  btnPrimaryLarge: {
+  
+  btnPrimaryLargeModal: {
     width: '100%',
     paddingVertical: 16,
-    backgroundColor: NAVY,
+    backgroundColor: GOLD,
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 8,

@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity , Alert} from 'react-native';
 import { TrendingUp, Star, Zap, Wrench } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
 import { mockDb } from '../../../services/mockDb';
@@ -86,7 +86,7 @@ export default function ProviderDashboardScreen() {
               <Text style={styles.cardTitle}>Revenue Trend</Text>
               <Text style={styles.cardSub}>Monthly (₹ Lakhs)</Text>
             </View>
-            <TouchableOpacity><Text style={[styles.viewAllText, { color: "#10B981" }]}>View All →</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => Alert.alert('Coming Soon', 'This feature is under development.')}><Text style={[styles.viewAllText, { color: "#10B981" }]}>View All →</Text></TouchableOpacity>
           </View>
           
           <View style={styles.chartBars}>

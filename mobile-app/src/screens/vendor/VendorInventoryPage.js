@@ -510,7 +510,7 @@ export default function VendorInventoryPage() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FAFAFA' },
-  topHeader: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  topHeader: { minHeight: 90, paddingTop: 40, paddingBottom: 16,  paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   topHeaderTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
   topHeaderDate: { fontSize: 11, color: colors.muted, marginTop: 4 },
 

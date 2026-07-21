@@ -13,8 +13,8 @@ const MOCK_TICKETS = [
 ];
 
 const FAQS = [
-  { id: 1, q: "How do I create an invoice for a deployment?", a: "Go to the Revenue page, click 'Create' and fill out the details. You can link the invoice directly to an active deployment from the dropdown." },
-  { id: 2, q: "How do I request a replacement for a candidate?", a: "Go to Deployments, locate the candidate, and click 'Handle Replacement'. This will notify the client and begin the search for a new candidate." },
+  { id: 1, q: "How do I create an invoice for staff records?", a: "Go to the Revenue page, click 'Create' and fill out the details. You can link the invoice directly to an active staff record from the dropdown." },
+  { id: 2, q: "How do I request a replacement for a candidate?", a: "Go to Staff Records, locate the candidate, and click 'Handle Replacement'. This will notify the client and begin the search for a new candidate." },
   { id: 3, q: "When do I receive my placement fees?", a: "Payment terms depend on your agreement with the specific employer. Generally, payments are processed within 15-30 days of invoice submission." },
   { id: 4, q: "How do I update my operational cities?", a: "Navigate to Settings > Edit Full Profile, and update the Operational Cities field. The changes will reflect immediately on your public profile." }
 ];
@@ -155,7 +155,7 @@ export default function ManpowerSupportPage() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: { padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16,  padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   headerTitleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: NAVY, marginLeft: 8 },
   headerSub: { fontSize: 13, color: '#64748B' },

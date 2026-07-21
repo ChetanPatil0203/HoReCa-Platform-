@@ -1,187 +1,168 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
-import { Package, TrendingUp, Clock, Building2, ArrowUpRight, Star } from 'lucide-react-native';
-import { typography } from '../../theme/typography';
-import { colors } from '../../theme/colors';
+import { Package, Users, Wrench, Megaphone, ShoppingCart, MessageSquare, CalendarDays, TriangleAlert, ChevronRight, Star } from 'lucide-react-native';
 
-const RECENT_ORDERS = [
-  { id: "ORD-287", title: "Premium Basmati Rice", category: "raw-material", qty: "500 kg", vendor: "Metro Fresh Supplies", date: "14 Jun", status: "Accepted" },
-  { id: "ORD-286", title: "Weekend Kitchen Staff", category: "manpower", qty: "2 persons", vendor: "Elite Staffing Co.", date: "13 Jun", status: "Pending" },
-  { id: "ORD-285", title: "Deep Kitchen Cleaning", category: "service", qty: "Full property", vendor: "ProClean Services", date: "13 Jun", status: "Accepted" },
-  { id: "ORD-284", title: "June Social Campaign", category: "marketing", qty: "30 days", vendor: "BrandCraft Agency", date: "12 Jun", status: "New" },
+const NAVY = '#071B3A';
+const MUTED = '#64748B';
+
+const QUICK_ACTIONS = [
+  { id: 'raw-material', title: 'Raw Material', status: '3 Active Orders', action: 'Browse Products →', icon: Package, color: '#F97316' },
+  { id: 'manpower', title: 'Manpower', status: '2 Open Requirements', action: 'Hire Staff →', icon: Users, color: '#3B82F6' },
+  { id: 'service', title: 'Service Providers', status: '1 Service Scheduled', action: 'Find Providers →', icon: Wrench, color: '#10B981' },
+  { id: 'marketing', title: 'Marketing', status: '2 Active Campaigns', action: 'Explore Agencies →', icon: Megaphone, color: '#8B5CF6' },
 ];
 
-const VENDORS = [
-  { name: "Metro Fresh Supplies", cat: "Raw Material", orders: 42, rating: 4.8, color: "#F59E0B" },
-  { name: "Elite Staffing Co.", cat: "Manpower", orders: 28, rating: 4.7, color: "#1E40AF" },
-  { name: "ProClean Services", cat: "Service", orders: 17, rating: 4.9, color: "#10B981" },
+const OVERVIEW_STATS = [
+  { id: 'active', label: 'Orders in Progress', value: '12', icon: ShoppingCart, color: '#3B82F6' },
+  { id: 'pending', label: 'Responses Pending', value: '4', icon: MessageSquare, color: '#F97316' },
+  { id: 'scheduled', label: 'Scheduled Today', value: '3', icon: CalendarDays, color: '#10B981' },
+  { id: 'urgent', label: 'Attention Needed', value: '1', icon: TriangleAlert, color: '#EF4444' },
 ];
 
-const CAT_COLORS = {
-  "raw-material": "#F59E0B",
-  manpower: "#1E40AF",
-  service: "#10B981",
-  marketing: "#8B5CF6",
-};
+const RECENT_ACTIVITY = [
+  { id: 1, title: 'Raw Material Order Confirmed', sub: 'Metro Fresh Supplies', time: '10m ago', icon: Package, color: '#F97316' },
+  { id: 2, title: 'New Candidates Submitted', sub: 'Head Chef Requirement', time: '35m ago', icon: Users, color: '#3B82F6' },
+  { id: 3, title: 'Service Request Accepted', sub: 'ProClean Services', time: '1h ago', icon: Wrench, color: '#10B981' },
+  { id: 4, title: 'Marketing Proposal Received', sub: 'BrandCraft Agency', time: '2h ago', icon: Megaphone, color: '#8B5CF6' },
+];
 
-const STATUS_META = {
-  Accepted: { bg: "rgba(16, 185, 129, 0.07)", text: "#059669", dot: "#10B981" },
-  Pending: { bg: "rgba(245, 158, 11, 0.07)", text: "#D97706", dot: "#F59E0B" },
-  New: { bg: "rgba(30, 64, 175, 0.07)", text: "#1E40AF", dot: "#2563EB" },
-  Rejected: { bg: "rgba(239, 68, 68, 0.07)", text: "#DC2626", dot: "#EF4444" },
-};
+const TOP_PARTNERS = [
+  { id: 1, name: 'Metro Fresh Supplies', category: 'Raw Material Supplier', rating: '4.8', initials: 'MF' },
+  { id: 2, name: 'Elite Staffing Co.', category: 'Manpower Agency', rating: '4.7', initials: 'ES' },
+  { id: 3, name: 'ProClean Services', category: 'Service Provider', rating: '4.9', initials: 'PS' },
+  { id: 4, name: 'BrandCraft Agency', category: 'Marketing Partner', rating: '4.6', initials: 'BA' },
+];
 
-import { mockDb } from '../../services/mockDb';
-
-export default function DashboardHome({ user }) {
+export default function DashboardHome({ user, onNavigate }) {
   const { width } = useWindowDimensions();
-  const isMobile = width < 768 || Platform.OS !== 'web';
-
-  const [orders, setOrders] = React.useState([]);
-
-  React.useEffect(() => {
-    setOrders(mockDb.getOrders());
-  }, []);
-
-  const totalOrders = orders.length;
-  const acceptedOrders = orders.filter(o => o.status === 'Accepted').length;
-  const pendingOrders = orders.filter(o => o.status === 'Pending' || o.status === 'New').length;
+  const pagePadding = width < 340 ? 12 : 16;
+  const gridGap = 12;
+  const columns = 2;
+  
+  // Exact card width calculation
+  const cardWidth = (width - (pagePadding * 2) - gridGap) / columns;
 
   return (
-    <View style={styles.container}>
-      {/* ── Welcome Header ── */}
-      <View style={styles.headerRow}>
-        <View>
-          <Text style={styles.welcomeTitle}>Good morning, {user?.name?.split(" ")[0] || 'Owner'} 👋</Text>
-          <Text style={styles.welcomeSub}>
-            Operational control panel for <Text style={{ color: colors.dark, fontWeight: 'bold' }}>{user?.businessName || 'Business'}</Text>
-          </Text>
-        </View>
-        <View style={styles.liveBadge}>
-          <View style={styles.liveDot} />
-          <Text style={styles.liveText}>LIVE FEED ONLINE</Text>
+    <View style={[styles.container, { paddingHorizontal: pagePadding }]}>
+      {/* 2. Welcome Hero Card */}
+      <View style={styles.heroCard}>
+        <View style={styles.heroContent}>
+          <Text style={styles.heroGreeting}>Good Morning, {user?.name?.split(" ")[0] || 'Arjun'} 👋</Text>
+          <Text style={styles.heroBusiness}>{user?.businessName || 'The Meridian Hotel'}</Text>
+          <Text style={styles.heroDesc}>Manage all your HoReCa business operations from one place.</Text>
         </View>
       </View>
 
-      {/* ── KPI Grid ── */}
-      <View style={[styles.kpiGrid, isMobile && { justifyContent: 'space-between', gap: 10 }]}>
-        {[
-          { label: "Total Orders", value: String(totalOrders), delta: "+8 completed", icon: Package, color: "#D97706", bg: "#FEF3C7" },
-          { label: "Accepted", value: String(acceptedOrders), delta: "55% acceptance", icon: TrendingUp, color: "#059669", bg: "#D1FAE5" },
-          { label: "Awaiting Review", value: String(pendingOrders), delta: "Pending responses", icon: Clock, color: "#2563EB", bg: "#DBEAFE" },
-          { label: "Supply Nodes", value: "12", delta: "Active partner nets", icon: Building2, color: "#334155", bg: "#F1F5F9" },
-        ].map((kpi, idx) => {
-          const Icon = kpi.icon;
-          return (
-            <View key={idx} style={[styles.kpiCard, isMobile && { flex: 0, minWidth: '47%', width: '47%', padding: 16 }]}>
-              <View style={[styles.kpiIconBox, { backgroundColor: kpi.bg, marginBottom: isMobile ? 8 : 16 }]}>
-                <Icon size={20} color={kpi.color} strokeWidth={2.2} />
+      {/* 3. Quick Access */}
+      <View style={styles.sectionContainer}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Quick Access</Text>
+          <TouchableOpacity><Text style={styles.viewAllText}>View All {'>'}</Text></TouchableOpacity>
+        </View>
+        <View style={[styles.gridContainer, { gap: gridGap }]}>
+          {QUICK_ACTIONS.map(action => (
+            <TouchableOpacity 
+              key={action.id} 
+              style={[styles.quickCard, { width: cardWidth }]}
+              onPress={() => onNavigate && onNavigate(action.id)}
+            >
+              <View style={[styles.iconContainer, { backgroundColor: `${action.color}15` }]}>
+                <action.icon size={20} color={action.color} strokeWidth={2.5} />
               </View>
-              <Text style={[styles.kpiValue, isMobile && { fontSize: 24 }]}>{kpi.value}</Text>
-              <Text style={styles.kpiLabel}>{kpi.label}</Text>
-              <Text style={styles.kpiDelta}>{kpi.delta}</Text>
-            </View>
-          );
-        })}
-      </View>
-
-      {/* ── Bottom Section ── */}
-      <View style={[styles.tablesRow, isMobile && { flexDirection: 'column' }]}>
-        
-        {/* Recent Active Logs */}
-        <View style={[styles.recentLogsContainer, isMobile && { minWidth: '100%' }]}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>RECENT LOGS</Text>
-            <TouchableOpacity style={styles.exploreBtn}>
-              <Text style={styles.exploreText}>EXPLORE ALL</Text>
-              <ArrowUpRight size={12} color="#1E40AF" />
+              <Text style={styles.quickTitle} numberOfLines={1}>{action.title}</Text>
+              <Text style={styles.quickStatus} numberOfLines={1}>{action.status}</Text>
+              <View style={styles.flexSpacer} />
+              <Text style={[styles.quickActionText, { color: action.color }]}>{action.action}</Text>
+              <View style={styles.watermarkContainer}>
+                <action.icon size={50} color={`${action.color}08`} />
+              </View>
             </TouchableOpacity>
-          </View>
-          
-          <View style={styles.logsList}>
-            {orders.slice(0, 5).map(order => {
-              const sm = STATUS_META[order.status] || STATUS_META["Pending"];
-              const catColor = CAT_COLORS[order.category] || "#64748B";
-
-              if (isMobile) {
-                return (
-                  <View key={order.id} style={{ paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
-                        <View style={[styles.catIndicator, { backgroundColor: catColor, height: 18, width: 3, marginRight: 8 }]} />
-                        <Text style={[styles.logTitle, { fontSize: 13, flex: 1 }]} numberOfLines={1}>{order.title}</Text>
-                      </View>
-                      <View style={[styles.statusBadge, { backgroundColor: sm.bg, paddingHorizontal: 8, paddingVertical: 3 }]}>
-                        <View style={[styles.statusDot, { backgroundColor: sm.dot }]} />
-                        <Text style={[styles.statusText, { color: sm.text, fontSize: 9 }]}>{order.status}</Text>
-                      </View>
-                    </View>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingLeft: 11 }}>
-                      <Text style={{ fontSize: 11, color: '#475569', fontWeight: '500' }}>{order.vendor} · {order.qty}</Text>
-                      <Text style={{ fontSize: 11, color: colors.muted }}>{order.date}</Text>
-                    </View>
-                  </View>
-                );
-              }
-
-              return (
-                <View key={order.id} style={styles.logRow}>
-                  <View style={styles.logLeft}>
-                    <View style={[styles.catIndicator, { backgroundColor: catColor }]} />
-                    <View>
-                      <Text style={styles.logTitle}>{order.title}</Text>
-                      <Text style={styles.logQty}>{order.qty}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.logCenter}>
-                    <Text style={styles.logVendor}>{order.vendor}</Text>
-                    <Text style={styles.logDate}>{order.date}</Text>
-                  </View>
-                  <View style={styles.logRight}>
-                    <View style={[styles.statusBadge, { backgroundColor: sm.bg }]}>
-                      <View style={[styles.statusDot, { backgroundColor: sm.dot }]} />
-                      <Text style={[styles.statusText, { color: sm.text }]}>{order.status}</Text>
-                    </View>
-                  </View>
-                </View>
-              );
-            })}
-          </View>
+          ))}
         </View>
+      </View>
 
-        {/* Top Vendors */}
-        <View style={[styles.vendorsContainer, isMobile && { minWidth: '100%' }]}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>ACTIVE NODE RATING</Text>
-            <View style={styles.onlineBadge}>
-              <Text style={styles.onlineBadgeText}>ALL CHANNELS ONLINE</Text>
-            </View>
-          </View>
-
-          <View style={styles.vendorList}>
-            {VENDORS.map((v, i) => (
-              <View key={v.name} style={styles.vendorRow}>
-                <View style={[styles.rankBox, i === 0 && styles.rankBoxTop]}>
-                  <Text style={[styles.rankText, i === 0 && styles.rankTextTop]}>{i + 1}</Text>
-                </View>
-                <View style={[styles.vendorAvatar, { backgroundColor: `${v.color}15`, borderColor: v.color }]}>
-                  <Text style={[styles.vendorAvatarText, { color: v.color }]}>
-                    {v.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
-                  </Text>
-                </View>
-                <View style={styles.vendorInfo}>
-                  <Text style={styles.vendorName}>{v.name}</Text>
-                  <Text style={styles.vendorStats}>{v.cat} · {v.orders} cycles</Text>
-                </View>
-                <View style={styles.ratingBadge}>
-                  <Star size={11} color="#F59E0B" fill="#F59E0B" />
-                  <Text style={styles.ratingText}>{v.rating}</Text>
-                </View>
+      {/* 4. Today at a Glance */}
+      <View style={styles.sectionContainer}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Today at a Glance</Text>
+          <TouchableOpacity><Text style={styles.viewAllText}>View All {'>'}</Text></TouchableOpacity>
+        </View>
+        <View style={[styles.gridContainer, { gap: gridGap }]}>
+          {OVERVIEW_STATS.map((stat, idx) => (
+            <TouchableOpacity 
+              key={idx} 
+              style={[styles.statCard, { width: cardWidth }]}
+              onPress={() => console.log(`Navigate to ${stat.id}`)}
+            >
+              <View style={[styles.statIconBox, { backgroundColor: `${stat.color}15` }]}>
+                <stat.icon size={18} color={stat.color} strokeWidth={2.5} />
               </View>
+              <Text style={styles.statValue}>{stat.value}</Text>
+              <Text style={styles.statLabel} numberOfLines={1}>{stat.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* 5. Recent Activity */}
+      <View style={styles.sectionContainer}>
+        <View style={styles.listCardWrapper}>
+          <View style={styles.listCardHeader}>
+            <Text style={styles.listCardTitle}>Recent Activity</Text>
+            <TouchableOpacity><Text style={styles.viewAllText}>View All {'>'}</Text></TouchableOpacity>
+          </View>
+          <View style={styles.listCardBody}>
+            {RECENT_ACTIVITY.map((activity, idx) => (
+              <TouchableOpacity key={idx} style={[styles.listRow, idx === RECENT_ACTIVITY.length - 1 && styles.noBorder]}>
+                <View style={[styles.listIconBox, { backgroundColor: `${activity.color}15` }]}>
+                  <activity.icon size={16} color={activity.color} />
+                </View>
+                <View style={styles.listInfo}>
+                  <Text style={styles.listTitle} numberOfLines={1}>{activity.title}</Text>
+                  <Text style={styles.listSub} numberOfLines={1}>{activity.sub}</Text>
+                </View>
+                <Text style={styles.listTime}>{activity.time}</Text>
+              </TouchableOpacity>
             ))}
           </View>
         </View>
       </View>
+
+      {/* 7. Top Partners */}
+      <View style={styles.sectionContainer}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Top Partners</Text>
+          <TouchableOpacity><Text style={styles.viewAllText}>View All {'>'}</Text></TouchableOpacity>
+        </View>
+      </View>
+      {/* Moved ScrollView out of sectionContainer padding so cards bleed to edge slightly, 
+          but added left padding to match align */}
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingLeft: pagePadding, paddingRight: pagePadding, gap: 12, paddingBottom: 24 }}
+        style={{ marginHorizontal: -pagePadding, marginBottom: 24 }}
+      >
+        {TOP_PARTNERS.map((partner, idx) => (
+          <TouchableOpacity key={idx} style={styles.partnerCard}>
+            <View style={styles.partnerAvatar}>
+              <Text style={styles.partnerAvatarText}>{partner.initials}</Text>
+            </View>
+            <View style={styles.partnerInfo}>
+              <Text style={styles.partnerName} numberOfLines={1}>{partner.name}</Text>
+              <Text style={styles.partnerCat} numberOfLines={1}>{partner.category}</Text>
+            </View>
+            <View style={styles.partnerRight}>
+              <View style={styles.ratingBadge}>
+                <Star size={11} color="#F6B800" fill="#F6B800" />
+                <Text style={styles.ratingText}>{partner.rating}</Text>
+              </View>
+              <ChevronRight size={14} color="#CBD5E1" />
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
     </View>
   );
 }
@@ -189,305 +170,278 @@ export default function DashboardHome({ user }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingBottom: 40,
+    backgroundColor: '#F8FAFC',
+    width: '100%',
   },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginBottom: 32,
-    flexWrap: 'wrap',
-    gap: 16,
-  },
-  welcomeTitle: {
-    fontSize: 24,
-    fontWeight: '900',
-    color: colors.dark,
-    letterSpacing: -0.5,
-  },
-  welcomeSub: {
-    fontSize: 12,
-    color: colors.muted,
-    marginTop: 6,
-    fontWeight: '500',
-  },
-  liveBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+  heroCard: {
+    marginBottom: 24,
+    backgroundColor: NAVY,
+    borderRadius: 22,
+    padding: 20,
+    minHeight: 145,
     borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    ...Platform.select({ web: { boxShadow: '0 2px 4px rgba(0,0,0,0.02)' } }),
+    borderColor: 'rgba(255,255,255,0.12)',
+    shadowColor: '#071B3A',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 10,
+    overflow: 'hidden',
   },
-  liveDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#10B981',
-    marginRight: 8,
-  },
-  liveText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#059669',
-    letterSpacing: 1,
-  },
-  kpiGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 20,
-    marginBottom: 32,
-  },
-  kpiCard: {
+  heroContent: {
+    position: 'relative',
+    zIndex: 2,
     flex: 1,
-    minWidth: 200,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    padding: 24,
-    ...Platform.select({ web: { boxShadow: '0 4px 18px rgba(0,0,0,0.03)' } }),
-  },
-  kpiIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
   },
-  kpiValue: {
-    fontSize: 32,
-    fontWeight: '900',
-    color: colors.dark,
+  heroGreeting: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#FFFFFF',
     marginBottom: 4,
   },
-  kpiLabel: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-    color: colors.muted,
-    letterSpacing: 0.5,
+  heroBusiness: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#F6B800', // Brand Gold
+    marginBottom: 8,
   },
-  kpiDelta: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#94A3B8',
-    marginTop: 16,
+  heroDesc: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.8)',
+    lineHeight: 20,
+    maxWidth: '90%',
   },
-  tablesRow: {
+  sectionContainer: {
+    marginBottom: 24,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: NAVY,
+  },
+  viewAllText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: MUTED,
+  },
+  gridContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 24,
   },
-  recentLogsContainer: {
-    flex: 2,
-    minWidth: 300,
-    backgroundColor: '#fff',
+  quickCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    minHeight: 132,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
+    borderColor: '#E8EDF4',
     overflow: 'hidden',
-    ...Platform.select({ web: { boxShadow: '0 4px 18px rgba(0,0,0,0.03)' } }),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
+    display: 'flex',
+    flexDirection: 'column',
   },
-  vendorsContainer: {
+  iconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  quickTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: NAVY,
+    marginBottom: 2,
+  },
+  quickStatus: {
+    fontSize: 11,
+    color: MUTED,
+    fontWeight: '500',
+  },
+  flexSpacer: {
     flex: 1,
-    minWidth: 300,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: colors.border,
+  },
+  quickActionText: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 8,
+  },
+  watermarkContainer: {
+    position: 'absolute',
+    bottom: -8,
+    right: -8,
+    opacity: 0.8,
+  },
+  statCard: {
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    overflow: 'hidden',
-    ...Platform.select({ web: { boxShadow: '0 4px 18px rgba(0,0,0,0.03)' } }),
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  cardTitle: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-    color: colors.dark,
-    letterSpacing: 0.5,
-  },
-  exploreBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  exploreText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#1E40AF',
-    marginRight: 4,
-    letterSpacing: 0.5,
-  },
-  onlineBadge: {
-    backgroundColor: '#ECFDF5',
+    padding: 14,
+    minHeight: 112,
     borderWidth: 1,
-    borderColor: '#A7F3D0',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
+    borderColor: '#E8EDF4',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  onlineBadgeText: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    color: '#047857',
-    letterSpacing: 0.5,
-  },
-  logsList: {
-    paddingVertical: 8,
-  },
-  logRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  logLeft: {
-    flex: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  catIndicator: {
-    width: 4,
+  statIconBox: {
+    width: 32,
     height: 32,
-    borderRadius: 2,
-    marginRight: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
   },
-  logTitle: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: colors.dark,
+  statValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: NAVY,
+    marginBottom: 2,
   },
-  logQty: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: colors.muted,
-    marginTop: 2,
-  },
-  logCenter: {
-    flex: 1.5,
-    paddingHorizontal: 16,
-  },
-  logVendor: {
+  statLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#334155',
+    color: MUTED,
   },
-  logDate: {
-    fontSize: 10,
-    color: colors.muted,
-    fontFamily: Platform.OS === 'web' ? 'monospace' : 'System',
-    marginTop: 2,
-  },
-  logRight: {
-    flex: 1,
-    alignItems: 'flex-end',
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
+  listCardWrapper: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#F8FAFC',
+    borderColor: '#E8EDF4',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
+    overflow: 'hidden',
   },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 6,
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-  },
-  vendorList: {
-    paddingVertical: 8,
-  },
-  vendorRow: {
+  listCardHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
   },
-  rankBox: {
-    width: 24,
-    height: 24,
+  listCardTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: NAVY,
+  },
+  listCardBody: {
+    paddingVertical: 0,
+  },
+  listRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F8FAFC',
+  },
+  noBorder: {
+    borderBottomWidth: 0,
+  },
+  listIconBox: {
+    width: 32,
+    height: 32,
     borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  listInfo: {
+    flex: 1,
+    paddingRight: 8,
+  },
+  listTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: NAVY,
+    marginBottom: 2,
+  },
+  listSub: {
+    fontSize: 11,
+    color: MUTED,
+  },
+  listTime: {
+    fontSize: 11,
+    color: '#94A3B8',
+    fontWeight: '500',
+  },
+  partnerCard: {
+    width: 250,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E8EDF4',
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  partnerAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
+    marginRight: 10,
   },
-  rankBoxTop: {
-    backgroundColor: '#FEF3C7',
+  partnerAvatarText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: NAVY,
   },
-  rankText: {
-    fontSize: 10,
-    fontWeight: '900',
-    color: colors.muted,
-  },
-  rankTextTop: {
-    color: '#D97706',
-  },
-  vendorAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  vendorAvatarText: {
-    fontSize: 12,
-    fontWeight: '900',
-  },
-  vendorInfo: {
+  partnerInfo: {
     flex: 1,
+    paddingRight: 6,
   },
-  vendorName: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: colors.dark,
+  partnerName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: NAVY,
+    marginBottom: 2,
   },
-  vendorStats: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: colors.muted,
-    marginTop: 2,
+  partnerCat: {
+    fontSize: 11,
+    color: MUTED,
+  },
+  partnerRight: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    gap: 6,
   },
   ratingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFBEB',
-    borderWidth: 1,
-    borderColor: '#FDE68A',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
   ratingText: {
-    fontSize: 10,
-    fontWeight: '900',
+    fontSize: 11,
+    fontWeight: '700',
     color: '#D97706',
     marginLeft: 4,
   }

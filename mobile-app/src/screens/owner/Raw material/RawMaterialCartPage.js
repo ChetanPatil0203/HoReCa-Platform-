@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
-import { ArrowLeft, Trash, Minus, Plus, ShoppingCart, ChevronRight } from 'lucide-react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions, Image } from 'react-native';
+import { ArrowLeft, Trash, Minus, Plus, ShoppingCart, ChevronRight, Store } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 
-const GOLD = '#D97706';
+const PURPLE = '#D97706';
 
 export default function RawMaterialCartPage({ cartItems, setCartItems, onBack, onCheckout }) {
   const { width } = useWindowDimensions();
@@ -23,19 +23,20 @@ export default function RawMaterialCartPage({ cartItems, setCartItems, onBack, o
     setCartItems(prev => prev.filter(item => item.id !== id));
   };
 
-  // Group by vendor
+  // Group by supplierName
   const groupedCart = useMemo(() => {
     const groups = {};
     cartItems.forEach(item => {
-      if (!groups[item.vendor]) groups[item.vendor] = [];
-      groups[item.vendor].push(item);
+      const supplier = item.supplierName || 'Other Supplier';
+      if (!groups[supplier]) groups[supplier] = [];
+      groups[supplier].push(item);
     });
     return groups;
   }, [cartItems]);
 
   const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.qty), 0);
   const gst = subtotal * 0.05; // mock 5%
-  const delivery = subtotal > 1000 ? 0 : 50; // free over 1000
+  const delivery = subtotal > 1000 ? 0 : 50 * Object.keys(groupedCart).length; // Delivery per supplier
   const grandTotal = subtotal + gst + delivery;
 
   if (cartItems.length === 0) {
@@ -85,7 +86,7 @@ export default function RawMaterialCartPage({ cartItems, setCartItems, onBack, o
             {Object.keys(groupedCart).map(vendor => (
               <View key={vendor} style={styles.vendorGroup}>
                 <View style={styles.vendorHeader}>
-                  <ShoppingCart size={16} color={GOLD} />
+                  <Store size={18} color={PURPLE} />
                   <Text style={styles.vendorName}>{vendor}</Text>
                 </View>
                 
@@ -93,8 +94,8 @@ export default function RawMaterialCartPage({ cartItems, setCartItems, onBack, o
                   const minQ = parseInt(item.moq) || 1;
                   return (
                     <View key={item.id} style={styles.cartItem}>
-                      <View style={[styles.itemImage, { backgroundColor: item.bg || '#F8FAFC' }]}>
-                        <Text style={styles.itemEmoji}>{item.emoji}</Text>
+                      <View style={styles.itemImageContainer}>
+                        <Image source={{ uri: item.image }} style={styles.itemImage} />
                       </View>
                       <View style={styles.itemDetails}>
                         <View style={styles.itemRowTop}>
@@ -103,7 +104,7 @@ export default function RawMaterialCartPage({ cartItems, setCartItems, onBack, o
                             <Trash size={16} color="#EF4444" />
                           </TouchableOpacity>
                         </View>
-                        <Text style={styles.itemPrice}>₹{item.price} / {item.unit.replace('per ', '')}</Text>
+                        <Text style={styles.itemPrice}>₹{item.price} / {item.unit}</Text>
                         
                         <View style={styles.itemRowBottom}>
                           <View style={styles.qtyControls}>
@@ -129,20 +130,20 @@ export default function RawMaterialCartPage({ cartItems, setCartItems, onBack, o
             <View style={styles.summaryCard}>
               <Text style={styles.summaryTitle}>Order Summary</Text>
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Subtotal</Text>
+                <Text style={styles.summaryLabel}>Items Total</Text>
                 <Text style={styles.summaryValue}>₹{subtotal.toLocaleString()}</Text>
               </View>
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>GST (5%)</Text>
+                <Text style={styles.summaryLabel}>Tax (5%)</Text>
                 <Text style={styles.summaryValue}>₹{gst.toFixed(2)}</Text>
               </View>
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Delivery</Text>
+                <Text style={styles.summaryLabel}>Delivery Charges</Text>
                 <Text style={styles.summaryValue}>{delivery === 0 ? 'Free' : `₹${delivery}`}</Text>
               </View>
               <View style={styles.summaryDivider} />
               <View style={styles.summaryRow}>
-                <Text style={styles.grandTotalLabel}>Grand Total</Text>
+                <Text style={styles.grandTotalLabel}>Total Amount</Text>
                 <Text style={styles.grandTotalValue}>₹{grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
               </View>
 
@@ -165,7 +166,7 @@ export default function RawMaterialCartPage({ cartItems, setCartItems, onBack, o
             <Text style={styles.bottomTotalValue}>₹{grandTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</Text>
           </View>
           <TouchableOpacity style={styles.checkoutBtnMobile} onPress={onCheckout}>
-            <Text style={styles.checkoutText}>Checkout</Text>
+            <Text style={styles.checkoutText}>Proceed to Checkout</Text>
             <ChevronRight size={16} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -192,13 +193,13 @@ const styles = StyleSheet.create({
   rightCol: { width: 360 },
   rightColMobile: { width: '100%', marginTop: 16 },
 
-  vendorGroup: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: colors.border, marginBottom: 16, overflow: 'hidden' },
-  vendorHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 16, backgroundColor: '#FAFAFA', borderBottomWidth: 1, borderBottomColor: colors.border },
-  vendorName: { fontSize: 14, fontWeight: '700', color: '#0F172A' },
+  vendorGroup: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: colors.border, marginBottom: 16, ...Platform.select({ web: { boxShadow: '0 2px 8px rgba(0,0,0,0.02)' } }) },
+  vendorHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 16, backgroundColor: '#F8FAFC', borderBottomWidth: 1, borderBottomColor: colors.border, borderTopLeftRadius: 16, borderTopRightRadius: 16 },
+  vendorName: { fontSize: 15, fontWeight: '800', color: '#0F172A' },
   
   cartItem: { flexDirection: 'row', padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border },
-  itemImage: { width: 64, height: 64, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  itemEmoji: { fontSize: 32 },
+  itemImageContainer: { width: 64, height: 64, borderRadius: 12, overflow: 'hidden', marginRight: 12, backgroundColor: '#F1F5F9' },
+  itemImage: { width: '100%', height: '100%', resizeMode: 'cover' },
   itemDetails: { flex: 1, justifyContent: 'center' },
   itemRowTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   itemName: { fontSize: 14, fontWeight: '700', color: '#0F172A', flex: 1, marginRight: 8 },
@@ -211,27 +212,27 @@ const styles = StyleSheet.create({
   qtyText: { fontSize: 13, fontWeight: '700', color: '#0F172A', minWidth: 24, textAlign: 'center' },
   itemTotal: { fontSize: 15, fontWeight: '800', color: '#0F172A' },
 
-  summaryCard: { backgroundColor: '#fff', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: colors.border },
+  summaryCard: { backgroundColor: '#fff', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: colors.border, ...Platform.select({ web: { boxShadow: '0 2px 8px rgba(0,0,0,0.02)' } }) },
   summaryTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A', marginBottom: 16 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
   summaryLabel: { fontSize: 14, color: '#475569' },
   summaryValue: { fontSize: 14, fontWeight: '600', color: '#0F172A' },
   summaryDivider: { height: 1, backgroundColor: colors.border, marginVertical: 12 },
   grandTotalLabel: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
-  grandTotalValue: { fontSize: 18, fontWeight: '900', color: GOLD },
+  grandTotalValue: { fontSize: 18, fontWeight: '900', color: PURPLE },
 
-  checkoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: GOLD, height: 48, borderRadius: 12, marginTop: 24 },
+  checkoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: PURPLE, height: 48, borderRadius: 12, marginTop: 24 },
   checkoutText: { fontSize: 15, fontWeight: '700', color: '#fff' },
 
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', padding: 16, paddingBottom: Platform.OS === 'ios' ? 32 : 16, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: colors.border, alignItems: 'center' },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', padding: 16, paddingBottom: Platform.OS === 'ios' ? 32 : 16, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: colors.border, alignItems: 'center', ...Platform.select({ web: { boxShadow: '0 -4px 12px rgba(0,0,0,0.05)' } }) },
   bottomTotal: { flex: 1 },
   bottomTotalLabel: { fontSize: 12, color: '#64748B' },
-  bottomTotalValue: { fontSize: 18, fontWeight: '900', color: GOLD },
-  checkoutBtnMobile: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: GOLD, height: 48, paddingHorizontal: 24, borderRadius: 12 },
+  bottomTotalValue: { fontSize: 18, fontWeight: '900', color: PURPLE },
+  checkoutBtnMobile: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: PURPLE, height: 48, paddingHorizontal: 20, borderRadius: 12 },
 
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
   emptyTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A', marginBottom: 8 },
   emptySub: { fontSize: 14, color: '#64748B', textAlign: 'center', marginBottom: 24 },
-  shopNowBtn: { backgroundColor: GOLD, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 },
+  shopNowBtn: { backgroundColor: PURPLE, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 },
   shopNowText: { fontSize: 14, fontWeight: '700', color: '#fff' }
 });

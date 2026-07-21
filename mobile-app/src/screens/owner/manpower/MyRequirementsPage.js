@@ -1,31 +1,34 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
-import { ArrowLeft, Users, Calendar, Clock, Pen, XCircle, ChevronRight } from 'lucide-react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions } from 'react-native';
+import { ArrowLeft, Search, Calendar, RefreshCw, FileText, Eye, Check, Pen, XCircle, ChevronRight, Package, Clock } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 import { ALL_REQUIREMENTS } from '../../../constants/manpowerData';
 
 const GOLD = '#D97706';
-const BLUE = '#2563EB';
 
 const TABS = ['All', 'Active', 'Responses', 'Shortlisted', 'Filled', 'Closed'];
 
 const STATUS_COLORS = {
-  'Active': { bg: '#DBEAFE', text: BLUE },
+  'Active': { bg: '#E0F2FE', text: '#0284C7' },
   'Responses': { bg: '#FEF3C7', text: GOLD },
   'Shortlisted': { bg: '#F3E8FF', text: '#9333EA' },
   'Filled': { bg: '#DCFCE7', text: '#16A34A' },
-  'Closed': { bg: '#F1F5F9', text: '#64748B' }
+  'Closed': { bg: '#FEE2E2', text: '#DC2626' }
 };
 
 export default function MyRequirementsPage({ onBack, onViewResponses }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
   
-  const [activeTab, setActiveTab] = useState('All');
+  const [searchText, setSearchText] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
 
   const filteredReqs = ALL_REQUIREMENTS.filter(req => {
-    if (activeTab === 'All') return true;
-    return req.status === activeTab;
+    const matchesSearch = 
+      req.id.toLowerCase().includes(searchText.toLowerCase()) || 
+      req.role.toLowerCase().includes(searchText.toLowerCase());
+    const matchesStatus = statusFilter === 'All' || req.status === statusFilter;
+    return matchesSearch && matchesStatus;
   });
 
   return (
@@ -39,93 +42,99 @@ export default function MyRequirementsPage({ onBack, onViewResponses }) {
         <View style={{ width: 36 }} />
       </View>
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 60 }}>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={[styles.contentLayout, !isMobile && styles.contentLayoutWeb]}>
           
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll} contentContainerStyle={styles.tabsContainer}>
-            {TABS.map(tab => (
+          {/* Filters */}
+          <View style={styles.filtersRow}>
+            <View style={styles.searchBox}>
+              <Search size={18} color="#94A3B8" />
+              <TextInput 
+                style={styles.searchInput}
+                placeholder="Search by ID or Role..."
+                placeholderTextColor="#94A3B8"
+                value={searchText}
+                onChangeText={setSearchText}
+              />
+            </View>
+          </View>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statusScroll} contentContainerStyle={styles.statusTabs}>
+            {TABS.map(status => (
               <TouchableOpacity 
-                key={tab} 
-                style={[styles.tab, activeTab === tab && styles.tabActive]}
-                onPress={() => setActiveTab(tab)}
+                key={status} 
+                style={[styles.statusTab, statusFilter === status && styles.statusTabActive]}
+                onPress={() => setStatusFilter(status)}
               >
-                <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</Text>
+                <Text style={[styles.statusTabText, statusFilter === status && styles.statusTabTextActive]}>{status}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
 
-          <View style={styles.cardsContainer}>
+          {/* Requests List */}
+          <View style={styles.ordersContainer}>
             {filteredReqs.length === 0 ? (
               <View style={styles.emptyState}>
-                <Clock size={40} color="#CBD5E1" style={{ marginBottom: 16 }} />
-                <Text style={styles.emptyTitle}>No requirements found</Text>
-                <Text style={styles.emptySub}>You don't have any requirements in this status.</Text>
+                <Package size={48} color="#CBD5E1" style={{ marginBottom: 16 }} />
+                <Text style={styles.emptyTitle}>No Requirements Found</Text>
+                <Text style={styles.emptySub}>Try adjusting your filters or search term.</Text>
               </View>
             ) : (
               filteredReqs.map(req => {
                 const sColor = STATUS_COLORS[req.status] || STATUS_COLORS['Closed'];
                 
                 return (
-                  <View key={req.id} style={styles.reqCard}>
+                  <View key={req.id} style={styles.orderCard}>
+                    
                     <View style={styles.cardHeader}>
                       <View>
-                        <Text style={styles.reqId}>{req.id}</Text>
-                        <Text style={styles.reqRole}>{req.role}</Text>
+                        <Text style={styles.orderId}>{req.id}</Text>
+                        <View style={styles.dateRow}>
+                          <Calendar size={12} color="#64748B" />
+                          <Text style={styles.orderDate}>Posted: {req.postedDate}</Text>
+                        </View>
                       </View>
                       <View style={[styles.statusBadge, { backgroundColor: sColor.bg }]}>
                         <Text style={[styles.statusText, { color: sColor.text }]}>{req.status}</Text>
                       </View>
                     </View>
 
-                    <View style={[styles.cardBody, isMobile && { flexDirection: 'column', gap: 12 }]}>
-                      <View style={styles.infoCol}>
-                        <View style={styles.infoRow}>
-                          <Users size={14} color="#64748B" />
-                          <Text style={styles.infoText}>Required: <Text style={styles.boldText}>{req.staffRequired}</Text> Staff</Text>
+                    <View style={styles.cardBody}>
+                      <View style={styles.vendorRow}>
+                        <View style={styles.vendorAvatar}>
+                          <Text style={styles.vendorInitial}>{req.role.charAt(0)}</Text>
                         </View>
-                        <View style={styles.infoRow}>
-                          <Calendar size={14} color="#64748B" />
-                          <Text style={styles.infoText}>Joining: <Text style={styles.boldText}>{req.joiningDate}</Text></Text>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.vendorName}>{req.role}</Text>
+                          <Text style={styles.itemCount}>Required: {req.staffRequired} Staff • {req.responses} Responses</Text>
                         </View>
-                      </View>
-
-                      <View style={styles.infoCol}>
-                        <View style={styles.infoRow}>
-                          <Text style={styles.infoLabel}>Salary:</Text>
-                          <Text style={styles.boldText}>{req.salary}</Text>
-                        </View>
-                        <View style={styles.infoRow}>
-                          <Text style={styles.infoLabel}>Posted:</Text>
-                          <Text style={styles.infoText}>{req.postedDate}</Text>
-                        </View>
-                      </View>
-
-                      <View style={styles.responseCol}>
-                        <Text style={styles.responseCount}>{req.responses}</Text>
-                        <Text style={styles.responseLabel}>Agency{'\n'}Responses</Text>
+                        <Text style={styles.orderAmount}>{req.salary}</Text>
                       </View>
                     </View>
 
                     <View style={styles.cardActions}>
+                      <TouchableOpacity 
+                        style={[styles.actionBtn, req.responses === 0 && { opacity: 0.5 }]} 
+                        onPress={() => req.responses > 0 && onViewResponses(req)}
+                        disabled={req.responses === 0}
+                      >
+                        <Eye size={14} color="#0F172A" />
+                        <Text style={styles.actionBtnText}>View Responses</Text>
+                      </TouchableOpacity>
                       <TouchableOpacity style={[styles.actionBtn, { borderColor: '#E2E8F0' }]}>
                         <Pen size={14} color="#64748B" />
                         <Text style={[styles.actionBtnText, { color: '#64748B' }]}>Edit</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity style={[styles.actionBtn, { borderColor: '#E2E8F0' }]}>
-                        <XCircle size={14} color="#EF4444" />
-                        <Text style={[styles.actionBtnText, { color: '#EF4444' }]}>Close</Text>
-                      </TouchableOpacity>
                       <TouchableOpacity 
-                        style={[styles.primaryActionBtn, req.responses === 0 && { opacity: 0.5 }]}
-                        onPress={() => req.responses > 0 && onViewResponses(req)}
-                        disabled={req.responses === 0}
+                        style={[styles.actionBtn, { backgroundColor: '#FFFBEB', borderColor: GOLD }]}
                       >
-                        <Text style={styles.primaryActionText}>View Responses</Text>
-                        <ChevronRight size={16} color="#fff" />
+                        <XCircle size={14} color={GOLD} />
+                        <Text style={[styles.actionBtnText, { color: GOLD }]}>Close</Text>
                       </TouchableOpacity>
                     </View>
+
                   </View>
-                );
+                )
               })
             )}
           </View>
@@ -146,41 +155,43 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   contentLayout: { padding: 16 },
   contentLayoutWeb: { padding: 32, maxWidth: 1000, alignSelf: 'center', width: '100%' },
+  
+  filtersRow: { marginBottom: 16 },
+  searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 12, height: 44 },
+  searchInput: { flex: 1, marginLeft: 8, fontSize: 14, color: '#0F172A', outlineStyle: 'none' },
+  
+  statusScroll: { flexGrow: 0, marginBottom: 20 },
+  statusTabs: { flexDirection: 'row', gap: 8, paddingRight: 16 },
+  statusTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border },
+  statusTabActive: { backgroundColor: GOLD, borderColor: GOLD },
+  statusTabText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
+  statusTabTextActive: { color: '#fff' },
 
-  tabsScroll: { flexGrow: 0, marginBottom: 20 },
-  tabsContainer: { flexDirection: 'row', gap: 8, paddingRight: 16 },
-  tab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border },
-  tabActive: { backgroundColor: '#0F172A', borderColor: '#0F172A' },
-  tabText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
-  tabTextActive: { color: '#fff' },
-
-  cardsContainer: { gap: 16 },
-
-  emptyState: { alignItems: 'center', justifyContent: 'center', padding: 60, backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: colors.border },
+  ordersContainer: { gap: 16 },
+  
+  emptyState: { alignItems: 'center', justifyContent: 'center', padding: 40, backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: colors.border },
   emptyTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A', marginBottom: 4 },
   emptySub: { fontSize: 13, color: '#64748B' },
 
-  reqCard: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
+  orderCard: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  reqId: { fontSize: 12, fontWeight: '700', color: '#64748B', marginBottom: 4 },
-  reqRole: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  statusText: { fontSize: 12, fontWeight: '800' },
-
-  cardBody: { flexDirection: 'row', padding: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  infoCol: { flex: 1, gap: 8 },
-  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  infoLabel: { fontSize: 13, color: '#64748B', width: 50 },
-  infoText: { fontSize: 13, color: '#475569' },
-  boldText: { fontWeight: '700', color: '#0F172A' },
+  orderId: { fontSize: 15, fontWeight: '800', color: '#0F172A', marginBottom: 4 },
+  dateRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  orderDate: { fontSize: 12, color: '#64748B', fontWeight: '500' },
   
-  responseCol: { width: 100, backgroundColor: '#F8FAFC', borderRadius: 12, alignItems: 'center', justifyContent: 'center', padding: 12, borderWidth: 1, borderColor: '#E2E8F0' },
-  responseCount: { fontSize: 24, fontWeight: '900', color: BLUE, marginBottom: 2 },
-  responseLabel: { fontSize: 11, fontWeight: '600', color: '#64748B', textAlign: 'center' },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  statusText: { fontSize: 11, fontWeight: '800' },
 
-  cardActions: { flexDirection: 'row', padding: 16, gap: 12 },
-  actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, height: 44, borderRadius: 10, borderWidth: 1, borderColor: colors.border, backgroundColor: '#fff' },
-  actionBtnText: { fontSize: 13, fontWeight: '700', color: '#0F172A' },
-  primaryActionBtn: { flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, height: 44, borderRadius: 10, backgroundColor: BLUE },
-  primaryActionText: { fontSize: 13, fontWeight: '800', color: '#fff' }
+  cardBody: { padding: 16 },
+  vendorRow: { flexDirection: 'row', alignItems: 'center' },
+  vendorAvatar: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  vendorInitial: { fontSize: 16, fontWeight: '800', color: '#2563EB' },
+  vendorName: { fontSize: 14, fontWeight: '700', color: '#0F172A', marginBottom: 2 },
+  itemCount: { fontSize: 12, color: '#64748B' },
+  orderAmount: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
+
+  cardActions: { flexDirection: 'row', padding: 16, paddingTop: 0, gap: 8 },
+  actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.border },
+  actionBtnText: { fontSize: 13, fontWeight: '700', color: '#0F172A' }
 });
+

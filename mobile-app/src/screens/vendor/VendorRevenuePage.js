@@ -48,7 +48,7 @@ export default function VendorRevenuePage() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16,  flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   iconBox: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#D1FAE5', borderWidth: 1, borderColor: '#6EE7B7', alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: 24, fontWeight: '900', color: '#0F172A' },

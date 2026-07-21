@@ -1,181 +1,252 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions } from 'react-native';
-import { ArrowLeft, Search, Star, ShieldCheck, MapPin, Briefcase, SlidersHorizontal } from 'lucide-react-native';
-import { colors } from '../../../theme/colors';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions, SafeAreaView } from 'react-native';
+import { ArrowLeft, Search, Star, ShieldCheck, MapPin, Briefcase, SlidersHorizontal, ClipboardCheck } from 'lucide-react-native';
 
 const NAVY = '#0E2042';
-const GOLD = '#D4AF37';
+const GOLD = '#F59E0B'; // Changed to match HRC HUB primary CTA Gold/Orange
+const BLUE = '#2563EB';
+const GREEN = '#10B981';
 
 const MOCK_PROVIDERS = [
-  { id: 'PRV-001', name: 'SafeGuard Solutions', rating: 4.9, experience: '8 Years', jobs: 450, verified: true, location: 'Downtown', categories: ['Pest Control', 'Cleaning'] },
-  { id: 'PRV-002', name: 'ProClean Services', rating: 4.8, experience: '5 Years', jobs: 320, verified: true, location: 'North Side', categories: ['Deep Cleaning', 'Sanitization'] },
-  { id: 'PRV-003', name: 'Elite Fixers', rating: 5.0, experience: '12 Years', jobs: 890, verified: true, location: 'West End', categories: ['General Repair', 'Plumbing'] },
-  { id: 'PRV-004', name: 'CoolBreeze HVAC', rating: 4.7, experience: '6 Years', jobs: 210, verified: false, location: 'South Side', categories: ['HVAC', 'Maintenance'] },
-  { id: 'PRV-005', name: 'Spark Electricals', rating: 4.5, experience: '3 Years', jobs: 150, verified: true, location: 'Downtown', categories: ['Electrical', 'Lighting'] }
+  { id: 'PRV-001', name: 'SafeGuard Solutions', rating: 4.9, experience: '8 Years', jobs: 450, verified: true, location: 'Downtown, Jalgaon', categories: ['Pest Control', 'Cleaning', 'Sanitization'], availability: 'Available Today' },
+  { id: 'PRV-002', name: 'ProClean Services', rating: 4.8, experience: '5 Years', jobs: 320, verified: true, location: 'North Side, Pune', categories: ['Deep Cleaning', 'Sanitization'], availability: 'Available Today' },
+  { id: 'PRV-003', name: 'Elite Fixers', rating: 5.0, experience: '12 Years', jobs: 890, verified: true, location: 'West End, Mumbai', categories: ['General Repair', 'Plumbing'], availability: 'Limited Slots' },
+  { id: 'PRV-004', name: 'CoolBreeze HVAC', rating: 4.7, experience: '6 Years', jobs: 210, verified: false, location: 'South Side, Mumbai', categories: ['HVAC', 'Maintenance'], availability: 'Available Today' },
+  { id: 'PRV-005', name: 'Spark Electricals', rating: 4.5, experience: '3 Years', jobs: 150, verified: true, location: 'Downtown, Pune', categories: ['Electrical', 'Lighting'], availability: 'Limited Slots' }
 ];
 
-export default function BrowseProvidersPage({ onBack, onViewProfile }) {
+export default function BrowseProvidersPage({ onBack, onViewProfile, onSendRequest }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
 
-  const categories = ['All', 'Cleaning', 'Pest Control', 'Plumbing', 'HVAC', 'Electrical'];
+  const categories = ['All', 'Cleaning', 'Pest Control', 'Plumbing', 'Electrical', 'AC & Refrigeration', 'Maintenance'];
+
+  const filteredProviders = MOCK_PROVIDERS.filter(provider => {
+    if (searchQuery && !provider.name.toLowerCase().includes(searchQuery.toLowerCase()) && !provider.categories.some(c => c.toLowerCase().includes(searchQuery.toLowerCase())) && !provider.location.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    if (activeCategory !== 'All' && !provider.categories.includes(activeCategory)) return false;
+    return true;
+  });
 
   return (
-    <View style={styles.wrapper}>
-      <View style={[styles.pageHeader, isMobile && styles.pageHeaderMobile]}>
-        <TouchableOpacity style={styles.backBtn} onPress={onBack}>
-          <ArrowLeft size={20} color={NAVY} />
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.pageTitle}>Browse Providers</Text>
-          <Text style={styles.pageSubtitle}>Find trusted service providers for your business</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.wrapper}>
+        
+        {/* ── Page Header ── */}
+        <View style={[styles.pageHeader, isMobile && styles.pageHeaderMobile]}>
+          <TouchableOpacity style={styles.backBtn} onPress={onBack}>
+            <ArrowLeft size={20} color={NAVY} />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.pageTitle}>Browse Service Providers</Text>
+            <Text style={styles.pageSubtitle}>Find trusted service professionals for your business</Text>
+          </View>
+          <View style={{ width: 36 }} />
         </View>
-      </View>
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 60 }}>
-        <View style={[styles.contentLayout, !isMobile && styles.contentLayoutWeb]}>
+        <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          <View style={[styles.contentLayout, !isMobile && styles.contentLayoutWeb]}>
 
-          {/* Search and Filters */}
-          <View style={styles.filtersContainer}>
-            <View style={styles.searchRow}>
-              <View style={styles.searchBox}>
-                <Search size={20} color="#64748B" style={styles.searchIcon} />
-                <TextInput 
-                  style={styles.searchInput}
-                  placeholder="Search providers by name or service..."
-                  placeholderTextColor="#94A3B8"
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                />
+            {/* ── Search & Filters ── */}
+            <View style={styles.filtersContainer}>
+              <View style={styles.searchRow}>
+                <View style={styles.searchBox}>
+                  <Search size={18} color="#94A3B8" />
+                  <TextInput 
+                    style={styles.searchInput}
+                    placeholder="Search providers by name, service, or location..."
+                    placeholderTextColor="#94A3B8"
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                  />
+                </View>
+                <TouchableOpacity style={styles.filterBtn}>
+                  <SlidersHorizontal size={20} color={NAVY} />
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity style={styles.filterBtn}>
-                <SlidersHorizontal size={20} color={NAVY} />
-              </TouchableOpacity>
+
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll} contentContainerStyle={styles.categoriesContainer}>
+                {categories.map(cat => (
+                  <TouchableOpacity 
+                    key={cat} 
+                    style={[styles.categoryPill, activeCategory === cat && styles.categoryPillActive]}
+                    onPress={() => setActiveCategory(cat)}
+                  >
+                    <Text style={[styles.categoryPillText, activeCategory === cat && styles.categoryPillTextActive]}>{cat}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             </View>
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll} contentContainerStyle={styles.categoriesContainer}>
-              {categories.map(cat => (
-                <TouchableOpacity 
-                  key={cat} 
-                  style={[styles.categoryPill, activeCategory === cat && styles.categoryPillActive]}
-                  onPress={() => setActiveCategory(cat)}
-                >
-                  <Text style={[styles.categoryPillText, activeCategory === cat && styles.categoryPillTextActive]}>{cat}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-
-          {/* Provider Grid */}
-          <View style={[styles.grid, isMobile && styles.gridMobile]}>
-            {MOCK_PROVIDERS.map(provider => (
-              <View key={provider.id} style={styles.providerCard}>
-                <View style={styles.cardHeader}>
-                  <View style={styles.logoBox}>
-                    <Text style={styles.logoText}>{provider.name.charAt(0)}</Text>
-                  </View>
-                  <View style={styles.ratingBox}>
-                    <Star size={14} color={GOLD} fill={GOLD} />
-                    <Text style={styles.ratingText}>{provider.rating}</Text>
-                  </View>
-                </View>
+            {/* ── Provider Grid ── */}
+            <View style={styles.grid}>
+              {filteredProviders.map(provider => {
+                const reviewCount = Math.floor(provider.rating * 42); // Dummy reviews
                 
-                <View style={styles.nameRow}>
-                  <Text style={styles.providerName}>{provider.name}</Text>
-                  {provider.verified && <ShieldCheck size={16} color="#16A34A" style={{ marginLeft: 4 }} />}
-                </View>
-                
-                <View style={styles.metaRow}>
-                  <MapPin size={14} color="#64748B" style={styles.metaIcon} />
-                  <Text style={styles.metaText}>{provider.location}</Text>
-                </View>
-
-                <View style={styles.statsRow}>
-                  <View style={styles.statBox}>
-                    <Briefcase size={14} color="#64748B" style={styles.statIcon} />
-                    <Text style={styles.statText}>{provider.experience}</Text>
-                  </View>
-                  <View style={styles.statDivider} />
-                  <View style={styles.statBox}>
-                    <Text style={[styles.statText, { fontWeight: '700', color: NAVY }]}>{provider.jobs}</Text>
-                    <Text style={styles.statText}> Jobs</Text>
-                  </View>
-                </View>
-
-                <View style={styles.tagsContainer}>
-                  {provider.categories.map((cat, idx) => (
-                    <View key={idx} style={styles.tag}>
-                      <Text style={styles.tagText}>{cat}</Text>
+                return (
+                  <View key={provider.id} style={styles.providerCard}>
+                    
+                    {/* Top Section */}
+                    <View style={styles.cardHeader}>
+                      <View style={styles.logoBox}>
+                        <Text style={styles.logoText}>{provider.name.charAt(0)}</Text>
+                      </View>
+                      
+                      <View style={styles.headerContent}>
+                        <View style={styles.nameRow}>
+                          <Text style={styles.providerName} numberOfLines={1}>{provider.name}</Text>
+                          <View style={styles.ratingBox}>
+                            <Star size={12} color={GOLD} fill={GOLD} />
+                            <Text style={styles.ratingText}>{provider.rating}</Text>
+                          </View>
+                        </View>
+                        
+                        <View style={styles.verifiedLocationRow}>
+                          {provider.verified && (
+                            <View style={styles.verifiedBadge}>
+                              <ShieldCheck size={12} color={BLUE} />
+                              <Text style={styles.verifiedText}>Verified Provider</Text>
+                            </View>
+                          )}
+                          <View style={styles.dotSeparator} />
+                          <MapPin size={12} color="#64748B" />
+                          <Text style={styles.metaText}>{provider.location}</Text>
+                        </View>
+                      </View>
                     </View>
-                  ))}
-                </View>
 
-                <TouchableOpacity style={styles.viewProfileBtn} onPress={() => onViewProfile(provider)}>
-                  <Text style={styles.viewProfileBtnText}>View Profile</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
+                    <View style={styles.divider} />
+
+                    {/* Details Strip */}
+                    <View style={styles.detailsStrip}>
+                      <View style={styles.detailItem}>
+                        <Briefcase size={16} color={NAVY} />
+                        <View>
+                          <Text style={styles.detailValue}>{provider.experience}</Text>
+                          <Text style={styles.detailLabel}>Experience</Text>
+                        </View>
+                      </View>
+                      <View style={styles.detailItem}>
+                        <ClipboardCheck size={16} color={NAVY} />
+                        <View>
+                          <Text style={styles.detailValue}>{provider.jobs}+</Text>
+                          <Text style={styles.detailLabel}>Jobs Completed</Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    {/* Service Tags */}
+                    <View style={styles.tagsContainer}>
+                      {provider.categories.slice(0, 3).map((cat, idx) => (
+                        <View key={idx} style={styles.tagChip}>
+                          <Text style={styles.tagText}>{cat}</Text>
+                        </View>
+                      ))}
+                      {provider.categories.length > 3 && (
+                        <View style={styles.tagChipMore}>
+                          <Text style={styles.tagMoreText}>+{provider.categories.length - 3} More</Text>
+                        </View>
+                      )}
+                    </View>
+
+                    {/* Availability */}
+                    <View style={styles.availabilityRow}>
+                      <View style={[styles.availDot, { backgroundColor: provider.availability === 'Available Today' ? GREEN : GOLD }]} />
+                      <Text style={[styles.availText, { color: provider.availability === 'Available Today' ? GREEN : GOLD }]}>{provider.availability}</Text>
+                    </View>
+
+                    {/* Actions */}
+                    <View style={styles.actionsRow}>
+                      <TouchableOpacity style={styles.secondaryBtn} onPress={() => onViewProfile(provider)}>
+                        <Text style={styles.secondaryBtnText}>View Profile</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.primaryBtn} onPress={() => onSendRequest && onSendRequest(provider)}>
+                        <Text style={styles.primaryBtnText}>Send Request</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                  </View>
+                );
+              })}
+            </View>
+
           </View>
-
-        </View>
-      </ScrollView>
-    </View>
+        </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: '#fff' },
   wrapper: { flex: 1, backgroundColor: '#F8FAFC' },
-  pageHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 24, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: colors.border },
-  pageHeaderMobile: { paddingHorizontal: 16, paddingVertical: 16 },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-  pageTitle: { fontSize: 24, fontWeight: '900', color: NAVY, marginBottom: 4 },
-  pageSubtitle: { fontSize: 14, color: '#64748B' },
+  
+  pageHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  pageHeaderMobile: { paddingHorizontal: 16, paddingVertical: 12 },
+  backBtn: { padding: 4 },
+  headerCenter: { flex: 1, alignItems: 'center', marginHorizontal: 12 },
+  pageTitle: { fontSize: 16, fontWeight: 'bold', color: NAVY },
+  pageSubtitle: { fontSize: 12, color: '#64748B', marginTop: 2 },
   
   scroll: { flex: 1 },
-  contentLayout: { padding: 16, gap: 24 },
-  contentLayoutWeb: { padding: 32, maxWidth: 1200, alignSelf: 'center', width: '100%', gap: 32 },
+  scrollContent: { paddingBottom: 120 }, // Sufficient bottom padding for nav
+  contentLayout: { padding: 16 },
+  contentLayoutWeb: { padding: 32, maxWidth: 800, alignSelf: 'center', width: '100%' },
 
-  filtersContainer: { gap: 16 },
-  searchRow: { flexDirection: 'row', gap: 12 },
-  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 16, height: 52 },
-  searchIcon: { marginRight: 12 },
-  searchInput: { flex: 1, fontSize: 15, color: '#0F172A', outlineStyle: 'none' },
-  filterBtn: { width: 52, height: 52, backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-
-  categoriesScroll: { overflow: 'visible' },
-  categoriesContainer: { gap: 12, paddingRight: 20 },
-  categoryPill: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border },
+  filtersContainer: { marginBottom: 24 },
+  searchRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, paddingHorizontal: 16, borderWidth: 1, borderColor: '#E2E8F0', height: 48 },
+  searchInput: { flex: 1, marginLeft: 10, fontSize: 14, color: '#1E293B' },
+  filterBtn: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' },
+  
+  categoriesScroll: { flexGrow: 0 },
+  categoriesContainer: { paddingRight: 16 },
+  categoryPill: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', marginRight: 10 },
   categoryPillActive: { backgroundColor: NAVY, borderColor: NAVY },
-  categoryPillText: { fontSize: 14, fontWeight: '600', color: '#64748B' },
+  categoryPillText: { fontSize: 13, fontWeight: '600', color: NAVY },
   categoryPillTextActive: { color: '#fff' },
 
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 20 },
-  gridMobile: { flexDirection: 'column' },
-  providerCard: { flex: 1, minWidth: 280, maxWidth: 350, backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
-  logoBox: { width: 56, height: 56, borderRadius: 16, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
-  logoText: { fontSize: 24, fontWeight: '900', color: NAVY },
-  ratingBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFBEB', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  ratingText: { fontSize: 13, fontWeight: '700', color: GOLD, marginLeft: 6 },
+  grid: { flexDirection: 'column', gap: 16 },
   
-  nameRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  providerName: { fontSize: 18, fontWeight: '800', color: NAVY },
-  metaRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  metaIcon: { marginRight: 6 },
-  metaText: { fontSize: 13, color: '#64748B' },
+  providerCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#E8EDF4', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 3, elevation: 1 },
+  
+  cardHeader: { flexDirection: 'row', alignItems: 'center' },
+  logoBox: { width: 52, height: 52, borderRadius: 12, backgroundColor: '#EEF2FF', alignItems: 'center', justifyContent: 'center' },
+  logoText: { fontSize: 22, fontWeight: 'bold', color: BLUE },
+  
+  headerContent: { flex: 1, marginLeft: 12 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
+  providerName: { fontSize: 16, fontWeight: 'bold', color: NAVY, flex: 1, marginRight: 8 },
+  ratingBox: { flexDirection: 'row', alignItems: 'center' },
+  ratingText: { fontSize: 13, fontWeight: 'bold', color: '#1E293B', marginLeft: 4 },
+  
+  verifiedLocationRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
+  verifiedBadge: { flexDirection: 'row', alignItems: 'center' },
+  verifiedText: { fontSize: 12, fontWeight: '600', color: BLUE, marginLeft: 4 },
+  dotSeparator: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#CBD5E1', marginHorizontal: 8 },
+  metaText: { fontSize: 12, color: '#64748B', marginLeft: 4 },
 
-  statsRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', padding: 12, borderRadius: 12, marginBottom: 16 },
-  statBox: { flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'center' },
-  statIcon: { marginRight: 6 },
-  statText: { fontSize: 13, color: '#475569' },
-  statDivider: { width: 1, height: 20, backgroundColor: colors.border },
+  divider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 12 },
 
-  tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
-  tag: { paddingHorizontal: 10, paddingVertical: 4, backgroundColor: '#F1F5F9', borderRadius: 6 },
-  tagText: { fontSize: 12, fontWeight: '600', color: '#64748B' },
+  detailsStrip: { flexDirection: 'row', alignItems: 'center', gap: 24, marginBottom: 12 },
+  detailItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  detailValue: { fontSize: 14, fontWeight: 'bold', color: '#1E293B' },
+  detailLabel: { fontSize: 11, color: '#64748B' },
 
-  viewProfileBtn: { paddingVertical: 12, borderRadius: 10, backgroundColor: '#fff', borderWidth: 1, borderColor: NAVY, alignItems: 'center' },
-  viewProfileBtnText: { fontSize: 14, fontWeight: '700', color: NAVY }
+  tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
+  tagChip: { backgroundColor: '#F1F5F9', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6 },
+  tagText: { color: NAVY, fontSize: 12, fontWeight: '500' },
+  tagChipMore: { backgroundColor: '#EEF2FF', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6 },
+  tagMoreText: { color: BLUE, fontSize: 12, fontWeight: '600' },
+
+  availabilityRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  availDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
+  availText: { fontSize: 12, fontWeight: 'bold' },
+
+  actionsRow: { flexDirection: 'row', gap: 12 },
+  secondaryBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: NAVY, alignItems: 'center' },
+  secondaryBtnText: { color: NAVY, fontSize: 14, fontWeight: 'bold' },
+  primaryBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: GOLD, alignItems: 'center' },
+  primaryBtnText: { color: '#fff', fontSize: 14, fontWeight: 'bold' }
 });

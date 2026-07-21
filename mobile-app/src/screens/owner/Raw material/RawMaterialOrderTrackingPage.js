@@ -1,15 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
-import { ArrowLeft, MapPin, Phone, FileText, Check, Package, Truck, Clock } from 'lucide-react-native';
+import { ArrowLeft, MapPin, Phone, FileText, Check, Package, Truck, Clock, Store } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 
-const GOLD = '#D97706';
+const PURPLE = '#D97706';
 
 const STATUS_STAGES = [
   { id: 'confirmed', label: 'Order Confirmed', time: '12 Jul, 10:30 AM', completed: true },
-  { id: 'accepted', label: 'Vendor Accepted', time: '12 Jul, 11:15 AM', completed: true },
-  { id: 'processing', label: 'Processing', time: '12 Jul, 02:00 PM', completed: true },
-  { id: 'packed', label: 'Packed', time: '12 Jul, 04:30 PM', completed: true },
+  { id: 'accepted', label: 'Preparing Your Order', time: '12 Jul, 11:15 AM', completed: true },
   { id: 'out', label: 'Out for Delivery', time: 'Today, 09:00 AM', completed: true, current: true },
   { id: 'delivered', label: 'Delivered', time: 'Pending', completed: false }
 ];
@@ -20,14 +18,14 @@ export default function RawMaterialOrderTrackingPage({ order, onBack }) {
   
   // Using passed order or a mock if not available
   const currentOrder = order || {
-    id: 'ORD-77382',
+    id: 'ORD-49201',
     status: 'Out for Delivery',
-    vendor: 'Metro Fresh Supplies',
+    supplierName: 'Fresh Farm Suppliers',
     expectedDelivery: 'Today by 12:00 PM',
     amount: 1450,
     items: [
-      { id: 'p1', name: 'Red Onion (Grade A)', qty: 20, price: 38 },
-      { id: 'p2', name: 'Tomato (Local)', qty: 15, price: 45 }
+      { id: 'p1', name: 'Tomato', qty: 5, price: 25 },
+      { id: 'p2', name: 'Onion', qty: 5, price: 20 }
     ]
   };
 
@@ -57,7 +55,7 @@ export default function RawMaterialOrderTrackingPage({ order, onBack }) {
                   <Text style={styles.expectedText}>Expected: {currentOrder.expectedDelivery}</Text>
                 </View>
                 <View style={styles.truckIconBox}>
-                  <Truck size={24} color={GOLD} />
+                  <Truck size={24} color={PURPLE} />
                 </View>
               </View>
             </View>
@@ -107,21 +105,17 @@ export default function RawMaterialOrderTrackingPage({ order, onBack }) {
               <View style={styles.divider} />
 
               <View style={styles.detailRow}>
-                <Package size={18} color="#64748B" />
+                <Store size={18} color="#64748B" />
                 <View style={styles.detailTextCol}>
-                  <Text style={styles.detailLabel}>Vendor</Text>
-                  <Text style={styles.detailValue}>{currentOrder.vendor}</Text>
+                  <Text style={styles.detailLabel}>Supplier</Text>
+                  <Text style={styles.detailValue}>{currentOrder.supplierName}</Text>
                 </View>
               </View>
 
               <View style={styles.actionsRow}>
                 <TouchableOpacity style={styles.actionBtn}>
                   <Phone size={16} color="#0F172A" />
-                  <Text style={styles.actionBtnText}>Contact</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.actionBtn}>
-                  <FileText size={16} color="#0F172A" />
-                  <Text style={styles.actionBtnText}>Invoice</Text>
+                  <Text style={styles.actionBtnText}>Contact Support</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -171,11 +165,11 @@ const styles = StyleSheet.create({
   leftCol: { flex: 1, minWidth: 0, gap: 16 },
   rightCol: { flex: 1, minWidth: 0, gap: 16 },
 
-  statusHeaderCard: { backgroundColor: '#FFFBEB', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#FEF3C7', marginBottom: Platform.OS === 'web' ? 0 : 16 },
+  statusHeaderCard: { backgroundColor: '#F5F3FF', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#E2D4F8', marginBottom: Platform.OS === 'web' ? 0 : 16 },
   statusHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  statusTitle: { fontSize: 20, fontWeight: '900', color: GOLD, marginBottom: 4 },
-  expectedText: { fontSize: 14, color: '#92400E', fontWeight: '500' },
-  truckIconBox: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center' },
+  statusTitle: { fontSize: 20, fontWeight: '900', color: PURPLE, marginBottom: 4 },
+  expectedText: { fontSize: 14, color: '#6D28D9', fontWeight: '500' },
+  truckIconBox: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
 
   card: { backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border, marginBottom: Platform.OS === 'web' ? 0 : 16 },
   timelineCard: { backgroundColor: '#fff', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: colors.border },
@@ -187,7 +181,7 @@ const styles = StyleSheet.create({
   timelineIndicator: { width: 24, alignItems: 'center' },
   dot: { width: 16, height: 16, borderRadius: 8, backgroundColor: '#E2E8F0', borderWidth: 2, borderColor: '#fff', alignItems: 'center', justifyContent: 'center', zIndex: 2 },
   dotCompleted: { backgroundColor: '#10B981' },
-  dotCurrent: { backgroundColor: GOLD, width: 20, height: 20, borderRadius: 10, borderWidth: 4, borderColor: '#FEF3C7' },
+  dotCurrent: { backgroundColor: PURPLE, width: 20, height: 20, borderRadius: 10, borderWidth: 4, borderColor: '#E2D4F8' },
   line: { width: 2, flex: 1, backgroundColor: '#E2E8F0', marginVertical: -4, zIndex: 1 },
   lineCompleted: { backgroundColor: '#10B981' },
   
@@ -198,22 +192,22 @@ const styles = StyleSheet.create({
 
   detailRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   detailTextCol: { flex: 1 },
-  detailLabel: { fontSize: 13, color: '#64748B', marginBottom: 2 },
+  detailLabel: { fontSize: 13, color: '#64748B', marginBottom: 4 },
   detailValue: { fontSize: 14, fontWeight: '600', color: '#0F172A', lineHeight: 20 },
   divider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 16 },
 
-  actionsRow: { flexDirection: 'row', gap: 12, marginTop: 24 },
-  actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 44, borderRadius: 10, borderWidth: 1, borderColor: colors.border, backgroundColor: '#F8FAFC' },
-  actionBtnText: { fontSize: 14, fontWeight: '700', color: '#0F172A' },
+  actionsRow: { flexDirection: 'row', gap: 12, marginTop: 16 },
+  actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 10, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: colors.border },
+  actionBtnText: { fontSize: 13, fontWeight: '700', color: '#0F172A' },
 
   itemRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   itemThumb: { width: 40, height: 40, borderRadius: 8, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  itemInitial: { fontSize: 16, fontWeight: '800', color: '#94A3B8' },
+  itemInitial: { fontSize: 16, fontWeight: '700', color: '#64748B' },
   itemName: { fontSize: 14, fontWeight: '700', color: '#0F172A', marginBottom: 2 },
-  itemQty: { fontSize: 13, color: '#64748B' },
-  itemPrice: { fontSize: 14, fontWeight: '800', color: '#0F172A' },
-
+  itemQty: { fontSize: 12, color: '#64748B' },
+  itemPrice: { fontSize: 14, fontWeight: '700', color: '#0F172A' },
+  
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  totalLabel: { fontSize: 14, fontWeight: '700', color: '#64748B' },
-  totalValue: { fontSize: 18, fontWeight: '900', color: '#0F172A' }
+  totalLabel: { fontSize: 15, fontWeight: '700', color: '#0F172A' },
+  totalValue: { fontSize: 18, fontWeight: '900', color: PURPLE }
 });

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions , Alert} from 'react-native';
 import {
   Megaphone, MonitorPlay, Radio, Presentation, FileText, CheckCircle, Clock,
-  ArrowRight, MapPin, Star, ShieldCheck, Target, BarChart2, Briefcase, Zap, PlusCircle
+  ArrowRight, MapPin, Star, ShieldCheck, Target, BarChart2, Briefcase, Zap, PlusCircle, Package
 } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 import OnlineBroadcastPage from './OnlineBroadcastPage';
@@ -285,9 +285,14 @@ export default function MarketingPage() {
     <View style={styles.wrapper}>
       {/* ── Header ── */}
       <View style={[styles.pageHeader, isMobile && styles.pageHeaderMobile]}>
-        <View>
+        <View style={{ flex: 1, paddingRight: 12 }}>
           <Text style={styles.pageTitle}>Marketing</Text>
           <Text style={styles.pageSubtitle}>Launch digital and offline campaigns to grow your business.</Text>
+        </View>
+        <View style={styles.headerIcons}>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => setCurrentView('campaignRequests')}>
+            <Package size={20} color="#0F172A" />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -390,7 +395,7 @@ export default function MarketingPage() {
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>Upcoming Campaigns</Text>
-                  <TouchableOpacity><Text style={styles.viewAllText}>View All</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => Alert.alert('Coming Soon', 'This feature is under development.')}><Text style={styles.viewAllText}>View All</Text></TouchableOpacity>
                 </View>
                 {UPCOMING_CAMPAIGNS.map(cmp => (
                   <View key={cmp.id} style={styles.upcomingCard}>
@@ -461,10 +466,21 @@ export default function MarketingPage() {
 // =====================================
 const styles = StyleSheet.create({
   wrapper: { flex: 1, backgroundColor: LIGHT_BG },
-  pageHeader: { paddingHorizontal: 20, paddingVertical: 24, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: colors.border },
+  pageHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 24, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: colors.border },
   pageHeaderMobile: { paddingHorizontal: 16, paddingVertical: 16 },
   pageTitle: { fontSize: 24, fontWeight: '900', color: NAVY, marginBottom: 4 },
   pageSubtitle: { fontSize: 14, color: '#64748B' },
+  headerIcons: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   scroll: { flex: 1 },
   contentLayout: { padding: 16, gap: 24 },

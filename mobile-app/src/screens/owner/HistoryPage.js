@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform } from 'react-native';
-import { Clock, Search, Download, Package, Users, Wrench, Megaphone, CheckCircle, XCircle } from 'lucide-react-native';
+import { Clock, Search, Download, Package, Users, Wrench, Megaphone, CheckCircle, XCircle, ShoppingBag, CircleCheck, Clock3 } from 'lucide-react-native';
 import { colors } from '../../theme/colors';
 
 const HISTORY_DATA = [
@@ -36,6 +36,9 @@ export default function HistoryPage() {
     return matchSearch && matchCat;
   });
 
+  const completedOrdersCount = HISTORY_DATA.filter(o => ['Completed', 'Delivered'].includes(o.status)).length;
+  const pendingOrdersCount = HISTORY_DATA.filter(o => !['Completed', 'Delivered', 'Cancelled', 'Rejected'].includes(o.status)).length;
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -54,20 +57,27 @@ export default function HistoryPage() {
       {/* Summary Stats */}
       <View style={styles.statsGrid}>
         <View style={styles.statCard}>
-          <Text style={[styles.statValue, { color: "#D4940A" }]}>{HISTORY_DATA.length}</Text>
+          <View style={[styles.statIconBox, { backgroundColor: 'rgba(124, 58, 237, 0.1)' }]}>
+            <ShoppingBag size={20} color="#7C3AED" />
+          </View>
+          <Text style={[styles.statValue, { color: colors.dark }]}>{HISTORY_DATA.length}</Text>
           <Text style={styles.statLabel}>Total Orders</Text>
         </View>
+
         <View style={styles.statCard}>
-          <Text style={[styles.statValue, { color: "#0FA668" }]}>4</Text>
+          <View style={[styles.statIconBox, { backgroundColor: 'rgba(16, 185, 129, 0.1)' }]}>
+            <CircleCheck size={20} color="#10B981" />
+          </View>
+          <Text style={[styles.statValue, { color: colors.dark }]}>{completedOrdersCount}</Text>
           <Text style={styles.statLabel}>Completed</Text>
         </View>
+
         <View style={styles.statCard}>
-          <Text style={[styles.statValue, { color: "#3B7FE0" }]}>₹63K</Text>
-          <Text style={styles.statLabel}>Total Spend</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={[styles.statValue, { color: "#9B5CF6" }]}>4</Text>
-          <Text style={styles.statLabel}>Vendors Used</Text>
+          <View style={[styles.statIconBox, { backgroundColor: 'rgba(245, 158, 11, 0.1)' }]}>
+            <Clock3 size={20} color="#F59E0B" />
+          </View>
+          <Text style={[styles.statValue, { color: colors.dark }]}>{pendingOrdersCount}</Text>
+          <Text style={styles.statLabel}>Pending</Text>
         </View>
       </View>
 
@@ -174,7 +184,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingBottom: 40,
   },
-  header: {
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16, 
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -217,6 +227,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     ...Platform.select({ web: { boxShadow: '0 4px 18px rgba(0,0,0,0.03)' } }),
+  },
+  statIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
   },
   statValue: {
     fontSize: 24,

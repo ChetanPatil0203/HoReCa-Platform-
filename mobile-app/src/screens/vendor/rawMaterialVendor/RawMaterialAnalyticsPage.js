@@ -208,7 +208,7 @@ export default function RawMaterialAnalyticsPage() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#F8FAFC' },
   container: { flex: 1 },
-  header: {
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16, 
     paddingHorizontal: 16, paddingVertical: 16, backgroundColor: '#FFFFFF',
     borderBottomWidth: 1, borderBottomColor: '#F1F5F9',
   },

@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions, TextInput } from 'react-native';
-import { ArrowLeft, MapPin, Calendar, Clock, CreditCard, ChevronRight, Check, Plus } from 'lucide-react-native';
+import { ArrowLeft, MapPin, Calendar, Clock, CreditCard, ChevronRight, Check, Plus, Store } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 
-const GOLD = '#D97706';
+const PURPLE = '#D97706';
 
-export default function RawMaterialCheckoutPage({ cartItems, onBack, onSuccess, isSuccess, onHome }) {
+export default function RawMaterialCheckoutPage({ cartItems, onBack, onSuccess, isSuccess, onHome, onTrackOrder }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
 
@@ -13,19 +13,20 @@ export default function RawMaterialCheckoutPage({ cartItems, onBack, onSuccess, 
   const [schedule, setSchedule] = useState('tomorrow_morning');
   const [payment, setPayment] = useState('cod');
 
-  // Group by vendor for summary
+  // Group by supplierName
   const groupedCart = useMemo(() => {
     const groups = {};
     cartItems.forEach(item => {
-      if (!groups[item.vendor]) groups[item.vendor] = [];
-      groups[item.vendor].push(item);
+      const supplier = item.supplierName || 'Other Supplier';
+      if (!groups[supplier]) groups[supplier] = [];
+      groups[supplier].push(item);
     });
     return groups;
   }, [cartItems]);
 
   const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.qty), 0);
   const gst = subtotal * 0.05; 
-  const delivery = subtotal > 1000 ? 0 : 50; 
+  const delivery = subtotal > 1000 ? 0 : 50 * Object.keys(groupedCart).length; 
   const grandTotal = subtotal + gst + delivery;
 
   const handlePlaceOrder = () => {
@@ -56,7 +57,7 @@ export default function RawMaterialCheckoutPage({ cartItems, onBack, onSuccess, 
           </View>
 
           <View style={styles.successActions}>
-            <TouchableOpacity style={styles.trackBtn}>
+            <TouchableOpacity style={styles.trackBtn} onPress={() => onTrackOrder({ id: '#ORD-49201', items: cartItems, total: grandTotal, status: 'confirmed', date: new Date().toLocaleDateString() })}>
               <Text style={styles.trackBtnText}>Track Order</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.homeBtn} onPress={onHome}>
@@ -89,8 +90,8 @@ export default function RawMaterialCheckoutPage({ cartItems, onBack, onSuccess, 
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Delivery Address</Text>
                 <TouchableOpacity style={styles.addBtn}>
-                  <Plus size={14} color={GOLD} />
-                  <Text style={styles.addBtnText}>Add New</Text>
+                  <Plus size={14} color={PURPLE} />
+                  <Text style={styles.addBtnText}>Change Address</Text>
                 </TouchableOpacity>
               </View>
               
@@ -114,34 +115,11 @@ export default function RawMaterialCheckoutPage({ cartItems, onBack, onSuccess, 
               </TouchableOpacity>
             </View>
 
-            {/* ── Delivery Schedule ── */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Delivery Schedule</Text>
-              <View style={styles.scheduleGrid}>
-                <TouchableOpacity 
-                  style={[styles.scheduleCard, schedule === 'today_eve' && styles.scheduleCardActive]}
-                  onPress={() => setSchedule('today_eve')}
-                >
-                  <Calendar size={16} color={schedule === 'today_eve' ? GOLD : '#64748B'} />
-                  <Text style={[styles.scheduleTitle, schedule === 'today_eve' && { color: GOLD }]}>Today</Text>
-                  <Text style={styles.scheduleSub}>4 PM - 7 PM</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[styles.scheduleCard, schedule === 'tomorrow_morning' && styles.scheduleCardActive]}
-                  onPress={() => setSchedule('tomorrow_morning')}
-                >
-                  <Calendar size={16} color={schedule === 'tomorrow_morning' ? GOLD : '#64748B'} />
-                  <Text style={[styles.scheduleTitle, schedule === 'tomorrow_morning' && { color: GOLD }]}>Tomorrow</Text>
-                  <Text style={styles.scheduleSub}>8 AM - 11 AM</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
             {/* ── Payment Method ── */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Payment Method</Text>
               <View style={styles.paymentList}>
-                {['upi', 'card', 'netbanking', 'cod'].map(method => (
+                {['upi', 'netbanking', 'cod'].map(method => (
                   <TouchableOpacity 
                     key={method}
                     style={[styles.paymentRow, payment === method && styles.paymentRowActive]}
@@ -152,13 +130,11 @@ export default function RawMaterialCheckoutPage({ cartItems, onBack, onSuccess, 
                         {payment === method && <View style={styles.radioInner} />}
                       </View>
                       <Text style={styles.paymentText}>
-                        {method === 'upi' && 'UPI (GPay, PhonePe)'}
-                        {method === 'card' && 'Credit / Debit Card'}
-                        {method === 'netbanking' && 'Net Banking'}
+                        {method === 'upi' && 'UPI / QR Code'}
+                        {method === 'netbanking' && 'Bank Transfer'}
                         {method === 'cod' && 'Cash on Delivery'}
                       </Text>
                     </View>
-                    {method === 'cod' && <Text style={styles.codFee}>Free</Text>}
                   </TouchableOpacity>
                 ))}
               </View>
@@ -188,26 +164,26 @@ export default function RawMaterialCheckoutPage({ cartItems, onBack, onSuccess, 
               <View style={styles.summaryDivider} />
 
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Subtotal</Text>
+                <Text style={styles.summaryLabel}>Items Total</Text>
                 <Text style={styles.summaryValue}>₹{subtotal.toLocaleString()}</Text>
               </View>
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>GST (5%)</Text>
+                <Text style={styles.summaryLabel}>Tax (5%)</Text>
                 <Text style={styles.summaryValue}>₹{gst.toFixed(2)}</Text>
               </View>
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Delivery</Text>
+                <Text style={styles.summaryLabel}>Delivery Charges</Text>
                 <Text style={styles.summaryValue}>{delivery === 0 ? 'Free' : `₹${delivery}`}</Text>
               </View>
               <View style={styles.summaryDivider} />
               <View style={styles.summaryRow}>
-                <Text style={styles.grandTotalLabel}>Total to Pay</Text>
+                <Text style={styles.grandTotalLabel}>Total Amount</Text>
                 <Text style={styles.grandTotalValue}>₹{grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
               </View>
 
               {!isMobile && (
-                <TouchableOpacity style={styles.placeOrderBtn} onPress={handlePlaceOrder}>
-                  <Text style={styles.placeOrderText}>Place Order</Text>
+                <TouchableOpacity style={styles.checkoutBtn} onPress={handlePlaceOrder}>
+                  <Text style={styles.checkoutText}>Place Order</Text>
                   <ChevronRight size={16} color="#fff" />
                 </TouchableOpacity>
               )}
@@ -223,8 +199,8 @@ export default function RawMaterialCheckoutPage({ cartItems, onBack, onSuccess, 
             <Text style={styles.bottomTotalLabel}>Total</Text>
             <Text style={styles.bottomTotalValue}>₹{grandTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</Text>
           </View>
-          <TouchableOpacity style={styles.placeOrderBtnMobile} onPress={handlePlaceOrder}>
-            <Text style={styles.placeOrderText}>Place Order</Text>
+          <TouchableOpacity style={styles.checkoutBtnMobile} onPress={handlePlaceOrder}>
+            <Text style={styles.checkoutText}>Place Order</Text>
             <ChevronRight size={16} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -239,83 +215,79 @@ const styles = StyleSheet.create({
   topBarMobile: { paddingHorizontal: 16, paddingVertical: 12 },
   backBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
-  
+
   scroll: { flex: 1 },
   contentLayout: { padding: 16 },
-  contentLayoutWeb: { flexDirection: 'row', gap: 32, padding: 32, maxWidth: 1200, alignSelf: 'center', width: '100%', alignItems: 'flex-start' },
+  contentLayoutWeb: { flexDirection: 'row', gap: 24, padding: 32, maxWidth: 1200, alignSelf: 'center', width: '100%', alignItems: 'flex-start' },
   
   leftCol: { flex: 1, minWidth: 0 },
-  rightCol: { width: 380 },
-  rightColMobile: { width: '100%', marginTop: 24 },
+  rightCol: { width: 360 },
+  rightColMobile: { width: '100%', marginTop: 16 },
 
-  section: { marginBottom: 32 },
+  section: { backgroundColor: '#fff', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: colors.border, marginBottom: 16, ...Platform.select({ web: { boxShadow: '0 2px 8px rgba(0,0,0,0.02)' } }) },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   sectionTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A', marginBottom: 16 },
   addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  addBtnText: { fontSize: 13, fontWeight: '700', color: GOLD },
+  addBtnText: { fontSize: 13, fontWeight: '700', color: PURPLE },
 
-  radioCard: { flexDirection: 'row', backgroundColor: '#fff', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: colors.border },
-  radioCardActive: { borderColor: GOLD, backgroundColor: '#FFFBEB' },
-  radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: '#CBD5E1', alignItems: 'center', justifyContent: 'center', marginRight: 16, marginTop: 2 },
-  radioActive: { borderColor: GOLD },
-  radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: GOLD },
+  radioCard: { flexDirection: 'row', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: '#fff', marginBottom: 12 },
+  radioCardActive: { borderColor: PURPLE, backgroundColor: '#F5F3FF' },
+  radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 1, borderColor: '#CBD5E1', alignItems: 'center', justifyContent: 'center', marginRight: 12, marginTop: 2 },
+  radioActive: { borderColor: PURPLE },
+  radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: PURPLE },
   
   radioContent: { flex: 1 },
-  addressTop: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  addressName: { fontSize: 15, fontWeight: '800', color: '#0F172A' },
-  addressBadge: { backgroundColor: '#F1F5F9', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  addressTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+  addressName: { fontSize: 14, fontWeight: '700', color: '#0F172A' },
+  addressBadge: { backgroundColor: '#E2E8F0', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   addressBadgeText: { fontSize: 10, fontWeight: '700', color: '#475569' },
-  addressText: { fontSize: 13, color: '#475569', marginBottom: 2 },
-  addressPhone: { fontSize: 13, fontWeight: '600', color: '#0F172A', marginTop: 4 },
+  addressText: { fontSize: 13, color: '#475569', lineHeight: 20 },
+  addressPhone: { fontSize: 13, fontWeight: '600', color: '#0F172A', marginTop: 8 },
 
-  scheduleGrid: { flexDirection: 'row', gap: 12 },
-  scheduleCard: { flex: 1, backgroundColor: '#fff', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: colors.border, alignItems: 'center' },
-  scheduleCardActive: { borderColor: GOLD, backgroundColor: '#FFFBEB' },
-  scheduleTitle: { fontSize: 14, fontWeight: '700', color: '#0F172A', marginTop: 8, marginBottom: 2 },
-  scheduleSub: { fontSize: 12, color: '#64748B' },
-
-  paymentList: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
-  paymentRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border },
-  paymentRowActive: { backgroundColor: '#FAFAFA' },
+  paymentList: { gap: 12 },
+  paymentRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: colors.border },
+  paymentRowActive: { borderColor: PURPLE, backgroundColor: '#F5F3FF' },
   paymentLeft: { flexDirection: 'row', alignItems: 'center' },
   paymentText: { fontSize: 14, fontWeight: '600', color: '#0F172A' },
-  codFee: { fontSize: 12, color: '#059669', fontWeight: '700' },
+  codFee: { fontSize: 12, fontWeight: '600', color: '#10B981' },
 
-  summaryCard: { backgroundColor: '#fff', padding: 24, borderRadius: 16, borderWidth: 1, borderColor: colors.border },
+  summaryCard: { backgroundColor: '#fff', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: colors.border, ...Platform.select({ web: { boxShadow: '0 2px 8px rgba(0,0,0,0.02)' } }) },
   summaryTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A', marginBottom: 16 },
+  
   summaryItems: { marginBottom: 16 },
   summaryVendor: { marginBottom: 12 },
-  summaryVendorName: { fontSize: 12, fontWeight: '700', color: '#64748B', marginBottom: 6 },
-  summaryItemRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  summaryItemName: { fontSize: 13, color: '#0F172A', flex: 1, marginRight: 8 },
+  summaryVendorName: { fontSize: 12, fontWeight: '700', color: '#64748B', marginBottom: 8, textTransform: 'uppercase' },
+  summaryItemRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  summaryItemName: { fontSize: 13, color: '#475569', flex: 1 },
   summaryItemPrice: { fontSize: 13, fontWeight: '600', color: '#0F172A' },
-  
+
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
   summaryLabel: { fontSize: 14, color: '#475569' },
   summaryValue: { fontSize: 14, fontWeight: '600', color: '#0F172A' },
   summaryDivider: { height: 1, backgroundColor: colors.border, marginVertical: 12 },
   grandTotalLabel: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
-  grandTotalValue: { fontSize: 20, fontWeight: '900', color: GOLD },
+  grandTotalValue: { fontSize: 18, fontWeight: '900', color: PURPLE },
 
-  placeOrderBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: GOLD, height: 48, borderRadius: 12, marginTop: 24 },
-  placeOrderText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  checkoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: PURPLE, height: 48, borderRadius: 12, marginTop: 24 },
+  checkoutText: { fontSize: 15, fontWeight: '700', color: '#fff' },
 
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', padding: 16, paddingBottom: Platform.OS === 'ios' ? 32 : 16, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: colors.border, alignItems: 'center' },
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', padding: 16, paddingBottom: Platform.OS === 'ios' ? 32 : 16, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: colors.border, alignItems: 'center', ...Platform.select({ web: { boxShadow: '0 -4px 12px rgba(0,0,0,0.05)' } }) },
   bottomTotal: { flex: 1 },
   bottomTotalLabel: { fontSize: 12, color: '#64748B' },
-  bottomTotalValue: { fontSize: 18, fontWeight: '900', color: GOLD },
-  placeOrderBtnMobile: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: GOLD, height: 48, paddingHorizontal: 24, borderRadius: 12 },
+  bottomTotalValue: { fontSize: 18, fontWeight: '900', color: PURPLE },
+  checkoutBtnMobile: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: PURPLE, height: 48, paddingHorizontal: 24, borderRadius: 12 },
 
-  successContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
-  successTitle: { fontSize: 24, fontWeight: '900', color: '#0F172A', marginBottom: 8 },
-  successSub: { fontSize: 15, color: '#64748B', marginBottom: 32 },
-  successCard: { backgroundColor: '#fff', width: '100%', maxWidth: 400, padding: 24, borderRadius: 16, borderWidth: 1, borderColor: colors.border, marginBottom: 32 },
-  successRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  // Success State
+  successContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: '#fff' },
+  successTitle: { fontSize: 24, fontWeight: '900', color: '#0F172A', marginBottom: 8, textAlign: 'center' },
+  successSub: { fontSize: 14, color: '#64748B', marginBottom: 32 },
+  successCard: { width: '100%', maxWidth: 400, backgroundColor: '#F8FAFC', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: colors.border, marginBottom: 32 },
+  successRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
   successLabel: { fontSize: 14, color: '#475569' },
   successValue: { fontSize: 14, fontWeight: '700', color: '#0F172A' },
-  successActions: { width: '100%', maxWidth: 400, gap: 12 },
-  trackBtn: { backgroundColor: GOLD, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  successActions: { flexDirection: 'row', gap: 16, width: '100%', maxWidth: 400 },
+  trackBtn: { flex: 1, height: 48, backgroundColor: PURPLE, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   trackBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
-  homeBtn: { backgroundColor: '#F8FAFC', height: 48, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
-  homeBtnText: { fontSize: 15, fontWeight: '700', color: '#0F172A' }
+  homeBtn: { flex: 1, height: 48, backgroundColor: '#F1F5F9', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  homeBtnText: { fontSize: 15, fontWeight: '700', color: '#0F172A' },
 });

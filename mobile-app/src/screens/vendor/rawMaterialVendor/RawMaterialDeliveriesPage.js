@@ -55,7 +55,7 @@ const MOCK_DELIVERIES = [
 
 export default function RawMaterialDeliveriesPage() {
   const { width } = useWindowDimensions();
-  const [activeFilter, setActiveFilter] = useState('Packed');
+  const [activeFilter, setActiveFilter] = useState('All');
   const [deliveries, setDeliveries] = useState(MOCK_DELIVERIES);
   
   // Expandable row state
@@ -83,26 +83,38 @@ export default function RawMaterialDeliveriesPage() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Scheduled': return '#8B5CF6';
-      case 'Packed': return '#F59E0B';
-      case 'Driver Assigned': return '#0EA5E9';
-      case 'Dispatched': return '#3B82F6';
-      case 'In Transit': return '#6366F1';
-      case 'Arrived': return '#14B8A6';
-      case 'Delivered': return '#10B981';
-      case 'Partially Delivered': return '#84CC16';
+      case 'Scheduled': return '#8B5CF6'; // Soft Blue/Purple
+      case 'Packed': return '#F59E0B'; // Orange
+      case 'Driver Assigned': return '#A855F7'; // Purple
+      case 'Dispatched': return '#3B82F6'; // Blue
+      case 'In Transit': return '#4F46E5'; // Indigo
+      case 'Arrived': return '#D4AF37'; // Gold
+      case 'Delivered': return '#10B981'; // Green
+      case 'Partially Delivered': return '#84CC16'; // Lime
+      case 'Cancelled': return '#EF4444'; // Red
       default: return '#64748B';
     }
   };
 
-  const getNextStatus = (status) => {
+  const getNextStatusAction = (status) => {
     switch (status) {
-      case 'Scheduled': return 'Packed';
+      case 'Scheduled': return 'Assign Driver';
       case 'Packed': return 'Assign Driver';
-      case 'Driver Assigned': return 'Dispatched';
-      case 'Dispatched': return 'In Transit';
-      case 'In Transit': return 'Arrived';
+      case 'Driver Assigned': return 'Mark Dispatched';
+      case 'Dispatched': return 'Mark In Transit';
+      case 'In Transit': return 'Mark Arrived';
       case 'Arrived': return 'Complete Delivery';
+      case 'Delivered': return 'View Proof';
+      case 'Partially Delivered': return 'View Proof';
+      default: return null;
+    }
+  };
+
+  const getNextStateForStatus = (action) => {
+    switch (action) {
+      case 'Mark Dispatched': return 'Dispatched';
+      case 'Mark In Transit': return 'In Transit';
+      case 'Mark Arrived': return 'Arrived';
       default: return null;
     }
   };
@@ -111,7 +123,7 @@ export default function RawMaterialDeliveriesPage() {
     setDeliveries(prev => prev.map(d => {
       if (d.id === id) {
         const newHistory = [...d.history];
-        if (newStatus !== d.status && newStatus !== 'Assign Driver' && newStatus !== 'Complete Delivery') {
+        if (newStatus !== d.status && newStatus !== 'Assign Driver' && newStatus !== 'Complete Delivery' && newStatus !== 'View Proof') {
           newHistory.push({
             status: newStatus,
             date: "Today",
@@ -119,34 +131,48 @@ export default function RawMaterialDeliveriesPage() {
             note: historyNote
           });
         }
-        return { ...d, ...updates, status: (newStatus === 'Assign Driver' || newStatus === 'Complete Delivery') ? d.status : newStatus, history: newHistory };
+        return { 
+          ...d, 
+          ...updates, 
+          status: (newStatus === 'Assign Driver' || newStatus === 'Complete Delivery' || newStatus === 'View Proof') ? d.status : newStatus, 
+          history: newHistory 
+        };
       }
       return d;
     }));
   };
 
   const handleUpdateStatusClick = (delivery) => {
-    const nextStatus = getNextStatus(delivery.status);
-    if (nextStatus === 'Assign Driver') {
+    const action = getNextStatusAction(delivery.status);
+    
+    if (action === 'Assign Driver') {
       setSelectedDelivery(delivery);
       setDriverForm({ name: '', phone: '', vehicleType: '', vehicleNum: '' });
       setAssignDriverVisible(true);
       return;
     }
-    if (nextStatus === 'Complete Delivery') {
+    
+    if (action === 'Complete Delivery') {
       setSelectedDelivery(delivery);
       setCompleteForm({ otp: '', receiver: '', qty: delivery.orderedQty.toString(), notes: '' });
       setCompleteModalVisible(true);
       return;
     }
+    
+    if (action === 'View Proof') {
+      setSelectedDelivery(delivery);
+      setDetailsModalVisible(true);
+      return;
+    }
 
-    if (nextStatus) {
+    const nextState = getNextStateForStatus(action);
+    if (nextState) {
       Alert.alert(
-        `Mark as ${nextStatus}?`,
-        `Are you sure you want to mark this delivery as ${nextStatus}?`,
+        `${action}?`,
+        `Are you sure you want to mark this delivery as ${nextState}?`,
         [
           { text: "Cancel", style: "cancel" },
-          { text: "Confirm", onPress: () => updateDeliveryState(delivery.id, nextStatus) }
+          { text: "Confirm", onPress: () => updateDeliveryState(delivery.id, nextState) }
         ]
       );
     }
@@ -206,21 +232,24 @@ export default function RawMaterialDeliveriesPage() {
 
   const renderDeliveryCard = ({ item }) => {
     const isExpanded = expandedId === item.id;
-    const nextStatusText = getNextStatus(item.status);
+    const actionText = getNextStatusAction(item.status);
     const canReportDelay = item.status === 'Dispatched' || item.status === 'In Transit';
     const canComplete = item.status === 'Arrived' || item.status === 'In Transit';
+    const accentColor = getStatusColor(item.status);
 
     return (
-      <View style={styles.card}>
+      <View style={[styles.card, { borderLeftColor: accentColor, borderLeftWidth: 4 }]}>
+        
+        {/* Top Row */}
         <View style={styles.cardHeader}>
-          <View>
-            <Text style={styles.deliveryId}>{item.id}</Text>
-            <Text style={styles.orderId}>Ref: {item.orderId}</Text>
-          </View>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '15' }]}>
-            <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>{item.status}</Text>
+          <Text style={styles.deliveryId}>{item.id}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: accentColor + '15' }]}>
+            <Text style={[styles.statusText, { color: accentColor }]}>{item.status}</Text>
           </View>
         </View>
+        
+        {/* Second Row */}
+        <Text style={styles.orderId}>Ref: {item.orderId}</Text>
         
         {item.isDelayed && (
           <View style={styles.delayedBanner}>
@@ -230,29 +259,60 @@ export default function RawMaterialDeliveriesPage() {
         )}
 
         <View style={styles.cardBody}>
-          <Text style={styles.clientName}>{item.client}</Text>
-          
-          <View style={styles.infoRow}>
-            <Package size={14} color="#64748B" />
-            <Text style={styles.infoText}>{item.product} • <Text style={styles.boldInfo}>{item.orderedQty}{item.unit}</Text></Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Clock size={14} color="#64748B" />
-            <Text style={styles.infoText}>{item.date}</Text>
-          </View>
-          
-          {item.driver && (
-            <View style={styles.infoRow}>
-              <Truck size={14} color="#64748B" />
-              <Text style={styles.infoText}>{item.driver} • {item.vehicleType} {item.vehicleNumber}</Text>
+          {/* Client Section */}
+          <View style={styles.clientSection}>
+            <Text style={styles.clientName}>{item.client}</Text>
+            <View style={styles.locationRow}>
+              <MapPin size={14} color="#64748B" />
+              <Text style={styles.addressText} numberOfLines={1}>{item.address}</Text>
             </View>
-          )}
+          </View>
+          
+          {/* Product Section */}
+          <View style={styles.productSection}>
+            <View style={styles.iconContainer}>
+              <Package size={16} color="#64748B" />
+            </View>
+            <Text style={styles.productText}>
+              {item.product} <Text style={styles.dotSeparator}>•</Text> <Text style={styles.boldInfo}>{item.orderedQty}{item.unit}</Text>
+            </Text>
+          </View>
+          
+          {/* Delivery Info */}
+          <View style={styles.infoGrid}>
+            <View style={styles.infoItem}>
+              <Clock size={14} color="#64748B" />
+              <Text style={styles.infoText}>{item.date}</Text>
+            </View>
+            
+            {item.driver ? (
+              <View style={styles.infoItem}>
+                <Truck size={14} color="#64748B" />
+                <Text style={styles.infoText}>Driver: {item.driver}</Text>
+              </View>
+            ) : (
+              <View style={styles.infoItem}>
+                <Truck size={14} color="#64748B" />
+                <Text style={styles.infoText}>Driver: <Text style={styles.unassignedText}>Not Assigned</Text></Text>
+              </View>
+            )}
+            
+            {item.vehicleNumber && (
+              <View style={[styles.infoItem, {marginTop: 6}]}>
+                <View style={{width: 14, alignItems: 'center'}}><Navigation size={14} color="#64748B" /></View>
+                <Text style={styles.infoText}>{item.vehicleType} • {item.vehicleNumber}</Text>
+              </View>
+            )}
+          </View>
         </View>
 
         <View style={styles.cardFooter}>
-          {nextStatusText && (
-            <TouchableOpacity style={styles.btnPrimary} onPress={() => handleUpdateStatusClick(item)}>
-              <Text style={styles.btnPrimaryText}>{nextStatusText}</Text>
+          {actionText && (
+            <TouchableOpacity 
+              style={[styles.btnPrimary, (actionText === 'View Proof') && styles.btnOutline]} 
+              onPress={() => handleUpdateStatusClick(item)}
+            >
+              <Text style={[styles.btnPrimaryText, (actionText === 'View Proof') && styles.btnOutlineText]}>{actionText}</Text>
             </TouchableOpacity>
           )}
           <TouchableOpacity 
@@ -268,7 +328,7 @@ export default function RawMaterialDeliveriesPage() {
             <View style={styles.expandedGrid}>
               <TouchableOpacity style={styles.expandedBtn} onPress={() => { setSelectedDelivery(item); setDetailsModalVisible(true); }}>
                 <Info size={20} color={NAVY} />
-                <Text style={styles.expandedBtnText}>Details</Text>
+                <Text style={styles.expandedBtnText}>View Details</Text>
               </TouchableOpacity>
               
               {item.driver && (
@@ -281,7 +341,7 @@ export default function RawMaterialDeliveriesPage() {
               {canReportDelay && !item.isDelayed && (
                 <TouchableOpacity style={styles.expandedBtn} onPress={() => { setSelectedDelivery(item); setDelayModalVisible(true); }}>
                   <AlertTriangle size={20} color="#F59E0B" />
-                  <Text style={styles.expandedBtnText}>Delay</Text>
+                  <Text style={styles.expandedBtnText}>Report Delay</Text>
                 </TouchableOpacity>
               )}
 
@@ -318,10 +378,10 @@ export default function RawMaterialDeliveriesPage() {
           <Text style={styles.headerTitle}>Deliveries</Text>
           <View style={styles.headerActions}>
             <TouchableOpacity style={styles.iconBtn}>
-              <Search size={20} color={NAVY} />
+              <Search size={22} color={NAVY} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconBtn}>
-              <Filter size={20} color={NAVY} />
+              <Filter size={22} color={NAVY} />
             </TouchableOpacity>
           </View>
         </View>
@@ -392,13 +452,18 @@ export default function RawMaterialDeliveriesPage() {
                   <Text style={styles.inputLabel}>Vehicle Number</Text>
                   <TextInput style={styles.inputField} placeholder="e.g. MH12 AB 1234" value={driverForm.vehicleNum} onChangeText={t => setDriverForm({...driverForm, vehicleNum: t})} />
                 </View>
+                
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Expected Dispatch Time</Text>
+                  <TextInput style={styles.inputField} placeholder="e.g. 02:00 PM" />
+                </View>
 
                 <TouchableOpacity 
-                  style={[styles.btnPrimaryLarge, (!driverForm.name || !driverForm.phone || !driverForm.vehicleType) && {backgroundColor: '#94A3B8'}]}
+                  style={[styles.btnPrimaryLargeModal, (!driverForm.name || !driverForm.phone || !driverForm.vehicleType) && {backgroundColor: '#E2E8F0'}]}
                   disabled={!driverForm.name || !driverForm.phone || !driverForm.vehicleType}
                   onPress={submitAssignDriver}
                 >
-                  <Text style={styles.btnPrimaryLargeText}>Save Details</Text>
+                  <Text style={[styles.btnPrimaryLargeText, (!driverForm.name || !driverForm.phone || !driverForm.vehicleType) && {color: '#94A3B8'}]}>Save Details</Text>
                 </TouchableOpacity>
               </ScrollView>
             </View>
@@ -427,11 +492,11 @@ export default function RawMaterialDeliveriesPage() {
                 </View>
 
                 <TouchableOpacity 
-                  style={[styles.btnPrimaryLarge, !delayForm.reason && {backgroundColor: '#94A3B8'}]}
+                  style={[styles.btnPrimaryLargeModal, !delayForm.reason && {backgroundColor: '#E2E8F0'}]}
                   disabled={!delayForm.reason}
                   onPress={submitDelay}
                 >
-                  <Text style={styles.btnPrimaryLargeText}>Report Delay</Text>
+                  <Text style={[styles.btnPrimaryLargeText, !delayForm.reason && {color: '#94A3B8'}]}>Report Delay</Text>
                 </TouchableOpacity>
               </ScrollView>
             </View>
@@ -464,7 +529,7 @@ export default function RawMaterialDeliveriesPage() {
                   <Text style={styles.inputLabel}>Delivered Quantity ({selectedDelivery?.unit}) *</Text>
                   <TextInput style={styles.inputField} keyboardType="numeric" value={completeForm.qty} onChangeText={t => setCompleteForm({...completeForm, qty: t})} />
                   {completeForm.qty !== '' && parseInt(completeForm.qty, 10) < selectedDelivery?.orderedQty && (
-                    <Text style={{color: '#F59E0B', fontSize: 12, marginTop: 4}}>Warning: This will mark the order as Partially Delivered.</Text>
+                    <Text style={{color: '#F59E0B', fontSize: 12, marginTop: 6, fontWeight: '500'}}>Warning: This will mark the order as Partially Delivered.</Text>
                   )}
                 </View>
 
@@ -477,11 +542,11 @@ export default function RawMaterialDeliveriesPage() {
                 </View>
 
                 <TouchableOpacity 
-                  style={[styles.btnPrimaryLarge, (!completeForm.otp || !completeForm.receiver || !completeForm.qty) && {backgroundColor: '#94A3B8'}]}
+                  style={[styles.btnPrimaryLargeModal, (!completeForm.otp || !completeForm.receiver || !completeForm.qty) && {backgroundColor: '#E2E8F0'}]}
                   disabled={!completeForm.otp || !completeForm.receiver || !completeForm.qty}
                   onPress={submitCompletion}
                 >
-                  <Text style={styles.btnPrimaryLargeText}>Submit Proof & Mark Delivered</Text>
+                  <Text style={[styles.btnPrimaryLargeText, (!completeForm.otp || !completeForm.receiver || !completeForm.qty) && {color: '#94A3B8'}]}>Submit Proof & Mark Delivered</Text>
                 </TouchableOpacity>
                 <View style={{height: 20}} />
               </ScrollView>
@@ -506,7 +571,7 @@ export default function RawMaterialDeliveriesPage() {
                   <Text style={styles.detailClientName}>{selectedDelivery.client}</Text>
                   <View style={styles.addressBox}>
                     <MapPin size={16} color="#64748B" />
-                    <Text style={styles.addressText}>{selectedDelivery.address}</Text>
+                    <Text style={styles.modalAddressText}>{selectedDelivery.address}</Text>
                   </View>
                 </View>
 
@@ -571,23 +636,24 @@ export default function RawMaterialDeliveriesPage() {
 }
 
 const UserIconPlaceholder = () => (
-  <View style={{width: 40, height: 40, borderRadius: 20, backgroundColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center'}}>
-    <Info size={20} color="#64748B" />
+  <View style={{width: 40, height: 40, borderRadius: 20, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center'}}>
+    <Info size={20} color="#94A3B8" />
   </View>
 );
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#F8FAFC' },
-  container: { flex: 1 },
-  header: {
+  safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16, 
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
+    zIndex: 10,
   },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: NAVY },
   headerActions: { flexDirection: 'row' },
@@ -603,91 +669,151 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F8FAFC',
     marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
-  activeChip: { backgroundColor: NAVY },
-  chipText: { fontSize: 13, color: '#64748B', fontWeight: '500' },
+  activeChip: { backgroundColor: NAVY, borderColor: NAVY },
+  chipText: { fontSize: 13, color: '#64748B', fontWeight: '600' },
   activeChipText: { color: '#FFFFFF' },
-  listContent: { padding: 16, paddingBottom: 80 },
+  listContent: { padding: 16, paddingBottom: 100 },
   emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
   emptyText: { marginTop: 16, color: '#94A3B8', fontSize: 15 },
+  
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 16,
+    borderWidth: 1,
+    borderRightColor: '#F1F5F9',
+    borderTopColor: '#F1F5F9',
+    borderBottomColor: '#F1F5F9',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
     elevation: 2,
+    overflow: 'hidden',
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+  },
+  deliveryId: { fontSize: 16, fontWeight: '700', color: NAVY },
+  orderId: { fontSize: 12, color: '#94A3B8', marginTop: 4, fontWeight: '500' },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
+  statusText: { fontSize: 11, fontWeight: '700' },
+  
+  delayedBanner: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#FEF2F2', 
+    padding: 10, 
+    borderRadius: 8, 
+    marginTop: 12,
+    marginBottom: 4 
+  },
+  delayedText: { color: '#EF4444', fontSize: 12, fontWeight: '600' },
+  
+  cardBody: { marginTop: 16, marginBottom: 16 },
+  
+  clientSection: { marginBottom: 12 },
+  clientName: { fontSize: 16, fontWeight: '700', color: '#1E293B', marginBottom: 6 },
+  locationRow: { flexDirection: 'row', alignItems: 'center' },
+  addressText: { fontSize: 13, color: '#64748B', marginLeft: 6, flex: 1 },
+  
+  productSection: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#F8FAFC', 
+    padding: 10, 
+    borderRadius: 8,
     marginBottom: 12,
   },
-  deliveryId: { fontSize: 16, fontWeight: 'bold', color: NAVY },
-  orderId: { fontSize: 12, color: '#64748B', marginTop: 2 },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
-  statusText: { fontSize: 11, fontWeight: '600' },
-  delayedBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF2F2', padding: 8, borderRadius: 6, marginBottom: 12 },
-  delayedText: { color: '#EF4444', fontSize: 12, fontWeight: '600' },
-  cardBody: { marginBottom: 16 },
-  clientName: { fontSize: 16, fontWeight: '600', color: '#1E293B', marginBottom: 8 },
-  infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  iconContainer: {
+    width: 28, height: 28, borderRadius: 6, backgroundColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center', marginRight: 10
+  },
+  productText: { fontSize: 14, color: '#334155', fontWeight: '500' },
+  dotSeparator: { color: '#94A3B8', marginHorizontal: 4 },
+  boldInfo: { fontWeight: '700', color: NAVY },
+  
+  infoGrid: { paddingLeft: 2 },
+  infoItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   infoText: { fontSize: 13, color: '#475569', marginLeft: 8 },
-  boldInfo: { fontWeight: '600', color: '#334155' },
+  unassignedText: { color: '#F59E0B', fontStyle: 'italic', fontWeight: '500' },
+
   cardFooter: {
     flexDirection: 'row',
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
-    paddingTop: 12,
+    paddingTop: 16,
   },
   btnPrimary: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    paddingVertical: 10,
+    backgroundColor: GOLD,
+    paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
-    marginRight: 8,
+    marginRight: 10,
+    shadowColor: GOLD,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  btnPrimaryText: { color: NAVY, fontWeight: '600', fontSize: 14 },
+  btnOutline: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  btnOutlineText: {
+    color: '#475569',
+  },
+  btnPrimaryText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
   btnIcon: {
     width: 44,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F8FAFC',
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
+  
   expandedMenu: {
-    marginTop: 12,
-    paddingTop: 12,
+    marginTop: 16,
+    paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
   },
   expandedGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'flex-start',
   },
   expandedBtn: {
-    width: '25%',
+    width: '23%',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 10,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 8,
   },
   expandedBtnText: {
     fontSize: 11,
     color: '#475569',
-    marginTop: 4,
+    marginTop: 6,
     textAlign: 'center',
+    fontWeight: '500',
   },
 
   // Details Modal
-  modalSafeArea: { flex: 1, backgroundColor: '#F8FAFC' },
+  modalSafeArea: { flex: 1, backgroundColor: '#FFFFFF' },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -698,39 +824,44 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F1F5F9',
   },
   modalTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY },
-  modalBody: { padding: 16 },
+  modalBody: { padding: 16, backgroundColor: '#F8FAFC' },
   infoCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 8,
     elevation: 1,
   },
-  infoCardTitle: { fontSize: 13, fontWeight: 'bold', color: '#94A3B8', textTransform: 'uppercase', marginBottom: 12 },
-  detailClientName: { fontSize: 18, fontWeight: '600', color: NAVY, marginBottom: 8 },
+  infoCardTitle: { fontSize: 12, fontWeight: 'bold', color: '#94A3B8', textTransform: 'uppercase', marginBottom: 12, letterSpacing: 0.5 },
+  detailClientName: { fontSize: 18, fontWeight: '700', color: NAVY, marginBottom: 10 },
   addressBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', padding: 12, borderRadius: 8 },
-  addressText: { marginLeft: 8, fontSize: 13, color: '#475569', flex: 1 },
+  modalAddressText: { marginLeft: 10, fontSize: 14, color: '#475569', flex: 1, lineHeight: 20 },
+  
   driverBox: { flexDirection: 'row', alignItems: 'center' },
-  driverAvatar: { marginRight: 12 },
+  driverAvatar: { marginRight: 14 },
   driverInfo: { flex: 1 },
-  driverName: { fontSize: 16, fontWeight: '600', color: '#1E293B' },
-  driverVehicle: { fontSize: 13, color: '#64748B' },
-  circleBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#10B981', justifyContent: 'center', alignItems: 'center' },
-  summaryItem: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: 4 },
-  summaryLabel: { fontSize: 14, color: '#334155' },
-  summaryValue: { fontSize: 14, fontWeight: '600', color: NAVY },
-  divider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 8 },
-  summaryTotalLabel: { fontSize: 15, fontWeight: 'bold', color: NAVY },
-  summaryTotalValue: { fontSize: 15, fontWeight: 'bold', color: '#10B981' },
+  driverName: { fontSize: 16, fontWeight: '700', color: '#1E293B', marginBottom: 4 },
+  driverVehicle: { fontSize: 13, color: '#64748B', fontWeight: '500' },
+  circleBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#10B981', justifyContent: 'center', alignItems: 'center' },
+  
+  summaryItem: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: 6 },
+  summaryLabel: { fontSize: 15, color: '#334155', fontWeight: '500' },
+  summaryValue: { fontSize: 15, fontWeight: '700', color: NAVY },
+  divider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 12 },
+  summaryTotalLabel: { fontSize: 16, fontWeight: 'bold', color: NAVY },
+  summaryTotalValue: { fontSize: 16, fontWeight: 'bold', color: '#10B981' },
+  
   timelineBox: { paddingLeft: 8, paddingTop: 4 },
   timelineItem: { flexDirection: 'row', alignItems: 'flex-start' },
-  timelineText: { marginLeft: 12, fontSize: 14, color: '#475569' },
-  timelineSubText: { fontSize: 12, color: '#94A3B8', marginTop: 2 },
-  timelineNote: { fontSize: 12, color: '#475569', fontStyle: 'italic', marginTop: 4 },
+  timelineText: { marginLeft: 12, fontSize: 14, color: '#334155' },
+  timelineSubText: { fontSize: 12, color: '#94A3B8', marginTop: 4 },
+  timelineNote: { fontSize: 13, color: '#475569', fontStyle: 'italic', marginTop: 6, backgroundColor: '#F8FAFC', padding: 8, borderRadius: 6 },
   timelineLine: { width: 2, height: 24, backgroundColor: '#E2E8F0', marginLeft: 7, marginVertical: 4 },
 
   // Sheet
@@ -752,44 +883,47 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  sheetTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY },
+  sheetTitle: { fontSize: 20, fontWeight: 'bold', color: NAVY },
   sheetBody: { paddingBottom: 20 },
-  inputGroup: { marginBottom: 16 },
-  inputLabel: { fontSize: 14, fontWeight: '500', color: '#475569', marginBottom: 8 },
+  inputGroup: { marginBottom: 18 },
+  inputLabel: { fontSize: 14, fontWeight: '600', color: '#475569', marginBottom: 8 },
   inputField: {
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: 10,
+    padding: 14,
     fontSize: 15,
     backgroundColor: '#F8FAFC',
+    color: NAVY,
   },
   uploadBox: {
     borderWidth: 1,
     borderStyle: 'dashed',
     borderColor: '#94A3B8',
-    borderRadius: 8,
+    borderRadius: 10,
     padding: 24,
     alignItems: 'center',
     backgroundColor: '#F8FAFC',
   },
-  uploadText: { marginTop: 8, fontSize: 14, color: '#64748B' },
+  uploadText: { marginTop: 10, fontSize: 14, color: '#64748B', fontWeight: '500' },
   textArea: {
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: 10,
+    padding: 14,
     fontSize: 15,
     backgroundColor: '#F8FAFC',
-    height: 80,
+    height: 100,
     textAlignVertical: 'top',
+    color: NAVY,
   },
-  btnPrimaryLarge: {
-    backgroundColor: NAVY,
+  
+  btnPrimaryLargeModal: {
+    backgroundColor: GOLD,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 8,
   },
-  btnPrimaryLargeText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 },
+  btnPrimaryLargeText: { color: '#FFFFFF', fontWeight: '700', fontSize: 16 },
 });

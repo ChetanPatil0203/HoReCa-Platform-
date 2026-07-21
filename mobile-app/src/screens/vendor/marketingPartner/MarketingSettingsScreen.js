@@ -173,7 +173,7 @@ export default function MarketingSettingsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: { padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16,  padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#0F172A' },
   scrollArea: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 40 },

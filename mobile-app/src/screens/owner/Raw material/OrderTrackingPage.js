@@ -67,81 +67,85 @@ export default function OrderTrackingPage() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <View style={[styles.iconBox, { backgroundColor: "rgba(155,92,246,0.1)" }]}>
-            <Truck size={24} color="#9B5CF6" />
-          </View>
-          <View>
-            <Text style={styles.pageTitle}>Order Tracking & Logistics</Text>
-            <Text style={styles.pageDesc}>Live status monitoring and timeline updates</Text>
+      {(!isMobile || !viewingDetail) && (
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <View style={[styles.iconBox, { backgroundColor: "rgba(155,92,246,0.1)" }]}>
+              <Truck size={24} color="#9B5CF6" />
+            </View>
+            <View>
+              <Text style={styles.pageTitle}>Order Track</Text>
+              <Text style={styles.pageDesc}>Live status monitoring and timeline updates</Text>
+            </View>
           </View>
         </View>
-      </View>
+      )}
 
       {/* Status Filters */}
-      {isMobile ? (
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false} 
-          contentContainerStyle={{ gap: 8, paddingHorizontal: 4, paddingBottom: 12 }} 
-          style={{ maxHeight: 60, marginBottom: 8 }}
-        >
-          {statusFilters.map(s => {
-            const isActive = filterStatus === s;
-            const meta = STATUS_META[s];
-            return (
-              <TouchableOpacity 
-                key={s} 
-                onPress={() => setFilterStatus(s)}
-                style={[
-                  styles.filterBtn,
-                  isActive && { 
-                    backgroundColor: meta ? meta.bg : "rgba(212,148,10,0.1)",
-                    borderColor: meta ? meta.color : "#D4940A",
-                    borderWidth: 1
-                  }
-                ]}
-              >
-                <Text style={[
-                  styles.filterBtnText,
-                  isActive && { color: meta ? meta.color : "#D4940A", fontWeight: 'bold' }
-                ]}>{s}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      ) : (
-        <View style={styles.filterGroup}>
-          {statusFilters.map(s => {
-            const isActive = filterStatus === s;
-            const meta = STATUS_META[s];
-            return (
-              <TouchableOpacity 
-                key={s} 
-                onPress={() => setFilterStatus(s)}
-                style={[
-                  styles.filterBtn,
-                  isActive && { 
-                    backgroundColor: meta ? meta.bg : "rgba(212,148,10,0.1)",
-                    borderColor: meta ? meta.color : "#D4940A",
-                    borderWidth: 1
-                  }
-                ]}
-              >
-                <Text style={[
-                  styles.filterBtnText,
-                  isActive && { color: meta ? meta.color : "#D4940A", fontWeight: 'bold' }
-                ]}>{s}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+      {(!isMobile || !viewingDetail) && (
+        isMobile ? (
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false} 
+            contentContainerStyle={{ gap: 8, paddingHorizontal: 4, paddingBottom: 12 }} 
+            style={{ maxHeight: 60, marginBottom: 8 }}
+          >
+            {statusFilters.map(s => {
+              const isActive = filterStatus === s;
+              const meta = STATUS_META[s];
+              return (
+                <TouchableOpacity 
+                  key={s} 
+                  onPress={() => setFilterStatus(s)}
+                  style={[
+                    styles.filterBtn,
+                    isActive && { 
+                      backgroundColor: meta ? meta.bg : "rgba(212,148,10,0.1)",
+                      borderColor: meta ? meta.color : "#D4940A",
+                      borderWidth: 1
+                    }
+                  ]}
+                >
+                  <Text style={[
+                    styles.filterBtnText,
+                    isActive && { color: meta ? meta.color : "#D4940A", fontWeight: 'bold' }
+                  ]}>{s}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        ) : (
+          <View style={styles.filterGroup}>
+            {statusFilters.map(s => {
+              const isActive = filterStatus === s;
+              const meta = STATUS_META[s];
+              return (
+                <TouchableOpacity 
+                  key={s} 
+                  onPress={() => setFilterStatus(s)}
+                  style={[
+                    styles.filterBtn,
+                    isActive && { 
+                      backgroundColor: meta ? meta.bg : "rgba(212,148,10,0.1)",
+                      borderColor: meta ? meta.color : "#D4940A",
+                      borderWidth: 1
+                    }
+                  ]}
+                >
+                  <Text style={[
+                    styles.filterBtnText,
+                    isActive && { color: meta ? meta.color : "#D4940A", fontWeight: 'bold' }
+                  ]}>{s}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )
       )}
 
       <View style={styles.contentGrid}>
         {(!isMobile || !viewingDetail) && (
-          <View style={[styles.listContainer, isMobile && { flex: 1, width: '100%', borderWidth: 0 }]}>
+          <View style={[styles.listContainer, isMobile && { flex: 1, width: '100%', minWidth: 'auto', maxHeight: '100%', borderWidth: 0 }]}>
             <View style={styles.searchBox}>
               <Search size={16} color={colors.muted} />
               <TextInput 
@@ -195,7 +199,7 @@ export default function OrderTrackingPage() {
         )}
 
         {(!isMobile || viewingDetail) && (
-          <View style={[styles.detailContainer, isMobile && { flex: 1, width: '100%', borderWidth: 0 }]}>
+          <View style={[styles.detailContainer, isMobile && { flex: 1, width: '100%', minWidth: 'auto', maxHeight: '100%', borderWidth: 0 }]}>
             {selectedOrder ? (
               <View style={{ flex: 1 }}>
                 {isMobile && (
@@ -296,7 +300,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingBottom: 40,
   },
-  header: {
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16, 
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -343,6 +347,7 @@ const styles = StyleSheet.create({
     color: colors.muted,
   },
   contentGrid: {
+    flex: 1,
     flexDirection: Platform.OS === 'web' && Platform.isPad === false ? 'row' : 'column',
     gap: 20,
     ...(Platform.OS === 'web' ? { display: 'flex', flexDirection: 'row' } : {})

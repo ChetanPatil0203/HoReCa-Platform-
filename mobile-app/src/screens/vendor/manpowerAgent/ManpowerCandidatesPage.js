@@ -10,7 +10,6 @@ import {
 } from 'lucide-react-native';
 
 import SubmissionDetailsModal from '../../../components/vendor/manpowerAgent/SubmissionDetailsModal';
-import InterviewDetailsModal from '../../../components/vendor/manpowerAgent/InterviewDetailsModal';
 
 const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
@@ -49,7 +48,7 @@ const MOCK_REQS = {
   ]
 };
 
-export default function ManpowerCandidatesPage() {
+export default function ManpowerCandidatesPage({ initialAction }) {
   const { width } = useWindowDimensions();
   const [candidates, setCandidates] = useState(INITIAL_CANDIDATES);
   const [searchQuery, setSearchQuery] = useState('');
@@ -65,14 +64,19 @@ export default function ManpowerCandidatesPage() {
   const [addStep, setAddStep] = useState(1);
   const [newCand, setNewCand] = useState({ name: '', mobile: '', role: '', experience: '', salary: '' });
 
+  React.useEffect(() => {
+    if (initialAction === 'add-candidate') {
+      setAddStep(1);
+      setAddVisible(true);
+    }
+  }, [initialAction]);
+
   // Profile State
   const [profTab, setProfTab] = useState('Overview');
 
   // Submissions State
   const [selectedSub, setSelectedSub] = useState(null);
   const [subModalVisible, setSubModalVisible] = useState(false);
-  const [selectedInterview, setSelectedInterview] = useState(null);
-  const [interviewModalVisible, setInterviewModalVisible] = useState(false);
 
   // Send Req State
   const [reqTab, setReqTab] = useState('broadcast');
@@ -85,7 +89,7 @@ export default function ManpowerCandidatesPage() {
     switch(status) {
       case 'Available': return '#10B981';
       case 'Submitted': return '#8B5CF6';
-      case 'Interviewing': return '#F59E0B';
+      case 'Shortlisted': return '#F59E0B';
       case 'Selected': return '#3B82F6';
       case 'Deployed': return '#059669';
       default: return '#64748B';
@@ -122,21 +126,6 @@ export default function ManpowerCandidatesPage() {
   };
 
   const handleSubClick = (status) => {
-    if (status === 'Interview Scheduled') {
-      setSelectedInterview({
-        candidateName: selectedCand.name,
-        business: "The Grand Taj",
-        role: selectedCand.role,
-        reqId: "REQ-901",
-        date: "20 Jul 2026",
-        time: "11:00 AM",
-        mode: "Video Call",
-        location: "Zoom",
-        ownerNotes: "Please be on time.",
-        status: "Scheduled"
-      });
-      setInterviewModalVisible(true);
-    } else {
       setSelectedSub({
         candidateName: selectedCand.name,
         role: selectedCand.role,
@@ -146,7 +135,6 @@ export default function ManpowerCandidatesPage() {
         note: "Available for immediate join."
       });
       setSubModalVisible(true);
-    }
   };
 
   const submitSendReq = () => {
@@ -201,8 +189,8 @@ export default function ManpowerCandidatesPage() {
         {renderSummary("Total", candidates.length, NAVY)}
         {renderSummary("Available", candidates.filter(c => c.status==='Available').length, "#10B981")}
         {renderSummary("Submitted", candidates.filter(c => c.status==='Submitted').length, "#8B5CF6")}
-        {renderSummary("Interviewing", 0, "#F59E0B")}
-        {renderSummary("Deployed", 0, "#059669")}
+        {renderSummary("Shortlisted", candidates.filter(c => c.status==='Shortlisted').length, "#F59E0B")}
+        {renderSummary("Selected", candidates.filter(c => c.status==='Selected').length, "#059669")}
       </ScrollView>
 
       {/* Search & Filters */}
@@ -218,7 +206,7 @@ export default function ManpowerCandidatesPage() {
           />
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
-          {['All', 'Available', 'Submitted', 'Interviewing', 'Selected', 'Deployed'].map(f => (
+          {['All', 'Available', 'Submitted', 'Shortlisted', 'Selected'].map(f => (
             <TouchableOpacity key={f} style={[styles.filterChip, activeFilter === f && styles.filterChipActive]} onPress={() => setActiveFilter(f)}>
               <Text style={[styles.filterChipText, activeFilter === f && styles.filterChipTextActive]}>{f}</Text>
             </TouchableOpacity>
@@ -397,7 +385,7 @@ export default function ManpowerCandidatesPage() {
                 <View style={styles.profSection}>
                   <Text style={styles.formSectionTitle}>Recent Submissions</Text>
                   
-                  {['Interview Scheduled', 'Viewed', 'Rejected'].map((status, idx) => (
+                  {['Submitted', 'Shortlisted', 'Selected'].map((status, idx) => (
                     <TouchableOpacity key={idx} style={styles.subCard} onPress={() => handleSubClick(status)}>
                       <View style={{flex: 1}}>
                         <Text style={styles.subCardTitle}>Cafe Mocha</Text>
@@ -474,11 +462,6 @@ export default function ManpowerCandidatesPage() {
         onClose={() => setSubModalVisible(false)} 
         submission={selectedSub} 
       />
-      <InterviewDetailsModal 
-        visible={interviewModalVisible} 
-        onClose={() => setInterviewModalVisible(false)} 
-        interview={selectedInterview} 
-      />
 
       {/* Toast */}
       {toastMsg ? <View style={styles.toastContainer}><Text style={styles.toastText}>{toastMsg}</Text></View> : null}
@@ -488,7 +471,7 @@ export default function ManpowerCandidatesPage() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: { padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16,  padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   headerTitleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: NAVY, marginLeft: 8 },
   headerSub: { fontSize: 13, color: '#64748B' },

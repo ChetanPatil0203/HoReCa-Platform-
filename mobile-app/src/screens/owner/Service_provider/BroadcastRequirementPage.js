@@ -43,9 +43,6 @@ export default function BroadcastRequirementPage({ onBack, onViewRequests }) {
             Your requirement has been shared with all eligible verified service providers.
           </Text>
           <View style={styles.successActions}>
-            <TouchableOpacity style={styles.primaryBtn} onPress={onViewRequests}>
-              <Text style={styles.primaryBtnText}>View My Requests</Text>
-            </TouchableOpacity>
             <TouchableOpacity style={styles.secondaryBtn} onPress={onBack}>
               <Text style={styles.secondaryBtnText}>Back Home</Text>
             </TouchableOpacity>

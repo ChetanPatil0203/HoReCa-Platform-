@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
   scrollContent: { padding: 16, paddingBottom: 40 },
   
-  header: { marginBottom: 16 },
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16,  marginBottom: 16 },
   pageTitle: { fontSize: 24, fontWeight: '800', color: '#0F172A' },
   pageSubtitle: { fontSize: 13, color: colors.muted, marginTop: 4 },
   

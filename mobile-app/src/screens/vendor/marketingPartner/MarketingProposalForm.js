@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1, backgroundColor: '#F8FAFC',
   },
-  header: {
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16, 
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', padding: 16, borderBottomWidth: 1, borderBottomColor: '#E2E8F0',
   },
   backBtn: {
