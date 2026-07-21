@@ -236,19 +236,20 @@ const DEFAULT_REQUIREMENTS = [
 const DEFAULT_TICKETS = [
   {
     id: "CH-2025-812",
-    category: "Payment Delay",
+    category: "Payment Issue",
     priority: "SLA Critical",
     status: "Escalated",
     assignedTo: "Support Rep A",
     date: "16 Jun 2026, 11:20 AM",
     slaTimer: "02:15:00",
-    raisedBy: { name: "Rahul Mehta", business: "The Meridian Hotels", phone: "+91 98765 43210" },
-    against: { name: "HRC HUB Finance", type: "Internal System" },
+    raisedBy: { name: "Rahul Mehta", business: "The Meridian Hotels", phone: "+91 98765 43210", email: "rahul@meridian.com", city: "Mumbai", role: "Owner" },
+    against: { name: "HRC HUB Finance", type: "Internal System", businessName: "HRC HUB Payments", role: "Internal System", phone: "+91 22 4567 8900", email: "payouts@hrchub.com" },
     relatedEntity: { type: "Order", id: "ORD-1250" },
+    subject: "Payout Delay for Order #ORD-1250",
     description: "Merchant has not received payment for Order #ORD-1250 placed on 12 Jun 2026. Delay exceeds standard 24h cycle.",
     evidence: [
-      { name: "bank_statement.pdf", size: "1.2MB" },
-      { name: "order_screenshot.png", size: "450KB" }
+      { name: "bank_statement.pdf", size: "1.2MB", url: "https://example.com/doc1" },
+      { name: "order_screenshot.png", size: "450KB", url: "https://example.com/doc2" }
     ],
     messages: [
       { sender: "System", type: "system", text: "Ticket created automatically due to payout delay threshold breach.", time: "16 Jun 2026, 11:20 AM" },
@@ -266,18 +267,19 @@ const DEFAULT_TICKETS = [
   },
   {
     id: "CH-2025-813",
-    category: "Wrong Item Delivered",
+    category: "Product Quality",
     priority: "Medium",
-    status: "Under Investigation",
+    status: "Investigating",
     assignedTo: "Neha Mathews",
     date: "15 Jun 2026, 09:10 AM",
     slaTimer: "24:00:00",
-    raisedBy: { name: "Karan Mehra", business: "The Food Junction", phone: "+91 99999 00000" },
-    against: { name: "Metro Fresh Supplies", type: "Vendor", id: "VEND-1005" },
+    raisedBy: { name: "Karan Mehra", business: "The Food Junction", phone: "+91 99999 00000", email: "karan@foodjunction.com", city: "Delhi", role: "Owner" },
+    against: { name: "Metro Fresh Supplies", type: "Vendor", id: "VEND-1005", businessName: "Metro Fresh Supplies Ltd", role: "Vendor", phone: "+91 95555 00005", email: "logistics@freshfoods.com" },
     relatedEntity: { type: "Order", id: "ORD-283" },
+    subject: "Wrong Coffee Beans Supplied",
     description: "Received whole coffee beans instead of medium-grind powder for stock item CCD-89.",
     evidence: [
-      { name: "wrong_item_photo.jpg", size: "2.1MB" }
+      { name: "wrong_item_photo.jpg", size: "2.1MB", url: "https://example.com/doc3" }
     ],
     messages: [
       { sender: "Karan Mehra", type: "user", text: "Please expedite, we are running out of espresso powder.", time: "15 Jun 2026, 09:12 AM" }
@@ -288,33 +290,62 @@ const DEFAULT_TICKETS = [
     timeline: [
       { status: "Open", time: "15 Jun 2026, 09:10 AM", note: "User opened ticket." },
       { status: "Assigned", time: "15 Jun 2026, 09:15 AM", note: "Assigned to Neha Mathews." },
-      { status: "Under Investigation", time: "15 Jun 2026, 09:30 AM", note: "Checking with vendor." }
+      { status: "Investigating", time: "15 Jun 2026, 09:30 AM", note: "Checking with vendor." }
     ],
     resolutionSummary: null
   },
   {
     id: "CH-2025-815",
-    category: "Agency No-Show",
+    category: "Service Issue",
     priority: "High",
     status: "Waiting for User",
     assignedTo: "Unassigned",
-    date: "14 Jun 2026, 14:00 PM",
+    date: "14 Jun 2026, 02:00 PM",
     slaTimer: "12:30:00",
-    raisedBy: { name: "Arjun Patel", business: "Brew & Bites Cafe", phone: "+91 88888 22222" },
-    against: { name: "QuickClean Hygiene", type: "Service Provider", id: "VEND-1003" },
+    raisedBy: { name: "Arjun Patel", business: "Brew & Bites Cafe", phone: "+91 88888 22222", email: "arjun@brewbites.com", city: "Bangalore", role: "Owner" },
+    against: { name: "QuickClean Hygiene", type: "Service Provider", id: "VEND-1003", businessName: "QuickClean Hygiene Services", role: "Service Provider", phone: "+91 88888 00003", email: "clean@quickclean.in" },
     relatedEntity: { type: "Requirement", id: "REQ-9902" },
+    subject: "Deep Cleaning Agency No-Show",
     description: "The deep cleaning agency did not show up at the scheduled time of 10 AM.",
     evidence: [],
     messages: [
-      { sender: "Arjun Patel", type: "user", text: "No one answered the phone when I called them.", time: "14 Jun 2026, 14:00 PM" },
-      { sender: "System", type: "system", text: "Automated message sent to QuickClean Hygiene requesting status.", time: "14 Jun 2026, 14:05 PM" }
+      { sender: "Arjun Patel", type: "user", text: "No one answered the phone when I called them.", time: "14 Jun 2026, 02:00 PM" },
+      { sender: "System", type: "system", text: "Automated message sent to QuickClean Hygiene requesting status.", time: "14 Jun 2026, 02:05 PM" }
     ],
     internalNotes: [],
     timeline: [
-      { status: "Open", time: "14 Jun 2026, 14:00 PM", note: "User opened ticket." },
-      { status: "Waiting for User", time: "14 Jun 2026, 14:10 PM", note: "Requested CCTV snapshot from HoReCa owner to confirm no-show." }
+      { status: "Open", time: "14 Jun 2026, 02:00 PM", note: "User opened ticket." },
+      { status: "Waiting for User", time: "14 Jun 2026, 02:10 PM", note: "Requested CCTV snapshot from HoReCa owner to confirm no-show." }
     ],
     resolutionSummary: null
+  },
+  {
+    id: "CH-2025-816",
+    category: "Manpower Issue",
+    priority: "Low",
+    status: "Resolved",
+    assignedTo: "Sarah Connor",
+    date: "13 Jun 2026, 10:00 AM",
+    slaTimer: "00:00:00",
+    raisedBy: { name: "Vijay Shah", business: "Royal Palace Hotel", phone: "+91 97777 55555", email: "vijay@royalpalace.com", city: "Pune", role: "Owner" },
+    against: { name: "Elite Staffing Solutions", type: "Manpower Agency", id: "VEND-1002", businessName: "Elite Manpower & Staffing", role: "Manpower Agency", phone: "+91 91234 00002", email: "contact@elitestaffing.in" },
+    relatedEntity: { type: "Requirement", id: "REQ-1014" },
+    subject: "Chef replacement delayed",
+    description: "Replacement cook was not sent within the promised 24 hours timeline.",
+    evidence: [],
+    messages: [
+      { sender: "Vijay Shah", type: "user", text: "Please help us, we are down one chef in the kitchen today.", time: "13 Jun 2026, 10:00 AM" },
+      { sender: "Sarah Connor", type: "admin", text: "We have contacted Elite Staffing. They are sending a replacement by 1 PM.", time: "13 Jun 2026, 10:30 AM" }
+    ],
+    internalNotes: [
+      { sender: "Sarah Connor", text: "Elite Staffing confirmed the replacement candidate is on the way.", time: "13 Jun 2026, 10:25 AM" }
+    ],
+    timeline: [
+      { status: "Open", time: "13 Jun 2026, 10:00 AM", note: "User opened ticket." },
+      { status: "Assigned", time: "13 Jun 2026, 10:05 AM", note: "Assigned to Sarah Connor." },
+      { status: "Resolved", time: "13 Jun 2026, 12:45 PM", note: "Replacement cook arrived. User confirmed service resumed." }
+    ],
+    resolutionSummary: "Cook replacement dispatched and arrived at 12:40 PM. Verified with hotel owner."
   }
 ];
 
@@ -360,6 +391,66 @@ const DEFAULT_KYC = [
     propertyPhotos: "3 uploaded"
   },
   {
+    id: "KYC-1031",
+    businessName: "Spice Route Kitchen",
+    type: "Restaurant",
+    entityType: "HoReCa Owners",
+    proprietor: "Ajay Verma",
+    location: "Delhi",
+    dateSubmitted: "28 May 2026, 03:15 PM",
+    status: "Pending",
+    documentCompletion: "100%",
+    riskFlag: "Low",
+    adminAssigned: "Unassigned",
+    history: [],
+    notes: "Famous local dining spot. Docs look clear.",
+    fssaiNumber: "FSSAI-224455889900",
+    gstinNumber: "07AAACV8821B1Z9",
+    panNumber: "AAACV8821B",
+    businessLicense: "LIC-DEL-8812",
+    propertyPhotos: "4 uploaded"
+  },
+  {
+    id: "KYC-1032",
+    businessName: "Royal Orchid Hotel",
+    type: "Hotel",
+    entityType: "HoReCa Owners",
+    proprietor: "Ramesh Kumar",
+    location: "Mumbai",
+    dateSubmitted: "29 May 2026, 11:00 AM",
+    status: "Approved",
+    documentCompletion: "100%",
+    riskFlag: "Low",
+    adminAssigned: "Neha Mathews",
+    history: [{ status: "Pending", date: "28 May 2026" }, { status: "Approved", date: "29 May 2026" }],
+    notes: "Premium 5-star hotel branch. All documents verified.",
+    fssaiNumber: "FSSAI-556677889900",
+    gstinNumber: "27AABCR5512D1Z2",
+    panNumber: "AABCR5512D",
+    businessLicense: "LIC-MUM-77231",
+    propertyPhotos: "5 uploaded"
+  },
+  {
+    id: "KYC-1033",
+    businessName: "Brew & Bites Cafe",
+    type: "Cafe",
+    entityType: "HoReCa Owners",
+    proprietor: "Arjun Patel",
+    location: "Bangalore",
+    dateSubmitted: "30 May 2026, 04:20 PM",
+    status: "Approved",
+    documentCompletion: "100%",
+    riskFlag: "Low",
+    adminAssigned: "Super Admin",
+    history: [{ status: "Pending", date: "29 May 2026" }, { status: "Approved", date: "30 May 2026" }],
+    notes: "Popular local cafe outlet.",
+    fssaiNumber: "FSSAI-112233445566",
+    gstinNumber: "29BBDCP1122A1Z1",
+    panNumber: "BBDCP1122A",
+    businessLicense: "LIC-BLR-9921",
+    propertyPhotos: "3 uploaded"
+  },
+  {
     id: "KYC-1025",
     businessName: "Fresh Farms Dairy",
     type: "Supplier",
@@ -378,6 +469,26 @@ const DEFAULT_KYC = [
     panNumber: "AAACG8472K",
     warehouseDetails: "Okhla Industrial Area Phase II",
     productCategories: "Dairy, Milk Products"
+  },
+  {
+    id: "KYC-1034",
+    businessName: "Metro Fresh Supplies",
+    type: "Supplier",
+    entityType: "Raw Material Vendors",
+    proprietor: "Vikrant Mehta",
+    location: "Mumbai",
+    dateSubmitted: "01 Jun 2026, 09:30 AM",
+    status: "Pending",
+    documentCompletion: "90%",
+    riskFlag: "Low",
+    adminAssigned: "Unassigned",
+    history: [],
+    notes: "Large vegetable supplier. Awaiting warehouse visit.",
+    fssaiNumber: "FSSAI-334455667788",
+    gstinNumber: "27AABCM3344M1Z4",
+    panNumber: "AABCM3344M",
+    warehouseDetails: "Vashi APMC Market, Navi Mumbai",
+    productCategories: "Fruits, Vegetables, Fresh Produce"
   },
   {
     id: "KYC-1026",
@@ -400,6 +511,26 @@ const DEFAULT_KYC = [
     replacementPolicy: "48-hour replacement guarantee"
   },
   {
+    id: "KYC-1035",
+    businessName: "QuickHire Manpower",
+    type: "Agency",
+    entityType: "Manpower Agencies",
+    proprietor: "Rajesh Gond",
+    location: "Mumbai",
+    dateSubmitted: "02 Jun 2026, 01:10 PM",
+    status: "Under Review",
+    documentCompletion: "100%",
+    riskFlag: "Medium",
+    adminAssigned: "Neha Mathews",
+    history: [{ status: "Pending", date: "02 Jun 2026" }],
+    notes: "Background screening in progress.",
+    gstinNumber: "27AABCQ7722N1Z8",
+    panNumber: "AABCQ7722N",
+    labourLicence: "LAB-MH-55212",
+    agencyRegistration: "REG-2024-MUM",
+    replacementPolicy: "7-day replacement window"
+  },
+  {
     id: "KYC-1027",
     businessName: "CoolBreeze HVAC Tech",
     type: "Contractor",
@@ -407,7 +538,7 @@ const DEFAULT_KYC = [
     proprietor: "Vikram Singh",
     location: "Pune",
     dateSubmitted: "26 May 2026, 02:40 PM",
-    status: "Changes Requested",
+    status: "Under Review",
     documentCompletion: "60%",
     riskFlag: "High",
     adminAssigned: "Neha Mathews",
@@ -418,6 +549,26 @@ const DEFAULT_KYC = [
     serviceCertifications: "ISO 9001 (Expired)",
     teamDetails: "12 Certified Technicians",
     coverageAreas: "Pune, Pimpri-Chinchwad"
+  },
+  {
+    id: "KYC-1036",
+    businessName: "QuickClean Hygiene",
+    type: "Contractor",
+    entityType: "Service Providers",
+    proprietor: "Harish Rao",
+    location: "Bangalore",
+    dateSubmitted: "03 Jun 2026, 11:45 AM",
+    status: "Approved",
+    documentCompletion: "100%",
+    riskFlag: "Low",
+    adminAssigned: "Super Admin",
+    history: [{ status: "Pending", date: "02 Jun 2026" }, { status: "Approved", date: "03 Jun 2026" }],
+    notes: "Top cleaning vendor. Good credentials.",
+    gstinNumber: "29BBDCQ5511K1Z7",
+    panNumber: "BBDCQ5511K",
+    serviceCertifications: "ISO 9001:2015, WHO Cleaning Standards",
+    teamDetails: "45 Trained Personnel",
+    coverageAreas: "Bangalore Urban, Bangalore Rural"
   },
   {
     id: "KYC-1028",
@@ -438,70 +589,114 @@ const DEFAULT_KYC = [
     portfolio: "www.creativedigitaledge.com/portfolio",
     agencyRegistration: "MUM-MAR-2024-91",
     services: "Social Media, Content Creation, Offline PR"
+  },
+  {
+    id: "KYC-1037",
+    businessName: "Creative Marketing Agency",
+    type: "Agency",
+    entityType: "Marketing Agencies",
+    proprietor: "Divya Nair",
+    location: "Delhi",
+    dateSubmitted: "04 Jun 2026, 02:20 PM",
+    status: "Rejected",
+    documentCompletion: "50%",
+    riskFlag: "High",
+    adminAssigned: "Neha Mathews",
+    history: [{ status: "Pending", date: "04 Jun 2026" }, { status: "Rejected", date: "05 Jun 2026" }],
+    notes: "Invalid GST Certificate submitted. Canceled after no response to change requests.",
+    gstinNumber: "07AAACK1122D1Z0 (Invalid)",
+    panNumber: "AAACK1122D",
+    portfolio: "No active portfolio",
+    agencyRegistration: "DEL-MAR-2023-41",
+    services: "Branding, Leaflet Printing"
   }
 ];
 
 const DEFAULT_FEED_ITEMS = [
-  { id:"fw-01", orderId:"ORD-M001", category:"manpower", title:"Weekend Banquet Servers – 10 persons",
-    description:"Need 10 trained servers for Saturday evening gala dinner. 6PM–midnight shift. Formal attire mandatory. Experience in fine dining essential.",
-    businessName:"The Meridian Grand", businessType:"Hotel", location:"Bandra, Mumbai",
-    qty:"10 persons", date:"21 Jun 2026", budget:"₹20,000", tags:["Fine Dining","Weekend","Formal"],
-    status:"New", postedAt:"5 min ago", urgency:"Urgent" },
-  { id:"fw-02", orderId:"ORD-M002", category:"manpower", title:"Head Chef – Italian Cuisine (Long Term)",
-    description:"Seeking experienced Head Chef specialising in Italian cuisine. Min 5yr experience. Pasta, risotto, wood-fired pizza expertise required. Trial shift before confirmation.",
-    businessName:"Trattoria Milano", businessType:"Restaurant", location:"Colaba, Mumbai",
-    qty:"1 person", date:"25 Jun 2026", budget:"₹65,000/mo", tags:["Head Chef","Italian","Long Term"],
-    status:"Pending", postedAt:"2 hrs ago", urgency:"Normal" },
-  { id:"fw-03", orderId:"ORD-M003", category:"manpower", title:"Barista – Part-time (Weekends Only)",
-    description:"Looking for a skilled barista for weekend shifts (Sat & Sun, 8AM–4PM). Latte art essential. English proficiency required.",
-    businessName:"Café Zephyr Group", businessType:"Café", location:"Lower Parel, Mumbai",
-    qty:"2 persons", date:"22 Jun 2026", budget:"₹7,200", tags:["Barista","Part-time","Coffee"],
-    status:"New", postedAt:"3 hrs ago", urgency:"Normal" },
-  { id:"fw-04", orderId:"ORD-M004", category:"manpower", title:"Security Guards – Night Shift",
-    description:"Require 2 security guards for night shift (10PM–6AM). Ex-military or retired police preferred. CCTV monitoring experience required.",
-    businessName:"Azure Palace Hotel", businessType:"Hotel", location:"Juhu, Mumbai",
-    qty:"2 persons", date:"20 Jun 2026", budget:"₹36,000/mo", tags:["Security","Night Shift","Hotel"],
-    status:"Proposal Sent", postedAt:"Yesterday", urgency:"Normal" },
-  { id:"fw-05", orderId:"ORD-S001", category:"service", title:"HVAC Annual Maintenance – 22 Units",
-    description:"Full annual maintenance contract for 22 HVAC units across 4 floors. Includes quarterly filter replacement and emergency call-out within 4 hours.",
-    businessName:"Sunset Resort", businessType:"Hotel", location:"Versova, Mumbai",
-    qty:"22 units / 12 months", date:"25 Jun 2026", budget:"₹85,000/yr", tags:["HVAC","AMC","Annual Contract"],
-    status:"New", postedAt:"1 hr ago", urgency:"Normal" },
-  { id:"fw-06", orderId:"ORD-S002", category:"service", title:"Commercial Kitchen Deep Cleaning (3 Sections)",
-    description:"Overnight deep clean required for 3 kitchen sections. Must use FSSAI-approved food-safe chemicals only. Work window: 12AM–5AM.",
-    businessName:"The Meridian Grand", businessType:"Hotel", location:"Bandra, Mumbai",
-    qty:"3 kitchen sections", date:"20 Jun 2026", budget:"₹22,000", tags:["Deep Clean","Overnight","FSSAI"],
-    status:"Pending", postedAt:"4 hrs ago", urgency:"Urgent" },
-  { id:"fw-07", orderId:"ORD-S003", category:"service", title:"Monthly Pest Control – Full Property",
-    description:"FSSAI-compliant rodent and cockroach treatment for full restaurant premises. Certified pest control agency only. Child and food-safe chemicals mandatory.",
-    businessName:"Spice Route Restaurant", businessType:"Restaurant", location:"Andheri, Mumbai",
-    qty:"Full property", date:"22 Jun 2026", budget:"₹4,800", tags:["Pest Control","FSSAI","Monthly"],
-    status:"New", postedAt:"6 hrs ago", urgency:"Normal" },
-  { id:"fw-08", orderId:"ORD-S004", category:"service", title:"Electrical Wiring Audit & Repair",
-    description:"Complete electrical audit of kitchen and dining area. Identify and repair faults. Must be a licensed electrical contractor. Compliance certificate required on completion.",
-    businessName:"Café Zephyr Group", businessType:"Café", location:"Lower Parel, Mumbai",
-    qty:"Full property", date:"24 Jun 2026", budget:"₹12,000", tags:["Electrical","Licensed","Audit"],
-    status:"Accepted", postedAt:"2 days ago", urgency:"Normal" },
-  { id:"fw-09", orderId:"ORD-K001", category:"marketing", title:"July Social Media Campaign – 30 Days",
-    description:"Full social media management for July. 12 Reels + 20 static posts for Instagram & Facebook. Food-forward aesthetic. Influencer collaboration preferred.",
-    businessName:"Azure Palace Hotel", businessType:"Hotel", location:"Juhu, Mumbai",
-    qty:"30 days", date:"01 Jul 2026", budget:"₹40,000", tags:["Social Media","Instagram","Reels"],
-    status:"New", postedAt:"30 min ago", urgency:"Normal" },
-  { id:"fw-10", orderId:"ORD-K002", category:"marketing", title:"Complete Menu Photography – 82 Items",
-    description:"Professional food photography for full menu (82 dishes). Dark-wood table styling preferred. Natural light setup. RAW files + retouched JPEGs. Delivery within 5 working days.",
-    businessName:"Spice Route Restaurant", businessType:"Restaurant", location:"Andheri, Mumbai",
-    qty:"82 menu items", date:"26 Jun 2026", budget:"₹18,000", tags:["Photography","Menu","Food Styling"],
-    status:"Proposal Sent", postedAt:"Yesterday", urgency:"Normal" },
-  { id:"fw-11", orderId:"ORD-K003", category:"marketing", title:"Google Ads Campaign – 3 Months",
-    description:"Search + Display Ads setup and management for 3 months. Focus on reservation conversions. ₹8,000/month ad spend handled by client. ROI reporting monthly.",
-    businessName:"The Grand Bistro", businessType:"Restaurant", location:"Fort, Mumbai",
-    qty:"3 months", date:"01 Jul 2026", budget:"₹24,000", tags:["Google Ads","PPC","ROI"],
-    status:"New", postedAt:"5 hrs ago", urgency:"Urgent" },
-  { id:"fw-12", orderId:"ORD-K004", category:"marketing", title:"Influencer Campaign – 5 Micro Creators",
-    description:"Coordinate 5 food-lifestyle micro-influencers (20K–100K followers). Reels + stories. Full content calendar and deliverables list to be submitted before execution.",
-    businessName:"Café Zephyr Group", businessType:"Café", location:"Lower Parel, Mumbai",
-    qty:"5 creators", date:"28 Jun 2026", budget:"₹42,000", tags:["Influencer","Micro","Content"],
-    status:"Accepted", postedAt:"2 days ago", urgency:"Normal" }
+  {
+    id: "fw-01", orderId: "ORD-M001", category: "manpower", title: "Weekend Banquet Servers – 10 persons",
+    description: "Need 10 trained servers for Saturday evening gala dinner. 6PM–midnight shift. Formal attire mandatory. Experience in fine dining essential.",
+    businessName: "The Meridian Grand", businessType: "Hotel", location: "Bandra, Mumbai",
+    qty: "10 persons", date: "21 Jun 2026", budget: "₹20,000", tags: ["Fine Dining", "Weekend", "Formal"],
+    status: "New", postedAt: "5 min ago", urgency: "Urgent"
+  },
+  {
+    id: "fw-02", orderId: "ORD-M002", category: "manpower", title: "Head Chef – Italian Cuisine (Long Term)",
+    description: "Seeking experienced Head Chef specialising in Italian cuisine. Min 5yr experience. Pasta, risotto, wood-fired pizza expertise required. Trial shift before confirmation.",
+    businessName: "Trattoria Milano", businessType: "Restaurant", location: "Colaba, Mumbai",
+    qty: "1 person", date: "25 Jun 2026", budget: "₹65,000/mo", tags: ["Head Chef", "Italian", "Long Term"],
+    status: "Pending", postedAt: "2 hrs ago", urgency: "Normal"
+  },
+  {
+    id: "fw-03", orderId: "ORD-M003", category: "manpower", title: "Barista – Part-time (Weekends Only)",
+    description: "Looking for a skilled barista for weekend shifts (Sat & Sun, 8AM–4PM). Latte art essential. English proficiency required.",
+    businessName: "Café Zephyr Group", businessType: "Café", location: "Lower Parel, Mumbai",
+    qty: "2 persons", date: "22 Jun 2026", budget: "₹7,200", tags: ["Barista", "Part-time", "Coffee"],
+    status: "New", postedAt: "3 hrs ago", urgency: "Normal"
+  },
+  {
+    id: "fw-04", orderId: "ORD-M004", category: "manpower", title: "Security Guards – Night Shift",
+    description: "Require 2 security guards for night shift (10PM–6AM). Ex-military or retired police preferred. CCTV monitoring experience required.",
+    businessName: "Azure Palace Hotel", businessType: "Hotel", location: "Juhu, Mumbai",
+    qty: "2 persons", date: "20 Jun 2026", budget: "₹36,000/mo", tags: ["Security", "Night Shift", "Hotel"],
+    status: "Proposal Sent", postedAt: "Yesterday", urgency: "Normal"
+  },
+  {
+    id: "fw-05", orderId: "ORD-S001", category: "service", title: "HVAC Annual Maintenance – 22 Units",
+    description: "Full annual maintenance contract for 22 HVAC units across 4 floors. Includes quarterly filter replacement and emergency call-out within 4 hours.",
+    businessName: "Sunset Resort", businessType: "Hotel", location: "Versova, Mumbai",
+    qty: "22 units / 12 months", date: "25 Jun 2026", budget: "₹85,000/yr", tags: ["HVAC", "AMC", "Annual Contract"],
+    status: "New", postedAt: "1 hr ago", urgency: "Normal"
+  },
+  {
+    id: "fw-06", orderId: "ORD-S002", category: "service", title: "Commercial Kitchen Deep Cleaning (3 Sections)",
+    description: "Overnight deep clean required for 3 kitchen sections. Must use FSSAI-approved food-safe chemicals only. Work window: 12AM–5AM.",
+    businessName: "The Meridian Grand", businessType: "Hotel", location: "Bandra, Mumbai",
+    qty: "3 kitchen sections", date: "20 Jun 2026", budget: "₹22,000", tags: ["Deep Clean", "Overnight", "FSSAI"],
+    status: "Pending", postedAt: "4 hrs ago", urgency: "Urgent"
+  },
+  {
+    id: "fw-07", orderId: "ORD-S003", category: "service", title: "Monthly Pest Control – Full Property",
+    description: "FSSAI-compliant rodent and cockroach treatment for full restaurant premises. Certified pest control agency only. Child and food-safe chemicals mandatory.",
+    businessName: "Spice Route Restaurant", businessType: "Restaurant", location: "Andheri, Mumbai",
+    qty: "Full property", date: "22 Jun 2026", budget: "₹4,800", tags: ["Pest Control", "FSSAI", "Monthly"],
+    status: "New", postedAt: "6 hrs ago", urgency: "Normal"
+  },
+  {
+    id: "fw-08", orderId: "ORD-S004", category: "service", title: "Electrical Wiring Audit & Repair",
+    description: "Complete electrical audit of kitchen and dining area. Identify and repair faults. Must be a licensed electrical contractor. Compliance certificate required on completion.",
+    businessName: "Café Zephyr Group", businessType: "Café", location: "Lower Parel, Mumbai",
+    qty: "Full property", date: "24 Jun 2026", budget: "₹12,000", tags: ["Electrical", "Licensed", "Audit"],
+    status: "Accepted", postedAt: "2 days ago", urgency: "Normal"
+  },
+  {
+    id: "fw-09", orderId: "ORD-K001", category: "marketing", title: "July Social Media Campaign – 30 Days",
+    description: "Full social media management for July. 12 Reels + 20 static posts for Instagram & Facebook. Food-forward aesthetic. Influencer collaboration preferred.",
+    businessName: "Azure Palace Hotel", businessType: "Hotel", location: "Juhu, Mumbai",
+    qty: "30 days", date: "01 Jul 2026", budget: "₹40,000", tags: ["Social Media", "Instagram", "Reels"],
+    status: "New", postedAt: "30 min ago", urgency: "Normal"
+  },
+  {
+    id: "fw-10", orderId: "ORD-K002", category: "marketing", title: "Complete Menu Photography – 82 Items",
+    description: "Professional food photography for full menu (82 dishes). Dark-wood table styling preferred. Natural light setup. RAW files + retouched JPEGs. Delivery within 5 working days.",
+    businessName: "Spice Route Restaurant", businessType: "Restaurant", location: "Andheri, Mumbai",
+    qty: "82 menu items", date: "26 Jun 2026", budget: "₹18,000", tags: ["Photography", "Menu", "Food Styling"],
+    status: "Proposal Sent", postedAt: "Yesterday", urgency: "Normal"
+  },
+  {
+    id: "fw-11", orderId: "ORD-K003", category: "marketing", title: "Google Ads Campaign – 3 Months",
+    description: "Search + Display Ads setup and management for 3 months. Focus on reservation conversions. ₹8,000/month ad spend handled by client. ROI reporting monthly.",
+    businessName: "The Grand Bistro", businessType: "Restaurant", location: "Fort, Mumbai",
+    qty: "3 months", date: "01 Jul 2026", budget: "₹24,000", tags: ["Google Ads", "PPC", "ROI"],
+    status: "New", postedAt: "5 hrs ago", urgency: "Urgent"
+  },
+  {
+    id: "fw-12", orderId: "ORD-K004", category: "marketing", title: "Influencer Campaign – 5 Micro Creators",
+    description: "Coordinate 5 food-lifestyle micro-influencers (20K–100K followers). Reels + stories. Full content calendar and deliverables list to be submitted before execution.",
+    businessName: "Café Zephyr Group", businessType: "Café", location: "Lower Parel, Mumbai",
+    qty: "5 creators", date: "28 Jun 2026", budget: "₹42,000", tags: ["Influencer", "Micro", "Content"],
+    status: "Accepted", postedAt: "2 days ago", urgency: "Normal"
+  }
 ];
 
 const DEFAULT_HORECA = [
@@ -520,7 +715,22 @@ const DEFAULT_HORECA = [
     documents: "All Documents Verified",
     requirements: "3 Pending Requirements",
     complaints: "0 Open Complaints",
-    activityHistory: [{ action: "Login", date: "Today 09:00 AM" }]
+    activityHistory: [
+      { action: "Business Registered", date: "12 Jan 2023" },
+      { action: "KYC Submitted", date: "15 Jan 2023" },
+      { action: "Verified", date: "20 Jan 2023" },
+      { action: "First Order Placed", date: "25 Jan 2023" }
+    ],
+    phone: "+91 98765 43210",
+    email: "ramesh@royalorchid.com",
+    address: "Bandra West, Mumbai, 400050",
+    gstNumber: "27AABCR5512D1Z2",
+    fssaiNumber: "11223344556677",
+    profileCompletion: 100,
+    completedOrders: 138,
+    revenue: "₹18,40,000",
+    licenseExpiry: "15 Dec 2028",
+    licenseStatus: "Valid"
   },
   {
     id: "HR-9902",
@@ -537,7 +747,20 @@ const DEFAULT_HORECA = [
     documents: "FSSAI Missing",
     requirements: "No Open Requirements",
     complaints: "1 Open Complaint",
-    activityHistory: [{ action: "Updated Menu", date: "Yesterday" }]
+    activityHistory: [
+      { action: "Business Registered", date: "24 Mar 2024" },
+      { action: "KYC Submitted", date: "26 Mar 2024" }
+    ],
+    phone: "+91 91234 56789",
+    email: "ajay@spiceroute.com",
+    address: "Connaught Place, New Delhi, 110001",
+    gstNumber: "07AAACV8821B1Z9",
+    fssaiNumber: "22334455667788",
+    profileCompletion: 85,
+    completedOrders: 80,
+    revenue: "₹6,80,000",
+    licenseExpiry: "10 Oct 2026",
+    licenseStatus: "Expiring Soon"
   },
   {
     id: "HR-9903",
@@ -554,7 +777,22 @@ const DEFAULT_HORECA = [
     documents: "All Documents Verified",
     requirements: "Looking for Barista",
     complaints: "0 Open Complaints",
-    activityHistory: [{ action: "Posted Job", date: "3 Days Ago" }]
+    activityHistory: [
+      { action: "Business Registered", date: "05 Nov 2022" },
+      { action: "KYC Submitted", date: "08 Nov 2022" },
+      { action: "Verified", date: "15 Nov 2022" },
+      { action: "First Order Placed", date: "20 Nov 2022" }
+    ],
+    phone: "+91 88888 22222",
+    email: "arjun@brewandbites.in",
+    address: "Indiranagar, Bangalore, 560038",
+    gstNumber: "29BBDCP1122A1Z1",
+    fssaiNumber: "33445566778899",
+    profileCompletion: 95,
+    completedOrders: 305,
+    revenue: "₹24,50,000",
+    licenseExpiry: "05 Nov 2027",
+    licenseStatus: "Valid"
   },
   {
     id: "HR-9904",
@@ -571,7 +809,21 @@ const DEFAULT_HORECA = [
     documents: "All Documents Verified",
     requirements: "None",
     complaints: "3 Escalated Complaints",
-    activityHistory: [{ action: "Account Suspended by Admin", date: "Last Week" }]
+    activityHistory: [
+      { action: "Business Registered", date: "10 Jun 2025" },
+      { action: "KYC Submitted", date: "12 Jun 2025" },
+      { action: "Verified", date: "20 Jun 2025" }
+    ],
+    phone: "+91 99999 00000",
+    email: "admin@foodjunction.in",
+    address: "Sector 17, Chandigarh, 160017",
+    gstNumber: "04AAACK8822C1Z4",
+    fssaiNumber: "44556677889900",
+    profileCompletion: 100,
+    completedOrders: 40,
+    revenue: "₹3,20,000",
+    licenseExpiry: "12 Mar 2026",
+    licenseStatus: "Expired"
   }
 ];
 
@@ -579,6 +831,7 @@ const DEFAULT_VENDORS = [
   {
     id: "VEND-1001",
     name: "Green Valley Supplies",
+    businessName: "Green Valley Supplies Ltd",
     category: "Raw Material",
     city: "Mumbai",
     rating: 4.8,
@@ -588,11 +841,29 @@ const DEFAULT_VENDORS = [
     productCount: 150,
     totalOrders: 1248,
     onTimeDelivery: "98%",
-    isTopRated: true
+    isTopRated: true,
+    documentStatus: "Valid",
+    phone: "+91 98765 00001",
+    email: "info@greenvalley.com",
+    ownerName: "Rajesh Sharma",
+    serviceArea: "Mumbai MMR, Pune",
+    profileCompletion: 95,
+    completedOrders: 1210,
+    successRate: "98%",
+    documents: [
+      { name: "PAN", status: "Valid", expiryDate: "N/A" },
+      { name: "GST", status: "Valid", expiryDate: "10 Feb 2029" },
+      { name: "Trade License", status: "Valid", expiryDate: "15 Dec 2028" },
+      { name: "Bank Proof", status: "Valid", expiryDate: "N/A" }
+    ],
+    productCategories: "Vegetables, Fruits, Grains",
+    deliveryArea: "Mumbai MMR",
+    stockAvailability: "95% In Stock"
   },
   {
     id: "VEND-1002",
     name: "Elite Staffing Solutions",
+    businessName: "Elite Manpower & Staffing",
     category: "Manpower",
     city: "Delhi",
     rating: 4.6,
@@ -603,11 +874,29 @@ const DEFAULT_VENDORS = [
     activeDeployments: 120,
     placementRate: "92%",
     replacementRate: "5%",
-    isTopRated: false
+    isTopRated: false,
+    documentStatus: "Expiring Soon",
+    phone: "+91 91234 00002",
+    email: "contact@elitestaffing.in",
+    ownerName: "Sanjay Singhal",
+    serviceArea: "Delhi NCR, Noida, Gurugram",
+    profileCompletion: 85,
+    completedOrders: 340,
+    successRate: "92%",
+    documents: [
+      { name: "PAN", status: "Valid", expiryDate: "N/A" },
+      { name: "GST", status: "Valid", expiryDate: "15 Jan 2028" },
+      { name: "Trade License", status: "Expiring Soon", expiryDate: "10 Aug 2026" },
+      { name: "Bank Proof", status: "Valid", expiryDate: "N/A" }
+    ],
+    availableStaff: "150 Cooks, 120 Waiters, 80 Cleaners",
+    staffRoles: "Chef, Waiter, Kitchen Helper, Barista",
+    placementCount: 340
   },
   {
     id: "VEND-1003",
     name: "QuickClean Hygiene",
+    businessName: "QuickClean Hygiene Services",
     category: "Service Provider",
     city: "Bangalore",
     rating: 4.9,
@@ -619,11 +908,29 @@ const DEFAULT_VENDORS = [
     activeJobs: 34,
     completionRate: "99%",
     reworkRate: "1%",
-    isTopRated: true
+    isTopRated: true,
+    documentStatus: "Valid",
+    phone: "+91 88888 00003",
+    email: "clean@quickclean.in",
+    ownerName: "Anita Reddy",
+    serviceArea: "Bangalore Urban, Bangalore Rural",
+    profileCompletion: 100,
+    completedOrders: 512,
+    successRate: "99%",
+    documents: [
+      { name: "PAN", status: "Valid", expiryDate: "N/A" },
+      { name: "GST", status: "Valid", expiryDate: "05 Nov 2029" },
+      { name: "Trade License", status: "Valid", expiryDate: "30 Sep 2028" },
+      { name: "Bank Proof", status: "Valid", expiryDate: "N/A" }
+    ],
+    serviceCategories: "Deep Cleaning, Pest Control, Sanitization",
+    completedServices: 512,
+    serviceAreas: "Bangalore District"
   },
   {
     id: "VEND-1004",
     name: "Creative Digital Edge",
+    businessName: "Creative Digital Edge Agency",
     category: "Marketing Agency",
     city: "Mumbai",
     rating: 4.5,
@@ -634,21 +941,54 @@ const DEFAULT_VENDORS = [
     activeCampaigns: 4,
     completedCampaigns: 12,
     teamSize: 15,
-    isTopRated: false
+    isTopRated: false,
+    documentStatus: "Expired",
+    phone: "+91 99999 00004",
+    email: "hello@creativedigital.com",
+    ownerName: "Vikram Malhotra",
+    serviceArea: "Online, Pan India",
+    profileCompletion: 70,
+    completedOrders: 12,
+    successRate: "85%",
+    documents: [
+      { name: "PAN", status: "Valid", expiryDate: "N/A" },
+      { name: "GST", status: "Expired", expiryDate: "12 May 2026" },
+      { name: "Trade License", status: "Expired", expiryDate: "30 Jun 2026" },
+      { name: "Bank Proof", status: "Valid", expiryDate: "N/A" }
+    ],
+    portfolioCount: 15
   },
   {
     id: "VEND-1005",
     name: "Fresh Foods Logistics",
+    businessName: "Fresh Foods Logistics Pvt Ltd",
     category: "Raw Material",
     city: "Pune",
     rating: 4.2,
-    verification: "Approved",
-    accountStatus: "Active",
+    verification: "Rejected",
+    accountStatus: "Blocked",
     joinedDate: "11 Mar 2025",
     productCount: 85,
     totalOrders: 412,
     onTimeDelivery: "91%",
-    isTopRated: false
+    isTopRated: false,
+    documentStatus: "Valid",
+    phone: "+91 95555 00005",
+    email: "logistics@freshfoods.com",
+    ownerName: "Manoj Deshmukh",
+    serviceArea: "Pune, Pimpri Chinchwad",
+    profileCompletion: 80,
+    completedOrders: 410,
+    successRate: "91%",
+    documents: [
+      { name: "PAN", status: "Valid", expiryDate: "N/A" },
+      { name: "GST", status: "Valid", expiryDate: "11 Mar 2030" },
+      { name: "Trade License", status: "Valid", expiryDate: "31 Dec 2029" },
+      { name: "Bank Proof", status: "Valid", expiryDate: "N/A" }
+    ],
+    productCategories: "Dairy, Frozen Foods, Poultry",
+    deliveryArea: "Pune Region",
+    stockAvailability: "88% In Stock"
   }
 ];
 
@@ -697,9 +1037,22 @@ export const mockDb = {
             localStorage.setItem("hrchub_orders", JSON.stringify(filtered));
           }
         }
-      } catch (e) {}
+      } catch (e) { }
     }
-    if (!localStorage.getItem("hrchub_tickets")) {
+    let resetTickets = false;
+    try {
+      const existing = localStorage.getItem("hrchub_tickets");
+      if (existing) {
+        const parsed = JSON.parse(existing);
+        if (parsed.length > 0 && !parsed[0].subject) {
+          resetTickets = true;
+        }
+      }
+    } catch (e) {
+      resetTickets = true;
+    }
+
+    if (!localStorage.getItem("hrchub_tickets") || resetTickets) {
       localStorage.setItem("hrchub_tickets", JSON.stringify(DEFAULT_TICKETS));
     }
     if (!localStorage.getItem("hrchub_kyc")) {
@@ -707,22 +1060,51 @@ export const mockDb = {
     } else {
       try {
         const existingKyc = JSON.parse(localStorage.getItem("hrchub_kyc"));
-        if (!existingKyc.find(k => k.id === "KYC-1099")) {
-          const demoKyc = DEFAULT_KYC.find(k => k.id === "KYC-1099");
-          if (demoKyc) {
-            existingKyc.unshift(demoKyc);
-            localStorage.setItem("hrchub_kyc", JSON.stringify(existingKyc));
+        let updated = false;
+        DEFAULT_KYC.forEach(item => {
+          if (!existingKyc.some(k => k.id === item.id)) {
+            existingKyc.push(item);
+            updated = true;
           }
+        });
+        if (updated) {
+          localStorage.setItem("hrchub_kyc", JSON.stringify(existingKyc));
         }
-      } catch (e) {}
+      } catch (e) { }
     }
     if (!localStorage.getItem("hrchub_feed")) {
       localStorage.setItem("hrchub_feed", JSON.stringify(DEFAULT_FEED_ITEMS));
     }
-    if (!localStorage.getItem("hrchub_horeca")) {
+    let resetHoreca = false;
+    try {
+      const existing = localStorage.getItem("hrchub_horeca");
+      if (existing) {
+        const parsed = JSON.parse(existing);
+        if (parsed.length > 0 && !parsed[0].gstNumber) {
+          resetHoreca = true;
+        }
+      }
+    } catch (e) {
+      resetHoreca = true;
+    }
+
+    if (!localStorage.getItem("hrchub_horeca") || resetHoreca) {
       localStorage.setItem("hrchub_horeca", JSON.stringify(DEFAULT_HORECA));
     }
-    if (!localStorage.getItem("hrchub_vendors")) {
+    let resetVendors = false;
+    try {
+      const existing = localStorage.getItem("hrchub_vendors");
+      if (existing) {
+        const parsed = JSON.parse(existing);
+        if (parsed.length > 0 && !parsed[0].businessName) {
+          resetVendors = true;
+        }
+      }
+    } catch (e) {
+      resetVendors = true;
+    }
+
+    if (!localStorage.getItem("hrchub_vendors") || resetVendors) {
       localStorage.setItem("hrchub_vendors", JSON.stringify(DEFAULT_VENDORS));
     }
     if (!localStorage.getItem("hrchub_requirements")) {

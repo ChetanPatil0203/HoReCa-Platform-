@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Download, Plus, Star, X, MoreVertical, Building, Eye, AlertTriangle, UserCheck, ShieldAlert, CheckCircle, Activity, MapPin, FileText, Phone, Mail, Box, Users, Settings, Megaphone } from 'lucide-react';
+import { Search, Download, Plus, Star, X, MoreVertical, Building, Eye, AlertTriangle, UserCheck, ShieldAlert, CheckCircle, Activity, MapPin, FileText, Phone, Mail, Box, Users, Settings, Megaphone, UserX } from 'lucide-react';
 import { mockDb } from '../../utils/mockDb';
 
 export default function Vendors() {
@@ -13,20 +13,16 @@ export default function Vendors() {
   const [ratingFilter, setRatingFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [verificationFilter, setVerificationFilter] = useState("All");
+  const [documentStatusFilter, setDocumentStatusFilter] = useState("All");
 
   // State
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [selectedProfileId, setSelectedProfileId] = useState(null);
   const [toasts, setToasts] = useState([]);
 
-  // Impersonation
-  const [impersonateTarget, setImpersonateTarget] = useState(null);
-  const [impersonateReason, setImpersonateReason] = useState("");
-  const [activeImpersonation, setActiveImpersonation] = useState(null);
-
   useEffect(() => {
     setVendors(mockDb.getVendors());
-    
+
     // Close menus on click outside
     const handleClickOutside = () => setActiveMenuId(null);
     document.addEventListener('click', handleClickOutside);
@@ -47,6 +43,7 @@ export default function Vendors() {
   const suspendedCount = vendors.filter(v => v.accountStatus === 'Suspended').length;
   const pendingVerifCount = vendors.filter(v => v.verification === 'Pending').length;
   const topRatedCount = vendors.filter(v => v.isTopRated).length;
+  const expiringDocsCount = vendors.filter(v => v.documentStatus === 'Expiring Soon').length;
 
   const filteredVendors = useMemo(() => {
     return vendors.filter((v) => {
@@ -54,260 +51,102 @@ export default function Vendors() {
       const matchCity = cityFilter === "All" || v.city === cityFilter;
       const matchStatus = statusFilter === "All" || v.accountStatus === statusFilter;
       const matchVerification = verificationFilter === "All" || v.verification === verificationFilter;
-      const matchRating = ratingFilter === "All" || (ratingFilter === "4.5+" && v.rating >= 4.5) || (ratingFilter === "<4.5" && v.rating < 4.5);
+
+      let matchRating = true;
+      if (ratingFilter !== "All") {
+        if (ratingFilter === "4.5+") {
+          matchRating = v.rating >= 4.5;
+        } else if (ratingFilter === "<4.5") {
+          matchRating = v.rating < 4.5;
+        }
+      }
+
+      const matchDocStatus = documentStatusFilter === "All" || v.documentStatus === documentStatusFilter;
+
       const matchQuery =
         v.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        v.id.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchTab && matchCity && matchStatus && matchVerification && matchRating && matchQuery;
+        v.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (v.businessName && v.businessName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (v.phone && v.phone.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        v.city.toLowerCase().includes(searchQuery.toLowerCase());
+
+      return matchTab && matchCity && matchStatus && matchVerification && matchRating && matchDocStatus && matchQuery;
     });
-  }, [vendors, activeTab, cityFilter, statusFilter, verificationFilter, ratingFilter, searchQuery]);
+  }, [vendors, activeTab, cityFilter, statusFilter, verificationFilter, ratingFilter, documentStatusFilter, searchQuery]);
 
   const activeProfile = useMemo(() => vendors.find(v => v.id === selectedProfileId), [vendors, selectedProfileId]);
 
-  const handleImpersonateStart = (e, v) => {
-    e.stopPropagation();
-    setActiveMenuId(null);
-    setImpersonateTarget(v);
+  const handleApprove = (id) => {
+    const updated = vendors.map(v => v.id === id ? { ...v, verification: 'Approved' } : v);
+    setVendors(updated);
+    mockDb.saveVendors(updated);
+    showToast("Vendor KYC approved successfully!", "success");
+    window.dispatchEvent(new Event('storage'));
   };
 
-  const confirmImpersonation = () => {
-    if (!impersonateReason.trim()) {
-      showToast("Reason is required.", "error");
-      return;
-    }
-    setActiveImpersonation(impersonateTarget);
-    setImpersonateTarget(null);
-    setImpersonateReason("");
-    showToast(`Started impersonating ${impersonateTarget.name}`, "success");
+  const handleReject = (id) => {
+    const updated = vendors.map(v => v.id === id ? { ...v, verification: 'Rejected' } : v);
+    setVendors(updated);
+    mockDb.saveVendors(updated);
+    showToast("Vendor KYC rejected successfully!", "error");
+    window.dispatchEvent(new Event('storage'));
   };
 
-  const endImpersonation = () => {
-    showToast(`Ended impersonation for ${activeImpersonation.name}`, "info");
-    setActiveImpersonation(null);
+  const handleApproveRejectToggle = (id) => {
+    const current = vendors.find(v => v.id === id);
+    if (current.verification === 'Approved') {
+      handleReject(id);
+    } else {
+      handleApprove(id);
+    }
   };
 
-  const renderTableHeader = () => {
-    if (activeTab === "Raw Material") {
-      return (
-        <tr className="bg-slate-50 border-b border-slate-200/80 text-[10px] uppercase tracking-wider text-slate-500">
-          <th className="p-4 font-bold">Vendor</th>
-          <th className="p-4 font-bold">Product Count</th>
-          <th className="p-4 font-bold">Total Orders</th>
-          <th className="p-4 font-bold">On-Time Delivery</th>
-          <th className="p-4 font-bold">Rating</th>
-          <th className="p-4 font-bold">Status</th>
-          <th className="p-4 font-bold text-center">Actions</th>
-        </tr>
-      );
-    }
-    if (activeTab === "Manpower") {
-      return (
-        <tr className="bg-slate-50 border-b border-slate-200/80 text-[10px] uppercase tracking-wider text-slate-500">
-          <th className="p-4 font-bold">Agency</th>
-          <th className="p-4 font-bold">Candidate Count</th>
-          <th className="p-4 font-bold">Active Deployments</th>
-          <th className="p-4 font-bold">Placement Rate</th>
-          <th className="p-4 font-bold">Replacement Rate</th>
-          <th className="p-4 font-bold">Rating</th>
-          <th className="p-4 font-bold text-center">Actions</th>
-        </tr>
-      );
-    }
-    if (activeTab === "Service Provider") {
-      return (
-        <tr className="bg-slate-50 border-b border-slate-200/80 text-[10px] uppercase tracking-wider text-slate-500">
-          <th className="p-4 font-bold">Provider</th>
-          <th className="p-4 font-bold">Service Count</th>
-          <th className="p-4 font-bold">Team Size</th>
-          <th className="p-4 font-bold">Active Jobs</th>
-          <th className="p-4 font-bold">Completion Rate</th>
-          <th className="p-4 font-bold">Rework Rate</th>
-          <th className="p-4 font-bold text-center">Actions</th>
-        </tr>
-      );
-    }
-    if (activeTab === "Marketing Agency") {
-      return (
-        <tr className="bg-slate-50 border-b border-slate-200/80 text-[10px] uppercase tracking-wider text-slate-500">
-          <th className="p-4 font-bold">Agency</th>
-          <th className="p-4 font-bold">Service Type</th>
-          <th className="p-4 font-bold">Active Campaigns</th>
-          <th className="p-4 font-bold">Completed Campaigns</th>
-          <th className="p-4 font-bold">Team Size</th>
-          <th className="p-4 font-bold">Rating</th>
-          <th className="p-4 font-bold text-center">Actions</th>
-        </tr>
-      );
-    }
-    return (
-      <tr className="bg-slate-50 border-b border-slate-200/80 text-[10px] uppercase tracking-wider text-slate-500">
-        <th className="p-4 font-bold">Vendor Name</th>
-        <th className="p-4 font-bold">Category</th>
-        <th className="p-4 font-bold">City</th>
-        <th className="p-4 font-bold">Rating</th>
-        <th className="p-4 font-bold">Verification</th>
-        <th className="p-4 font-bold">Status</th>
-        <th className="p-4 font-bold text-center">Actions</th>
-      </tr>
-    );
+  const handleSuspendToggle = (id) => {
+    const updated = vendors.map(v => {
+      if (v.id === id) {
+        const next = v.accountStatus === 'Active' ? 'Suspended' : 'Active';
+        return { ...v, accountStatus: next };
+      }
+      return v;
+    });
+    setVendors(updated);
+    mockDb.saveVendors(updated);
+    const current = updated.find(v => v.id === id);
+    showToast(`Vendor account is now ${current.accountStatus}!`, "info");
+    window.dispatchEvent(new Event('storage'));
   };
 
-  const renderTableRow = (v) => {
-    const actionCell = (
-      <td className="p-4 text-center relative" onClick={e => e.stopPropagation()}>
-        <button 
-          onClick={() => setActiveMenuId(activeMenuId === v.id ? null : v.id)}
-          className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg transition-colors inline-block"
-        >
-          <MoreVertical size={16} />
-        </button>
-
-        <AnimatePresence>
-          {activeMenuId === v.id && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 5 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 5 }}
-              className="absolute right-8 top-8 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-20 py-2 text-left"
-            >
-              <button onClick={() => { setSelectedProfileId(v.id); setActiveMenuId(null); }} className="w-full text-left px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-blue-600 flex items-center gap-2">
-                <Eye size={14} /> View Profile
-              </button>
-              <button className="w-full text-left px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 flex items-center gap-2">
-                <Activity size={14} /> View Operations
-              </button>
-              <button className="w-full text-left px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 flex items-center gap-2">
-                <AlertTriangle size={14} /> View Complaints
-              </button>
-              
-              <div className="h-px bg-slate-100 my-1 mx-2" />
-              
-              <button onClick={(e) => handleImpersonateStart(e, v)} className="w-full text-left px-4 py-2 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 flex items-center gap-2">
-                <UserCheck size={14} /> Impersonate
-              </button>
-              
-              <div className="h-px bg-slate-100 my-1 mx-2" />
-
-              <button className="w-full text-left px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2">
-                <ShieldAlert size={14} /> Suspend Account
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </td>
-    );
-
-    const commonNameCell = (
-      <td className="p-4">
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-black text-slate-800">{v.name}</span>
-            {v.isTopRated && <span className="text-[8px] font-bold bg-amber-50 border border-amber-200 text-amber-700 px-1.5 py-0.5 rounded-full uppercase">Top Rated</span>}
-          </div>
-          <span className="text-[9px] font-mono font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded w-max">{v.id}</span>
-        </div>
-      </td>
-    );
-
-    const ratingCell = (
-      <td className="p-4">
-        <div className="flex items-center gap-1 text-amber-500 font-bold text-[11px]">
-          <Star className="w-3 h-3 fill-amber-400" /> {v.rating}
-        </div>
-      </td>
-    );
-
-    const statusCell = (
-      <td className="p-4">
-        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-          v.accountStatus === "Active" ? "text-emerald-600" : "text-rose-600"
-        }`}>
-          • {v.accountStatus}
-        </span>
-      </td>
-    );
-
-    if (activeTab === "Raw Material") {
-      return (
-        <tr key={v.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-          {commonNameCell}
-          <td className="p-4 text-xs font-semibold text-slate-700">{v.productCount} Items</td>
-          <td className="p-4 text-xs font-semibold text-slate-700">{v.totalOrders}</td>
-          <td className="p-4 text-xs font-semibold text-emerald-600">{v.onTimeDelivery}</td>
-          {ratingCell}
-          {statusCell}
-          {actionCell}
-        </tr>
-      );
+  const handleDelete = (id) => {
+    if (window.confirm("Are you sure you want to delete this vendor?")) {
+      const updated = vendors.filter(v => v.id !== id);
+      setVendors(updated);
+      mockDb.saveVendors(updated);
+      showToast("Vendor deleted successfully!", "success");
+      window.dispatchEvent(new Event('storage'));
     }
-    if (activeTab === "Manpower") {
-      return (
-        <tr key={v.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-          {commonNameCell}
-          <td className="p-4 text-xs font-semibold text-slate-700">{v.candidateCount} Pool</td>
-          <td className="p-4 text-xs font-semibold text-slate-700">{v.activeDeployments} Active</td>
-          <td className="p-4 text-xs font-semibold text-emerald-600">{v.placementRate}</td>
-          <td className="p-4 text-xs font-semibold text-rose-500">{v.replacementRate}</td>
-          {ratingCell}
-          {actionCell}
-        </tr>
-      );
-    }
-    if (activeTab === "Service Provider") {
-      return (
-        <tr key={v.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-          {commonNameCell}
-          <td className="p-4 text-xs font-semibold text-slate-700">{v.serviceCount} Services</td>
-          <td className="p-4 text-xs font-semibold text-slate-700">{v.teamSize} Members</td>
-          <td className="p-4 text-xs font-semibold text-slate-700">{v.activeJobs} Jobs</td>
-          <td className="p-4 text-xs font-semibold text-emerald-600">{v.completionRate}</td>
-          <td className="p-4 text-xs font-semibold text-rose-500">{v.reworkRate}</td>
-          {actionCell}
-        </tr>
-      );
-    }
-    if (activeTab === "Marketing Agency") {
-      return (
-        <tr key={v.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-          {commonNameCell}
-          <td className="p-4 text-xs font-semibold text-slate-700">{v.serviceType}</td>
-          <td className="p-4 text-xs font-semibold text-slate-700">{v.activeCampaigns} Active</td>
-          <td className="p-4 text-xs font-semibold text-slate-700">{v.completedCampaigns} Done</td>
-          <td className="p-4 text-xs font-semibold text-slate-700">{v.teamSize} Size</td>
-          {ratingCell}
-          {actionCell}
-        </tr>
-      );
-    }
+  };
 
-    return (
-      <tr key={v.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-        {commonNameCell}
-        <td className="p-4">
-          <span className={`text-[9px] font-bold px-2 py-1 rounded-md border ${
-            v.category === "Raw Material" ? "bg-blue-50 border-blue-100 text-blue-700" :
-            v.category === "Manpower" ? "bg-emerald-50 border-emerald-100 text-emerald-700" :
-            v.category === "Service Provider" ? "bg-indigo-50 border-indigo-100 text-indigo-700" :
-            "bg-purple-50 border-purple-100 text-purple-700"
-          }`}>
-            {v.category}
-          </span>
-        </td>
-        <td className="p-4 text-xs font-bold text-slate-700">{v.city}</td>
-        {ratingCell}
-        <td className="p-4">
-          <span className={`text-[10px] font-extrabold px-2 py-0.5 flex items-center gap-1 w-max rounded-full border ${
-            v.verification === "Approved" ? "bg-emerald-50 border-emerald-200/40 text-emerald-700" :
-            "bg-amber-50 border-amber-200/40 text-amber-700"
-          }`}>
-            {v.verification === "Approved" ? <CheckCircle size={10}/> : <AlertTriangle size={10}/>}
-            {v.verification}
-          </span>
-        </td>
-        {statusCell}
-        {actionCell}
-      </tr>
-    );
+  const handleApproveFromDrawer = (id) => {
+    handleApprove(id);
+  };
+
+  const handleRejectFromDrawer = (id) => {
+    handleReject(id);
+  };
+
+  const handleSuspendFromDrawer = (id) => {
+    handleSuspendToggle(id);
+  };
+
+  const handleDeleteFromDrawer = (id) => {
+    if (window.confirm("Are you sure you want to delete this vendor?")) {
+      const updated = vendors.filter(v => v.id !== id);
+      setVendors(updated);
+      mockDb.saveVendors(updated);
+      setSelectedProfileId(null);
+      showToast("Vendor deleted successfully!", "success");
+      window.dispatchEvent(new Event('storage'));
+    }
   };
 
   return (
@@ -321,10 +160,9 @@ export default function Vendors() {
               initial={{ opacity: 0, y: 25 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
-              className={`flex items-start gap-3 p-4 rounded-xl border shadow-xl bg-white backdrop-blur-md pointer-events-auto ${
-                toast.type === "success" ? "border-emerald-500/20 text-emerald-800" : 
-                toast.type === "error" ? "border-rose-500/20 text-rose-800" : "border-blue-500/20 text-blue-800"
-              }`}
+              className={`flex items-start gap-3 p-4 rounded-xl border shadow-xl bg-white backdrop-blur-md pointer-events-auto ${toast.type === "success" ? "border-emerald-500/20 text-emerald-800" :
+                  toast.type === "error" ? "border-rose-500/20 text-rose-800" : "border-blue-500/20 text-blue-800"
+                }`}
             >
               <div className="flex-1 text-xs font-semibold leading-relaxed mt-0.5">{toast.message}</div>
               <button onClick={() => setToasts((p) => p.filter((t) => t.id !== toast.id))} className="text-slate-400">
@@ -335,46 +173,29 @@ export default function Vendors() {
         </AnimatePresence>
       </div>
 
-      {/* Global Impersonation Warning Banner */}
-      <AnimatePresence>
-        {activeImpersonation && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="bg-rose-600 text-white p-4 rounded-xl shadow-lg flex items-center justify-between sticky top-4 z-40 border border-rose-500"
-          >
-            <div className="flex items-center gap-3">
-              <span className="w-3 h-3 rounded-full bg-rose-400 animate-pulse" />
-              <ShieldAlert size={20} className="text-rose-200" />
-              <div>
-                <h4 className="font-bold text-sm">Impersonation Active: {activeImpersonation.name}</h4>
-                <p className="text-[10px] text-rose-200 uppercase tracking-wider font-semibold">Any actions taken will be logged as {activeImpersonation.name}.</p>
-              </div>
-            </div>
-            <button
-              onClick={endImpersonation}
-              className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold rounded-lg transition-colors"
-            >
-              End Impersonation
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="bg-white border border-slate-200/60 shadow-sm rounded-2xl p-5">
-        <h1 className="text-xl font-black text-slate-800 tracking-tight">Vendor Network</h1>
-        <p className="text-xs text-slate-400 mt-1 font-medium">Manage supply chains, manpower agencies, service providers and marketing agencies.</p>
+      {/* Hero Header Card */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-3xl p-6 shadow-xl border border-slate-700/50 relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="absolute right-0 top-0 translate-x-12 -translate-y-8 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30 border border-blue-400/30 shrink-0">
+            <Box size={26} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black tracking-tight text-white">Vendor Network</h1>
+            <p className="text-xs text-slate-300 mt-0.5 font-medium">Manage supply chains, manpower agencies, service providers and marketing agencies.</p>
+          </div>
+        </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {[
           { title: "Total Vendors", val: totalVendors, col: "text-slate-800", bg: "bg-slate-50" },
           { title: "Active", val: activeCount, col: "text-emerald-700", bg: "bg-emerald-50" },
           { title: "Suspended", val: suspendedCount, col: "text-rose-700", bg: "bg-rose-50" },
           { title: "Pending Verif.", val: pendingVerifCount, col: "text-amber-700", bg: "bg-amber-50" },
           { title: "Top Rated", val: topRatedCount, col: "text-indigo-700", bg: "bg-indigo-50" },
+          { title: "Expiring Docs", val: expiringDocsCount, col: "text-amber-700", bg: "bg-amber-50" },
         ].map((s, i) => (
           <div key={i} className={`p-4 rounded-xl border border-slate-100 shadow-sm ${s.bg}`}>
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{s.title}</span>
@@ -383,7 +204,7 @@ export default function Vendors() {
         ))}
       </div>
 
-      {/* Toolbar */}
+      {/* Toolbar & Filters */}
       <div className="flex flex-col gap-4 bg-white border border-slate-200/60 p-4 rounded-xl shadow-sm">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-100 pb-4">
           <div className="flex flex-wrap items-center gap-1 bg-[#F3F4F6] border border-slate-200/60 p-1 rounded-xl">
@@ -391,11 +212,10 @@ export default function Vendors() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all active:scale-[0.97] ${
-                  activeTab === tab
+                className={`text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all active:scale-[0.97] ${activeTab === tab
                     ? "bg-white text-blue-700 shadow-sm border border-slate-200/30"
                     : "text-slate-400 hover:text-slate-600"
-                }`}
+                  }`}
               >
                 {tab}
               </button>
@@ -406,7 +226,7 @@ export default function Vendors() {
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search vendor name, ID..."
+                placeholder="Search name, ID, business, phone..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 border border-slate-200 bg-slate-50/50 focus:bg-white text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -423,20 +243,17 @@ export default function Vendors() {
             <option value="Bangalore">Bangalore</option>
             <option value="Pune">Pune</option>
           </select>
-          <select value={ratingFilter} onChange={e => setRatingFilter(e.target.value)} className="border border-slate-200 bg-slate-50/50 text-xs rounded-lg px-3 py-1.5 focus:outline-none text-slate-600 font-semibold">
-            <option value="All">All Ratings</option>
-            <option value="4.5+">4.5 & Above</option>
-            <option value="<4.5">Below 4.5</option>
-          </select>
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="border border-slate-200 bg-slate-50/50 text-xs rounded-lg px-3 py-1.5 focus:outline-none text-slate-600 font-semibold">
             <option value="All">All Account Status</option>
             <option value="Active">Active</option>
             <option value="Suspended">Suspended</option>
+            <option value="Blocked">Blocked</option>
           </select>
-          <select value={verificationFilter} onChange={e => setVerificationFilter(e.target.value)} className="border border-slate-200 bg-slate-50/50 text-xs rounded-lg px-3 py-1.5 focus:outline-none text-slate-600 font-semibold">
-            <option value="All">All Verification</option>
-            <option value="Approved">Approved</option>
-            <option value="Pending">Pending</option>
+          <select value={documentStatusFilter} onChange={e => setDocumentStatusFilter(e.target.value)} className="border border-slate-200 bg-slate-50/50 text-xs rounded-lg px-3 py-1.5 focus:outline-none text-slate-600 font-semibold">
+            <option value="All">All Document Status</option>
+            <option value="Valid">Valid</option>
+            <option value="Expiring Soon">Expiring Soon</option>
+            <option value="Expired">Expired</option>
           </select>
         </div>
       </div>
@@ -445,15 +262,136 @@ export default function Vendors() {
       <div className="bg-white border border-slate-200/60 shadow-sm rounded-2xl overflow-hidden w-full overflow-x-auto min-h-[400px]">
         <table className="w-full text-left border-collapse min-w-[1000px]">
           <thead>
-            {renderTableHeader()}
+            <tr className="bg-slate-50 border-b border-slate-200/80 text-[10px] uppercase tracking-wider text-slate-500">
+              <th className="p-4 font-bold">Vendor Name</th>
+              <th className="p-4 font-bold">Category</th>
+              <th className="p-4 font-bold">Business Name</th>
+              <th className="p-4 font-bold">City</th>
+              <th className="p-4 font-bold">Rating</th>
+              <th className="p-4 font-bold">Verification</th>
+              <th className="p-4 font-bold">Document Status</th>
+              <th className="p-4 font-bold">Account Status</th>
+              <th className="p-4 font-bold text-center">Actions</th>
+            </tr>
           </thead>
           <tbody>
             {filteredVendors.length > 0 ? (
-              filteredVendors.map((v) => renderTableRow(v))
+              filteredVendors.map((v) => (
+                <tr key={v.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                  <td className="p-4">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-black text-slate-800">{v.name}</span>
+                        {v.isTopRated && <span className="text-[8px] font-bold bg-amber-50 border border-amber-200 text-amber-700 px-1.5 py-0.5 rounded-full uppercase">Top Rated</span>}
+                      </div>
+                      <span className="text-[9px] font-mono font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded w-max">{v.id}</span>
+                    </div>
+                  </td>
+                  <td className="p-4 text-xs font-semibold text-slate-700">
+                    <span className={`text-[9px] font-bold px-2 py-1 rounded-md border ${v.category === "Raw Material" ? "bg-blue-50 border-blue-100 text-blue-700" :
+                        v.category === "Manpower" ? "bg-emerald-50 border-emerald-100 text-emerald-700" :
+                          v.category === "Service Provider" ? "bg-indigo-50 border-indigo-100 text-indigo-700" :
+                            "bg-purple-50 border-purple-100 text-purple-700"
+                      }`}>
+                      {v.category}
+                    </span>
+                  </td>
+                  <td className="p-4 text-xs font-bold text-slate-700">{v.businessName}</td>
+                  <td className="p-4 text-xs font-semibold text-slate-600">{v.city}</td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-1 text-amber-500 font-bold text-[11px]">
+                      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> {v.rating}
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold border ${v.verification === 'Approved' ? 'bg-blue-50 border-blue-200/30 text-blue-700' :
+                        v.verification === 'Pending' ? 'bg-amber-50 border-amber-200/30 text-amber-700' :
+                          v.verification === 'Under Review' ? 'bg-purple-50 border-purple-200/30 text-purple-700' :
+                            'bg-rose-50 border-rose-200/30 text-rose-700'
+                      }`}>
+                      {v.verification === 'Approved' ? 'Approved' :
+                        v.verification === 'Pending' ? 'Pending' :
+                          v.verification === 'Under Review' ? 'Under Review' :
+                            'Rejected'}
+                    </span>
+                  </td>
+                  <td className="p-4">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold border ${v.documentStatus === 'Valid' ? 'bg-emerald-50 border-emerald-200/30 text-emerald-700' :
+                        v.documentStatus === 'Expiring Soon' ? 'bg-amber-50 border-amber-200/30 text-amber-700' :
+                          'bg-rose-50 border-rose-200/30 text-rose-700'
+                      }`}>
+                      {v.documentStatus === 'Valid' ? '🟢 Valid' :
+                        v.documentStatus === 'Expiring Soon' ? '🟡 Expiring Soon' :
+                          '🔴 Expired'}
+                    </span>
+                  </td>
+                  <td className="p-4">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSuspendToggle(v.id);
+                      }}
+                      title="Click to toggle status"
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold border transition-all cursor-pointer active:scale-95 hover:opacity-90 ${v.accountStatus === 'Active' ? 'bg-emerald-50 border-emerald-200/30 text-emerald-700 hover:bg-emerald-100/50' :
+                          v.accountStatus === 'Suspended' ? 'bg-rose-50 border-rose-200/30 text-rose-700 hover:bg-rose-100/50' :
+                            'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200/80'
+                        }`}
+                    >
+                      {v.accountStatus === 'Active' ? '🟢 Active' :
+                        v.accountStatus === 'Suspended' ? '🔴 Suspended' :
+                          '⚫ Blocked'}
+                    </button>
+                  </td>
+                  <td className="p-4 text-center relative">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveMenuId(activeMenuId === v.id ? null : v.id);
+                      }}
+                      className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg transition-colors inline-block"
+                    >
+                      <MoreVertical size={16} />
+                    </button>
+
+                    <AnimatePresence>
+                      {activeMenuId === v.id && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95, y: 5 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95, y: 5 }}
+                          className="absolute right-8 top-8 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-20 py-2 text-left"
+                        >
+                          <button onClick={() => { setSelectedProfileId(v.id); setActiveMenuId(null); }} className="w-full text-left px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-blue-600 flex items-center gap-2">
+                            <Eye size={14} /> View
+                          </button>
+                          <button onClick={() => { showToast(`Edit form for ${v.name}`, "info"); setActiveMenuId(null); }} className="w-full text-left px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 flex items-center gap-2">
+                            <FileText size={14} /> Edit
+                          </button>
+                          <button onClick={() => { handleApproveRejectToggle(v.id); setActiveMenuId(null); }} className="w-full text-left px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 flex items-center gap-2">
+                            <CheckCircle size={14} /> {v.verification === 'Approved' ? 'Reject KYC' : 'Approve KYC'}
+                          </button>
+                          <button onClick={() => { handleSuspendToggle(v.id); setActiveMenuId(null); }} className="w-full text-left px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 flex items-center gap-2">
+                            <UserX size={14} /> {v.accountStatus === 'Active' ? 'Suspend' : 'Activate'}
+                          </button>
+                          <button onClick={() => { handleDelete(v.id); setActiveMenuId(null); }} className="w-full text-left px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2">
+                            <X size={14} /> Delete
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </td>
+                </tr>
+              ))
             ) : (
               <tr>
-                <td colSpan="8" className="p-8 text-center text-slate-400 text-xs font-medium">
-                  No vendors found matching filters.
+                <td colSpan="9" className="p-12 text-center text-slate-400">
+                  <div className="flex flex-col items-center justify-center gap-3">
+                    <Building size={48} className="text-slate-300 stroke-[1.5]" />
+                    <span className="text-xs font-black text-slate-500">No Vendors Found</span>
+                    <span className="text-[10px] text-slate-400 max-w-[200px] leading-relaxed">
+                      Try adjusting your search query or filters to find what you are looking for.
+                    </span>
+                  </div>
                 </td>
               </tr>
             )}
@@ -461,170 +399,281 @@ export default function Vendors() {
         </table>
       </div>
 
-      {/* Impersonate Dialog */}
+      {/* Vendor Profile Drawer (Right Side) */}
       <AnimatePresence>
-        {impersonateTarget && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setImpersonateTarget(null)} />
+        {selectedProfileId && activeProfile && (
+          <div className="fixed inset-0 z-50 overflow-hidden">
+            {/* Backdrop */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm relative z-10"
-            >
-              <div className="flex justify-center mb-4 text-indigo-500">
-                <UserCheck size={40} />
-              </div>
-              <h3 className="text-lg font-black text-slate-800 text-center mb-1">Impersonate Vendor</h3>
-              <p className="text-xs text-slate-500 text-center mb-6">
-                You are about to securely mirror the dashboard of <span className="font-bold text-slate-800">{impersonateTarget.name}</span>.
-              </p>
-              
-              <div className="mb-4">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Reason for Impersonation</label>
-                <textarea
-                  value={impersonateReason}
-                  onChange={(e) => setImpersonateReason(e.target.value)}
-                  placeholder="e.g., Investigating compliance issue..."
-                  className="w-full border border-slate-300 rounded-xl p-3 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[80px] resize-none"
-                />
-              </div>
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
+              onClick={() => setSelectedProfileId(null)}
+            />
 
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2 mb-6">
-                <AlertTriangle size={14} className="text-amber-600 mt-0.5 flex-shrink-0" />
-                <p className="text-[10px] text-amber-800 font-medium">
-                  All actions taken during this session will be logged under your super-admin account on behalf of this vendor.
-                </p>
-              </div>
-
-              <div className="flex gap-3 justify-end">
-                <button 
-                  onClick={() => { setImpersonateTarget(null); setImpersonateReason(''); }}
-                  className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-lg transition-colors w-full"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={confirmImpersonation}
-                  className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors w-full"
-                >
-                  Start Session
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Vendor Profile Modal */}
-      <AnimatePresence>
-        {activeProfile && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedProfileId(null)} />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="bg-[#F8FAFC] shadow-2xl rounded-2xl w-full max-w-4xl flex flex-col relative z-10 max-h-[90vh] overflow-hidden"
-            >
-              {/* Profile Header */}
-              <div className="bg-white px-6 py-5 border-b border-slate-200 flex justify-between items-start flex-shrink-0">
-                <div className="flex gap-4 items-center">
-                  <div className="w-14 h-14 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-700">
-                    {activeProfile.category === 'Raw Material' ? <Box size={24} /> :
-                     activeProfile.category === 'Manpower' ? <Users size={24} /> :
-                     activeProfile.category === 'Service Provider' ? <Settings size={24} /> : <Megaphone size={24} />}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="font-black text-slate-800 text-xl">{activeProfile.name}</h2>
-                      {activeProfile.isTopRated && <span className="text-[9px] font-bold bg-amber-50 border border-amber-200 text-amber-700 px-2 py-0.5 rounded-full uppercase">Top Rated</span>}
+            <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
+              <motion.div
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="w-screen max-w-md md:max-w-lg bg-white border-l border-slate-200/80 shadow-2xl flex flex-col h-full"
+              >
+                {/* Header */}
+                <div className="bg-white px-5 py-4 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
+                  <div className="flex gap-3 items-center">
+                    <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-700">
+                      {activeProfile.category === 'Raw Material' ? <Box size={20} /> :
+                        activeProfile.category === 'Manpower' ? <Users size={20} /> :
+                          activeProfile.category === 'Service Provider' ? <Settings size={20} /> : <Megaphone size={20} />}
                     </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded">{activeProfile.id}</span>
-                      <span className="text-[10px] text-slate-400 font-bold">• {activeProfile.category} in {activeProfile.city}</span>
+                    <div>
+                      <h2 className="font-black text-slate-800 text-sm">{activeProfile.name}</h2>
+                      <span className="text-[10px] text-slate-400 font-bold">{activeProfile.category} • {activeProfile.id}</span>
                     </div>
                   </div>
+                  <button onClick={() => setSelectedProfileId(null)} className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 transition-colors">
+                    <X size={18} />
+                  </button>
                 </div>
-                <button onClick={() => setSelectedProfileId(null)} className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500">
-                  <X size={20} />
-                </button>
-              </div>
 
-              {/* Profile Body */}
-              <div className="flex-1 overflow-y-auto p-6" style={{ scrollbarWidth: "thin" }}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  
-                  {/* Basic Info */}
-                  <div className="bg-white p-5 rounded-xl border border-slate-200/60 shadow-sm">
-                    <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-4">Vendor Details</h4>
-                    <div className="grid grid-cols-2 gap-4">
+                {/* Body */}
+                <div className="flex-1 overflow-y-auto p-5 space-y-5" style={{ scrollbarWidth: "thin" }}>
+
+                  {/* Profile Completion */}
+                  <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl shadow-xs">
+                    <div className="flex justify-between items-center mb-1.5">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Profile Completion</span>
+                      <span className="text-[11px] font-extrabold text-blue-600">{activeProfile.profileCompletion}% Complete</span>
+                    </div>
+                    <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-600 rounded-full transition-all duration-500" style={{ width: `${activeProfile.profileCompletion}%` }} />
+                    </div>
+                  </div>
+
+                  {/* Vendor Identity Details */}
+                  <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs space-y-3">
+                    <div className="flex justify-center py-2">
+                      <div className="w-20 h-20 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 font-black text-xl">
+                        {activeProfile.name.substring(0, 2).toUpperCase()}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
                       <div>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase block mb-1">Joined Date</span>
-                        <span className="text-xs font-bold text-slate-700">{activeProfile.joinedDate}</span>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Vendor Name</span>
+                        <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.name}</span>
                       </div>
                       <div>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase block mb-1">City</span>
-                        <span className="text-xs font-bold text-slate-700">{activeProfile.city}</span>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Business Name</span>
+                        <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.businessName}</span>
                       </div>
                       <div>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase block mb-1">Verification</span>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border inline-block ${
-                          activeProfile.verification === "Approved" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"
-                        }`}>{activeProfile.verification}</span>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Vendor Category</span>
+                        <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.category}</span>
                       </div>
                       <div>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase block mb-1">Status</span>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border inline-block ${
-                          activeProfile.accountStatus === "Active" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"
-                        }`}>{activeProfile.accountStatus}</span>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Owner Name</span>
+                        <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.ownerName}</span>
                       </div>
                       <div>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase block mb-1">Rating</span>
-                        <span className="text-xs font-bold text-amber-600 flex items-center gap-1"><Star size={12} className="fill-amber-500" /> {activeProfile.rating}</span>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Phone</span>
+                        <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.phone}</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Email</span>
+                        <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.email}</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">City</span>
+                        <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.city}</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Service Area</span>
+                        <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.serviceArea}</span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Registration Date</span>
+                        <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.joinedDate}</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Operations Meta */}
-                  <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-5 rounded-xl border border-slate-700 shadow-md text-white">
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4">Operations Meta</h4>
+                  {/* Performance Statistics */}
+                  <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs">
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Performance Parameters</h4>
                     <div className="grid grid-cols-2 gap-4">
+                      <div className="p-3 bg-slate-50 border border-slate-100 rounded-lg">
+                        <span className="text-[9px] text-slate-400 font-bold uppercase block">Rating</span>
+                        <span className="text-lg font-black text-amber-500 mt-1 block flex items-center gap-1">
+                          {activeProfile.rating} <Star size={16} className="fill-amber-400 text-amber-400" />
+                        </span>
+                      </div>
+                      <div className="p-3 bg-slate-50 border border-slate-100 rounded-lg">
+                        <span className="text-[9px] text-slate-400 font-bold uppercase block">Total Orders / Jobs</span>
+                        <span className="text-lg font-black text-slate-800 mt-1 block">
+                          {activeProfile.category === 'Raw Material' ? activeProfile.totalOrders :
+                            activeProfile.category === 'Manpower' ? activeProfile.candidateCount :
+                              activeProfile.category === 'Service Provider' ? activeProfile.completedServices :
+                                activeProfile.completedCampaigns}
+                        </span>
+                      </div>
+                      <div className="p-3 bg-slate-50 border border-slate-100 rounded-lg">
+                        <span className="text-[9px] text-slate-400 font-bold uppercase block">Completed</span>
+                        <span className="text-lg font-black text-slate-800 mt-1 block">
+                          {activeProfile.completedOrders || activeProfile.completedServices || activeProfile.completedCampaigns || 0}
+                        </span>
+                      </div>
+                      <div className="p-3 bg-slate-50 border border-slate-100 rounded-lg">
+                        <span className="text-[9px] text-slate-400 font-bold uppercase block">Success Rate</span>
+                        <span className="text-lg font-black text-emerald-600 mt-1 block">{activeProfile.successRate || "100%"}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Documents Checklist */}
+                  <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs">
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Compliance Documents</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      {activeProfile.documents && activeProfile.documents.map((doc) => (
+                        <div key={doc.name} className="border border-slate-100 rounded-lg p-3 bg-slate-50 flex flex-col justify-between gap-1.5">
+                          <div className="flex justify-between items-start">
+                            <span className="text-[10px] font-bold text-slate-600">{doc.name}</span>
+                            <span className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded border ${doc.status === 'Valid' ? 'bg-emerald-50 border-emerald-200/40 text-emerald-700' :
+                                doc.status === 'Expiring Soon' ? 'bg-amber-50 border-amber-200/40 text-amber-700' :
+                                  'bg-rose-50 border-rose-200/40 text-rose-700'
+                              }`}>{doc.status}</span>
+                          </div>
+                          <div className="flex justify-between items-center mt-1">
+                            <span className="text-[8px] text-slate-400 font-medium">Expiry: {doc.expiryDate}</span>
+                            <button
+                              onClick={() => showToast(`Downloading ${doc.name} compliance document...`, "success")}
+                              className="p-1 rounded bg-white hover:bg-slate-100 text-blue-600 border border-slate-200/50"
+                              title="Download Doc"
+                            >
+                              <Download size={10} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Category Specific Details */}
+                  <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs">
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Category-Specific Information</h4>
+                    <div className="text-xs space-y-2">
                       {activeProfile.category === 'Raw Material' && (
                         <>
-                          <div><span className="text-2xl font-black block">{activeProfile.productCount}</span><span className="text-[9px] text-slate-300 font-bold uppercase">Products</span></div>
-                          <div><span className="text-2xl font-black block">{activeProfile.totalOrders}</span><span className="text-[9px] text-slate-300 font-bold uppercase">Total Orders</span></div>
-                          <div><span className="text-2xl font-black block text-emerald-400">{activeProfile.onTimeDelivery}</span><span className="text-[9px] text-slate-300 font-bold uppercase">On-Time</span></div>
+                          <div className="flex justify-between p-2 bg-slate-50/50 border border-slate-50 rounded-lg">
+                            <span className="font-semibold text-slate-600">Product Categories</span>
+                            <span className="font-bold text-slate-800">{activeProfile.productCategories}</span>
+                          </div>
+                          <div className="flex justify-between p-2 bg-slate-50/50 border border-slate-50 rounded-lg">
+                            <span className="font-semibold text-slate-600">Delivery Area</span>
+                            <span className="font-bold text-slate-800">{activeProfile.deliveryArea}</span>
+                          </div>
+                          <div className="flex justify-between p-2 bg-slate-50/50 border border-slate-50 rounded-lg">
+                            <span className="font-semibold text-slate-600">Stock Availability</span>
+                            <span className="font-bold text-emerald-600">{activeProfile.stockAvailability}</span>
+                          </div>
                         </>
                       )}
                       {activeProfile.category === 'Manpower' && (
                         <>
-                          <div><span className="text-2xl font-black block">{activeProfile.candidateCount}</span><span className="text-[9px] text-slate-300 font-bold uppercase">Pool Size</span></div>
-                          <div><span className="text-2xl font-black block">{activeProfile.activeDeployments}</span><span className="text-[9px] text-slate-300 font-bold uppercase">Deployed</span></div>
-                          <div><span className="text-2xl font-black block text-emerald-400">{activeProfile.placementRate}</span><span className="text-[9px] text-slate-300 font-bold uppercase">Placement</span></div>
+                          <div className="flex justify-between p-2 bg-slate-50/50 border border-slate-50 rounded-lg">
+                            <span className="font-semibold text-slate-600">Available Staff</span>
+                            <span className="font-bold text-slate-800">{activeProfile.availableStaff}</span>
+                          </div>
+                          <div className="flex justify-between p-2 bg-slate-50/50 border border-slate-50 rounded-lg">
+                            <span className="font-semibold text-slate-600">Staff Roles</span>
+                            <span className="font-bold text-slate-800">{activeProfile.staffRoles}</span>
+                          </div>
+                          <div className="flex justify-between p-2 bg-slate-50/50 border border-slate-50 rounded-lg">
+                            <span className="font-semibold text-slate-600">Placement Count</span>
+                            <span className="font-bold text-slate-800">{activeProfile.placementCount} Placement(s)</span>
+                          </div>
                         </>
                       )}
                       {activeProfile.category === 'Service Provider' && (
                         <>
-                          <div><span className="text-2xl font-black block">{activeProfile.serviceCount}</span><span className="text-[9px] text-slate-300 font-bold uppercase">Services</span></div>
-                          <div><span className="text-2xl font-black block">{activeProfile.activeJobs}</span><span className="text-[9px] text-slate-300 font-bold uppercase">Active Jobs</span></div>
-                          <div><span className="text-2xl font-black block text-emerald-400">{activeProfile.completionRate}</span><span className="text-[9px] text-slate-300 font-bold uppercase">Completion</span></div>
+                          <div className="flex justify-between p-2 bg-slate-50/50 border border-slate-50 rounded-lg">
+                            <span className="font-semibold text-slate-600">Service Categories</span>
+                            <span className="font-bold text-slate-800">{activeProfile.serviceCategories}</span>
+                          </div>
+                          <div className="flex justify-between p-2 bg-slate-50/50 border border-slate-50 rounded-lg">
+                            <span className="font-semibold text-slate-600">Completed Services</span>
+                            <span className="font-bold text-slate-800">{activeProfile.completedServices} Services</span>
+                          </div>
+                          <div className="flex justify-between p-2 bg-slate-50/50 border border-slate-50 rounded-lg">
+                            <span className="font-semibold text-slate-600">Service Areas</span>
+                            <span className="font-bold text-slate-800">{activeProfile.serviceAreas}</span>
+                          </div>
                         </>
                       )}
                       {activeProfile.category === 'Marketing Agency' && (
                         <>
-                          <div><span className="text-lg font-black block leading-tight">{activeProfile.serviceType}</span><span className="text-[9px] text-slate-300 font-bold uppercase mt-1 block">Expertise</span></div>
-                          <div><span className="text-2xl font-black block">{activeProfile.activeCampaigns}</span><span className="text-[9px] text-slate-300 font-bold uppercase">Active</span></div>
-                          <div><span className="text-2xl font-black block text-emerald-400">{activeProfile.completedCampaigns}</span><span className="text-[9px] text-slate-300 font-bold uppercase">Completed</span></div>
+                          <div className="flex justify-between p-2 bg-slate-50/50 border border-slate-50 rounded-lg">
+                            <span className="font-semibold text-slate-600">Active Campaigns</span>
+                            <span className="font-bold text-slate-800">{activeProfile.activeCampaigns} Active</span>
+                          </div>
+                          <div className="flex justify-between p-2 bg-slate-50/50 border border-slate-50 rounded-lg">
+                            <span className="font-semibold text-slate-600">Completed Campaigns</span>
+                            <span className="font-bold text-slate-800">{activeProfile.completedCampaigns} Campaigns</span>
+                          </div>
+                          <div className="flex justify-between p-2 bg-slate-50/50 border border-slate-50 rounded-lg">
+                            <span className="font-semibold text-slate-600">Portfolio Count</span>
+                            <span className="font-bold text-slate-800">{activeProfile.portfolioCount} Projects</span>
+                          </div>
                         </>
                       )}
                     </div>
                   </div>
 
                 </div>
-              </div>
 
-            </motion.div>
+                {/* Footer Quick Actions */}
+                <div className="bg-slate-50 border-t border-slate-100 p-4 flex gap-2 flex-shrink-0">
+                  {activeProfile.verification !== 'Approved' ? (
+                    <button
+                      onClick={() => handleApproveFromDrawer(activeProfile.id)}
+                      className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition-colors"
+                    >
+                      Approve
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleRejectFromDrawer(activeProfile.id)}
+                      className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-sm transition-colors"
+                    >
+                      Reject KYC
+                    </button>
+                  )}
+                  <button
+                    onClick={() => { showToast(`Edit Form for ${activeProfile.name}`, "info"); setSelectedProfileId(null); }}
+                    className="flex-1 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-bold rounded-xl transition-colors"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleSuspendFromDrawer(activeProfile.id)}
+                    className={`flex-1 py-2 border text-xs font-bold rounded-xl transition-colors ${activeProfile.accountStatus === 'Active'
+                        ? 'border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600'
+                        : 'border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-600'
+                      }`}
+                  >
+                    {activeProfile.accountStatus === 'Active' ? 'Suspend' : 'Activate'}
+                  </button>
+                  <button
+                    onClick={() => handleDeleteFromDrawer(activeProfile.id)}
+                    className="p-2 border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-colors"
+                    title="Delete Vendor"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              </motion.div>
+            </div>
           </div>
         )}
       </AnimatePresence>

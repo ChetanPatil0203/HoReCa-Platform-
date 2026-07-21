@@ -294,11 +294,6 @@ export default function AdminLayout({ children }) {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Live Indicator */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-100 text-[10px] font-bold text-emerald-700">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Platform Health: 99.98%</span>
-            </div>
 
             {/* Notification Bell */}
             <button onClick={() => showToast("Database synchronization matches master replica.", "info")} className="p-2 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-all border border-slate-200/60 relative">
