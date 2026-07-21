@@ -1,11 +1,11 @@
 import React, { useState, useContext } from 'react';
-import { 
-  View, Text, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, 
-  ScrollView, TouchableOpacity, TextInput, Dimensions 
+import {
+  View, Text, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform,
+  ScrollView, TouchableOpacity, TextInput, Dimensions
 } from 'react-native';
-import { 
-  User, Building2, ShieldCheck, Check, ArrowLeft, ArrowRight, Home, Utensils, 
-  Coffee, Truck, Briefcase, Wrench, Megaphone, CheckCircle2, UploadCloud, 
+import {
+  User, Building2, ShieldCheck, Check, ArrowLeft, ArrowRight, Home, Utensils,
+  Coffee, Truck, Briefcase, Wrench, Megaphone, CheckCircle2, UploadCloud,
   FileText, Edit2, AlertCircle
 } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
@@ -56,7 +56,7 @@ const VENDOR_SUBCATEGORIES = {
 
 export default function RegisterScreen({ navigation }) {
   const { login } = useContext(AuthContext);
-  
+
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
@@ -175,7 +175,7 @@ export default function RegisterScreen({ navigation }) {
   // UI Component Generators
   const InputField = ({ label, keyName, placeholder, secure = false, keyboard = 'default', required = true }) => (
     <View style={styles.inputGroup}>
-      <Text style={styles.inputLabel}>{label} {required && <Text style={{color: '#EF4444'}}>*</Text>}</Text>
+      <Text style={styles.inputLabel}>{label} {required && <Text style={{ color: '#EF4444' }}>*</Text>}</Text>
       <TextInput
         style={[styles.input, errors[keyName] && styles.inputError]}
         placeholder={placeholder}
@@ -193,16 +193,16 @@ export default function RegisterScreen({ navigation }) {
       {renderStepper()}
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          
+
           {step === 1 && (
             <View style={styles.stepBlock}>
               <Text style={styles.stepTitle}>Account Verification</Text>
               <Text style={styles.stepSubtitle}>Create your secure HRC HUB account.</Text>
 
               {InputField({ label: "Full Name", keyName: "fullName", placeholder: "Arjun Mehta" })}
-              
+
               <View style={styles.verifyGroup}>
-                <View style={{flex: 1}}>
+                <View style={{ flex: 1 }}>
                   {InputField({ label: "Mobile Number", keyName: "mobile", placeholder: "9876543210", keyboard: "phone-pad" })}
                 </View>
                 {formData.isMobileVerified ? (
@@ -213,10 +213,10 @@ export default function RegisterScreen({ navigation }) {
                   </TouchableOpacity>
                 )}
               </View>
-              {errors.mobileVerify && <Text style={[styles.errorText, {marginTop:-10, marginBottom:16}]}>{errors.mobileVerify}</Text>}
+              {errors.mobileVerify && <Text style={[styles.errorText, { marginTop: -10, marginBottom: 16 }]}>{errors.mobileVerify}</Text>}
 
               <View style={styles.verifyGroup}>
-                <View style={{flex: 1}}>
+                <View style={{ flex: 1 }}>
                   {InputField({ label: "Email Address", keyName: "email", placeholder: "contact@company.com", keyboard: "email-address" })}
                 </View>
                 {formData.isEmailVerified ? (
@@ -227,7 +227,7 @@ export default function RegisterScreen({ navigation }) {
                   </TouchableOpacity>
                 )}
               </View>
-              {errors.emailVerify && <Text style={[styles.errorText, {marginTop:-10, marginBottom:16}]}>{errors.emailVerify}</Text>}
+              {errors.emailVerify && <Text style={[styles.errorText, { marginTop: -10, marginBottom: 16 }]}>{errors.emailVerify}</Text>}
 
               {InputField({ label: "Password", keyName: "password", placeholder: "••••••••", secure: true })}
               {InputField({ label: "Confirm Password", keyName: "confirmPassword", placeholder: "••••••••", secure: true })}
@@ -239,21 +239,21 @@ export default function RegisterScreen({ navigation }) {
               <Text style={styles.stepTitle}>What best describes your business?</Text>
               <Text style={styles.stepSubtitle}>Select your primary operation category.</Text>
               {errors.businessCategory && <Text style={styles.errorText}>{errors.businessCategory}</Text>}
-              
+
               <View style={styles.cardGrid}>
                 {BUSINESS_CATEGORIES.map((cat) => {
                   const isSelected = formData.businessCategory === cat.id;
                   const Icon = cat.icon;
                   return (
-                    <TouchableOpacity 
-                      key={cat.id} 
+                    <TouchableOpacity
+                      key={cat.id}
                       style={[styles.catCard, isSelected && styles.catCardSelected]}
                       onPress={() => updateForm('businessCategory', cat.id)}
                     >
-                      <View style={[styles.catIconBox, isSelected && {backgroundColor: GOLD+'20'}]}>
+                      <View style={[styles.catIconBox, isSelected && { backgroundColor: GOLD + '20' }]}>
                         <Icon size={32} color={isSelected ? GOLD : '#94A3B8'} />
                       </View>
-                      <Text style={[styles.catTitle, isSelected && {color: NAVY}]}>{cat.title}</Text>
+                      <Text style={[styles.catTitle, isSelected && { color: NAVY }]}>{cat.title}</Text>
                       {isSelected && <View style={styles.checkIcon}><CheckCircle2 size={20} color={GOLD} /></View>}
                     </TouchableOpacity>
                   );
@@ -273,36 +273,36 @@ export default function RegisterScreen({ navigation }) {
                   const isSelected = formData.specializedCategory === cat.id;
                   const Icon = cat.icon;
                   return (
-                    <TouchableOpacity 
-                      key={cat.id} 
+                    <TouchableOpacity
+                      key={cat.id}
                       style={[styles.catCard, isSelected && styles.catCardSelected]}
                       onPress={() => {
                         updateForm('specializedCategory', cat.id);
                         updateForm('subcategory', '');
                       }}
                     >
-                      <View style={[styles.catIconBox, isSelected && {backgroundColor: GOLD+'20'}]}>
+                      <View style={[styles.catIconBox, isSelected && { backgroundColor: GOLD + '20' }]}>
                         <Icon size={24} color={isSelected ? GOLD : '#94A3B8'} />
                       </View>
-                      <Text style={[styles.catTitle, isSelected && {color: NAVY}]}>{cat.title}</Text>
+                      <Text style={[styles.catTitle, isSelected && { color: NAVY }]}>{cat.title}</Text>
                     </TouchableOpacity>
                   );
                 })}
               </View>
 
               {formData.specializedCategory ? (
-                <View style={{marginTop: 24}}>
-                  <Text style={styles.inputLabel}>Select Subcategory <Text style={{color: '#EF4444'}}>*</Text></Text>
+                <View style={{ marginTop: 24 }}>
+                  <Text style={styles.inputLabel}>Select Subcategory <Text style={{ color: '#EF4444' }}>*</Text></Text>
                   <View style={styles.subCatGrid}>
                     {VENDOR_SUBCATEGORIES[formData.specializedCategory].map((sub) => {
                       const isSubSelected = formData.subcategory === sub;
                       return (
-                        <TouchableOpacity 
-                          key={sub} 
+                        <TouchableOpacity
+                          key={sub}
                           style={[styles.subCatPill, isSubSelected && styles.subCatPillSelected]}
                           onPress={() => updateForm('subcategory', sub)}
                         >
-                          <Text style={[styles.subCatPillText, isSubSelected && {color: '#FFFFFF'}]}>{sub}</Text>
+                          <Text style={[styles.subCatPillText, isSubSelected && { color: '#FFFFFF' }]}>{sub}</Text>
                         </TouchableOpacity>
                       )
                     })}
@@ -322,10 +322,10 @@ export default function RegisterScreen({ navigation }) {
               {InputField({ label: "Contact Person Name", keyName: "contactPerson", placeholder: "Rahul Sharma" })}
               {InputField({ label: "GST Number", keyName: "gst", placeholder: "22AAAAA0000A1Z5" })}
               {InputField({ label: "Business Address", keyName: "address", placeholder: "123 Business Avenue" })}
-              
-              <View style={{flexDirection: 'row', gap: 12}}>
-                <View style={{flex: 1}}>{InputField({ label: "City", keyName: "city", placeholder: "Mumbai" })}</View>
-                <View style={{flex: 1}}>{InputField({ label: "State", keyName: "state", placeholder: "Maharashtra" })}</View>
+
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <View style={{ flex: 1 }}>{InputField({ label: "City", keyName: "city", placeholder: "Mumbai" })}</View>
+                <View style={{ flex: 1 }}>{InputField({ label: "State", keyName: "state", placeholder: "Maharashtra" })}</View>
               </View>
               {InputField({ label: "Pincode", keyName: "pincode", placeholder: "400001", keyboard: "numeric" })}
             </View>
@@ -335,42 +335,42 @@ export default function RegisterScreen({ navigation }) {
             <View style={styles.stepBlock}>
               <Text style={styles.stepTitle}>Upload Documents</Text>
               <Text style={styles.stepSubtitle}>Upload official documents for verification.</Text>
-              
+
               {getRequiredDocuments().map((doc, idx) => {
                 const isUploaded = !!formData.documents[doc];
                 return (
                   <View key={idx} style={styles.docCard}>
                     <View style={styles.docHeader}>
-                      <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                        <View style={[styles.docIconBox, isUploaded && {backgroundColor: '#10B98120'}]}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <View style={[styles.docIconBox, isUploaded && { backgroundColor: '#10B98120' }]}>
                           <FileText size={20} color={isUploaded ? "#10B981" : TEXT_MUTED} />
                         </View>
-                        <View style={{marginLeft: 12}}>
+                        <View style={{ marginLeft: 12 }}>
                           <Text style={styles.docTitle}>{doc} {doc.includes('Optional') ? '' : '*'}</Text>
                           <Text style={styles.docStatus}>{isUploaded ? 'Uploaded Successfully' : 'Pending Upload'}</Text>
                         </View>
                       </View>
                       {isUploaded && <CheckCircle2 size={24} color="#10B981" />}
                     </View>
-                    
+
                     {errors[doc] && <Text style={styles.errorText}>{errors[doc]}</Text>}
 
                     <View style={styles.docActions}>
-                      <TouchableOpacity 
-                        style={[styles.docBtn, isUploaded && {backgroundColor: LIGHT_BG, borderWidth: 1, borderColor: GRAY_BORDER}]}
+                      <TouchableOpacity
+                        style={[styles.docBtn, isUploaded && { backgroundColor: LIGHT_BG, borderWidth: 1, borderColor: GRAY_BORDER }]}
                         onPress={() => updateForm('documents', { ...formData.documents, [doc]: 'uploaded_file.pdf' })}
                       >
                         <UploadCloud size={16} color={isUploaded ? NAVY : "#FFFFFF"} />
-                        <Text style={[styles.docBtnText, isUploaded && {color: NAVY}]}>
+                        <Text style={[styles.docBtnText, isUploaded && { color: NAVY }]}>
                           {isUploaded ? 'Replace File' : 'Select File'}
                         </Text>
                       </TouchableOpacity>
-                      
+
                       {isUploaded && (
-                        <TouchableOpacity 
+                        <TouchableOpacity
                           style={styles.docRemoveBtn}
                           onPress={() => {
-                            const newDocs = {...formData.documents};
+                            const newDocs = { ...formData.documents };
                             delete newDocs[doc];
                             updateForm('documents', newDocs);
                           }}
@@ -431,8 +431,8 @@ export default function RegisterScreen({ navigation }) {
                   <TouchableOpacity onPress={() => setStep(5)}><Edit2 size={16} color={NAVY} /></TouchableOpacity>
                 </View>
                 {getRequiredDocuments().map((doc, i) => (
-                  <View key={i} style={{flexDirection: 'row', alignItems: 'center', marginBottom: 4}}>
-                    <CheckCircle2 size={14} color={formData.documents[doc] ? "#10B981" : "#94A3B8"} style={{marginRight: 6}}/>
+                  <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                    <CheckCircle2 size={14} color={formData.documents[doc] ? "#10B981" : "#94A3B8"} style={{ marginRight: 6 }} />
                     <Text style={styles.summaryVal}>{doc}</Text>
                   </View>
                 ))}
@@ -442,7 +442,7 @@ export default function RegisterScreen({ navigation }) {
                 <View style={[styles.checkbox, formData.agreed && styles.checkboxActive]}>
                   {formData.agreed && <Check size={14} color="#FFFFFF" />}
                 </View>
-                <Text style={styles.termsText}>I agree to the <Text style={{color: NAVY, fontWeight: 'bold'}}>Terms & Conditions</Text> and <Text style={{color: NAVY, fontWeight: 'bold'}}>Privacy Policy</Text>.</Text>
+                <Text style={styles.termsText}>I agree to the <Text style={{ color: NAVY, fontWeight: 'bold' }}>Terms & Conditions</Text> and <Text style={{ color: NAVY, fontWeight: 'bold' }}>Privacy Policy</Text>.</Text>
               </TouchableOpacity>
               {errors.agreed && <Text style={styles.errorText}>{errors.agreed}</Text>}
 
@@ -454,7 +454,7 @@ export default function RegisterScreen({ navigation }) {
               <View style={styles.successIconBox}>
                 <ShieldCheck size={64} color="#10B981" />
               </View>
-              
+
               {formData.businessCategory === 'Vendor / Supplier' ? (
                 <>
                   <Text style={styles.successTitle}>Registration Submitted</Text>
@@ -487,7 +487,7 @@ export default function RegisterScreen({ navigation }) {
           <View style={styles.footer}>
             <TouchableOpacity style={styles.btnPrimary} onPress={handleNext}>
               <Text style={styles.btnPrimaryText}>{step === 6 ? 'Submit Registration' : 'Continue'}</Text>
-              {step !== 6 && <ArrowRight size={20} color="#FFFFFF" style={{marginLeft: 8}} />}
+              {step !== 6 && <ArrowRight size={20} color="#FFFFFF" style={{ marginLeft: 8 }} />}
             </TouchableOpacity>
           </View>
         )}
@@ -500,7 +500,7 @@ export default function RegisterScreen({ navigation }) {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
   container: { flex: 1, backgroundColor: LIGHT_BG },
-  
+
   // Stepper
   stepperContainer: {
     backgroundColor: '#FFFFFF',
@@ -525,7 +525,7 @@ const styles = StyleSheet.create({
   progressBarFill: { height: 4, backgroundColor: GOLD },
 
   scrollContent: { padding: 20, paddingBottom: 100 },
-  
+
   stepBlock: { flex: 1 },
   stepTitle: { fontSize: 24, fontWeight: 'bold', color: NAVY, marginBottom: 8 },
   stepSubtitle: { fontSize: 14, color: TEXT_MUTED, marginBottom: 24, lineHeight: 20 },
@@ -544,7 +544,7 @@ const styles = StyleSheet.create({
   },
   inputError: { borderColor: '#EF4444' },
   errorText: { color: '#EF4444', fontSize: 12, marginTop: 4, fontWeight: '500' },
-  
+
   // Verify Group
   verifyGroup: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   verifyBtn: {
@@ -580,7 +580,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
     alignItems: 'center',
-    shadowColor: '#000', shadowOffset: {width: 0, height: 2}, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
     marginBottom: 12,
   },
   catCardSelected: {

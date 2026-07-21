@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  useWindowDimensions, SafeAreaView
+  useWindowDimensions, SafeAreaView, Modal, Pressable
 } from 'react-native';
 import {
   ClipboardPlus, FileClock, UsersRound, UserRoundCheck,
-  Briefcase, MapPin, DollarSign, CheckCircle, Clock
+  Briefcase, MapPin, DollarSign, CheckCircle, Clock, ChevronRight, X
 } from 'lucide-react-native';
 
 const NAVY = '#071B3A';
@@ -44,6 +44,14 @@ export default function ManpowerDashboardHome({ onNavigate }) {
   const columns = 2;
   const cardWidth = (width - (pagePadding * 2) - gridGap) / columns;
 
+  const [selectedReq, setSelectedReq] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const openDetails = (req) => {
+    setSelectedReq(req);
+    setModalVisible(true);
+  };
+
   return (
     <View style={[styles.container, { paddingHorizontal: pagePadding }]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -55,10 +63,7 @@ export default function ManpowerDashboardHome({ onNavigate }) {
             <Text style={styles.heroAgencyName}>Elite Manpower</Text>
             <Text style={styles.heroAgencyType}>Manpower Agency</Text>
             
-            <View style={styles.heroStatusBadge}>
-              <View style={styles.heroStatusDot} />
-              <Text style={styles.heroStatusText}>Open for New Requirements</Text>
-            </View>
+
             
             <Text style={styles.heroDesc}>Manage job requirements, candidates and staff records from one place.</Text>
           </View>
@@ -96,58 +101,41 @@ export default function ManpowerDashboardHome({ onNavigate }) {
           <View style={styles.sectionHeader}>
             <View>
               <Text style={styles.sectionTitle}>New Job Requirements</Text>
-              <Text style={styles.sectionSubtitle}>Latest staff requirements from Hotels, Restaurants and Cafes</Text>
             </View>
             <TouchableOpacity><Text style={styles.viewAllText}>View All {'>'}</Text></TouchableOpacity>
           </View>
 
           {NEW_REQUIREMENTS.map((req) => (
-            <View key={req.id} style={styles.reqCard}>
+            <TouchableOpacity 
+              key={req.id} 
+              style={styles.reqCard} 
+              activeOpacity={0.7}
+              onPress={() => openDetails(req)}
+            >
               <View style={styles.reqTopRow}>
-                <Text style={styles.reqRole}>{req.role}</Text>
+                <Text style={styles.reqRole} numberOfLines={1}>{req.role}</Text>
                 <View style={[styles.reqStatusBadge, req.status === 'HIGH PRIORITY' && { backgroundColor: '#FEF2F2', borderColor: '#FECACA' }]}>
                   <Text style={[styles.reqStatusText, req.status === 'HIGH PRIORITY' && { color: '#DC2626' }]}>{req.status}</Text>
                 </View>
               </View>
 
               <View style={styles.reqBusinessRow}>
-                <Briefcase size={14} color={MUTED} />
-                <Text style={styles.reqBusinessText}>{req.businessName}</Text>
-                {req.verified && <CheckCircle size={14} color="#10B981" style={{ marginLeft: 4 }} />}
-                <Text style={styles.reqBusinessSub}> • Hotel • {req.location}</Text>
+                <Text style={styles.reqBusinessText} numberOfLines={1}>{req.businessName}</Text>
+                {req.verified && <CheckCircle size={14} color="#10B981" style={{ marginLeft: 4, marginRight: 4 }} />}
+                <Text style={styles.reqBusinessSub} numberOfLines={1}>• {req.location}</Text>
               </View>
 
-              <View style={styles.reqInfoGrid}>
-                <View style={styles.reqInfoItem}>
-                  <UsersRound size={14} color={MUTED} />
-                  <Text style={styles.reqInfoText}>{req.count} Staff</Text>
-                </View>
-                <View style={styles.reqInfoItem}>
-                  <Briefcase size={14} color={MUTED} />
-                  <Text style={styles.reqInfoText}>{req.experience}</Text>
-                </View>
-                <View style={styles.reqInfoItem}>
-                  <DollarSign size={14} color={MUTED} />
-                  <Text style={styles.reqInfoText}>{req.salary}</Text>
-                </View>
-                <View style={styles.reqInfoItem}>
-                  <MapPin size={14} color={MUTED} />
-                  <Text style={styles.reqInfoText}>{req.location}</Text>
-                </View>
-                <View style={styles.reqInfoItem}>
-                  <Clock size={14} color={MUTED} />
-                  <Text style={styles.reqInfoText}>Joining: {req.joining}</Text>
-                </View>
-                <View style={styles.reqInfoItem}>
-                  <Briefcase size={14} color={MUTED} />
-                  <Text style={styles.reqInfoText}>{req.typeStr}</Text>
-                </View>
+              <View style={styles.reqSimpleInfo}>
+                <Text style={styles.reqInfoText}>{req.count} Staff</Text>
+                <Text style={styles.reqInfoText}>{req.salary}</Text>
+                <Text style={styles.reqInfoText}>Joining: {req.joining}</Text>
               </View>
 
-              <TouchableOpacity style={styles.primaryBtn}>
-                <Text style={styles.primaryBtnText}>View Requirement</Text>
-              </TouchableOpacity>
-            </View>
+              <View style={styles.reqFooterAction}>
+                <Text style={styles.reqActionText}>View Details</Text>
+                <ChevronRight size={16} color={NAVY} />
+              </View>
+            </TouchableOpacity>
           ))}
         </View>
 
@@ -176,6 +164,57 @@ export default function ManpowerDashboardHome({ onNavigate }) {
         </View>
 
       </ScrollView>
+
+      {/* Requirement Details Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Requirement Details</Text>
+              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeBtn}>
+                <X size={24} color={NAVY} />
+              </TouchableOpacity>
+            </View>
+
+            {selectedReq && (
+              <ScrollView style={styles.modalBody}>
+                <View style={styles.modalTopInfo}>
+                  <Text style={styles.modalRole}>{selectedReq.role}</Text>
+                  <View style={[styles.reqStatusBadge, { alignSelf: 'flex-start', marginTop: 4 }]}>
+                    <Text style={styles.reqStatusText}>{selectedReq.status}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.modalSection}>
+                  <Text style={styles.modalSectionTitle}>Business Information</Text>
+                  <Text style={styles.modalText}><Text style={{fontWeight: '700'}}>Name:</Text> {selectedReq.businessName}</Text>
+                  <Text style={styles.modalText}><Text style={{fontWeight: '700'}}>Type:</Text> {selectedReq.type}</Text>
+                  <Text style={styles.modalText}><Text style={{fontWeight: '700'}}>Location:</Text> {selectedReq.location}</Text>
+                </View>
+
+                <View style={styles.modalSection}>
+                  <Text style={styles.modalSectionTitle}>Requirement Details</Text>
+                  <Text style={styles.modalText}><Text style={{fontWeight: '700'}}>Staff Count:</Text> {selectedReq.count}</Text>
+                  <Text style={styles.modalText}><Text style={{fontWeight: '700'}}>Experience:</Text> {selectedReq.experience}</Text>
+                  <Text style={styles.modalText}><Text style={{fontWeight: '700'}}>Salary:</Text> {selectedReq.salary}</Text>
+                  <Text style={styles.modalText}><Text style={{fontWeight: '700'}}>Employment Type:</Text> {selectedReq.typeStr}</Text>
+                  <Text style={styles.modalText}><Text style={{fontWeight: '700'}}>Joining Date:</Text> {selectedReq.joining}</Text>
+                </View>
+
+                <TouchableOpacity style={[styles.primaryBtn, { marginTop: 24, marginBottom: 40 }]}>
+                  <Text style={styles.primaryBtnText}>Submit Candidates</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 }
@@ -357,12 +396,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   reqRole: {
     fontSize: 16,
     fontWeight: '800',
     color: NAVY,
+    flex: 1,
+    marginRight: 8,
   },
   reqStatusBadge: {
     backgroundColor: '#EFF6FF',
@@ -380,49 +421,39 @@ const styles = StyleSheet.create({
   reqBusinessRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   reqBusinessText: {
     fontSize: 13,
-    fontWeight: '700',
-    color: NAVY,
-    marginLeft: 6,
+    fontWeight: '600',
+    color: MUTED,
   },
   reqBusinessSub: {
     fontSize: 13,
     color: MUTED,
   },
-  reqInfoGrid: {
+  reqSimpleInfo: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    backgroundColor: '#F8FAFC',
-    padding: 12,
-    borderRadius: 12,
+    justifyContent: 'space-between',
     marginBottom: 16,
-    gap: 12,
-  },
-  reqInfoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '45%',
   },
   reqInfoText: {
-    fontSize: 12,
-    color: '#475569',
-    marginLeft: 8,
+    fontSize: 13,
+    color: NAVY,
     fontWeight: '500',
   },
-  primaryBtn: {
-    backgroundColor: NAVY,
-    paddingVertical: 12,
-    borderRadius: 10,
+  reqFooterAction: {
+    flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-end',
+    height: 36,
     justifyContent: 'center',
   },
-  primaryBtnText: {
-    color: '#FFFFFF',
-    fontSize: 14,
+  reqActionText: {
+    fontSize: 13,
     fontWeight: '700',
+    color: NAVY,
+    marginRight: 4,
   },
   listCardWrapper: {
     backgroundColor: '#FFFFFF',
@@ -490,5 +521,73 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#94A3B8',
     fontWeight: '500',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(7, 27, 58, 0.4)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: NAVY,
+  },
+  closeBtn: {
+    padding: 4,
+  },
+  modalBody: {
+    padding: 20,
+  },
+  modalTopInfo: {
+    marginBottom: 24,
+  },
+  modalRole: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: NAVY,
+  },
+  modalSection: {
+    marginBottom: 20,
+    backgroundColor: '#F8FAFC',
+    padding: 16,
+    borderRadius: 12,
+  },
+  modalSectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: NAVY,
+    marginBottom: 12,
+  },
+  modalText: {
+    fontSize: 14,
+    color: '#475569',
+    marginBottom: 8,
+  },
+  primaryBtn: {
+    backgroundColor: NAVY,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

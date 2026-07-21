@@ -1,458 +1,318 @@
 import React from 'react';
 import { 
   View, Text, StyleSheet, ScrollView, Platform, 
-  TouchableOpacity, useWindowDimensions, SafeAreaView, FlatList 
-, Alert} from 'react-native';
+  TouchableOpacity, useWindowDimensions, SafeAreaView 
+} from 'react-native';
 import { 
-  Activity, Star, Briefcase, FileText, TrendingUp, 
-  Clock, MapPin, AlertCircle, Calendar, CheckCircle, 
-  ChevronRight, Users, MessageSquare 
+  Inbox, Clock, Calendar, Wrench, 
+  ChevronRight, CheckCircle, Activity, FileText,
+  Star, Briefcase, Radio
 } from 'lucide-react-native';
 
-const NAVY = '#081A3A';
-const GOLD = '#D4AF37';
+const NAVY = '#071B3A';
+const GOLD = '#F6B800';
 
-const SUMMARY_DATA = [
-  { label: "New Broadcasts", value: "24", icon: Activity, color: "#3B82F6", bg: "#DBEAFE" },
-  { label: "Direct Requests", value: "5", icon: MessageSquare, color: "#F59E0B", bg: "#FEF3C7" },
-  { label: "Quotes Sent", value: "18", icon: FileText, color: "#8B5CF6", bg: "#F3E8FF" },
-  { label: "Scheduled Jobs", value: "12", icon: Calendar, color: "#10B981", bg: "#D1FAE5" },
-  { label: "In Progress", value: "4", icon: Clock, color: "#3B82F6", bg: "#DBEAFE" },
-  { label: "Completed", value: "142", icon: CheckCircle, color: "#10B981", bg: "#D1FAE5" },
-  { label: "Monthly Rev.", value: "₹2.8L", icon: TrendingUp, color: "#10B981", bg: "#D1FAE5" },
-  { label: "Avg. Rating", value: "4.8", icon: Star, color: "#F59E0B", bg: "#FEF3C7" },
+const OVERVIEW_DATA = [
+  { label: "Open Opportunities", value: "5", icon: Radio, color: "#3B82F6", bg: "#EFF6FF", navigateTo: "feed" },
+  { label: "Pending Quotes", value: "3", icon: Clock, color: "#F59E0B", bg: "#FFFBEB", navigateTo: "quotes" },
+  { label: "Scheduled Today", value: "2", icon: Calendar, color: "#10B981", bg: "#ECFDF5", navigateTo: "jobs" },
+  { label: "Active Jobs", value: "4", icon: Wrench, color: "#6C4CF6", bg: "#F3F0FF", navigateTo: "jobs" },
 ];
 
-const BROADCAST_REQUESTS = [
+const COMMON_FEED = [
   {
     id: "REQ-209",
+    service: "AC Deep Cleaning",
     business: "Grand Hotel & Spa",
-    service: "AC Deep Cleaning & Service",
-    budget: "₹15,000 - ₹20,000",
-    date: "24 Oct 2026",
     location: "Bandra West",
-    urgency: "High",
+    budget: "₹15,000 – ₹20,000",
+    date: "24 Oct 2026",
+    priority: "High",
+    responses: 5,
   },
   {
     id: "REQ-208",
-    business: "Cafe Mocha",
     service: "Commercial Oven Repair",
-    budget: "₹8,000 - ₹12,000",
-    date: "25 Oct 2026",
+    business: "Cafe Aroma",
     location: "Andheri East",
-    urgency: "Medium",
-  },
-  {
-    id: "REQ-205",
-    business: "The Gourmet Kitchen",
-    service: "Exhaust Fan Installation",
-    budget: "₹25,000",
-    date: "28 Oct 2026",
-    location: "Lower Parel",
-    urgency: "Low",
+    budget: "₹8,000 – ₹12,000",
+    date: "25 Oct 2026",
+    priority: "Normal",
+    responses: 2,
   }
 ];
 
-const RECENT_REVIEWS = [
-  { id: 1, client: "Sea View Restaurant", rating: 5, text: "Excellent plumbing work. Arrived on time." },
-  { id: 2, client: "Urban Cafe", rating: 4, text: "Good service, but slightly delayed." },
+const TODAYS_SCHEDULE = [
+  {
+    service: "AC Maintenance",
+    business: "The Meridian Hotel",
+    time: "10:30 AM",
+    status: "Scheduled",
+  },
+  {
+    service: "Pest Control",
+    business: "Cafe Aroma",
+    time: "02:00 PM",
+    status: "Upcoming",
+  }
 ];
 
-const TEAM_MEMBERS = [
-  { id: 1, name: "Rahul S.", role: "Senior Electrician", status: "Available" },
-  { id: 2, name: "Amit K.", role: "AC Technician", status: "On Job" },
+const RECENT_ACTIVITY = [
+  {
+    title: "Quote Submitted",
+    description: "Quote sent to Grand Hotel & Spa",
+    time: "10 minutes ago",
+    icon: FileText,
+    color: "#F59E0B",
+    bg: "#FFFBEB"
+  },
+  {
+    title: "Request Accepted",
+    description: "AC maintenance request confirmed",
+    time: "1 hour ago",
+    icon: CheckCircle,
+    color: "#10B981",
+    bg: "#ECFDF5"
+  },
+  {
+    title: "Service Completed",
+    description: "Deep kitchen cleaning completed",
+    time: "Yesterday",
+    icon: Briefcase,
+    color: "#6C4CF6",
+    bg: "#F3F0FF"
+  }
 ];
 
-export default function ProviderDashboardHome() {
+export default function ProviderDashboardHome({ onNavigate }) {
   const { width } = useWindowDimensions();
-  const isSmallScreen = width < 360;
+  const isLargeScreen = width >= 768;
 
-  const renderSummaryCard = ({ item }) => {
-    const Icon = item.icon;
-    return (
-      <View style={[styles.summaryCard, { width: (width - 48) / 2 }]}>
-        <View style={styles.summaryTop}>
-          <View style={[styles.iconBox, { backgroundColor: item.bg }]}>
-            <Icon size={20} color={item.color} />
-          </View>
-          <Text style={styles.summaryValue}>{item.value}</Text>
-        </View>
-        <Text style={styles.summaryLabel}>{item.label}</Text>
-      </View>
-    );
+  const getStatusStyle = (status) => {
+    switch (status) {
+      case 'Scheduled': return { text: '#10B981' };
+      case 'Upcoming': return { text: '#3B82F6' };
+      case 'In Progress': return { text: '#F59E0B' };
+      case 'Delayed': return { text: '#EF4444' };
+      default: return { text: '#64748B' };
+    }
   };
-
-  const renderBroadcastCard = ({ item }) => (
-    <View style={styles.feedCard}>
-      <View style={styles.feedHeader}>
-        <Text style={styles.feedId}>{item.id}</Text>
-        <View style={[styles.urgencyBadge, item.urgency === 'High' ? styles.urgencyHigh : styles.urgencyNormal]}>
-          <Text style={[styles.urgencyText, item.urgency === 'High' ? styles.urgencyTextHigh : styles.urgencyTextNormal]}>
-            {item.urgency} Urgency
-          </Text>
-        </View>
-      </View>
-      <View style={styles.feedBody}>
-        <Text style={styles.feedBusiness}>{item.business}</Text>
-        <Text style={styles.feedService}>{item.service}</Text>
-        
-        <View style={styles.feedDetailsRow}>
-          <View style={styles.feedDetailItem}>
-            <AlertCircle size={14} color="#64748B" />
-            <Text style={styles.feedDetailText}>{item.budget}</Text>
-          </View>
-          <View style={styles.feedDetailItem}>
-            <Calendar size={14} color="#64748B" />
-            <Text style={styles.feedDetailText}>{item.date}</Text>
-          </View>
-          <View style={styles.feedDetailItem}>
-            <MapPin size={14} color="#64748B" />
-            <Text style={styles.feedDetailText}>{item.location}</Text>
-          </View>
-        </View>
-      </View>
-      <View style={[styles.feedFooter, isSmallScreen && { flexDirection: 'column' }]}>
-        <TouchableOpacity style={[styles.btnOutline, isSmallScreen && { marginBottom: 8, width: '100%' }]} onPress={() => Alert.alert('Coming Soon', 'This feature is under development.')}>
-          <Text style={styles.btnOutlineText}>View Details</Text>
-        </TouchableOpacity>
-        <View style={[styles.actionBtns, isSmallScreen && { width: '100%' }]}>
-          <TouchableOpacity style={[styles.btnOutline, { marginRight: 8, flex: isSmallScreen ? 1 : undefined }]}>
-            <Text style={styles.btnOutlineText}>Save</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.btnPrimary, { flex: isSmallScreen ? 1 : undefined }]}>
-            <Text style={styles.btnPrimaryText}>Send Quote</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, isLargeScreen && styles.centerWrapper]}>
         
+        {/* Premium Welcome Hero */}
+        <View style={styles.heroCard}>
+          <View style={styles.heroContent}>
+            <Text style={styles.heroGreeting}>Good Morning 👋</Text>
+            <Text style={styles.heroName}>ProClean Services</Text>
+            <Text style={styles.heroSubtitle}>Service Provider</Text>
+            <Text style={styles.heroDesc}>Manage service requests, quotations and scheduled jobs from one place.</Text>
+          </View>
+          <View style={styles.heroWatermark}>
+            <Wrench size={100} color="rgba(255,255,255,0.05)" />
+          </View>
+        </View>
+
+        {/* Overview Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Overview</Text>
-          <FlatList
-            data={SUMMARY_DATA}
-            keyExtractor={(item) => item.label}
-            renderItem={renderSummaryCard}
-            numColumns={2}
-            scrollEnabled={false}
-            columnWrapperStyle={styles.summaryRow}
-          />
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Broadcast Requirements Feed</Text>
-            <TouchableOpacity style={styles.viewAllBtn}>
-              <Text style={styles.viewAllText}>View All</Text>
-              <ChevronRight size={16} color={NAVY} />
-            </TouchableOpacity>
-          </View>
-          {BROADCAST_REQUESTS.map(item => (
-            <React.Fragment key={item.id}>
-              {renderBroadcastCard({ item })}
-            </React.Fragment>
-          ))}
-        </View>
-
-        <View style={styles.twoColSection}>
-          <View style={[styles.col, { marginRight: 8 }]}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Available Team</Text>
-            </View>
-            <View style={styles.card}>
-              {TEAM_MEMBERS.map((member, idx) => (
-                <View key={member.id} style={[styles.listItem, idx === TEAM_MEMBERS.length - 1 && { borderBottomWidth: 0 }]}>
-                  <View style={styles.listAvatar}>
-                    <Users size={16} color="#64748B" />
+          <View style={styles.overviewGrid}>
+            {OVERVIEW_DATA.map((item, idx) => (
+              <TouchableOpacity 
+                key={idx} 
+                style={[styles.overviewCard, isLargeScreen && { width: '23%' }]} 
+                onPress={() => onNavigate && onNavigate(item.navigateTo)}
+              >
+                <View style={styles.overviewTop}>
+                  <View style={[styles.iconBox, { backgroundColor: item.bg }]}>
+                    <item.icon size={20} color={item.color} />
                   </View>
-                  <View style={styles.listBody}>
-                    <Text style={styles.listTitle}>{member.name}</Text>
-                    <Text style={styles.listSub}>{member.role}</Text>
-                  </View>
-                  <View style={[styles.statusDot, member.status === 'Available' ? { backgroundColor: '#10B981' } : { backgroundColor: '#F59E0B' }]} />
+                  <ChevronRight size={16} color="#CBD5E1" />
                 </View>
-              ))}
-            </View>
+                <Text style={styles.overviewValue}>{item.value}</Text>
+                <Text style={styles.overviewLabel}>{item.label}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
+        </View>
 
-          <View style={[styles.col, { marginLeft: 8 }]}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Recent Reviews</Text>
-            </View>
-            <View style={styles.card}>
-              {RECENT_REVIEWS.map((review, idx) => (
-                <View key={review.id} style={[styles.listItem, idx === RECENT_REVIEWS.length - 1 && { borderBottomWidth: 0 }]}>
-                  <View style={styles.listBody}>
-                    <Text style={styles.listTitle}>{review.client}</Text>
-                    <View style={styles.ratingRow}>
-                      <Star size={12} color="#F59E0B" fill="#F59E0B" />
-                      <Text style={styles.ratingText}>{review.rating}</Text>
+        <View style={isLargeScreen ? styles.desktopRow : null}>
+          
+          <View style={[isLargeScreen && styles.col, isLargeScreen && { flex: 1.5 }]}>
+            {/* Common Feed Wall */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View style={{ flex: 1, paddingRight: 8 }}>
+                  <Text style={styles.sectionTitle} numberOfLines={2}>Open Service Opportunities</Text>
+                  <Text style={styles.sectionSubtitle} numberOfLines={2}>Common service requirements matching your services</Text>
+                </View>
+                <TouchableOpacity style={styles.viewAllBtn} onPress={() => onNavigate && onNavigate('feed')}>
+                  <Text style={styles.viewAllText}>View Feed Wall</Text>
+                  <ChevronRight size={16} color={NAVY} />
+                </TouchableOpacity>
+              </View>
+
+              {COMMON_FEED.length === 0 ? (
+                <View style={styles.emptyFeedBox}>
+                  <Text style={styles.emptyFeedTitle}>No matching service opportunities</Text>
+                  <Text style={styles.emptyFeedSub}>New requirements matching your services will appear here.</Text>
+                </View>
+              ) : (
+                COMMON_FEED.map((req, idx) => (
+                  <View key={idx} style={styles.feedCard}>
+                    <View style={styles.feedHeader}>
+                      <Text style={styles.feedId}>{req.id}</Text>
+                      <View style={styles.opportunityBadge}>
+                        <Text style={styles.opportunityText}>Open Opportunity</Text>
+                      </View>
                     </View>
-                    <Text style={styles.reviewText} numberOfLines={2}>{review.text}</Text>
+                    
+                    <Text style={styles.reqService}>{req.service}</Text>
+                    <Text style={styles.reqBusiness}>{req.business} • {req.location}</Text>
+                    <Text style={styles.reqResponses}>{req.responses} provider responses</Text>
+                    
+                    <View style={styles.feedDetailsRow}>
+                      <Text style={styles.feedDetailText}>{req.budget}</Text>
+                      <Text style={styles.feedDetailDot}>•</Text>
+                      <Text style={styles.feedDetailText}>{req.date}</Text>
+                    </View>
+                    
+                    <TouchableOpacity style={styles.viewActionBtn} onPress={() => onNavigate && onNavigate('feed')}>
+                      <Text style={styles.viewActionText}>View Opportunity</Text>
+                      <ChevronRight size={16} color="#2563EB" />
+                    </TouchableOpacity>
                   </View>
-                </View>
-              ))}
+                ))
+              )}
             </View>
           </View>
+
+          <View style={[isLargeScreen && styles.col, isLargeScreen && { flex: 1 }]}>
+            {/* Today's Schedule */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Today's Schedule</Text>
+                <TouchableOpacity style={styles.viewAllBtn} onPress={() => onNavigate && onNavigate('jobs')}>
+                  <Text style={styles.viewAllText}>View All</Text>
+                  <ChevronRight size={16} color={NAVY} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.listCard}>
+                {TODAYS_SCHEDULE.map((job, idx) => (
+                  <TouchableOpacity key={idx} style={[styles.scheduleRow, idx === TODAYS_SCHEDULE.length - 1 && { borderBottomWidth: 0 }]} onPress={() => onNavigate && onNavigate('jobs')}>
+                    <View style={styles.scheduleInfo}>
+                      <Text style={styles.scheduleService}>{job.service}</Text>
+                      <Text style={styles.scheduleBusiness}>{job.business}</Text>
+                    </View>
+                    <View style={styles.scheduleRight}>
+                      <Text style={styles.scheduleTime}>{job.time}</Text>
+                      <Text style={[styles.scheduleStatus, { color: getStatusStyle(job.status).text }]}>{job.status}</Text>
+                    </View>
+                    <ChevronRight size={16} color="#CBD5E1" style={{ marginLeft: 8 }} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Recent Activity */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Recent Activity</Text>
+                <TouchableOpacity style={styles.viewAllBtn} onPress={() => onNavigate && onNavigate('history')}>
+                  <Text style={styles.viewAllText}>View All</Text>
+                  <ChevronRight size={16} color={NAVY} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.listCard}>
+                {RECENT_ACTIVITY.map((activity, idx) => (
+                  <View key={idx} style={[styles.activityRow, idx === RECENT_ACTIVITY.length - 1 && { borderBottomWidth: 0 }]}>
+                    <View style={[styles.activityIconBox, { backgroundColor: activity.bg }]}>
+                      <activity.icon size={16} color={activity.color} />
+                    </View>
+                    <View style={styles.activityInfo}>
+                      <Text style={styles.activityTitle}>{activity.title}</Text>
+                      <Text style={styles.activityDesc}>{activity.description}</Text>
+                    </View>
+                    <Text style={styles.activityTime}>{activity.time}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </View>
+          
         </View>
-        
-        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: NAVY,
-  },
-  viewAllBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  viewAllText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: NAVY,
-    marginRight: 4,
-  },
-  summaryRow: {
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  summaryCard: {
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  summaryTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  iconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  summaryValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: NAVY,
-  },
-  summaryLabel: {
-    fontSize: 12,
-    color: '#64748B',
-    fontWeight: '500',
-  },
-  feedCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  feedHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-    paddingBottom: 12,
-  },
-  feedId: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: NAVY,
-  },
-  urgencyBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  urgencyHigh: {
-    backgroundColor: '#FEE2E2',
-  },
-  urgencyNormal: {
-    backgroundColor: '#F1F5F9',
-  },
-  urgencyText: {
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  urgencyTextHigh: {
-    color: '#EF4444',
-  },
-  urgencyTextNormal: {
-    color: '#64748B',
-  },
-  feedBody: {
-    marginBottom: 16,
-  },
-  feedBusiness: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: NAVY,
-    marginBottom: 4,
-  },
-  feedService: {
-    fontSize: 14,
-    color: '#475569',
-    marginBottom: 12,
-  },
-  feedDetailsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  feedDetailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 16,
-    marginBottom: 8,
-  },
-  feedDetailText: {
-    marginLeft: 6,
-    fontSize: 13,
-    color: '#64748B',
-  },
-  feedFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-    paddingTop: 16,
-  },
-  actionBtns: {
-    flexDirection: 'row',
-  },
-  btnOutline: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: NAVY,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  btnOutlineText: {
-    color: NAVY,
-    fontWeight: '600',
-    fontSize: 13,
-  },
-  btnPrimary: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    backgroundColor: NAVY,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  btnPrimaryText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 13,
-  },
-  twoColSection: {
-    flexDirection: 'row',
-    marginBottom: 24,
-  },
-  col: {
-    flex: 1,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  listItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  listAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F1F5F9',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  listBody: {
-    flex: 1,
-  },
-  listTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: NAVY,
-  },
-  listSub: {
-    fontSize: 12,
-    color: '#64748B',
-    marginTop: 2,
-  },
-  statusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginLeft: 8,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 2,
-    marginBottom: 4,
-  },
-  ratingText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#475569',
-    marginLeft: 4,
-  },
-  reviewText: {
-    fontSize: 12,
-    color: '#64748B',
-    fontStyle: 'italic',
-  }
+  safeArea: { flex: 1, backgroundColor: '#F8FAFC' },
+  container: { flex: 1 },
+  scrollContent: { padding: 16, paddingBottom: 120 },
+  centerWrapper: { maxWidth: 1200, alignSelf: 'center', width: '100%' },
+
+  heroCard: { backgroundColor: NAVY, borderRadius: 22, overflow: 'hidden', marginBottom: 24, padding: 20, position: 'relative' },
+  heroContent: { position: 'relative', zIndex: 2 },
+  heroGreeting: { fontSize: 14, color: 'rgba(255,255,255,0.7)', marginBottom: 4 },
+  heroName: { fontSize: 22, fontWeight: 'bold', color: '#fff' },
+  heroSubtitle: { fontSize: 14, color: GOLD, fontWeight: '600', marginBottom: 8 },
+  heroDesc: { fontSize: 13, color: 'rgba(255,255,255,0.8)', maxWidth: '80%', lineHeight: 18 },
+  heroWatermark: { position: 'absolute', right: -15, bottom: -20, zIndex: 1 },
+
+  section: { marginBottom: 24 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY },
+  sectionSubtitle: { fontSize: 12, color: '#64748B', marginTop: 2 },
+  viewAllBtn: { flexDirection: 'row', alignItems: 'center' },
+  viewAllText: { fontSize: 13, fontWeight: '600', color: NAVY, marginRight: 2 },
+
+  overviewGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12 },
+  overviewCard: { width: '48%', backgroundColor: '#fff', borderRadius: 18, padding: 16, borderWidth: 1, borderColor: '#E8EDF4', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
+  overviewTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  iconBox: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  overviewValue: { fontSize: 24, fontWeight: 'bold', color: NAVY, marginBottom: 2 },
+  overviewLabel: { fontSize: 13, color: '#64748B', fontWeight: '500' },
+
+  emptyFeedBox: { backgroundColor: '#FFFFFF', borderRadius: 18, padding: 32, alignItems: 'center', borderWidth: 1, borderColor: '#F1F5F9' },
+  emptyFeedTitle: { fontSize: 15, fontWeight: 'bold', color: NAVY, marginBottom: 6 },
+  emptyFeedSub: { fontSize: 13, color: '#64748B', textAlign: 'center' },
+
+  feedCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E8EDF4', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
+  feedHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  feedId: { fontSize: 14, fontWeight: 'bold', color: '#64748B' },
+  opportunityBadge: { backgroundColor: '#DBEAFE', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  opportunityText: { fontSize: 11, fontWeight: 'bold', color: '#1D4ED8' },
+  reqService: { fontSize: 16, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
+  reqBusiness: { fontSize: 13, color: '#475569', marginBottom: 4, fontWeight: '500' },
+  reqResponses: { fontSize: 12, color: '#F59E0B', fontWeight: '600', marginBottom: 12 },
+  feedDetailsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  feedDetailText: { fontSize: 13, fontWeight: '600', color: '#1E293B' },
+  feedDetailDot: { marginHorizontal: 8, color: '#CBD5E1' },
+  viewActionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#EFF6FF', paddingVertical: 12, borderRadius: 10 },
+  viewActionText: { fontSize: 14, fontWeight: 'bold', color: '#2563EB', marginRight: 4 },
+
+  listCard: { backgroundColor: '#fff', borderRadius: 16, paddingHorizontal: 16, borderWidth: 1, borderColor: '#E8EDF4', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
+  
+  scheduleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  scheduleInfo: { flex: 1 },
+  scheduleService: { fontSize: 14, fontWeight: 'bold', color: NAVY, marginBottom: 2 },
+  scheduleBusiness: { fontSize: 12, color: '#64748B' },
+  scheduleRight: { alignItems: 'flex-end' },
+  scheduleTime: { fontSize: 13, fontWeight: '600', color: '#1E293B', marginBottom: 2 },
+  scheduleStatus: { fontSize: 11, fontWeight: 'bold' },
+
+  activityRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  activityIconBox: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  activityInfo: { flex: 1 },
+  activityTitle: { fontSize: 14, fontWeight: 'bold', color: NAVY, marginBottom: 2 },
+  activityDesc: { fontSize: 12, color: '#64748B' },
+  activityTime: { fontSize: 11, color: '#94A3B8', alignSelf: 'flex-start' },
+
+  desktopRow: { flexDirection: 'row', gap: 24 },
+  col: { flex: 1 },
 });

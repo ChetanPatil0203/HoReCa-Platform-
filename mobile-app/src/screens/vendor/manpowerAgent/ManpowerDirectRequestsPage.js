@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Modal, SafeAreaView, FlatList, TextInput
+  Modal, SafeAreaView, FlatList, TextInput, Pressable, useWindowDimensions
 } from 'react-native';
 import {
   Briefcase, Users, Calendar, MapPin, 
-  Search, X, CheckCircle, Send, DollarSign, Building, ChevronRight
+  Search, X, CheckCircle, Send, DollarSign, Building, ChevronRight,
+  Building2, UsersRound, IndianRupee,
+  FilePlus2, CircleCheck, Clock3
 } from 'lucide-react-native';
 
 const NAVY = '#081A3A';
@@ -63,6 +65,10 @@ const DECLINE_REASONS = [
 ];
 
 export default function ManpowerDirectRequestsPage({ initialAction }) {
+  const { width } = useWindowDimensions();
+  const summaryGridGap = 12;
+  const summaryCardWidth = (width - 32 - summaryGridGap) / 2;
+
   const [requests, setRequests] = useState(INITIAL_REQUESTS);
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -149,61 +155,104 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
     return matchesTab && matchesSearch;
   });
 
-  const renderSummary = (label, count, color) => (
-    <View style={styles.summaryCard}>
-      <Text style={[styles.summaryCount, { color }]}>{count}</Text>
-      <Text style={styles.summaryLabel}>{label}</Text>
-    </View>
-  );
-
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerTitleRow}>
-          <Briefcase size={24} color={NAVY} />
-          <Text style={styles.headerTitle}>Job Requirements</Text>
-        </View>
-        <Text style={styles.headerSub}>View and manage job requirements from businesses.</Text>
-      </View>
-
-      {/* Summary */}
-      <View style={styles.summarySection}>
-        {renderSummary("New", requests.filter(r => r.status === 'New').length, "#3B82F6")}
-        {renderSummary("Accepted", requests.filter(r => r.status === 'Accepted').length, "#F59E0B")}
-        {renderSummary("Sent", requests.filter(r => r.status === 'Candidates Sent').length, "#8B5CF6")}
-      </View>
-
-      {/* Search Bar */}
-      <View style={styles.searchSection}>
-        <View style={styles.searchBox}>
-          <Search size={18} color="#94A3B8" />
-          <TextInput 
-            style={styles.searchInput} 
-            placeholder="Search by ID, Business, Role..." 
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
-      </View>
-
-      {/* Tabs */}
-      <View style={styles.tabSection}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
-          {filters.map(tab => (
-            <TouchableOpacity key={tab} style={[styles.filterChip, activeFilter === tab && styles.filterChipActive]} onPress={() => setActiveFilter(tab)}>
-              <Text style={[styles.filterChipText, activeFilter === tab && styles.filterChipTextActive]}>{tab}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
-      {/* List */}
       <FlatList
         data={filteredRequests}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        ListHeaderComponent={(
+          <>
+            {/* Header */}
+            <View style={styles.header}>
+              <View style={styles.headerTitleRow}>
+                <Briefcase size={24} color={NAVY} />
+                <Text style={styles.headerTitle}>Job Requirements</Text>
+              </View>
+              <Text style={styles.headerSub}>View and manage job requirements from businesses.</Text>
+            </View>
+
+            {/* Summary */}
+            <View style={styles.summaryGrid}>
+              <Pressable 
+                style={({ pressed }) => [styles.overviewCard, { width: summaryCardWidth, opacity: pressed ? 0.9 : 1 }]}
+                onPress={() => setActiveFilter("New")}
+              >
+                <View style={styles.overviewTopRow}>
+                  <Text style={styles.overviewLabel} numberOfLines={2}>New</Text>
+                  <View style={[styles.overviewIconBox, { backgroundColor: '#EFF6FF' }]}>
+                    <FilePlus2 size={20} color="#3B82F6" strokeWidth={2.5} />
+                  </View>
+                </View>
+                <Text style={styles.overviewValue}>1</Text>
+              </Pressable>
+
+              <Pressable 
+                style={({ pressed }) => [styles.overviewCard, { width: summaryCardWidth, opacity: pressed ? 0.9 : 1 }]}
+                onPress={() => setActiveFilter("Accepted")}
+              >
+                <View style={styles.overviewTopRow}>
+                  <Text style={styles.overviewLabel} numberOfLines={2}>Accepted</Text>
+                  <View style={[styles.overviewIconBox, { backgroundColor: '#ECFDF5' }]}>
+                    <CircleCheck size={20} color="#10B981" strokeWidth={2.5} />
+                  </View>
+                </View>
+                <Text style={styles.overviewValue}>1</Text>
+              </Pressable>
+
+              <Pressable 
+                style={({ pressed }) => [styles.overviewCard, { width: summaryCardWidth, opacity: pressed ? 0.9 : 1 }]}
+                onPress={() => setActiveFilter("Candidates Sent")}
+              >
+                <View style={styles.overviewTopRow}>
+                  <Text style={styles.overviewLabel} numberOfLines={2}>Candidates Sent</Text>
+                  <View style={[styles.overviewIconBox, { backgroundColor: '#F5F3FF' }]}>
+                    <Send size={20} color="#8B5CF6" strokeWidth={2.5} />
+                  </View>
+                </View>
+                <Text style={styles.overviewValue}>1</Text>
+              </Pressable>
+
+              <Pressable 
+                style={({ pressed }) => [styles.overviewCard, { width: summaryCardWidth, opacity: pressed ? 0.9 : 1 }]}
+                onPress={() => setActiveFilter("Pending")}
+              >
+                <View style={styles.overviewTopRow}>
+                  <Text style={styles.overviewLabel} numberOfLines={2}>Pending</Text>
+                  <View style={[styles.overviewIconBox, { backgroundColor: '#FFF7ED' }]}>
+                    <Clock3 size={20} color="#F97316" strokeWidth={2.5} />
+                  </View>
+                </View>
+                <Text style={styles.overviewValue}>2</Text>
+              </Pressable>
+            </View>
+
+            {/* Search Bar */}
+            <View style={styles.searchSection}>
+              <View style={styles.searchBox}>
+                <Search size={18} color="#94A3B8" />
+                <TextInput 
+                  style={styles.searchInput} 
+                  placeholder="Search by ID, Business, Role..." 
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+              </View>
+            </View>
+
+            {/* Tabs */}
+            <View style={styles.tabSection}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
+                {filters.map(tab => (
+                  <TouchableOpacity key={tab} style={[styles.filterChip, activeFilter === tab && styles.filterChipActive]} onPress={() => setActiveFilter(tab)}>
+                    <Text style={[styles.filterChipText, activeFilter === tab && styles.filterChipTextActive]}>{tab}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </>
+        )}
         ListEmptyComponent={() => (
           <View style={styles.emptyBox}>
             <Text style={styles.emptyTitle}>No job requirements found</Text>
@@ -213,23 +262,26 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
         renderItem={({item}) => (
           <View style={styles.recordCard}>
             <View style={styles.recordHeader}>
-              <View style={styles.recordAvatar}><Text style={styles.recordAvatarText}>{item.role.charAt(0)}</Text></View>
-              <View style={styles.recordHeaderInfo}>
-                <View>
-                  <Text style={styles.recordName}>{item.role}</Text>
+              <View style={styles.recordHeaderLeft}>
+                <View style={styles.recordAvatar}><Text style={styles.recordAvatarText}>{item.role.charAt(0)}</Text></View>
+                <View style={styles.recordHeaderInfo}>
+                  <Text style={styles.recordName} numberOfLines={1}>{item.role}</Text>
                   <Text style={styles.recordSub}>ID: {item.id}</Text>
                 </View>
-                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '15' }]}>
-                  <Text style={[styles.statusBadgeText, { color: getStatusColor(item.status) }]}>{item.status}</Text>
-                </View>
+              </View>
+              <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '15' }]}>
+                <Text style={[styles.statusBadgeText, { color: getStatusColor(item.status) }]}>{item.status}</Text>
               </View>
             </View>
 
             <View style={styles.recordBody}>
-              <View style={styles.infoRow}><Building size={14} color="#64748B" /><Text style={styles.infoText}>{item.businessName}</Text></View>
-              <View style={styles.infoRow}><MapPin size={14} color="#64748B" /><Text style={styles.infoText}>{item.location}</Text></View>
-              <View style={styles.infoRow}><Users size={14} color="#64748B" /><Text style={styles.infoText}>{item.count} Staff Needed</Text></View>
-              <View style={styles.infoRow}><DollarSign size={14} color="#64748B" /><Text style={styles.infoText}>{item.salary}</Text></View>
+              <View style={styles.infoRow}><Building2 size={14} color="#64748B" /><Text style={styles.infoText} numberOfLines={1}>{item.businessName}</Text></View>
+              <View style={styles.infoRow}><MapPin size={14} color="#64748B" /><Text style={styles.infoText} numberOfLines={1}>{item.location}</Text></View>
+            </View>
+
+            <View style={styles.summaryRow}>
+              <View style={styles.summaryItem}><UsersRound size={14} color="#64748B" /><Text style={styles.summaryText}>{item.count} Staff Needed</Text></View>
+              <View style={styles.summaryItem}><IndianRupee size={14} color="#64748B" /><Text style={styles.summaryText}>{item.salary}</Text></View>
             </View>
 
             <View style={styles.recordFooter}>
@@ -239,8 +291,23 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
               </TouchableOpacity>
               
               {item.status === 'New' && (
-                <TouchableOpacity style={[styles.primaryBtn, {paddingVertical: 8, paddingHorizontal: 16, flex: 0}]} onPress={() => handleAccept(item.id)}>
-                  <Text style={styles.primaryBtnText}>Accept</Text>
+                <TouchableOpacity style={styles.primaryBtnSmall} onPress={() => handleAccept(item.id)}>
+                  <Text style={styles.primaryBtnSmallText}>Accept</Text>
+                </TouchableOpacity>
+              )}
+              {item.status === 'Accepted' && (
+                <TouchableOpacity style={styles.primaryBtnSmall} onPress={() => { setSelectedReq(item); setSendCandVisible(true); }}>
+                  <Text style={styles.primaryBtnSmallText}>Send Candidates</Text>
+                </TouchableOpacity>
+              )}
+              {item.status === 'Candidates Sent' && (
+                <TouchableOpacity style={styles.primaryBtnSmall}>
+                  <Text style={styles.primaryBtnSmallText}>View Submission</Text>
+                </TouchableOpacity>
+              )}
+              {item.status === 'Pending' && (
+                <TouchableOpacity style={styles.primaryBtnSmall}>
+                  <Text style={styles.primaryBtnSmallText}>View Status</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -397,10 +464,54 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 22, fontWeight: 'bold', color: NAVY, marginLeft: 8 },
   headerSub: { fontSize: 13, color: '#64748B', lineHeight: 20 },
 
-  summarySection: { flexDirection: 'row', padding: 16, gap: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  summaryCard: { flex: 1, backgroundColor: '#fff', paddingVertical: 12, paddingHorizontal: 8, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' },
-  summaryCount: { fontSize: 24, fontWeight: 'bold' },
-  summaryLabel: { fontSize: 12, color: '#64748B', marginTop: 4, fontWeight: '500' },
+  summaryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: 16,
+    gap: 12,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9'
+  },
+  overviewCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    minHeight: 110,
+    borderWidth: 1,
+    borderColor: '#E8EDF4',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
+    justifyContent: 'space-between',
+  },
+  overviewTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  overviewIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  overviewValue: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: NAVY,
+    marginTop: 12,
+  },
+  overviewLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#64748B',
+    flex: 1,
+    marginRight: 8,
+  },
 
   searchSection: { padding: 16, paddingBottom: 0 },
   searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 12, height: 44 },
@@ -413,27 +524,32 @@ const styles = StyleSheet.create({
   filterChipText: { fontSize: 13, color: '#475569', fontWeight: '500' },
   filterChipTextActive: { color: '#fff' },
 
-  listContent: { padding: 16, paddingTop: 0, paddingBottom: 120 },
+  listContent: { paddingBottom: 120 },
   
-  recordCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
-  recordHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  recordCard: { marginHorizontal: 16, backgroundColor: '#fff', borderRadius: 16, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
+  recordHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  recordHeaderLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 },
   recordAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' },
   recordAvatarText: { fontSize: 16, fontWeight: 'bold', color: '#3B82F6' },
-  recordHeaderInfo: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginLeft: 12 },
-  recordName: { fontSize: 16, fontWeight: 'bold', color: '#1E293B' },
+  recordHeaderInfo: { flex: 1, marginLeft: 12 },
+  recordName: { fontSize: 16, fontWeight: 'bold', color: NAVY },
   recordSub: { fontSize: 12, color: '#64748B', marginTop: 2 },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, flexShrink: 0 },
   statusBadgeText: { fontSize: 11, fontWeight: 'bold' },
 
-  recordBody: { marginBottom: 16, gap: 8 },
+  recordBody: { marginBottom: 12, gap: 6 },
   infoRow: { flexDirection: 'row', alignItems: 'center' },
-  infoText: { fontSize: 13, color: '#475569', marginLeft: 8 },
+  infoText: { fontSize: 13, color: '#475569', marginLeft: 8, flex: 1 },
 
-  recordFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 16 },
+  summaryRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 16, flexWrap: 'wrap' },
+  summaryItem: { flexDirection: 'row', alignItems: 'center' },
+  summaryText: { fontSize: 13, color: NAVY, fontWeight: '500', marginLeft: 6 },
+
+  recordFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 14 },
   viewDetailsBtn: { flexDirection: 'row', alignItems: 'center' },
-  viewDetailsText: { fontSize: 14, fontWeight: '600', color: NAVY, marginRight: 4 },
+  viewDetailsText: { fontSize: 13, fontWeight: '700', color: NAVY, marginRight: 2 },
 
-  emptyBox: { alignItems: 'center', justifyContent: 'center', padding: 32, backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', borderStyle: 'dashed' },
+  emptyBox: { marginHorizontal: 16, alignItems: 'center', justifyContent: 'center', padding: 32, backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', borderStyle: 'dashed', marginBottom: 20 },
   emptyTitle: { fontSize: 16, fontWeight: 'bold', color: '#1E293B', marginBottom: 8, textAlign: 'center' },
   emptyDesc: { fontSize: 13, color: '#64748B', textAlign: 'center', lineHeight: 20 },
 
@@ -464,6 +580,8 @@ const styles = StyleSheet.create({
   secondaryBtnText: { fontSize: 13, fontWeight: '600', color: '#475569' },
   primaryBtn: { flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center' },
   primaryBtnText: { fontSize: 13, fontWeight: 'bold', color: '#fff' },
+  primaryBtnSmall: { minHeight: 40, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-end', flexShrink: 0 },
+  primaryBtnSmallText: { fontSize: 13, fontWeight: 'bold', color: '#fff' },
 
   sheetSub: { fontSize: 13, color: '#64748B', marginBottom: 12 },
   reasonBtn: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },

@@ -117,24 +117,14 @@ export default function ManpowerDashboard() {
     outputRange: [0, 1]
   });
 
-  const action1TranslateY = animation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [20, -55]
-  });
-
-  const action1TranslateX = animation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -55]
-  });
-
   const action2TranslateY = animation.interpolate({
     inputRange: [0, 1],
-    outputRange: [20, -55]
+    outputRange: [20, -60]
   });
 
   const action2TranslateX = animation.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 55]
+    outputRange: [0, 0]
   });
 
   const actionScale = animation.interpolate({
@@ -215,15 +205,6 @@ export default function ManpowerDashboard() {
               </TouchableWithoutFeedback>
             )}
             
-            <Animated.View style={[styles.radialAction, { opacity: actionScale, transform: [{ translateX: action1TranslateX }, { translateY: action1TranslateY }, { scale: actionScale }] }]}>
-              <TouchableOpacity style={styles.radialActionBtn} onPress={() => navigateTo('candidates', 'add-candidate')}>
-                <UserPlus size={22} color={PRIMARY} />
-              </TouchableOpacity>
-              <View style={styles.radialLabelBox}>
-                <Text style={styles.radialLabelTitle}>Add Candidate</Text>
-              </View>
-            </Animated.View>
-
             <Animated.View style={[styles.radialAction, { opacity: actionScale, transform: [{ translateX: action2TranslateX }, { translateY: action2TranslateY }, { scale: actionScale }] }]}>
               <TouchableOpacity style={styles.radialActionBtn} onPress={() => navigateTo('candidates')}>
                 <Users size={22} color={PRIMARY} />
@@ -232,6 +213,8 @@ export default function ManpowerDashboard() {
                 <Text style={styles.radialLabelTitle}>Manage Candidates</Text>
               </View>
             </Animated.View>
+
+            {/* Nav Bar */}
 
             {/* Nav Bar */}
             <View style={styles.bottomNav}>

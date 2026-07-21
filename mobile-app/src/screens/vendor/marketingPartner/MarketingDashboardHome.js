@@ -1,420 +1,429 @@
-import React, { useContext, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Dimensions, ScrollView, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, useWindowDimensions, SafeAreaView } from 'react-native';
 import { 
-  TrendingUp, Star, Zap, Megaphone, 
-  Radio, Mail, FileText, Clock,
-  Briefcase, DollarSign, MapPin,
-  CheckCircle, Bookmark, Eye, Calendar,
-  Activity, ShieldCheck, Wifi, WifiOff
+  Megaphone, RadioTower, Inbox, Mail, Rocket, TrendingUp, BadgeAlert, FileClock,
+  ChevronRight, Sparkles, MapPin, CalendarDays, Zap, Clock, ShieldCheck, Play
 } from 'lucide-react-native';
-import { AuthContext } from '../../../context/AuthContext';
 
-const { width } = Dimensions.get('window');
+const NAVY = '#071B3A';
+const PURPLE = '#8B5CF6';
+const BLUE = '#3B82F6';
+const GREEN = '#10B981';
+const ORANGE = '#F59E0B';
+const WHITE = '#FFFFFF';
+const MUTED = '#64748B';
 
-const KPI_DATA = [
-  { id: 'broadcast', label: "New Broadcast Requirements", value: "12", delta: "New", icon: Radio, color: "#8B5CF6" },
-  { id: 'direct', label: "New Direct Requests", value: "4", delta: "2 Unread", icon: Mail, color: "#2563EB", isShortcut: true },
-  { id: 'proposals', label: "Proposals Sent", value: "18", delta: "+3 this week", icon: FileText, color: "#10B981" },
-  { id: 'active_c', label: "Active Campaigns", value: "3", delta: "+1 this month", icon: Activity, color: "#F59E0B" },
-  { id: 'pending', label: "Pending Creative Approvals", value: "2", delta: "Needs action", icon: Clock, color: "#EF4444" },
-  { id: 'completed', label: "Completed Campaigns", value: "45", delta: "+5 this month", icon: CheckCircle, color: "#10B981" },
-  { id: 'revenue', label: "Monthly Revenue", value: "₹1.2L", delta: "+34% vs last month", icon: TrendingUp, color: "#059669" },
-  { id: 'rating', label: "Agency Rating", value: "4.8 ★", delta: "From 38 reviews", icon: Star, color: "#F59E0B" },
-];
-
-const FILTERS = ["All", "New", "Urgent", "Online", "Offline", "Saved", "Responded"];
-
-const BROADCAST_FEED = [
+const MOCK_OPPORTUNITIES = [
   {
-    id: "REQ-101",
-    campaign: "Summer Season Social Media Launch",
-    business: "Azure Palace Hotel",
-    type: "Online",
-    category: "Social Media Management",
-    budget: "₹45,000 - ₹60,000",
-    location: "Mumbai, MH",
-    startDate: "01 Aug 2026",
-    duration: "3 Months",
-    urgency: "High",
-    postedTime: "2 hours ago"
+    id: "REQ-101", priority: "HIGH PRIORITY",
+    title: "Summer Season Social Media Launch",
+    business: "The Meridian Hotel",
+    category: "Social Media Marketing",
+    budget: "₹45,000 – ₹60,000",
+    duration: "3 Months", location: "Mumbai"
   },
   {
-    id: "REQ-102",
-    campaign: "New Menu Photography & Videography",
+    id: "REQ-102", priority: "NORMAL",
+    title: "New Menu Photography & Videography",
     business: "Spice Route Restaurant",
-    type: "Offline",
     category: "Content Creation",
     budget: "₹25,000",
-    location: "Pune, MH",
-    startDate: "15 Aug 2026",
-    duration: "1 Week",
-    urgency: "Medium",
-    postedTime: "5 hours ago"
+    duration: "1 Week", location: "Pune"
   }
 ];
 
+const MOCK_CAMPAIGNS = [
+  {
+    id: "CAMP-01", title: "July Social Media Promotion",
+    business: "Azure Palace Hotel", category: "Social Media Marketing",
+    progress: 65, currentStage: "Content Publishing", nextMilestone: "Client Performance Review",
+    due: "25 Jul 2026"
+  },
+  {
+    id: "CAMP-02", title: "Autumn Menu Launch Strategy",
+    business: "The Meridian Hotel", category: "Branding",
+    progress: 15, currentStage: "Initial Research", nextMilestone: "Concept Presentation",
+    due: "15 Aug 2026"
+  }
+];
+
+const MOCK_APPROVALS = [
+  {
+    id: "APP-01", title: "Video Ad Draft v2",
+    business: "Spice Route Restaurant", campaign: "Summer Promotion Campaign",
+    type: "Creative Review", submitted: "Submitted 2 hours ago"
+  },
+  {
+    id: "APP-02", title: "Instagram Carousel Drafts",
+    business: "Azure Palace Hotel", campaign: "July Social Media Promotion",
+    type: "Content Review", submitted: "Submitted Yesterday"
+  }
+];
+
+const MOCK_SCHEDULE = [
+  { id: "SCH-01", time: "10:30 AM", title: "Client Call", business: "Azure Palace Hotel" },
+  { id: "SCH-02", time: "02:00 PM", title: "Creative Review", business: "Spice Route Restaurant" },
+  { id: "SCH-03", time: "04:30 PM", title: "Campaign Presentation", business: "The Meridian Hotel" }
+];
+
 export default function MarketingDashboardHome({ setActivePage, handleSendProposal }) {
-  const [activeFilter, setActiveFilter] = useState("All");
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768;
 
   const renderHeader = () => (
-    <View>
-      {/* Welcome Banner */}
-      <View style={[styles.welcomeBanner, { backgroundColor: "#F5F3FF", borderColor: "#DDD6FE" }]}>
-        <View style={styles.avatarBox}>
-           <Text style={styles.avatarInitials}>BC</Text>
+    <View style={styles.contentPad}>
+      {/* Welcome Hero */}
+      <View style={styles.heroCard}>
+        <View style={styles.heroTop}>
+          <View>
+            <Text style={styles.heroGreeting}>Good Morning 👋</Text>
+            <Text style={styles.heroTitle}>BrandCraft Agency</Text>
+            <Text style={styles.heroSubtitle}>Marketing Agency</Text>
+          </View>
+          <View style={styles.heroIconBox}>
+            <Sparkles size={24} color={WHITE} opacity={0.6} />
+          </View>
         </View>
-        <View style={styles.bannerContent}>
-          <Text style={styles.bannerTitle}>Welcome back, BrandCraft</Text>
-          <View style={styles.badgeRow}>
-            <View style={styles.verifiedBadge}>
-              <ShieldCheck size={12} color="#10B981" />
-              <Text style={styles.verifiedText}>Verified Agency</Text>
+        
+        <Text style={styles.heroDesc}>
+          Manage marketing opportunities, campaigns and client approvals from one place.
+        </Text>
+
+        <View style={styles.heroBadges}>
+          <View style={styles.badgeGlass}>
+            <ShieldCheck size={12} color="#D4AF37" />
+            <Text style={styles.badgeGlassText}>Verified Agency</Text>
+          </View>
+          <View style={styles.badgeSolid}>
+            <View style={styles.dotGreen} />
+            <Text style={styles.badgeSolidText}>Available for Projects</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Overview Section */}
+      <Text style={styles.sectionTitle}>Overview</Text>
+      <View style={styles.overviewGrid}>
+        
+        <TouchableOpacity style={styles.overviewCard} onPress={() => {}}>
+          <View style={styles.overviewCardTop}>
+            <View style={[styles.overviewIconWrap, {backgroundColor: '#F5F3FF'}]}>
+              <RadioTower size={18} color={PURPLE} />
             </View>
-            <View style={styles.modeBadge}>
-              <Wifi size={12} color="#2563EB" />
-              <Text style={styles.modeText}>Online & Offline</Text>
-            </View>
+            <ChevronRight size={16} color={MUTED} />
           </View>
-        </View>
-      </View>
-
-      {/* KPI Grid */}
-      <View style={styles.kpiGrid}>
-        {KPI_DATA.map((kpi) => (
-          <TouchableOpacity 
-            key={kpi.id} 
-            style={[styles.kpiCard, { borderTopColor: kpi.color }]}
-            activeOpacity={kpi.isShortcut ? 0.7 : 1}
-            onPress={() => {
-              if (kpi.isShortcut) setActivePage('requests');
-            }}
-          >
-            <View style={styles.kpiHeader}>
-              <View style={[styles.kpiIconBox, { backgroundColor: kpi.color + '14' }]}>
-                <kpi.icon size={16} color={kpi.color} />
-              </View>
-            </View>
-            <Text style={styles.kpiValue}>{kpi.value}</Text>
-            <Text style={styles.kpiLabel}>{kpi.label}</Text>
-            <Text style={[styles.kpiDelta, { color: kpi.color }]}>{kpi.delta}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <Text style={styles.sectionHeader}>Broadcast Requirements</Text>
-      
-      {/* Filters */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterContainer}>
-        {FILTERS.map((f, idx) => (
-          <TouchableOpacity 
-            key={idx} 
-            style={[styles.filterChip, activeFilter === f && styles.filterChipActive]}
-            onPress={() => setActiveFilter(f)}
-          >
-            <Text style={[styles.filterText, activeFilter === f && styles.filterTextActive]}>{f}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
-  );
-
-  const renderFooter = () => (
-    <View style={styles.bottomSections}>
-      <Text style={styles.sectionHeader}>Active Campaigns</Text>
-      <View style={styles.cardBox}>
-        <View style={styles.listItem}>
-          <View style={styles.listItemLeft}>
-            <Text style={styles.listItemTitle}>July Social Media Promo</Text>
-            <Text style={styles.listItemSub}>Azure Palace Hotel</Text>
-          </View>
-          <View style={[styles.statusBadge, { backgroundColor: "#D1FAE5" }]}>
-            <Text style={[styles.statusText, { color: "#059669" }]}>Running</Text>
-          </View>
-        </View>
-      </View>
-
-      <Text style={styles.sectionHeader}>Pending Creative Approvals</Text>
-      <View style={styles.cardBox}>
-        <View style={styles.listItem}>
-          <View style={styles.listItemLeft}>
-            <Text style={styles.listItemTitle}>Video Ad Draft v2</Text>
-            <Text style={styles.listItemSub}>Spice Route Restaurant</Text>
-          </View>
-          <View style={[styles.statusBadge, { backgroundColor: "#FEE2E2" }]}>
-            <Text style={[styles.statusText, { color: "#EF4444" }]}>Pending</Text>
-          </View>
-        </View>
-      </View>
-
-      <Text style={styles.sectionHeader}>Recent Proposals</Text>
-      <View style={styles.cardBox}>
-        <View style={styles.listItem}>
-          <View style={styles.listItemLeft}>
-            <Text style={styles.listItemTitle}>SEO Optimization 6-Months</Text>
-            <Text style={styles.listItemSub}>Submitted 1 day ago</Text>
-          </View>
-          <View style={[styles.statusBadge, { backgroundColor: "#FEF3C7" }]}>
-            <Text style={[styles.statusText, { color: "#D97706" }]}>Under Review</Text>
-          </View>
-        </View>
-      </View>
-
-      <Text style={styles.sectionHeader}>Today's Schedule</Text>
-      <View style={styles.cardBox}>
-        <View style={styles.listItem}>
-          <View style={styles.listItemLeft}>
-            <Text style={styles.listItemTitle}>Client Pitch - Azure Palace</Text>
-            <View style={styles.timeRow}>
-              <Clock size={12} color="#64748B"/>
-              <Text style={styles.listItemSubTime}>10:00 AM</Text>
-            </View>
-          </View>
-        </View>
-      </View>
-
-    </View>
-  );
-
-  const renderFeedItem = ({ item }) => (
-    <View style={styles.feedCard}>
-      <View style={styles.feedHeaderRow}>
-        <Text style={styles.reqIdText}>{item.id}</Text>
-        {item.type === 'Online' ? (
-           <View style={[styles.typeBadge, { backgroundColor: '#DBEAFE' }]}><Text style={[styles.typeBadgeText, { color: '#1D4ED8' }]}>Online</Text></View>
-        ) : (
-           <View style={[styles.typeBadge, { backgroundColor: '#F3F4F6' }]}><Text style={[styles.typeBadgeText, { color: '#4B5563' }]}>Offline</Text></View>
-        )}
-      </View>
-
-      <Text style={styles.feedTitle}>{item.campaign}</Text>
-      
-      <View style={styles.feedDetailsGrid}>
-        <View style={styles.feedDetailCol}>
-          <Briefcase size={14} color="#64748B" />
-          <Text style={styles.feedText} numberOfLines={1}>{item.business}</Text>
-        </View>
-        <View style={styles.feedDetailCol}>
-          <Activity size={14} color="#64748B" />
-          <Text style={styles.feedText} numberOfLines={1}>{item.category}</Text>
-        </View>
-        <View style={styles.feedDetailCol}>
-          <DollarSign size={14} color="#64748B" />
-          <Text style={styles.feedText} numberOfLines={1}>{item.budget}</Text>
-        </View>
-        <View style={styles.feedDetailCol}>
-          <MapPin size={14} color="#64748B" />
-          <Text style={styles.feedText} numberOfLines={1}>{item.location}</Text>
-        </View>
-        <View style={styles.feedDetailCol}>
-          <Calendar size={14} color="#64748B" />
-          <Text style={styles.feedText} numberOfLines={1}>Starts {item.startDate}</Text>
-        </View>
-        <View style={styles.feedDetailCol}>
-          <Clock size={14} color="#64748B" />
-          <Text style={styles.feedText} numberOfLines={1}>{item.duration}</Text>
-        </View>
-        <View style={styles.feedDetailCol}>
-          <Zap size={14} color={item.urgency === 'High' ? '#EF4444' : '#F59E0B'} />
-          <Text style={[styles.feedText, { color: item.urgency === 'High' ? '#EF4444' : '#F59E0B', fontWeight: 'bold' }]} numberOfLines={1}>{item.urgency} Urgency</Text>
-        </View>
-        <View style={styles.feedDetailCol}>
-          <Radio size={14} color="#64748B" />
-          <Text style={styles.feedText} numberOfLines={1}>Posted {item.postedTime}</Text>
-        </View>
-      </View>
-
-      <View style={styles.actionButtons}>
-        <TouchableOpacity style={styles.btnOutline}>
-          <Eye size={16} color="#8B5CF6" />
-          <Text style={styles.btnOutlineText}>View Details</Text>
+          <Text style={styles.overviewCount}>12</Text>
+          <Text style={styles.overviewLabel}>Open Opportunities</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.btnPrimary} onPress={() => handleSendProposal(item)}>
-          <Text style={styles.btnPrimaryText}>Send Proposal</Text>
+
+        <TouchableOpacity style={styles.overviewCard} onPress={() => setActivePage('requests')}>
+          <View style={styles.overviewCardTop}>
+            <View style={[styles.overviewIconWrap, {backgroundColor: '#EFF6FF'}]}>
+              <Inbox size={18} color={BLUE} />
+            </View>
+            <ChevronRight size={16} color={MUTED} />
+          </View>
+          <Text style={styles.overviewCount}>4</Text>
+          <Text style={styles.overviewLabel}>Direct Requests</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.btnIcon}>
-           <Bookmark size={18} color="#8B5CF6" />
+
+        <TouchableOpacity style={styles.overviewCard} onPress={() => setActivePage('campaigns')}>
+          <View style={styles.overviewCardTop}>
+            <View style={[styles.overviewIconWrap, {backgroundColor: '#F0FDF4'}]}>
+              <Rocket size={18} color={GREEN} />
+            </View>
+            <ChevronRight size={16} color={MUTED} />
+          </View>
+          <Text style={styles.overviewCount}>3</Text>
+          <Text style={styles.overviewLabel}>Active Campaigns</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity style={styles.overviewCard} onPress={() => setActivePage('campaigns')}>
+          <View style={styles.overviewCardTop}>
+            <View style={[styles.overviewIconWrap, {backgroundColor: '#FFFBEB'}]}>
+              <BadgeAlert size={18} color={ORANGE} />
+            </View>
+            <ChevronRight size={16} color={MUTED} />
+          </View>
+          <Text style={styles.overviewCount}>2</Text>
+          <Text style={styles.overviewLabel}>Pending Approvals</Text>
+        </TouchableOpacity>
+
       </View>
     </View>
   );
 
   return (
-    <FlatList
-      style={styles.container}
-      data={BROADCAST_FEED}
-      keyExtractor={(item) => item.id}
-      renderItem={renderFeedItem}
-      ListHeaderComponent={renderHeader}
-      ListFooterComponent={renderFooter}
-      contentContainerStyle={styles.contentContainer}
-      showsVerticalScrollIndicator={false}
-    />
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {renderHeader()}
+
+        {/* Desktop grid layout for sections */}
+        <View style={!isMobile && styles.desktopRow}>
+          
+          <View style={!isMobile && styles.desktopCol}>
+            {/* Open Marketing Opportunities */}
+            <View style={styles.sectionHeaderRow}>
+              <View>
+                <Text style={styles.sectionTitle}>Open Marketing Opportunities</Text>
+                <Text style={styles.sectionSubtitle}>Campaign requirements matching your agency services</Text>
+              </View>
+              <TouchableOpacity><Text style={styles.actionLink}>View Feed Wall &gt;</Text></TouchableOpacity>
+            </View>
+
+            <View style={styles.contentPadX}>
+              {MOCK_OPPORTUNITIES.map(req => (
+                <TouchableOpacity key={req.id} style={styles.card} onPress={() => handleSendProposal(req)}>
+                  <View style={styles.cardTopRow}>
+                    <Text style={styles.reqId}>{req.id}</Text>
+                    {req.priority === 'HIGH PRIORITY' && (
+                      <View style={styles.badgeRed}><Text style={styles.badgeRedText}>{req.priority}</Text></View>
+                    )}
+                  </View>
+                  <Text style={styles.reqTitle}>{req.title}</Text>
+                  <Text style={styles.reqBusiness}>{req.business}</Text>
+                  
+                  <View style={styles.reqMetaRow}>
+                    <Megaphone size={14} color={MUTED} style={styles.metaIcon} />
+                    <Text style={styles.reqMetaText}>{req.category}</Text>
+                  </View>
+                  
+                  <View style={styles.reqMetaGrid}>
+                    <View style={styles.reqMetaCol}>
+                      <Text style={styles.reqMetaLabel}>Budget</Text>
+                      <Text style={styles.reqMetaValue}>{req.budget}</Text>
+                    </View>
+                    <View style={styles.reqMetaCol}>
+                      <Text style={styles.reqMetaLabel}>Duration</Text>
+                      <Text style={styles.reqMetaValue}>{req.duration}</Text>
+                    </View>
+                    <View style={styles.reqMetaCol}>
+                      <Text style={styles.reqMetaLabel}>Location</Text>
+                      <Text style={styles.reqMetaValue}>{req.location}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.cardFooter}>
+                    <View style={styles.textActionBtn}>
+                      <Text style={styles.textActionText}>View Opportunity</Text>
+                      <ChevronRight size={16} color={NAVY} />
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Active Campaigns */}
+            <View style={styles.sectionHeaderRow}>
+              <View>
+                <Text style={styles.sectionTitle}>Active Campaigns</Text>
+                <Text style={styles.sectionSubtitle}>Campaigns currently being managed by your agency</Text>
+              </View>
+              <TouchableOpacity onPress={() => setActivePage('campaigns')}><Text style={styles.actionLink}>View All &gt;</Text></TouchableOpacity>
+            </View>
+
+            <View style={styles.contentPadX}>
+              {MOCK_CAMPAIGNS.map(camp => (
+                <TouchableOpacity key={camp.id} style={styles.card} onPress={() => setActivePage('campaigns')}>
+                  <Text style={styles.campTitle}>{camp.title}</Text>
+                  <Text style={styles.campBusiness}>{camp.business}</Text>
+                  
+                  <View style={styles.campCategoryRow}>
+                    <View style={styles.campCategoryBadge}><Text style={styles.campCategoryText}>{camp.category}</Text></View>
+                  </View>
+
+                  <View style={styles.progressSection}>
+                    <View style={styles.progressHeader}>
+                      <Text style={styles.progressLabel}>Progress</Text>
+                      <Text style={styles.progressValue}>{camp.progress}%</Text>
+                    </View>
+                    <View style={styles.progressBarBg}>
+                      <View style={[styles.progressBarFill, {width: `${camp.progress}%`}]} />
+                    </View>
+                  </View>
+
+                  <View style={styles.campMetaGrid}>
+                    <View style={styles.campMetaRow}>
+                      <Text style={styles.campMetaLabel}>Current Stage:</Text>
+                      <Text style={styles.campMetaValue}>{camp.currentStage}</Text>
+                    </View>
+                    <View style={styles.campMetaRow}>
+                      <Text style={styles.campMetaLabel}>Next Milestone:</Text>
+                      <Text style={styles.campMetaValue}>{camp.nextMilestone}</Text>
+                    </View>
+                    <View style={styles.campMetaRow}>
+                      <Text style={styles.campMetaLabel}>Due:</Text>
+                      <Text style={styles.campMetaValue}>{camp.due}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.cardFooter}>
+                    <View style={styles.textActionBtn}>
+                      <Text style={styles.textActionText}>View Campaign</Text>
+                      <ChevronRight size={16} color={NAVY} />
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+          
+          <View style={!isMobile && styles.desktopCol}>
+            {/* Pending Client Approvals */}
+            <View style={styles.sectionHeaderRow}>
+              <View>
+                <Text style={styles.sectionTitle}>Pending Client Approvals</Text>
+                <Text style={styles.sectionSubtitle}>Creative work waiting for client review</Text>
+              </View>
+              <TouchableOpacity onPress={() => setActivePage('campaigns')}><Text style={styles.actionLink}>View All &gt;</Text></TouchableOpacity>
+            </View>
+
+            <View style={styles.contentPadX}>
+              {MOCK_APPROVALS.map(app => (
+                <TouchableOpacity key={app.id} style={styles.cardRow} onPress={() => setActivePage('campaigns')}>
+                  <View style={styles.cardRowLeft}>
+                    <Text style={styles.appTitle}>{app.title}</Text>
+                    <Text style={styles.appBusiness}>{app.business}</Text>
+                    <Text style={styles.appCampaign}>{app.campaign} · {app.type}</Text>
+                    <Text style={styles.appSubmitted}>{app.submitted}</Text>
+                  </View>
+                  <View style={styles.cardRowRight}>
+                    <View style={styles.badgeOrange}><Text style={styles.badgeOrangeText}>Pending Client Approval</Text></View>
+                    <View style={[styles.textActionBtn, {marginTop: 12}]}>
+                      <Text style={[styles.textActionText, {fontSize: 12}]}>Review Details</Text>
+                      <ChevronRight size={14} color={NAVY} />
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Today's Schedule */}
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.sectionTitle}>Today's Schedule</Text>
+              <TouchableOpacity><Text style={styles.actionLink}>View All &gt;</Text></TouchableOpacity>
+            </View>
+
+            <View style={styles.contentPadX}>
+              <View style={styles.scheduleBox}>
+                {MOCK_SCHEDULE.map((sch, i) => (
+                  <TouchableOpacity key={sch.id} style={[styles.scheduleRow, i !== MOCK_SCHEDULE.length - 1 && styles.borderBottom]}>
+                    <View style={styles.scheduleTimeBox}>
+                      <Text style={styles.scheduleTime}>{sch.time}</Text>
+                    </View>
+                    <View style={styles.scheduleContent}>
+                      <Text style={styles.scheduleTitle}>{sch.title}</Text>
+                      <Text style={styles.scheduleBusiness}>{sch.business}</Text>
+                    </View>
+                    <ChevronRight size={16} color={MUTED} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+          
+        </View>
+
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  contentContainer: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  welcomeBanner: {
-    flexDirection: 'row', alignItems: 'center', borderWidth: 1,
-    borderRadius: 16, padding: 20, marginBottom: 24,
-  },
-  avatarBox: {
-    width: 48, height: 48, borderRadius: 24, backgroundColor: '#8B5CF6',
-    alignItems: 'center', justifyContent: 'center', elevation: 2,
-  },
-  avatarInitials: {
-    color: '#fff', fontWeight: 'bold', fontSize: 18,
-  },
-  bannerContent: {
-    flex: 1, marginLeft: 16,
-  },
-  bannerTitle: {
-    fontSize: 18, fontWeight: '800', color: '#0F172A', marginBottom: 6,
-  },
-  badgeRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap',
-  },
-  verifiedBadge: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#D1FAE5',
-    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, gap: 4,
-  },
-  verifiedText: {
-    fontSize: 10, fontWeight: 'bold', color: '#059669',
-  },
-  modeBadge: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#DBEAFE',
-    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, gap: 4,
-  },
-  modeText: {
-    fontSize: 10, fontWeight: 'bold', color: '#1D4ED8',
-  },
-  kpiGrid: {
-    flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24,
-  },
-  kpiCard: {
-    width: (width - 44) / 2, backgroundColor: '#fff', borderRadius: 16, padding: 16,
-    borderWidth: 1, borderColor: '#E2E8F0', borderTopWidth: 3,
-    elevation: 1,
-  },
-  kpiHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12,
-  },
-  kpiIconBox: {
-    width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
-  },
-  kpiValue: {
-    fontSize: 20, fontWeight: '800', color: '#0F172A',
-  },
-  kpiLabel: {
-    fontSize: 12, color: '#64748B', marginTop: 2,
-  },
-  kpiDelta: {
-    fontSize: 11, fontWeight: '600', marginTop: 8,
-  },
-  sectionHeader: {
-    fontSize: 18, fontWeight: 'bold', color: '#0F172A', marginBottom: 12, marginTop: 8,
-  },
-  filterScroll: {
-    marginBottom: 16,
-  },
-  filterContainer: {
-    paddingRight: 16, gap: 8, flexDirection: 'row',
-  },
-  filterChip: {
-    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
-    backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0',
-  },
-  filterChipActive: {
-    backgroundColor: '#8B5CF6', borderColor: '#8B5CF6',
-  },
-  filterText: {
-    fontSize: 13, color: '#475569', fontWeight: '500',
-  },
-  filterTextActive: {
-    color: '#fff', fontWeight: 'bold',
-  },
-  feedCard: {
-    backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 16,
-    borderWidth: 1, borderColor: '#E2E8F0', elevation: 1,
-  },
-  feedHeaderRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8,
-  },
-  reqIdText: {
-    fontSize: 12, fontWeight: 'bold', color: '#64748B',
-  },
-  typeBadge: {
-    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12,
-  },
-  typeBadgeText: {
-    fontSize: 10, fontWeight: 'bold',
-  },
-  feedTitle: {
-    fontSize: 16, fontWeight: 'bold', color: '#0F172A', marginBottom: 12,
-  },
-  feedDetailsGrid: {
-    flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 16,
-  },
-  feedDetailCol: {
-    width: '45%', flexDirection: 'row', alignItems: 'center',
-  },
-  feedText: {
-    fontSize: 12, color: '#475569', marginLeft: 6, flex: 1,
-  },
-  actionButtons: {
-    flexDirection: 'row', alignItems: 'center', gap: 8, borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 16,
-  },
-  btnPrimary: {
-    flex: 1, backgroundColor: '#8B5CF6', paddingVertical: 10, borderRadius: 8, alignItems: 'center',
-  },
-  btnPrimaryText: {
-    color: '#fff', fontWeight: 'bold', fontSize: 13,
-  },
-  btnOutline: {
-    flex: 1, flexDirection: 'row', backgroundColor: '#F5F3FF', borderWidth: 1, borderColor: '#DDD6FE', paddingVertical: 10, borderRadius: 8, alignItems: 'center', justifyContent: 'center', gap: 6,
-  },
-  btnOutlineText: {
-    color: '#8B5CF6', fontWeight: 'bold', fontSize: 13,
-  },
-  btnIcon: {
-    width: 40, height: 40, backgroundColor: '#F5F3FF', borderWidth: 1, borderColor: '#DDD6FE', borderRadius: 8, alignItems: 'center', justifyContent: 'center',
-  },
-  bottomSections: {
-    marginTop: 16,
-  },
-  cardBox: {
-    backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 24,
-    borderWidth: 1, borderColor: '#E2E8F0', elevation: 1,
-  },
-  listItem: {
-    flexDirection: 'row', alignItems: 'center', paddingVertical: 12,
-  },
-  listItemLeft: {
-    flex: 1,
-  },
-  listItemTitle: {
-    fontSize: 14, fontWeight: '600', color: '#0F172A',
-  },
-  listItemSub: {
-    fontSize: 12, color: '#64748B', marginTop: 4,
-  },
-  timeRow: {
-    flexDirection: 'row', alignItems: 'center', marginTop: 4,
-  },
-  listItemSubTime: {
-    fontSize: 12, color: '#64748B', marginLeft: 4,
-  },
-  statusBadge: {
-    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12,
-  },
-  statusText: {
-    fontSize: 10, fontWeight: 'bold',
-  },
+  safeArea: { flex: 1, backgroundColor: '#F8FAFC' },
+  scrollContent: { paddingBottom: 115, maxWidth: 1200, alignSelf: 'center', width: '100%' },
+  contentPad: { paddingHorizontal: 16 },
+  contentPadX: { paddingHorizontal: 16 },
+
+  desktopRow: { flexDirection: 'row', gap: 24, paddingHorizontal: 16 },
+  desktopCol: { flex: 1 },
+
+  // Hero
+  heroCard: { backgroundColor: NAVY, borderRadius: 20, padding: 20, marginTop: 16, marginBottom: 24, overflow: 'hidden' },
+  heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  heroGreeting: { fontSize: 14, color: '#CBD5E1', marginBottom: 4 },
+  heroTitle: { fontSize: 24, fontWeight: 'bold', color: WHITE, marginBottom: 2 },
+  heroSubtitle: { fontSize: 13, color: '#D4AF37', fontWeight: '600' },
+  heroIconBox: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
+  heroDesc: { fontSize: 13, color: '#94A3B8', marginTop: 12, marginBottom: 16, maxWidth: '90%', lineHeight: 20 },
+  heroBadges: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
+  badgeGlass: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, gap: 6 },
+  badgeGlassText: { fontSize: 11, fontWeight: 'bold', color: WHITE },
+  badgeSolid: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0FDF4', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, gap: 6 },
+  dotGreen: { width: 6, height: 6, borderRadius: 3, backgroundColor: GREEN },
+  badgeSolidText: { fontSize: 11, fontWeight: 'bold', color: GREEN },
+
+  // Overview
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
+  sectionSubtitle: { fontSize: 12, color: MUTED, marginBottom: 16 },
+  sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginTop: 24, marginBottom: 4 },
+  actionLink: { fontSize: 13, fontWeight: 'bold', color: PURPLE },
+
+  overviewGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  overviewCard: { width: '48%', backgroundColor: WHITE, borderRadius: 16, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1 },
+  overviewCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  overviewIconWrap: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  overviewCount: { fontSize: 22, fontWeight: 'bold', color: NAVY, marginBottom: 2 },
+  overviewLabel: { fontSize: 12, color: MUTED, fontWeight: '500' },
+
+  // Cards Generic
+  card: { backgroundColor: WHITE, borderRadius: 18, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1 },
+  cardFooter: { borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 12, marginTop: 12, flexDirection: 'row', justifyContent: 'flex-start' },
+  textActionBtn: { flexDirection: 'row', alignItems: 'center' },
+  textActionText: { fontSize: 13, fontWeight: 'bold', color: NAVY, marginRight: 4 },
+  
+  // Feed Cards
+  cardTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  reqId: { fontSize: 12, fontWeight: 'bold', color: MUTED },
+  badgeRed: { backgroundColor: '#FEF2F2', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  badgeRedText: { fontSize: 10, fontWeight: 'bold', color: '#DC2626' },
+  reqTitle: { fontSize: 16, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
+  reqBusiness: { fontSize: 14, color: MUTED, marginBottom: 12 },
+  reqMetaRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  metaIcon: { marginRight: 6 },
+  reqMetaText: { fontSize: 13, color: NAVY, fontWeight: '500' },
+  reqMetaGrid: { flexDirection: 'row', backgroundColor: '#F8FAFC', borderRadius: 10, padding: 12, gap: 12 },
+  reqMetaCol: { flex: 1 },
+  reqMetaLabel: { fontSize: 11, color: MUTED, marginBottom: 4 },
+  reqMetaValue: { fontSize: 13, fontWeight: 'bold', color: NAVY },
+
+  // Campaign Cards
+  campTitle: { fontSize: 16, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
+  campBusiness: { fontSize: 13, color: MUTED, marginBottom: 8 },
+  campCategoryRow: { flexDirection: 'row', marginBottom: 16 },
+  campCategoryBadge: { backgroundColor: '#F8FAFC', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: '#F1F5F9' },
+  campCategoryText: { fontSize: 11, color: MUTED, fontWeight: '600' },
+  
+  progressSection: { marginBottom: 16 },
+  progressHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  progressLabel: { fontSize: 12, fontWeight: '600', color: NAVY },
+  progressValue: { fontSize: 12, fontWeight: 'bold', color: GREEN },
+  progressBarBg: { height: 6, backgroundColor: '#F1F5F9', borderRadius: 3 },
+  progressBarFill: { height: 6, backgroundColor: GREEN, borderRadius: 3 },
+
+  campMetaGrid: { backgroundColor: '#F8FAFC', borderRadius: 10, padding: 12, gap: 8 },
+  campMetaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  campMetaLabel: { fontSize: 12, color: MUTED },
+  campMetaValue: { fontSize: 12, fontWeight: '600', color: NAVY },
+
+  // Approval Row Cards
+  cardRow: { flexDirection: 'row', backgroundColor: WHITE, borderRadius: 16, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1 },
+  cardRowLeft: { flex: 1, paddingRight: 12 },
+  appTitle: { fontSize: 15, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
+  appBusiness: { fontSize: 13, fontWeight: '600', color: NAVY, marginBottom: 2 },
+  appCampaign: { fontSize: 12, color: MUTED, marginBottom: 6 },
+  appSubmitted: { fontSize: 11, color: MUTED, fontStyle: 'italic' },
+  cardRowRight: { alignItems: 'flex-end', justifyContent: 'center' },
+  badgeOrange: { backgroundColor: '#FFFBEB', paddingHorizontal: 8, paddingVertical: 6, borderRadius: 6 },
+  badgeOrangeText: { fontSize: 10, fontWeight: 'bold', color: ORANGE },
+
+  // Schedule
+  scheduleBox: { backgroundColor: WHITE, borderRadius: 16, padding: 8, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1 },
+  scheduleRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8 },
+  borderBottom: { borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  scheduleTimeBox: { width: 70 },
+  scheduleTime: { fontSize: 13, fontWeight: 'bold', color: NAVY },
+  scheduleContent: { flex: 1, paddingHorizontal: 12 },
+  scheduleTitle: { fontSize: 14, fontWeight: '600', color: NAVY, marginBottom: 2 },
+  scheduleBusiness: { fontSize: 12, color: MUTED },
 });

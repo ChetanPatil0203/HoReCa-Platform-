@@ -31,11 +31,11 @@ const RAW_SUB_CATEGORIES = [
 export default function AuthScreen({ navigation }) {
   const { width } = useWindowDimensions();
   const isLargeScreen = width >= 1024;
-  
+
   const { login } = useContext(AuthContext);
 
   const [mode, setMode] = useState('login'); // 'login' | 'register'
-  
+
   /* --- Login State --- */
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPass, setLoginPass] = useState('');
@@ -62,7 +62,7 @@ export default function AuthScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [confirmPwd, setConfirmPwd] = useState('');
   const [city, setCity] = useState('');
-  
+
   const [errors1, setErrors1] = useState({});
   const [errors2, setErrors2] = useState({});
 
@@ -132,17 +132,17 @@ export default function AuthScreen({ navigation }) {
   const handleLogin = () => {
     const emailLower = loginEmail.trim().toLowerCase();
     if (emailLower === 'admin@hrchub.in') {
-       login('superadmin', 'mock-token');
+      login('superadmin', 'mock-token');
     } else if (emailLower.includes('manpower') || emailLower.includes('elitemanpower')) {
-       login('manpower', 'mock-token', 'manpower');
+      login('manpower', 'mock-token', 'manpower');
     } else if (emailLower.includes('service') || emailLower.includes('proclean')) {
-       login('serviceProvider', 'mock-token', 'service');
+      login('serviceProvider', 'mock-token', 'service');
     } else if (emailLower.includes('marketing') || emailLower.includes('brandcraft') || emailLower.includes('marking')) {
-       login('marketing', 'mock-token', 'marketing');
+      login('marketing', 'mock-token', 'marketing');
     } else if (emailLower.includes('vendor')) {
-       login('vendor', 'mock-token', 'raw-material');
+      login('vendor', 'mock-token', 'raw-material');
     } else {
-       login('owner', 'mock-token');
+      login('owner', 'mock-token');
     }
   };
 
@@ -150,45 +150,45 @@ export default function AuthScreen({ navigation }) {
     <View style={styles.leftCol}>
       <View style={styles.brandRow}>
         <View style={styles.brandIconBox}>
-          <Image source={require('../../assets/HoReCa_Logo.png')} style={{width: 24, height: 24, resizeMode: 'contain'}} />
+          <Image source={require('../../assets/HoReCa_Logo.png')} style={{ width: 24, height: 24, resizeMode: 'contain' }} />
         </View>
         <View>
-          <Text style={styles.brandTitle}>HRC<Text style={{color: '#60A5FA'}}>HUB</Text></Text>
+          <Text style={styles.brandTitle}>HRC<Text style={{ color: '#60A5FA' }}>HUB</Text></Text>
           <Text style={styles.brandSubtitle}>ENTERPRISE HUB</Text>
         </View>
       </View>
-      
+
       <View style={{ flex: 1, justifyContent: 'center' }}>
-         <View style={styles.pillBadge}>
-            <Sparkles size={12} color="#60A5FA" />
-            <Text style={styles.pillBadgeText}>Empowering Hospitality Chains</Text>
-         </View>
-         <Text style={styles.heroHeadline}>The operational standard</Text>
-         <Text style={styles.heroHeadlineHighlight}>for modern HoReCa.</Text>
-         <Text style={styles.heroDesc}>Unify procurement, source raw ingredients, hire kitchen staff, and automate facilities operations through a single secure console.</Text>
-         
-         {[
-           { title: "Direct Sourcing", desc: "Access 800+ food suppliers with automated routing" },
-           { title: "Vetted Professionals", desc: "Book qualified kitchen crew and certified service teams" },
-           { title: "Enterprise Analytics", desc: "Gain unified insights on procurement spend and operational ROI" },
-         ].map((p, idx) => (
-           <View key={idx} style={styles.featureRow}>
-             <View style={styles.featureCheck}>
-               <Check size={12} color="#93C5FD" strokeWidth={3} />
-             </View>
-             <View>
-               <Text style={styles.featureTitle}>{p.title}</Text>
-               <Text style={styles.featureDesc}>{p.desc}</Text>
-             </View>
-           </View>
-         ))}
+        <View style={styles.pillBadge}>
+          <Sparkles size={12} color="#60A5FA" />
+          <Text style={styles.pillBadgeText}>Empowering Hospitality Chains</Text>
+        </View>
+        <Text style={styles.heroHeadline}>The operational standard</Text>
+        <Text style={styles.heroHeadlineHighlight}>for modern HoReCa.</Text>
+        <Text style={styles.heroDesc}>Unify procurement, source raw ingredients, hire kitchen staff, and automate facilities operations through a single secure console.</Text>
+
+        {[
+          { title: "Direct Sourcing", desc: "Access 800+ food suppliers with automated routing" },
+          { title: "Vetted Professionals", desc: "Book qualified kitchen crew and certified service teams" },
+          { title: "Enterprise Analytics", desc: "Gain unified insights on procurement spend and operational ROI" },
+        ].map((p, idx) => (
+          <View key={idx} style={styles.featureRow}>
+            <View style={styles.featureCheck}>
+              <Check size={12} color="#93C5FD" strokeWidth={3} />
+            </View>
+            <View>
+              <Text style={styles.featureTitle}>{p.title}</Text>
+              <Text style={styles.featureDesc}>{p.desc}</Text>
+            </View>
+          </View>
+        ))}
       </View>
     </View>
   );
 
   const renderRegisterSteps = () => {
     return (
-      <View style={{width: '100%'}}>
+      <View style={{ width: '100%' }}>
         {/* Progress Bar */}
         <View style={styles.progressBar}>
           {[
@@ -200,138 +200,138 @@ export default function AuthScreen({ navigation }) {
             const active = i === step - 1;
             const Icon = s.icon;
             return (
-              <View key={i} style={{flex: 1, flexDirection: 'row', alignItems: 'center'}}>
-                 <View style={[styles.stepIcon, active && styles.stepIconActive, done && styles.stepIconDone]}>
-                    {done ? <Check size={14} color="#fff" /> : <Icon size={14} color={active||done ? "#fff" : colors.muted} />}
-                 </View>
-                 {isLargeScreen && <Text style={[styles.stepLabelText, (active||done) && {color: active?colors.primary:colors.success}]}>{s.label}</Text>}
-                 {i < 2 && <View style={[styles.stepLine, done && {backgroundColor: colors.success}]} />}
+              <View key={i} style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+                <View style={[styles.stepIcon, active && styles.stepIconActive, done && styles.stepIconDone]}>
+                  {done ? <Check size={14} color="#fff" /> : <Icon size={14} color={active || done ? "#fff" : colors.muted} />}
+                </View>
+                {isLargeScreen && <Text style={[styles.stepLabelText, (active || done) && { color: active ? colors.primary : colors.success }]}>{s.label}</Text>}
+                {i < 2 && <View style={[styles.stepLine, done && { backgroundColor: colors.success }]} />}
               </View>
             )
           })}
         </View>
- 
+
         {step === 1 && (
           <View>
-             <CustomInput label="Business Name" value={businessName} onChangeText={setBusinessName} placeholder="The Meridian Hotels" error={errors1.businessName} required />
-             <CustomSelect label="Business Type" value={businessType} onChange={setBusinessType} options={BUSINESS_TYPES} placeholder="Select primary category" error={errors1.businessType} required />
-             {isVendor && <CustomSelect label="Vendor Specialty" value={vendorSpecialty} onChange={setVendorSpecialty} options={VENDOR_SPECIALTIES} placeholder="Select specialty" error={errors1.vendorSpecialty} required />}
-             {isRawMat && <CustomSelect label="Raw Material Category" value={rawSubCat} onChange={setRawSubCat} options={RAW_SUB_CATEGORIES} placeholder="Select category" error={errors1.rawSubCat} required />}
-             <CustomInput label="Mobile Number" value={mobile} onChangeText={setMobile} placeholder="9876543210" keyboardType="phone-pad" error={errors1.mobile} required />
-             
-             {getDynamicKycFields().map((f, i) => (
-                <CustomInput key={i} label={f.label} value={f.value} onChangeText={f.onChange} placeholder={f.placeholder} />
-             ))}
-             <PrimaryButton title="CONTINUE" onPress={() => { if(validateStep1()) setStep(2) }} />
+            <CustomInput label="Business Name" value={businessName} onChangeText={setBusinessName} placeholder="The Meridian Hotels" error={errors1.businessName} required />
+            <CustomSelect label="Business Type" value={businessType} onChange={setBusinessType} options={BUSINESS_TYPES} placeholder="Select primary category" error={errors1.businessType} required />
+            {isVendor && <CustomSelect label="Vendor Specialty" value={vendorSpecialty} onChange={setVendorSpecialty} options={VENDOR_SPECIALTIES} placeholder="Select specialty" error={errors1.vendorSpecialty} required />}
+            {isRawMat && <CustomSelect label="Raw Material Category" value={rawSubCat} onChange={setRawSubCat} options={RAW_SUB_CATEGORIES} placeholder="Select category" error={errors1.rawSubCat} required />}
+            <CustomInput label="Mobile Number" value={mobile} onChangeText={setMobile} placeholder="9876543210" keyboardType="phone-pad" error={errors1.mobile} required />
+
+            {getDynamicKycFields().map((f, i) => (
+              <CustomInput key={i} label={f.label} value={f.value} onChangeText={f.onChange} placeholder={f.placeholder} />
+            ))}
+            <PrimaryButton title="CONTINUE" onPress={() => { if (validateStep1()) setStep(2) }} />
           </View>
         )}
- 
+
         {step === 2 && (
           <View>
-             <View style={{flexDirection: 'row', gap: 12}}>
-                <View style={{flex:1}}><CustomInput label="First Name" value={firstName} onChangeText={setFirstName} placeholder="Arjun" error={errors2.firstName} required /></View>
-                <View style={{flex:1}}><CustomInput label="Last Name" value={lastName} onChangeText={setLastName} placeholder="Mehta" /></View>
-             </View>
-             <CustomInput label="Email Address" value={email} onChangeText={setEmail} placeholder="arjun@company.com" error={errors2.email} required />
-             <CustomInput label="Password" value={password} onChangeText={setPassword} placeholder="••••••••" secureTextEntry error={errors2.password} required />
-             <CustomInput label="Confirm Password" value={confirmPwd} onChangeText={setConfirmPwd} placeholder="••••••••" secureTextEntry error={errors2.confirmPwd} required />
-             <PrimaryButton title="CONTINUE" onPress={() => { if(validateStep2()) setStep(3) }} />
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <View style={{ flex: 1 }}><CustomInput label="First Name" value={firstName} onChangeText={setFirstName} placeholder="Arjun" error={errors2.firstName} required /></View>
+              <View style={{ flex: 1 }}><CustomInput label="Last Name" value={lastName} onChangeText={setLastName} placeholder="Mehta" /></View>
+            </View>
+            <CustomInput label="Email Address" value={email} onChangeText={setEmail} placeholder="arjun@company.com" error={errors2.email} required />
+            <CustomInput label="Password" value={password} onChangeText={setPassword} placeholder="••••••••" secureTextEntry error={errors2.password} required />
+            <CustomInput label="Confirm Password" value={confirmPwd} onChangeText={setConfirmPwd} placeholder="••••••••" secureTextEntry error={errors2.confirmPwd} required />
+            <PrimaryButton title="CONTINUE" onPress={() => { if (validateStep2()) setStep(3) }} />
           </View>
         )}
- 
+
         {step === 3 && (
-          <View style={{alignItems: 'center'}}>
-             <View style={styles.verifyIconLg}><ShieldCheck size={40} color={colors.primary} /></View>
-             <Text style={styles.verifyTitle}>Verify Mobile</Text>
-             <Text style={styles.verifySub}>OTP sent to +91 {mobile}</Text>
-             <View style={styles.otpGrid}>
-                {[1,2,3,4,5,6].map(i => <View key={i} style={styles.otpBox} />)}
-             </View>
-             <PrimaryButton title="VERIFY & REGISTER" onPress={handleLogin} style={{width: '100%', marginTop: 24}} />
+          <View style={{ alignItems: 'center' }}>
+            <View style={styles.verifyIconLg}><ShieldCheck size={40} color={colors.primary} /></View>
+            <Text style={styles.verifyTitle}>Verify Mobile</Text>
+            <Text style={styles.verifySub}>OTP sent to +91 {mobile}</Text>
+            <View style={styles.otpGrid}>
+              {[1, 2, 3, 4, 5, 6].map(i => <View key={i} style={styles.otpBox} />)}
+            </View>
+            <PrimaryButton title="VERIFY & REGISTER" onPress={handleLogin} style={{ width: '100%', marginTop: 24 }} />
           </View>
         )}
       </View>
     );
   };
- 
+
   const renderLoginForm = () => (
-    <View style={{width: '100%'}}>
-       <View style={{marginBottom: 24}}>
-          <Text style={{...typography.h2, color: colors.dark, marginBottom: 4}}>Welcome back</Text>
-          <Text style={{...typography.bodySmall, color: colors.body}}>Enter your credentials to access your control panel.</Text>
-       </View>
-       <CustomInput label="Email Address" value={loginEmail} onChangeText={setLoginEmail} placeholder="name@company.com" icon={Mail} required />
-       <CustomInput label="Password" value={loginPass} onChangeText={setLoginPass} placeholder="••••••••••••" icon={Lock} secureTextEntry={!showPass} required suffix={
-         <TouchableOpacity onPress={() => setShowPass(!showPass)}>
-           {showPass ? <EyeOff size={16} color={colors.muted} /> : <Eye size={16} color={colors.muted} />}
-         </TouchableOpacity>
-       } />
-       <PrimaryButton title="SIGN IN" onPress={handleLogin} style={{marginTop: 8}} />
-       
-       <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 24 }}>
-          <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-          <Text style={{ fontSize: 11, fontWeight: 'bold', color: colors.muted, marginHorizontal: 12 }}>QUICK DEMO LOGIN</Text>
-          <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-       </View>
- 
-       <View style={{ flexDirection: 'column', gap: 10 }}>
-          <PrimaryButton 
-             title="Login as Hotel Owner" 
-             onPress={() => login('owner', 'mock-jwt-token')} 
-             style={{ backgroundColor: '#0F172A' }}
-          />
-          <PrimaryButton 
-             title="Login as Raw Material Vendor" 
-             onPress={() => login('vendor', 'mock-jwt-token', 'raw-material')} 
-             style={{ backgroundColor: '#1E40AF' }}
-          />
-          <PrimaryButton 
-             title="Login as Manpower Vendor" 
-             onPress={() => login('manpower', 'mock-jwt-token', 'manpower')} 
-             style={{ backgroundColor: '#2563EB' }}
-          />
-          <PrimaryButton 
-             title="Login as Service Provider Vendor" 
-             onPress={() => login('serviceProvider', 'mock-jwt-token', 'service')} 
-             style={{ backgroundColor: '#10B981' }}
-          />
-          <PrimaryButton 
-             title="Login as Marketing Vendor" 
-             onPress={() => login('marketing', 'mock-jwt-token', 'marketing')} 
-             style={{ backgroundColor: '#8B5CF6' }}
-          />
-       </View>
+    <View style={{ width: '100%' }}>
+      <View style={{ marginBottom: 24 }}>
+        <Text style={{ ...typography.h2, color: colors.dark, marginBottom: 4 }}>Welcome back</Text>
+        <Text style={{ ...typography.bodySmall, color: colors.body }}>Enter your credentials to access your control panel.</Text>
+      </View>
+      <CustomInput label="Email Address" value={loginEmail} onChangeText={setLoginEmail} placeholder="name@company.com" icon={Mail} required />
+      <CustomInput label="Password" value={loginPass} onChangeText={setLoginPass} placeholder="••••••••••••" icon={Lock} secureTextEntry={!showPass} required suffix={
+        <TouchableOpacity onPress={() => setShowPass(!showPass)}>
+          {showPass ? <EyeOff size={16} color={colors.muted} /> : <Eye size={16} color={colors.muted} />}
+        </TouchableOpacity>
+      } />
+      <PrimaryButton title="SIGN IN" onPress={handleLogin} style={{ marginTop: 8 }} />
+
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 24 }}>
+        <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+        <Text style={{ fontSize: 11, fontWeight: 'bold', color: colors.muted, marginHorizontal: 12 }}>QUICK DEMO LOGIN</Text>
+        <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+      </View>
+
+      <View style={{ flexDirection: 'column', gap: 10 }}>
+        <PrimaryButton
+          title="Login as Hotel Owner"
+          onPress={() => login('owner', 'mock-jwt-token')}
+          style={{ backgroundColor: '#0F172A' }}
+        />
+        <PrimaryButton
+          title="Login as Raw Material Vendor"
+          onPress={() => login('vendor', 'mock-jwt-token', 'raw-material')}
+          style={{ backgroundColor: '#1E40AF' }}
+        />
+        <PrimaryButton
+          title="Login as Manpower Vendor"
+          onPress={() => login('manpower', 'mock-jwt-token', 'manpower')}
+          style={{ backgroundColor: '#2563EB' }}
+        />
+        <PrimaryButton
+          title="Login as Service Provider Vendor"
+          onPress={() => login('serviceProvider', 'mock-jwt-token', 'service')}
+          style={{ backgroundColor: '#10B981' }}
+        />
+        <PrimaryButton
+          title="Login as Marketing Vendor"
+          onPress={() => login('marketing', 'mock-jwt-token', 'marketing')}
+          style={{ backgroundColor: '#8B5CF6' }}
+        />
+      </View>
     </View>
   );
 
   return (
-    <SafeAreaView style={{flex: 1, backgroundColor: '#F3F4F6'}}>
-      <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={{flex:1, flexDirection: 'row'}}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#F3F4F6' }}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, flexDirection: 'row' }}>
         {isLargeScreen && renderLeftColumn()}
-        
-        <View style={[styles.rightCol, !isLargeScreen && {padding: 16}]}>
-          <ScrollView contentContainerStyle={[styles.scrollContent, !isLargeScreen && {justifyContent: 'center'}]}>
-            
+
+        <View style={[styles.rightCol, !isLargeScreen && { padding: 16 }]}>
+          <ScrollView contentContainerStyle={[styles.scrollContent, !isLargeScreen && { justifyContent: 'center' }]}>
+
             {!isLargeScreen && (
               <TouchableOpacity style={styles.mobileBackBtn} onPress={() => navigation.goBack()}>
-                 <ArrowLeft size={16} color={colors.dark} />
-                 <Text style={{fontSize: 12, fontWeight: 'bold', marginLeft: 8, color: colors.dark}}>HOME</Text>
+                <ArrowLeft size={16} color={colors.dark} />
+                <Text style={{ fontSize: 12, fontWeight: 'bold', marginLeft: 8, color: colors.dark }}>HOME</Text>
               </TouchableOpacity>
             )}
 
-            <View style={[styles.glassCard, !isLargeScreen && {width: '100%', maxWidth: 500, alignSelf: 'center'}]}>
-               {/* Tab Switcher */}
-               <View style={styles.tabSwitcher}>
-                 <View style={[styles.tabSlider, { left: mode === 'login' ? 4 : '50%' }]} />
-                 <TouchableOpacity style={styles.tabButton} onPress={() => {setMode('login'); setStep(1);}}>
-                    <Text style={[styles.tabText, {color: mode==='login' ? colors.dark : colors.muted}]}>SIGN IN</Text>
-                 </TouchableOpacity>
-                 <TouchableOpacity style={styles.tabButton} onPress={() => {setMode('register'); setStep(1);}}>
-                    <Text style={[styles.tabText, {color: mode==='register' ? colors.dark : colors.muted}]}>REGISTER</Text>
-                 </TouchableOpacity>
-               </View>
+            <View style={[styles.glassCard, !isLargeScreen && { width: '100%', maxWidth: 500, alignSelf: 'center' }]}>
+              {/* Tab Switcher */}
+              <View style={styles.tabSwitcher}>
+                <View style={[styles.tabSlider, { left: mode === 'login' ? 4 : '50%' }]} />
+                <TouchableOpacity style={styles.tabButton} onPress={() => { setMode('login'); setStep(1); }}>
+                  <Text style={[styles.tabText, { color: mode === 'login' ? colors.dark : colors.muted }]}>SIGN IN</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.tabButton} onPress={() => { setMode('register'); setStep(1); }}>
+                  <Text style={[styles.tabText, { color: mode === 'register' ? colors.dark : colors.muted }]}>REGISTER</Text>
+                </TouchableOpacity>
+              </View>
 
-               {mode === 'login' ? renderLoginForm() : renderRegisterSteps()}
+              {mode === 'login' ? renderLoginForm() : renderRegisterSteps()}
             </View>
           </ScrollView>
         </View>

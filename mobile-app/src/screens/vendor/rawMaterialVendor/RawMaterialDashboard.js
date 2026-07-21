@@ -1,6 +1,6 @@
 import React, { useState, useContext, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Platform, useWindowDimensions, TouchableOpacity, Image, Animated, Easing, TouchableWithoutFeedback } from 'react-native';
-import { Menu, Bell, Search, User, LayoutDashboard, Activity, Truck, Briefcase, DollarSign, BarChart2, Package, HelpCircle, Settings, Home, ClipboardList, Plus, PackagePlus, PackageSearch } from 'lucide-react-native';
+import { Menu, Bell, User, Truck, HelpCircle, Settings, Home, ClipboardList, Plus, PackagePlus, Boxes, Users, History, CircleHelp, LogOut } from 'lucide-react-native';
 import RoleBasedMobileDrawer from '../../../components/navigation/RoleBasedMobileDrawer';
 import { AuthContext } from '../../../context/AuthContext';
 import { colors } from '../../../theme/colors';
@@ -10,6 +10,7 @@ import RawMaterialOrdersPage from './RawMaterialOrdersPage';
 import RawMaterialDeliveriesPage from './RawMaterialDeliveriesPage';
 import RawMaterialRevenuePage from './RawMaterialRevenuePage';
 import RawMaterialInventoryPage from './RawMaterialInventoryPage';
+import RawMaterialProfilePage from './RawMaterialProfilePage';
 
 // Supporting Pages
 import RawMaterialNotificationsPage from './RawMaterialNotificationsPage';
@@ -70,22 +71,22 @@ export default function RawMaterialDashboard() {
       case "support":
         return <RawMaterialSupportPage />;
       case "profile":
-        return <View style={styles.placeholder}><Text style={styles.placeholderText}>Vendor Profile Page</Text></View>;
+        return <RawMaterialProfilePage />;
       default: return <View style={styles.placeholder}><Text style={styles.placeholderText}>{activePage} Under Construction</Text></View>;
     }
   };
 
   const navItems = [
-    { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { key: "requests", label: "Orders", icon: Activity },
-    { key: "inventory", label: "Inventory", icon: Package },
+    { key: "dashboard", label: "Home", icon: Home },
+    { key: "requests", label: "Orders", icon: ClipboardList },
+    { key: "inventory", label: "Inventory", icon: Boxes },
     { key: "deliveries", label: "Deliveries", icon: Truck },
-    { key: "revenue", label: "Revenue", icon: DollarSign },
+    { key: "history", label: "History", icon: History },
     { key: "notifications", label: "Notifications", icon: Bell },
   ];
 
   const bottomNavItems = [
-    { key: "support", label: "Support", icon: HelpCircle },
+    { key: "support", label: "Help & Support", icon: CircleHelp },
     { key: "settings", label: "Settings", icon: Settings },
   ];
 
@@ -101,7 +102,7 @@ export default function RawMaterialDashboard() {
   // Animation styles for radial menu
   const rotation = animation.interpolate({
     inputRange: [0, 1],
-    outputRange: ['0deg', '45deg']
+    outputRange: ['0deg', '0deg'] // Keep as + per requirements
   });
 
   const bgOpacity = animation.interpolate({
@@ -116,7 +117,7 @@ export default function RawMaterialDashboard() {
 
   const action1TranslateX = animation.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, -55]
+    outputRange: [0, 0]
   });
 
   const action2TranslateY = animation.interpolate({
@@ -191,21 +192,14 @@ export default function RawMaterialDashboard() {
             
             <Animated.View style={[styles.radialAction, { opacity: actionScale, transform: [{ translateX: action1TranslateX }, { translateY: action1TranslateY }, { scale: actionScale }] }]}>
               <TouchableOpacity style={styles.radialActionBtn} onPress={() => navigateTo('inventory', null, null)}>
-                <PackageSearch size={22} color={PRIMARY} />
+                <Boxes size={22} color={PRIMARY} />
               </TouchableOpacity>
               <View style={styles.radialLabelBox}>
                 <Text style={styles.radialLabelTitle}>Manage Inventory</Text>
               </View>
             </Animated.View>
 
-            <Animated.View style={[styles.radialAction, { opacity: actionScale, transform: [{ translateX: action2TranslateX }, { translateY: action2TranslateY }, { scale: actionScale }] }]}>
-              <TouchableOpacity style={styles.radialActionBtn} onPress={() => navigateTo('inventory', null, 'add-product')}>
-                <PackagePlus size={22} color={PRIMARY} />
-              </TouchableOpacity>
-              <View style={styles.radialLabelBox}>
-                <Text style={styles.radialLabelTitle}>Add Product</Text>
-              </View>
-            </Animated.View>
+
 
             {/* Nav Bar */}
             <View style={styles.bottomNav}>
