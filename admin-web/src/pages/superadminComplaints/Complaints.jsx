@@ -142,6 +142,21 @@ export default function Complaints() {
     window.dispatchEvent(new Event('storage'));
   };
 
+  const handleStatusToggle = (id) => {
+    const updated = tickets.map(t => {
+      if (t.id === id) {
+        const nextStatus = t.status === 'Resolved' ? 'Open' : 'Resolved';
+        return { ...t, status: nextStatus };
+      }
+      return t;
+    });
+    setTickets(updated);
+    mockDb.saveTickets(updated);
+    const item = updated.find(t => t.id === id);
+    showToast(`Ticket status is now ${item.status}!`, "info");
+    window.dispatchEvent(new Event('storage'));
+  };
+
   const handleResolveTicketSubmit = () => {
     if (!selectedTicketId) return;
     if (!resSummary.trim()) {
@@ -352,7 +367,7 @@ export default function Complaints() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               className={`flex items-start gap-3 p-4 rounded-xl border shadow-xl bg-white backdrop-blur-md pointer-events-auto ${toast.type === "success" ? "border-emerald-500/20 text-emerald-800" :
-                  toast.type === "error" ? "border-rose-500/20 text-rose-800" : "border-blue-500/20 text-blue-800"
+                toast.type === "error" ? "border-rose-500/20 text-rose-800" : "border-blue-500/20 text-blue-800"
                 }`}
             >
               <div className="flex-1 text-xs font-semibold leading-relaxed mt-0.5">{toast.message}</div>
@@ -490,54 +505,39 @@ export default function Complaints() {
                     )}
                   </td>
                   <td className="p-4">
-                    <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full border ${getStatusColor(t.status)}`}>
-                      {t.status}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStatusToggle(t.id);
+                        }}
+                        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                          t.status === 'Resolved' ? 'bg-emerald-500' : 'bg-rose-500'
+                        }`}
+                        title={t.status === 'Resolved' ? 'Ticket is Resolved (click to Open)' : `Ticket is ${t.status} (click to Resolve)`}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                            t.status === 'Resolved' ? 'translate-x-4' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                      <span className={`text-[10px] font-black ${t.status === 'Resolved' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {t.status}
+                      </span>
+                    </div>
                   </td>
-                  <td className="p-4 text-center relative" onClick={e => e.stopPropagation()}>
+                  <td className="p-4 text-center">
                     <button
-                      onClick={() => setActiveMenuId(activeMenuId === t.id ? null : t.id)}
-                      className="p-1.5 text-slate-400 hover:bg-slate-200 rounded-lg transition-colors inline-block"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedTicketId(t.id);
+                        setDrawerTab("Overview");
+                      }}
+                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all inline-flex items-center gap-1.5 text-xs font-semibold active:scale-95"
                     >
-                      <MoreVertical size={16} />
+                      <Eye size={14} /> View
                     </button>
-
-                    <AnimatePresence>
-                      {activeMenuId === t.id && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.95, y: 5 }}
-                          animate={{ opacity: 1, scale: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.95, y: 5 }}
-                          className="absolute right-8 top-8 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-20 py-2 text-left"
-                        >
-                          <button onClick={() => { setSelectedTicketId(t.id); setDrawerTab("Overview"); setActiveMenuId(null); }} className="w-full text-left px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 flex items-center gap-2">
-                            <Eye size={14} /> View Complaint
-                          </button>
-                          <button onClick={() => { setSelectedTicketId(t.id); setAssignModalOpen(true); setActiveMenuId(null); }} className="w-full text-left px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 flex items-center gap-2">
-                            <Users size={14} /> Assign Admin
-                          </button>
-                          <button
-                            onClick={() => {
-                              const nextStatus = t.status === 'Open' ? 'In Progress' : 'Open';
-                              handleUpdateStatus(t.id, nextStatus);
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full text-left px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 flex items-center gap-2"
-                          >
-                            <RefreshCw size={14} /> Update Status
-                          </button>
-                          <button onClick={() => { handleEscalateDirect(t.id); setActiveMenuId(null); }} className="w-full text-left px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2">
-                            <Zap size={14} /> Escalate
-                          </button>
-                          <button onClick={() => { setSelectedTicketId(t.id); setResolveModalOpen(true); setActiveMenuId(null); }} className="w-full text-left px-4 py-2 text-xs font-semibold text-emerald-600 hover:bg-emerald-50 flex items-center gap-2">
-                            <CheckCircle size={14} /> Resolve
-                          </button>
-                          <button onClick={() => { handleCloseTicketDirect(t.id); setActiveMenuId(null); }} className="w-full text-left px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2">
-                            <X size={14} /> Close Ticket
-                          </button>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
                   </td>
                 </tr>
               ))
@@ -558,346 +558,323 @@ export default function Complaints() {
         </table>
       </div>
 
-      {/* Right Side Drawer */}
+      {/* Complaint Profile Modal (Centered) */}
       <AnimatePresence>
         {selectedTicketId && activeTicket && (
-          <div className="fixed inset-0 z-50 overflow-hidden">
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
             {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
               onClick={() => setSelectedTicketId(null)}
             />
 
-            <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
-              <motion.div
-                initial={{ x: '100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="w-screen max-w-md md:max-w-lg bg-white border-l border-slate-200/80 shadow-2xl flex flex-col h-full"
-              >
-                {/* Header */}
-                <div className="bg-white px-5 py-4 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
-                  <div className="flex gap-3 items-center">
-                    <div className={`w-10 h-10 rounded-lg border flex items-center justify-center ${activeTicket.priority === 'SLA Critical' ? 'bg-rose-50 border-rose-100 text-rose-600' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>
-                      <AlertTriangle size={20} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="relative w-full max-w-xl md:max-w-2xl bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden z-10"
+            >
+              {/* Header */}
+              <div className="bg-white px-5 py-4 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
+                <div className="flex gap-3 items-center">
+                  <div className={`w-10 h-10 rounded-lg border flex items-center justify-center ${activeTicket.priority === 'SLA Critical' ? 'bg-rose-50 border-rose-100 text-rose-600' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>
+                    <AlertTriangle size={20} />
+                  </div>
+                  <div>
+                    <h2 className="font-black text-slate-800 text-sm">{activeTicket.id}</h2>
+                    <span className="text-[10px] text-slate-400 font-bold">{activeTicket.category}</span>
+                  </div>
+                </div>
+                <button onClick={() => setSelectedTicketId(null)} className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 transition-colors">
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Tab Navigation */}
+              <div className="bg-white px-4 border-b border-slate-100 flex gap-2 flex-shrink-0">
+                {["Overview", "Conversation", "Notes", "Activity"].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setDrawerTab(tab)}
+                    className={`text-xs font-bold py-3 px-2 border-b-2 transition-all relative ${drawerTab === tab
+                      ? "border-blue-600 text-blue-600"
+                      : "border-transparent text-slate-400 hover:text-slate-600"
+                      }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+
+              {/* Body Content */}
+              <div className="flex-1 overflow-y-auto p-5 space-y-5" style={{ scrollbarWidth: "thin" }}>
+                {drawerTab === "Overview" && (
+                  <div className="space-y-4">
+                    {/* Ticket Information */}
+                    <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl shadow-xs">
+                      <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Ticket Information</h4>
+                      <div className="grid grid-cols-2 gap-3 text-xs font-medium text-slate-600">
+                        <div>
+                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Complaint ID</span>
+                          <span className="font-bold text-slate-800">{activeTicket.id}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Category</span>
+                          <span className="font-bold text-slate-800">{activeTicket.category}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Status</span>
+                          <span className={`inline-block text-[9px] font-extrabold px-2 py-0.5 rounded border mt-0.5 ${getStatusColor(activeTicket.status)}`}>{activeTicket.status}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Raised Date</span>
+                          <span className="font-bold text-slate-700">{activeTicket.date}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <h2 className="font-black text-slate-800 text-sm">{activeTicket.id}</h2>
-                      <span className="text-[10px] text-slate-400 font-bold">{activeTicket.category}</span>
+
+                    {/* Raised By */}
+                    <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs">
+                      <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Raised By Details</h4>
+                      <div className="grid grid-cols-2 gap-3 text-xs font-medium text-slate-600">
+                        <div>
+                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Business Name</span>
+                          <span className="font-bold text-slate-800">{activeTicket.raisedBy?.business}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Owner / Vendor Name</span>
+                          <span className="font-bold text-slate-800">{activeTicket.raisedBy?.name}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Role</span>
+                          <span className="font-bold text-slate-800">{activeTicket.raisedBy?.role || "Owner"}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Phone</span>
+                          <span className="font-bold text-slate-800">{activeTicket.raisedBy?.phone}</span>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Email & City</span>
+                          <span className="font-bold text-slate-700">{activeTicket.raisedBy?.email || "N/A"} • {activeTicket.raisedBy?.city || "N/A"}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Complaint Against */}
+                    <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs">
+                      <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Complaint Against Details</h4>
+                      <div className="grid grid-cols-2 gap-3 text-xs font-medium text-slate-600">
+                        <div>
+                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Business Name</span>
+                          <span className="font-bold text-slate-800">{activeTicket.against?.businessName || activeTicket.against?.name}</span>
+                        </div>
+                        <div>
+                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Role</span>
+                          <span className="font-bold text-slate-800">{activeTicket.against?.role || activeTicket.against?.type}</span>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Phone & Email</span>
+                          <span className="font-bold text-slate-700">{activeTicket.against?.phone || "N/A"} • {activeTicket.against?.email || "N/A"}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Complaint Details */}
+                    <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs space-y-2">
+                      <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Complaint Details</h4>
+                      <div className="text-xs font-medium text-slate-600">
+                        <span className="text-[9px] text-slate-400 font-bold block uppercase">Subject</span>
+                        <span className="font-bold text-slate-800 block mb-2">{activeTicket.subject}</span>
+
+                        <span className="text-[9px] text-slate-400 font-bold block uppercase">Description</span>
+                        <p className="text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100 font-medium leading-relaxed italic">
+                          "{activeTicket.description}"
+                        </p>
+                      </div>
+                      {activeTicket.relatedEntity && (
+                        <div className="pt-1 flex gap-2 text-xs">
+                          <span className="text-[9px] text-slate-400 font-bold uppercase">Related Order ID:</span>
+                          <span className="font-bold text-indigo-600">{activeTicket.relatedEntity.id}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Attachments */}
+                    <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs">
+                      <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Evidence & Attachments</h4>
+                      {activeTicket.evidence && activeTicket.evidence.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-3">
+                          {activeTicket.evidence.map((file, idx) => (
+                            <div key={idx} className="border border-slate-100 rounded-lg p-2.5 bg-slate-50 flex flex-col justify-between gap-2 shadow-xs">
+                              <div className="flex gap-2 items-center">
+                                <div className="w-8 h-8 rounded bg-slate-200 flex items-center justify-center text-slate-500 flex-shrink-0">
+                                  <FileText size={16} />
+                                </div>
+                                <div className="truncate flex-1">
+                                  <span className="text-[10px] font-bold text-slate-700 block truncate">{file.name}</span>
+                                  <span className="text-[8px] text-slate-400 block">{file.size}</span>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => showToast(`Downloading ${file.name}...`, "success")}
+                                className="w-full py-1 border border-slate-200 hover:bg-slate-100 text-blue-600 font-bold text-[9px] rounded flex items-center justify-center gap-1 bg-white"
+                              >
+                                <Download size={10} /> Download
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-4 text-center text-xs text-slate-400 font-medium border border-dashed border-slate-200 rounded-lg">
+                          No evidence files uploaded.
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <button onClick={() => setSelectedTicketId(null)} className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 transition-colors">
-                    <X size={18} />
-                  </button>
-                </div>
+                )}
 
-                {/* Tab Navigation */}
-                <div className="bg-white px-4 border-b border-slate-100 flex gap-2 flex-shrink-0">
-                  {["Overview", "Conversation", "Notes", "Activity"].map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setDrawerTab(tab)}
-                      className={`text-xs font-bold py-3 px-2 border-b-2 transition-all relative ${drawerTab === tab
-                          ? "border-blue-600 text-blue-600"
-                          : "border-transparent text-slate-400 hover:text-slate-600"
-                        }`}
-                    >
-                      {tab}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Body Content */}
-                <div className="flex-1 overflow-y-auto p-5 space-y-5" style={{ scrollbarWidth: "thin" }}>
-                  {drawerTab === "Overview" && (
-                    <div className="space-y-4">
-                      {/* Ticket Information */}
-                      <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl shadow-xs">
-                        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Ticket Information</h4>
-                        <div className="grid grid-cols-2 gap-3 text-xs font-medium text-slate-600">
-                          <div>
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase">Complaint ID</span>
-                            <span className="font-bold text-slate-800">{activeTicket.id}</span>
-                          </div>
-                          <div>
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase">Category</span>
-                            <span className="font-bold text-slate-800">{activeTicket.category}</span>
-                          </div>
-                          <div>
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase">Status</span>
-                            <span className={`inline-block text-[9px] font-extrabold px-2 py-0.5 rounded border mt-0.5 ${getStatusColor(activeTicket.status)}`}>{activeTicket.status}</span>
-                          </div>
-                          <div>
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase">Raised Date</span>
-                            <span className="font-bold text-slate-700">{activeTicket.date}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Raised By */}
-                      <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs">
-                        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Raised By Details</h4>
-                        <div className="grid grid-cols-2 gap-3 text-xs font-medium text-slate-600">
-                          <div>
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase">Business Name</span>
-                            <span className="font-bold text-slate-800">{activeTicket.raisedBy?.business}</span>
-                          </div>
-                          <div>
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase">Owner / Vendor Name</span>
-                            <span className="font-bold text-slate-800">{activeTicket.raisedBy?.name}</span>
-                          </div>
-                          <div>
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase">Role</span>
-                            <span className="font-bold text-slate-800">{activeTicket.raisedBy?.role || "Owner"}</span>
-                          </div>
-                          <div>
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase">Phone</span>
-                            <span className="font-bold text-slate-800">{activeTicket.raisedBy?.phone}</span>
-                          </div>
-                          <div className="col-span-2">
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase">Email & City</span>
-                            <span className="font-bold text-slate-700">{activeTicket.raisedBy?.email || "N/A"} • {activeTicket.raisedBy?.city || "N/A"}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Complaint Against */}
-                      <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs">
-                        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Complaint Against Details</h4>
-                        <div className="grid grid-cols-2 gap-3 text-xs font-medium text-slate-600">
-                          <div>
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase">Business Name</span>
-                            <span className="font-bold text-slate-800">{activeTicket.against?.businessName || activeTicket.against?.name}</span>
-                          </div>
-                          <div>
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase">Role</span>
-                            <span className="font-bold text-slate-800">{activeTicket.against?.role || activeTicket.against?.type}</span>
-                          </div>
-                          <div className="col-span-2">
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase">Phone & Email</span>
-                            <span className="font-bold text-slate-700">{activeTicket.against?.phone || "N/A"} • {activeTicket.against?.email || "N/A"}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Complaint Details */}
-                      <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs space-y-2">
-                        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Complaint Details</h4>
-                        <div className="text-xs font-medium text-slate-600">
-                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Subject</span>
-                          <span className="font-bold text-slate-800 block mb-2">{activeTicket.subject}</span>
-
-                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Description</span>
-                          <p className="text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100 font-medium leading-relaxed italic">
-                            "{activeTicket.description}"
-                          </p>
-                        </div>
-                        {activeTicket.relatedEntity && (
-                          <div className="pt-1 flex gap-2 text-xs">
-                            <span className="text-[9px] text-slate-400 font-bold uppercase">Related Order ID:</span>
-                            <span className="font-bold text-indigo-600">{activeTicket.relatedEntity.id}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Attachments */}
-                      <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs">
-                        <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Evidence & Attachments</h4>
-                        {activeTicket.evidence && activeTicket.evidence.length > 0 ? (
-                          <div className="grid grid-cols-2 gap-3">
-                            {activeTicket.evidence.map((file, idx) => (
-                              <div key={idx} className="border border-slate-100 rounded-lg p-2.5 bg-slate-50 flex flex-col justify-between gap-2 shadow-xs">
-                                <div className="flex gap-2 items-center">
-                                  <div className="w-8 h-8 rounded bg-slate-200 flex items-center justify-center text-slate-500 flex-shrink-0">
-                                    <FileText size={16} />
-                                  </div>
-                                  <div className="truncate flex-1">
-                                    <span className="text-[10px] font-bold text-slate-700 block truncate">{file.name}</span>
-                                    <span className="text-[8px] text-slate-400 block">{file.size}</span>
-                                  </div>
-                                </div>
-                                <button
-                                  onClick={() => showToast(`Downloading ${file.name}...`, "success")}
-                                  className="w-full py-1 border border-slate-200 hover:bg-slate-100 text-blue-600 font-bold text-[9px] rounded flex items-center justify-center gap-1 bg-white"
-                                >
-                                  <Download size={10} /> Download
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="p-4 text-center text-xs text-slate-400 font-medium border border-dashed border-slate-200 rounded-lg">
-                            No evidence files uploaded.
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {drawerTab === "Conversation" && (
-                    <div className="flex flex-col h-[400px] border border-slate-200/80 rounded-xl overflow-hidden bg-white shadow-xs">
-                      {/* Thread Messages */}
-                      <div className="flex-1 p-4 overflow-y-auto space-y-3.5 bg-slate-50/50" style={{ scrollbarWidth: "thin" }}>
-                        {activeTicket.messages && activeTicket.messages.map((msg, idx) => {
-                          const isSys = msg.type === "system";
-                          const isAdmin = msg.type === "admin";
-                          if (isSys) {
-                            return (
-                              <div key={idx} className="flex flex-col items-center my-1.5">
-                                <span className="text-[9px] font-bold text-slate-400 bg-slate-100 border border-slate-200 px-3 py-0.5 rounded-full text-center max-w-[280px]">
-                                  {msg.text}
-                                </span>
-                              </div>
-                            );
-                          }
+                {drawerTab === "Conversation" && (
+                  <div className="flex flex-col h-[400px] border border-slate-200/80 rounded-xl overflow-hidden bg-white shadow-xs">
+                    {/* Thread Messages */}
+                    <div className="flex-1 p-4 overflow-y-auto space-y-3.5 bg-slate-50/50" style={{ scrollbarWidth: "thin" }}>
+                      {activeTicket.messages && activeTicket.messages.map((msg, idx) => {
+                        const isSys = msg.type === "system";
+                        const isAdmin = msg.type === "admin";
+                        if (isSys) {
                           return (
-                            <div key={idx} className={`flex flex-col max-w-[85%] ${isAdmin ? "self-end items-end ml-auto" : "self-start items-start"}`}>
-                              <span className="text-[9px] font-bold text-slate-400 mb-0.5">{msg.sender}</span>
-                              <div className={`p-2.5 rounded-2xl text-[11px] font-semibold leading-relaxed shadow-xs ${isAdmin
-                                  ? "bg-blue-600 text-white rounded-tr-none"
-                                  : "bg-white border border-slate-200/80 text-slate-700 rounded-tl-none"
-                                }`}>
+                            <div key={idx} className="flex flex-col items-center my-1.5">
+                              <span className="text-[9px] font-bold text-slate-400 bg-slate-100 border border-slate-200 px-3 py-0.5 rounded-full text-center max-w-[280px]">
                                 {msg.text}
-                              </div>
-                              <span className="text-[8px] text-slate-400 font-bold mt-0.5">{msg.time}</span>
+                              </span>
                             </div>
                           );
-                        })}
-                      </div>
-
-                      {/* Reply Box Footer */}
-                      <div className="p-3 border-t border-slate-100 bg-white">
-                        <div className="flex gap-2">
-                          <button onClick={() => showToast("Attaching file...", "info")} className="p-2 border border-slate-200 hover:bg-slate-50 text-slate-400 rounded-xl transition-colors flex items-center justify-center">
-                            <Paperclip size={14} />
-                          </button>
-                          <input
-                            type="text"
-                            placeholder="Type reply to user..."
-                            value={replyText}
-                            onChange={(e) => setReplyText(e.target.value)}
-                            onKeyDown={(e) => { if (e.key === 'Enter') handleSendReply(); }}
-                            className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
-                          />
-                          <button
-                            onClick={handleSendReply}
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm animate-pulse-subtle"
-                          >
-                            Send
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {drawerTab === "Notes" && (
-                    <div className="space-y-4">
-                      {/* Notes Box input */}
-                      <div className="bg-yellow-50 border border-yellow-200/60 p-4 rounded-xl shadow-xs space-y-3">
-                        <h4 className="text-[10px] font-bold text-yellow-700 uppercase tracking-wider">Add Internal Admin Note</h4>
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            placeholder="Add private note (visible to admins only)..."
-                            value={newNoteText}
-                            onChange={(e) => setNewNoteText(e.target.value)}
-                            onKeyDown={(e) => { if (e.key === 'Enter') handleAddNote(); }}
-                            className="flex-1 border border-yellow-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-yellow-500 bg-white font-medium text-slate-700"
-                          />
-                          <button
-                            onClick={handleAddNote}
-                            className="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-xl text-xs font-bold shadow-sm"
-                          >
-                            Save
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Notes List */}
-                      <div className="space-y-3">
-                        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Internal Admin Notes History</h4>
-                        {activeTicket.internalNotes && activeTicket.internalNotes.length > 0 ? (
-                          activeTicket.internalNotes.map((note, idx) => (
-                            <div key={idx} className="bg-yellow-50/30 border border-yellow-100 rounded-lg p-3 space-y-1 relative shadow-xs">
-                              <div className="flex justify-between items-center">
-                                <span className="text-[9px] font-black text-slate-800">{note.sender}</span>
-                                <span className="text-[8px] text-slate-400 font-bold">{note.time}</span>
-                              </div>
-                              <p className="text-xs text-slate-600 font-medium italic">
-                                "{note.text}"
-                              </p>
+                        }
+                        return (
+                          <div key={idx} className={`flex flex-col max-w-[85%] ${isAdmin ? "self-end items-end ml-auto" : "self-start items-start"}`}>
+                            <span className="text-[9px] font-bold text-slate-400 mb-0.5">{msg.sender}</span>
+                            <div className={`p-2.5 rounded-2xl text-[11px] font-semibold leading-relaxed shadow-xs ${isAdmin
+                              ? "bg-blue-600 text-white rounded-tr-none"
+                              : "bg-white border border-slate-200/80 text-slate-700 rounded-tl-none"
+                              }`}>
+                              {msg.text}
                             </div>
-                          ))
-                        ) : (
-                          <div className="p-6 text-center text-xs text-slate-400 italic bg-slate-50 rounded-lg border border-slate-100">
-                            No internal notes added yet.
+                            <span className="text-[8px] text-slate-400 font-bold mt-0.5">{msg.time}</span>
                           </div>
-                        )}
+                        );
+                      })}
+                    </div>
+
+                    {/* Reply Box Footer */}
+                    <div className="p-3 border-t border-slate-100 bg-white">
+                      <div className="flex gap-2">
+                        <button onClick={() => showToast("Attaching file...", "info")} className="p-2 border border-slate-200 hover:bg-slate-50 text-slate-400 rounded-xl transition-colors flex items-center justify-center">
+                          <Paperclip size={14} />
+                        </button>
+                        <input
+                          type="text"
+                          placeholder="Type reply to user..."
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') handleSendReply(); }}
+                          className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+                        />
+                        <button
+                          onClick={handleSendReply}
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm animate-pulse-subtle"
+                        >
+                          Send
+                        </button>
                       </div>
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {drawerTab === "Activity" && (
-                    <div className="space-y-4">
-                      <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Timeline Activity Logs</h4>
-                      <div className="relative border-l border-slate-200 ml-3 flex flex-col gap-5 pt-2 pb-2">
-                        {activeTicket.timeline && activeTicket.timeline.map((evt, idx) => (
-                          <div key={idx} className="relative pl-5">
-                            <span className="absolute -left-[4.5px] top-1 w-2 h-2 rounded-full bg-slate-300 ring-4 ring-white" />
-                            <div className="flex flex-col text-xs">
-                              <span className="font-black text-slate-800">{evt.status}</span>
-                              <span className="text-[9px] font-bold text-slate-400 mt-0.5">{evt.time}</span>
-                              <p className="text-[10px] font-semibold text-slate-500 mt-1 leading-relaxed">{evt.note}</p>
+                {drawerTab === "Notes" && (
+                  <div className="space-y-4">
+                    {/* Notes Box input */}
+                    <div className="bg-yellow-50 border border-yellow-200/60 p-4 rounded-xl shadow-xs space-y-3">
+                      <h4 className="text-[10px] font-bold text-yellow-700 uppercase tracking-wider">Add Internal Admin Note</h4>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Add private note (visible to admins only)..."
+                          value={newNoteText}
+                          onChange={(e) => setNewNoteText(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') handleAddNote(); }}
+                          className="flex-1 border border-yellow-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-yellow-500 bg-white font-medium text-slate-700"
+                        />
+                        <button
+                          onClick={handleAddNote}
+                          className="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-xl text-xs font-bold shadow-sm"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Notes List */}
+                    <div className="space-y-3">
+                      <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Internal Admin Notes History</h4>
+                      {activeTicket.internalNotes && activeTicket.internalNotes.length > 0 ? (
+                        activeTicket.internalNotes.map((note, idx) => (
+                          <div key={idx} className="bg-yellow-50/30 border border-yellow-100 rounded-lg p-3 space-y-1 relative shadow-xs">
+                            <div className="flex justify-between items-center">
+                              <span className="text-[9px] font-black text-slate-800">{note.sender}</span>
+                              <span className="text-[8px] text-slate-400 font-bold">{note.time}</span>
                             </div>
+                            <p className="text-xs text-slate-600 font-medium italic">
+                              "{note.text}"
+                            </p>
                           </div>
-                        ))}
-                      </div>
+                        ))
+                      ) : (
+                        <div className="p-6 text-center text-xs text-slate-400 italic bg-slate-50 rounded-lg border border-slate-100">
+                          No internal notes added yet.
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
-                {/* Footer Quick Actions */}
-                <div className="bg-slate-50 border-t border-slate-100 p-4 flex gap-2 flex-shrink-0">
-                  <button
-                    onClick={() => setAssignModalOpen(true)}
-                    className="flex-1 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-bold rounded-xl transition-colors shadow-xs"
-                  >
-                    Assign Admin
-                  </button>
-                  <button
-                    onClick={() => {
-                      const next = activeTicket.status === 'Open' ? 'In Progress' : 'Open';
-                      handleUpdateStatus(activeTicket.id, next);
-                    }}
-                    className="flex-1 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-bold rounded-xl transition-colors shadow-xs"
-                  >
-                    Update Status
-                  </button>
-                  <button
-                    onClick={() => handleEscalateDirect(activeTicket.id)}
-                    className="flex-1 py-2 border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-xl transition-colors shadow-xs"
-                  >
-                    Escalate
-                  </button>
-                  <button
-                    onClick={() => setResolveModalOpen(true)}
-                    className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors animate-pulse-subtle"
-                  >
-                    Resolve
-                  </button>
-                  <button
-                    onClick={() => handleCloseTicketDirect(activeTicket.id)}
-                    className="flex-1 py-2 bg-slate-850 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
-                  >
-                    Close Ticket
-                  </button>
-                </div>
-              </motion.div>
-            </div>
+                {drawerTab === "Activity" && (
+                  <div className="space-y-4">
+                    <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Timeline Activity Logs</h4>
+                    <div className="relative border-l border-slate-200 ml-3 flex flex-col gap-5 pt-2 pb-2">
+                      {activeTicket.timeline && activeTicket.timeline.map((evt, idx) => (
+                        <div key={idx} className="relative pl-5">
+                          <span className="absolute -left-[4.5px] top-1 w-2 h-2 rounded-full bg-slate-300 ring-4 ring-white" />
+                          <div className="flex flex-col text-xs">
+                            <span className="font-black text-slate-800">{evt.status}</span>
+                            <span className="text-[9px] font-bold text-slate-400 mt-0.5">{evt.time}</span>
+                            <p className="text-[10px] font-semibold text-slate-500 mt-1 leading-relaxed">{evt.note}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer Quick Actions */}
+              <div className="bg-slate-50 border-t border-slate-100 p-4 flex gap-2 flex-shrink-0">
+                <button
+                  onClick={() => setAssignModalOpen(true)}
+                  className="flex-1 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-bold rounded-xl transition-colors shadow-xs"
+                >
+                  Assign Admin
+                </button>
+                <button
+                  onClick={() => handleCloseTicketDirect(activeTicket.id)}
+                  className="flex-1 py-2 bg-slate-850 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
+                >
+                  Close Ticket
+                </button>
+              </div>
+            </motion.div>
           </div>
         )}
       </AnimatePresence>
