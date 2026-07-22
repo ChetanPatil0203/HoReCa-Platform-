@@ -283,6 +283,19 @@ export default function Team() {
     window.dispatchEvent(new Event('storage'));
   };
 
+  const handleStatusToggle = (id) => {
+    const updated = admins.map(a => {
+      if (a.id === id) {
+        const nextStatus = a.status === 'Active' || a.status === 'Online' ? 'Disabled' : 'Active';
+        return { ...a, status: nextStatus };
+      }
+      return a;
+    });
+    saveAdmins(updated);
+    const item = updated.find(a => a.id === id);
+    showToast(`Admin account status is now ${item.status}!`, "info");
+  };
+
   const showToast = (message, type = 'success') => {
     const id = Math.random().toString(36).substring(2, 9);
     setToasts((prev) => [...prev, { id, message, type }]);
@@ -345,9 +358,8 @@ export default function Team() {
 
   const totalPages = Math.ceil(filteredAdmins.length / itemsPerPage);
   const currentAdmins = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredAdmins.slice(start, start + itemsPerPage);
-  }, [filteredAdmins, currentPage]);
+    return filteredAdmins;
+  }, [filteredAdmins]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -703,60 +715,41 @@ export default function Team() {
                     </span>
                   </td>
                   <td className="p-4">
-                    <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full border ${getStatusColor(a.status)}`}>
-                      {a.status}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStatusToggle(a.id);
+                        }}
+                        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                          a.status === 'Active' || a.status === 'Online' ? 'bg-emerald-500' : 'bg-rose-500'
+                        }`}
+                        title={a.status === 'Active' || a.status === 'Online' ? 'Admin is Active (click to Disable)' : `Admin is ${a.status} (click to Activate)`}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                            a.status === 'Active' || a.status === 'Online' ? 'translate-x-4' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                      <span className={`text-[10px] font-black ${a.status === 'Active' || a.status === 'Online' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {a.status}
+                      </span>
+                    </div>
                   </td>
                   <td className="p-4 text-center relative" onClick={e => e.stopPropagation()}>
                     <button
-                      onClick={() => setActiveMenuId(activeMenuId === a.id ? null : a.id)}
-                      className="p-1.5 text-slate-400 hover:bg-slate-200 rounded-lg transition-colors inline-block"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedAdminId(a.id);
+                        setDrawerTab("Overview");
+                      }}
+                      className="inline-flex items-center gap-1 px-2 py-1 text-xs font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50/50 rounded-lg transition-all"
+                      title="View Details"
                     >
-                      <MoreVertical size={16} />
+                      <Eye size={14} />
+                      <span>View</span>
                     </button>
-
-                    <AnimatePresence>
-                      {activeMenuId === a.id && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.95, y: 5 }}
-                          animate={{ opacity: 1, scale: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.95, y: 5 }}
-                          className="absolute right-8 top-8 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-25 py-2 text-left"
-                        >
-                          <button onClick={(e) => handleAction(e, a, 'view')} className="w-full text-left px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 flex items-center gap-2">
-                            <Eye size={14} /> View Details
-                          </button>
-                          <button onClick={(e) => handleAction(e, a, 'edit')} className="w-full text-left px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 flex items-center gap-2">
-                            <ShieldCheck size={14} /> Edit Admin
-                          </button>
-                          <button onClick={(e) => handleAction(e, a, 'permissions')} className="w-full text-left px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2">
-                            <Lock size={14} /> Manage Permissions
-                          </button>
-
-                          <div className="h-px bg-slate-100 my-1 mx-2" />
-
-                          <button onClick={(e) => handleAction(e, a, 'toggle-status')} className="w-full text-left px-4 py-2 text-xs font-semibold text-orange-600 hover:bg-orange-50 flex items-center gap-2">
-                            {a.status === 'Disabled' ? <UserCheck size={14} /> : <UserX size={14} />}
-                            {a.status === 'Disabled' ? 'Enable Admin' : 'Disable Admin'}
-                          </button>
-                          <button onClick={(e) => handleAction(e, a, 'password')} className="w-full text-left px-4 py-2 text-xs font-semibold text-blue-600 hover:bg-blue-50 flex items-center gap-2">
-                            <Key size={14} /> Reset Password
-                          </button>
-
-                          {(a.status === 'Pending Invite' || a.status === 'Disabled') && (
-                            <button onClick={(e) => handleAction(e, a, 'invite')} className="w-full text-left px-4 py-2 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 flex items-center gap-2">
-                              <Mail size={14} /> Resend Invitation
-                            </button>
-                          )}
-
-                          <div className="h-px bg-slate-100 my-1 mx-2" />
-
-                          <button onClick={(e) => handleAction(e, a, 'remove')} className="w-full text-left px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2">
-                            <Trash2 size={14} /> Remove Admin
-                          </button>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
                   </td>
                 </tr>
               ))
@@ -777,347 +770,289 @@ export default function Team() {
         </table>
       </div>
 
-      {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <div className="flex justify-between items-center bg-white border border-slate-200/60 p-4 rounded-xl shadow-sm">
-          <span className="text-xs font-semibold text-slate-500">
-            Showing Page <span className="text-slate-800 font-extrabold">{currentPage}</span> of <span className="text-slate-800 font-extrabold">{totalPages}</span>
-          </span>
-          <div className="flex gap-2">
-            <button
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              className={`px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-bold transition-colors ${currentPage === 1
-                  ? "bg-slate-50 text-slate-300 cursor-not-allowed"
-                  : "bg-white hover:bg-slate-50 text-slate-600"
-                }`}
-            >
-              Previous
-            </button>
-            {Array.from({ length: totalPages }).map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrentPage(idx + 1)}
-                className={`w-8 h-8 rounded-lg text-xs font-bold border transition-colors ${currentPage === idx + 1
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white hover:bg-slate-50 text-slate-600 border-slate-200"
-                  }`}
-              >
-                {idx + 1}
-              </button>
-            ))}
-            <button
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              className={`px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-bold transition-colors ${currentPage === totalPages
-                  ? "bg-slate-50 text-slate-300 cursor-not-allowed"
-                  : "bg-white hover:bg-slate-50 text-slate-600"
-                }`}
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
 
-      {/* Right Side Drawer */}
+
+      {/* Admin Details Modal (Centered) */}
       <AnimatePresence>
         {selectedAdminId && activeAdmin && (
-          <div className="fixed inset-0 z-50 overflow-hidden">
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
             {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
               onClick={() => setSelectedAdminId(null)}
             />
 
-            <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
-              <motion.div
-                initial={{ x: '100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="w-screen max-w-md md:max-w-lg bg-white border-l border-slate-200/80 shadow-2xl flex flex-col h-full"
-              >
-                {/* Header */}
-                <div className="bg-white px-5 py-4 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
-                  <div className="flex gap-3 items-center">
-                    <div className="w-10 h-10 rounded-lg bg-slate-50 border border-slate-150 flex items-center justify-center text-slate-650">
-                      <Shield size={20} />
-                    </div>
-                    <div>
-                      <h2 className="font-black text-slate-800 text-sm">{activeAdmin.name}</h2>
-                      <span className="text-[10px] text-slate-400 font-bold">{activeAdmin.id} • Registered: {activeAdmin.regDate}</span>
+            {/* Modal Content Container */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="bg-white border border-slate-200/80 rounded-3xl shadow-2xl flex flex-col w-full max-w-2xl h-[85vh] relative z-10 overflow-hidden"
+            >
+              {/* Header */}
+              <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex justify-between items-center flex-shrink-0">
+                <div className="flex gap-3 items-center">
+                  <div className="w-10 h-10 rounded-xl bg-slate-800 text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0 uppercase">
+                    {activeAdmin.name.split(' ').map(n => n[0]).join('')}
+                  </div>
+                  <div>
+                    <h2 className="font-black text-slate-800 text-sm">{activeAdmin.name}</h2>
+                    <span className="text-[10px] text-slate-400 font-bold">{activeAdmin.id} • Registered: {activeAdmin.regDate}</span>
+                  </div>
+                </div>
+                <button onClick={() => setSelectedAdminId(null)} className="p-1.5 rounded-full hover:bg-slate-200 text-slate-400 transition-colors">
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Body Content */}
+              <div className="flex-1 overflow-y-auto p-5 space-y-6" style={{ scrollbarWidth: "thin" }}>
+                
+                {/* Profile Overview */}
+                <div className="space-y-4">
+                  <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs space-y-3.5">
+                    <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Admin Profile Info</h4>
+                    <div className="grid grid-cols-2 gap-3 text-xs font-semibold text-slate-600">
+                      <div>
+                        <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Email Address</span>
+                        <span className="font-bold text-slate-800">{activeAdmin.email}</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Phone Number</span>
+                        <span className="font-bold text-slate-800">{activeAdmin.phone}</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Department</span>
+                        <span className="font-bold text-slate-800">{activeAdmin.department || "Operations"}</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Account Status</span>
+                        <span className={`inline-block text-[9px] font-extrabold px-2.5 py-0.5 rounded-full border mt-0.5 ${getStatusColor(activeAdmin.status)}`}>
+                          {activeAdmin.status}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Last Login Time</span>
+                        <span className="font-bold text-slate-700">{activeAdmin.lastLogin}</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Registration Date</span>
+                        <span className="font-bold text-slate-700">{activeAdmin.regDate}</span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Created By Admin</span>
+                        <span className="font-bold text-slate-800">{activeAdmin.createdBy || "Super Admin"}</span>
+                      </div>
                     </div>
                   </div>
-                  <button onClick={() => setSelectedAdminId(null)} className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 transition-colors">
-                    <X size={18} />
-                  </button>
-                </div>
 
-                {/* Tab Navigation */}
-                <div className="bg-white px-4 border-b border-slate-100 flex gap-2 flex-shrink-0">
-                  {["Overview", "Permissions", "Activity", "Security"].map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setDrawerTab(tab)}
-                      className={`text-xs font-bold py-3 px-2 border-b-2 transition-all relative ${drawerTab === tab
-                          ? "border-blue-600 text-blue-600"
-                          : "border-transparent text-slate-400 hover:text-slate-600"
-                        }`}
-                    >
-                      {tab}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Body Content */}
-                <div className="flex-1 overflow-y-auto p-5 space-y-5" style={{ scrollbarWidth: "thin" }}>
-                  {drawerTab === "Overview" && (
-                    <div className="space-y-4">
-                      {/* Profiles info */}
-                      <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs space-y-3.5">
-                        <div className="flex gap-3 items-center pb-3 border-b border-slate-50">
-                          <div className="w-12 h-12 bg-slate-800 text-white font-black rounded-xl flex items-center justify-center text-sm shadow-sm flex-shrink-0 uppercase">
-                            {activeAdmin.name.split(' ').map(n => n[0]).join('')}
-                          </div>
-                          <div>
-                            <span className="text-sm font-black text-slate-800 block">{activeAdmin.name}</span>
-                            <span className="text-[10px] text-slate-400 font-bold uppercase">{activeAdmin.role}</span>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3 text-xs font-medium text-slate-600">
-                          <div>
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Email Address</span>
-                            <span className="font-bold text-slate-800">{activeAdmin.email}</span>
-                          </div>
-                          <div>
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Phone Number</span>
-                            <span className="font-bold text-slate-800">{activeAdmin.phone}</span>
-                          </div>
-                          <div>
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Department</span>
-                            <span className="font-bold text-slate-800">{activeAdmin.department || "Operations"}</span>
-                          </div>
-                          <div>
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Account Status</span>
-                            <span className={`inline-block text-[9px] font-extrabold px-2.5 py-0.5 rounded-full border mt-0.5 ${getStatusColor(activeAdmin.status)}`}>
-                              {activeAdmin.status}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Last Login Time</span>
-                            <span className="font-bold text-slate-700">{activeAdmin.lastLogin}</span>
-                          </div>
-                          <div>
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Registration Date</span>
-                            <span className="font-bold text-slate-700">{activeAdmin.regDate}</span>
-                          </div>
-                          <div className="col-span-2">
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Created By Admin</span>
-                            <span className="font-bold text-slate-800">{activeAdmin.createdBy || "Super Admin"}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Modules list */}
-                      <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs">
-                        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Assigned Modules</h4>
-                        <div className="flex flex-wrap gap-1.5">
-                          {activeAdmin.access.map(mod => (
-                            <span key={mod} className="text-[10px] font-bold bg-slate-50 border border-slate-150 rounded px-2.5 py-0.5 text-slate-700">
-                              {mod}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
+                  {/* Assigned Modules summary list */}
+                  <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs">
+                    <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Assigned Modules</h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {activeAdmin.access.map(mod => (
+                        <span key={mod} className="text-[10px] font-bold bg-slate-50 border border-slate-150 rounded px-2.5 py-0.5 text-slate-700">
+                          {mod}
+                        </span>
+                      ))}
                     </div>
-                  )}
+                  </div>
+                </div>
 
-                  {drawerTab === "Permissions" && (
-                    <div className="space-y-4 animate-fadeIn">
-                      <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Module Permissions Matrix</h4>
-                      <div className="border border-slate-100 rounded-xl overflow-hidden shadow-xs bg-white">
-                        <table className="w-full text-left text-xs border-collapse">
-                          <thead>
-                            <tr className="bg-slate-50 text-[9px] uppercase font-bold text-slate-400 border-b border-slate-100">
-                              <th className="p-3">Module</th>
-                              <th className="p-2 text-center">View</th>
-                              <th className="p-2 text-center">Create</th>
-                              <th className="p-2 text-center">Edit</th>
-                              <th className="p-2 text-center">Approve</th>
-                              <th className="p-2 text-center">Delete</th>
-                              <th className="p-2 text-center">Export</th>
+                {/* Module Permissions Matrix */}
+                <div className="space-y-3 pt-4 border-t border-slate-100">
+                  <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Module Permissions Matrix</h4>
+                  <div className="border border-slate-100 rounded-xl overflow-hidden shadow-xs bg-white">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 text-[9px] uppercase font-bold text-slate-400 border-b border-slate-100">
+                          <th className="p-3">Module</th>
+                          <th className="p-2 text-center">View</th>
+                          <th className="p-2 text-center">Create</th>
+                          <th className="p-2 text-center">Edit</th>
+                          <th className="p-2 text-center">Approve</th>
+                          <th className="p-2 text-center">Delete</th>
+                          <th className="p-2 text-center">Export</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {availableModules.map((mod) => {
+                          const hasAccess = activeAdmin.access.includes(mod);
+                          const matrix = activeAdmin.permissionsMatrix?.[mod] || [];
+                          return (
+                            <tr key={mod} className={`border-b border-slate-50 font-semibold text-slate-600 ${!hasAccess ? 'opacity-40 bg-slate-50/20' : ''}`}>
+                              <td className="p-3 text-[11px] font-bold text-slate-800">{mod}</td>
+                              {["View", "Create", "Edit", "Approve", "Delete", "Export"].map((action) => {
+                                const isChecked = hasAccess && (activeAdmin.role === "Super Admin" || matrix.includes(action));
+                                return (
+                                  <td key={action} className="p-2 text-center">
+                                    <div className="flex justify-center">
+                                      {isChecked ? (
+                                        <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />
+                                      ) : (
+                                        <span className="text-slate-300 font-normal">-</span>
+                                      )}
+                                    </div>
+                                  </td>
+                                );
+                              })}
                             </tr>
-                          </thead>
-                          <tbody>
-                            {availableModules.map((mod) => {
-                              const hasAccess = activeAdmin.access.includes(mod);
-                              const matrix = activeAdmin.permissionsMatrix?.[mod] || [];
-                              return (
-                                <tr key={mod} className={`border-b border-slate-50 font-semibold text-slate-600 ${!hasAccess ? 'opacity-40 bg-slate-50/20' : ''}`}>
-                                  <td className="p-3 text-[11px] font-bold text-slate-800">{mod}</td>
-                                  {["View", "Create", "Edit", "Approve", "Delete", "Export"].map((action) => {
-                                    const isChecked = hasAccess && (activeAdmin.role === "Super Admin" || matrix.includes(action));
-                                    return (
-                                      <td key={action} className="p-2 text-center">
-                                        <div className="flex justify-center">
-                                          {isChecked ? (
-                                            <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />
-                                          ) : (
-                                            <span className="text-slate-300 font-normal">-</span>
-                                          )}
-                                        </div>
-                                      </td>
-                                    );
-                                  })}
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
 
-                  {drawerTab === "Activity" && (
-                    <div className="space-y-4 animate-fadeIn">
-                      <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Activity Timeline</h4>
-                      <div className="relative border-l border-slate-200 ml-3 flex flex-col gap-5 pt-2 pb-2">
-                        {activeAdmin.activity && activeAdmin.activity.length > 0 ? (
-                          activeAdmin.activity.map((act, idx) => (
-                            <div key={idx} className="relative pl-5">
-                              <span className="absolute -left-[4.5px] top-1 w-2 h-2 rounded-full bg-slate-350 ring-4 ring-white" />
-                              <div className="flex flex-col text-xs font-semibold">
-                                <span className="font-black text-slate-800">{act.action}</span>
-                                <span className="text-[9px] font-bold text-slate-400 mt-0.5">{act.time}</span>
-                                <span className="text-[9px] font-bold text-blue-600 uppercase mt-1 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded w-fit">
-                                  {act.module}
-                                </span>
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="p-6 text-center text-xs text-slate-400 italic bg-slate-50 border border-slate-100 rounded-xl">
-                            No recent activity logs recorded.
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {drawerTab === "Security" && (
-                    <div className="space-y-4 animate-fadeIn">
-                      <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Security Properties</h4>
-
-                      <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-3.5">
-                        <div className="flex justify-between items-center pb-2.5 border-b border-slate-200/60">
-                          <span className="text-xs font-bold text-slate-700">Two Factor Authentication (2FA)</span>
-                          <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${activeAdmin.security?.twoFactorStatus === "Enabled"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                              : "bg-slate-100 text-slate-650 border-slate-200"
-                            }`}>
-                            {activeAdmin.security?.twoFactorStatus || "Disabled"}
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3 text-xs font-semibold text-slate-600">
-                          <div>
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Password Last Changed</span>
-                            <span className="text-slate-800 font-bold">{activeAdmin.security?.passwordLastChanged || "N/A"}</span>
-                          </div>
-                          <div>
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Failed Login Attempts</span>
-                            <span className={`font-bold ${activeAdmin.security?.failedLoginAttempts > 2 ? 'text-rose-600 font-black' : 'text-slate-800'}`}>
-                              {activeAdmin.security?.failedLoginAttempts || 0}
+                {/* Activity Timeline */}
+                <div className="space-y-3 pt-4 border-t border-slate-100">
+                  <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Activity Timeline</h4>
+                  <div className="relative border-l border-slate-200 ml-3 flex flex-col gap-5 pt-2 pb-2">
+                    {activeAdmin.activity && activeAdmin.activity.length > 0 ? (
+                      activeAdmin.activity.map((act, idx) => (
+                        <div key={idx} className="relative pl-5">
+                          <span className="absolute -left-[4.5px] top-1 w-2 h-2 rounded-full bg-slate-350 ring-4 ring-white" />
+                          <div className="flex flex-col text-xs font-semibold">
+                            <span className="font-black text-slate-800">{act.action}</span>
+                            <span className="text-[9px] font-bold text-slate-400 mt-0.5">{act.time}</span>
+                            <span className="text-[9px] font-bold text-blue-600 uppercase mt-1 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded w-fit">
+                              {act.module}
                             </span>
                           </div>
-                          <div>
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Last Login Device</span>
-                            <span className="text-slate-800">{activeAdmin.security?.lastLoginDevice || "N/A"}</span>
-                          </div>
-                          <div>
-                            <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Last Login IP</span>
-                            <span className="font-mono text-slate-800">{activeAdmin.security?.lastLoginIp || "N/A"}</span>
-                          </div>
                         </div>
+                      ))
+                    ) : (
+                      <div className="p-4 text-center text-xs text-slate-400 italic bg-slate-50 border border-slate-100 rounded-xl">
+                        No recent activity logs recorded.
                       </div>
+                    )}
+                  </div>
+                </div>
 
-                      <div className="border border-slate-100 bg-white rounded-xl p-4 flex justify-between items-center shadow-xs">
-                        <div>
-                          <span className="text-xs font-bold text-slate-800 block">Active Device Sessions</span>
-                          <span className="text-[10px] text-slate-400 font-semibold block">{activeAdmin.security?.activeSessions || 0} session(s) active on this account</span>
-                        </div>
-                        {activeAdmin.security?.activeSessions > 1 && (
-                          <button
-                            onClick={() => {
-                              const updated = admins.map(a =>
-                                a.id === activeAdmin.id
-                                  ? { ...a, security: { ...a.security, activeSessions: 1, lastLoginDevice: "This Browser" } }
-                                  : a
-                              );
-                              saveAdmins(updated);
-                              showToast("All other active sessions revoked.", "info");
-                            }}
-                            className="px-3 py-1.5 border border-slate-200 hover:bg-slate-100 text-rose-600 text-xs font-bold rounded-lg transition-colors bg-white shadow-xs"
-                          >
-                            Revoke Others
-                          </button>
-                        )}
+                {/* Security Properties */}
+                <div className="space-y-3 pt-4 border-t border-slate-100">
+                  <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Security Properties</h4>
+
+                  <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-3.5">
+                    <div className="flex justify-between items-center pb-2.5 border-b border-slate-200/60">
+                      <span className="text-xs font-bold text-slate-700">Two Factor Authentication (2FA)</span>
+                      <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${activeAdmin.security?.twoFactorStatus === "Enabled"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                          : "bg-slate-100 text-slate-650 border-slate-200"
+                        }`}>
+                        {activeAdmin.security?.twoFactorStatus || "Disabled"}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 text-xs font-semibold text-slate-600">
+                      <div>
+                        <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Password Last Changed</span>
+                        <span className="text-slate-800 font-bold">{activeAdmin.security?.passwordLastChanged || "N/A"}</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Failed Login Attempts</span>
+                        <span className={`font-bold ${activeAdmin.security?.failedLoginAttempts > 2 ? 'text-rose-600 font-black' : 'text-slate-800'}`}>
+                          {activeAdmin.security?.failedLoginAttempts || 0}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Last Login Device</span>
+                        <span className="text-slate-800">{activeAdmin.security?.lastLoginDevice || "N/A"}</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Last Login IP</span>
+                        <span className="font-mono text-slate-800">{activeAdmin.security?.lastLoginIp || "N/A"}</span>
                       </div>
                     </div>
-                  )}
+                  </div>
+
+                  <div className="border border-slate-100 bg-white rounded-xl p-4 flex justify-between items-center shadow-xs">
+                    <div>
+                      <span className="text-xs font-bold text-slate-800 block">Active Device Sessions</span>
+                      <span className="text-[10px] text-slate-400 font-semibold block">{activeAdmin.security?.activeSessions || 0} session(s) active on this account</span>
+                    </div>
+                    {activeAdmin.security?.activeSessions > 1 && (
+                      <button
+                        onClick={() => {
+                          const updated = admins.map(a =>
+                            a.id === activeAdmin.id
+                              ? { ...a, security: { ...a.security, activeSessions: 1, lastLoginDevice: "This Browser" } }
+                              : a
+                          );
+                          saveAdmins(updated);
+                          showToast("All other active sessions revoked.", "info");
+                        }}
+                        className="px-3 py-1.5 border border-slate-200 hover:bg-slate-100 text-rose-600 text-xs font-bold rounded-lg transition-colors bg-white shadow-xs"
+                      >
+                        Revoke Others
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                {/* Footer Controls */}
-                <div className="bg-slate-50 border-t border-slate-100 p-4 flex gap-2 flex-shrink-0">
+              </div>
+
+              {/* Footer Controls */}
+              <div className="bg-slate-50 border-t border-slate-100 p-4 flex gap-2 flex-shrink-0">
+                <button
+                  onClick={() => {
+                    setFormName(activeAdmin.name);
+                    setFormEmail(activeAdmin.email);
+                    setFormPhone(activeAdmin.phone);
+                    setFormRole(activeAdmin.role);
+                    setFormDept(activeAdmin.department || "Operations");
+                    setFormAccess(activeAdmin.access || []);
+                    setEditStatus(activeAdmin.status);
+                    setEditModalOpen(true);
+                  }}
+                  className="flex-1 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-650 text-xs font-bold rounded-xl transition-colors shadow-xs"
+                >
+                  Edit Details
+                </button>
+                <button
+                  onClick={() => {
+                    handleGeneratePassword(true);
+                    setResetModalOpen(true);
+                  }}
+                  className="flex-1 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-blue-600 text-xs font-bold rounded-xl transition-colors shadow-xs"
+                >
+                  Reset Password
+                </button>
+
+                {(activeAdmin.status === 'Pending Invite' || activeAdmin.status === 'Disabled') && (
                   <button
                     onClick={() => {
-                      setFormName(activeAdmin.name);
-                      setFormEmail(activeAdmin.email);
-                      setFormPhone(activeAdmin.phone);
-                      setFormRole(activeAdmin.role);
-                      setFormDept(activeAdmin.department || "Operations");
-                      setFormAccess(activeAdmin.access || []);
-                      setEditStatus(activeAdmin.status);
-                      setEditModalOpen(true);
+                      showToast(`Invitation email resent to ${activeAdmin.email}`, "success");
                     }}
-                    className="flex-1 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-bold rounded-xl transition-colors shadow-xs"
+                    className="flex-1 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-indigo-600 text-xs font-bold rounded-xl transition-colors shadow-xs"
                   >
-                    Edit Admin
+                    Resend Invite
                   </button>
-                  <button
-                    onClick={() => {
-                      handleGeneratePassword(true);
-                      setResetModalOpen(true);
-                    }}
-                    className="flex-1 py-2 border border-slate-250 bg-white hover:bg-slate-50 text-blue-600 text-xs font-bold rounded-xl transition-colors shadow-xs"
-                  >
-                    Reset Password
-                  </button>
-                  <button
-                    onClick={() => {
-                      const newStatus = activeAdmin.status === 'Active' || activeAdmin.status === 'Online' ? 'Disabled' : 'Active';
-                      const updated = admins.map(a => a.id === activeAdmin.id ? { ...a, status: newStatus } : a);
-                      saveAdmins(updated);
-                      showToast(`${activeAdmin.name} account set to ${newStatus}.`, "success");
-                    }}
-                    className="flex-1 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-colors shadow-xs"
-                  >
-                    {activeAdmin.status === 'Disabled' ? 'Enable' : 'Disable'}
-                  </button>
-                  <button
-                    onClick={() => setRemoveModalOpen(true)}
-                    className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
-                  >
-                    Remove
-                  </button>
-                </div>
-              </motion.div>
-            </div>
+                )}
+
+                <button
+                  onClick={() => {
+                    const newStatus = activeAdmin.status === 'Disabled' ? 'Active' : 'Disabled';
+                    const updated = admins.map(a => a.id === activeAdmin.id ? { ...a, status: newStatus } : a);
+                    saveAdmins(updated);
+                    showToast(`${activeAdmin.name} account set to ${newStatus}.`, "success");
+                  }}
+                  className="flex-1 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-colors shadow-xs"
+                >
+                  {activeAdmin.status === 'Disabled' ? 'Enable' : 'Disable'}
+                </button>
+                <button
+                  onClick={() => setRemoveModalOpen(true)}
+                  className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
+                >
+                  Remove
+                </button>
+              </div>
+            </motion.div>
           </div>
         )}
       </AnimatePresence>

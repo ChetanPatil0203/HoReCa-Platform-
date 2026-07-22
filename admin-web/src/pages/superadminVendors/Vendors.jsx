@@ -304,16 +304,27 @@ export default function Vendors() {
                     </div>
                   </td>
                   <td className="p-4">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold border ${v.verification === 'Approved' ? 'bg-blue-50 border-blue-200/30 text-blue-700' :
-                        v.verification === 'Pending' ? 'bg-amber-50 border-amber-200/30 text-amber-700' :
-                          v.verification === 'Under Review' ? 'bg-purple-50 border-purple-200/30 text-purple-700' :
-                            'bg-rose-50 border-rose-200/30 text-rose-700'
-                      }`}>
-                      {v.verification === 'Approved' ? 'Approved' :
-                        v.verification === 'Pending' ? 'Pending' :
-                          v.verification === 'Under Review' ? 'Under Review' :
-                            'Rejected'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleApproveRejectToggle(v.id);
+                        }}
+                        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                          v.verification === 'Approved' ? 'bg-blue-600' : 'bg-slate-300'
+                        }`}
+                        title={v.verification === 'Approved' ? 'KYC is Approved (click to reject)' : 'KYC is Pending/Rejected (click to approve)'}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                            v.verification === 'Approved' ? 'translate-x-4' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                      <span className={`text-[10px] font-black ${v.verification === 'Approved' ? 'text-blue-600' : 'text-slate-400'}`}>
+                        {v.verification === 'Approved' ? 'Approved' : 'Pending'}
+                      </span>
+                    </div>
                   </td>
                   <td className="p-4">
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold border ${v.documentStatus === 'Valid' ? 'bg-emerald-50 border-emerald-200/30 text-emerald-700' :
@@ -326,59 +337,38 @@ export default function Vendors() {
                     </span>
                   </td>
                   <td className="p-4">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSuspendToggle(v.id);
-                      }}
-                      title="Click to toggle status"
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold border transition-all cursor-pointer active:scale-95 hover:opacity-90 ${v.accountStatus === 'Active' ? 'bg-emerald-50 border-emerald-200/30 text-emerald-700 hover:bg-emerald-100/50' :
-                          v.accountStatus === 'Suspended' ? 'bg-rose-50 border-rose-200/30 text-rose-700 hover:bg-rose-100/50' :
-                            'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200/80'
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSuspendToggle(v.id);
+                        }}
+                        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                          v.accountStatus === 'Active' ? 'bg-emerald-500' : 'bg-rose-500'
                         }`}
-                    >
-                      {v.accountStatus === 'Active' ? '🟢 Active' :
-                        v.accountStatus === 'Suspended' ? '🔴 Suspended' :
-                          '⚫ Blocked'}
-                    </button>
+                        title={v.accountStatus === 'Active' ? 'Account is Active (click to toggle)' : 'Account is Suspended (click to toggle)'}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                            v.accountStatus === 'Active' ? 'translate-x-4' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                      <span className={`text-[10px] font-black ${v.accountStatus === 'Active' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {v.accountStatus === 'Active' ? 'Active' : 'Suspended'}
+                      </span>
+                    </div>
                   </td>
-                  <td className="p-4 text-center relative">
+                  <td className="p-4 text-center">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setActiveMenuId(activeMenuId === v.id ? null : v.id);
+                        setSelectedProfileId(v.id);
                       }}
-                      className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg transition-colors inline-block"
+                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all inline-flex items-center gap-1.5 text-xs font-semibold active:scale-95"
                     >
-                      <MoreVertical size={16} />
+                      <Eye size={14} /> View
                     </button>
-
-                    <AnimatePresence>
-                      {activeMenuId === v.id && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.95, y: 5 }}
-                          animate={{ opacity: 1, scale: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.95, y: 5 }}
-                          className="absolute right-8 top-8 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-20 py-2 text-left"
-                        >
-                          <button onClick={() => { setSelectedProfileId(v.id); setActiveMenuId(null); }} className="w-full text-left px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-blue-600 flex items-center gap-2">
-                            <Eye size={14} /> View
-                          </button>
-                          <button onClick={() => { showToast(`Edit form for ${v.name}`, "info"); setActiveMenuId(null); }} className="w-full text-left px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 flex items-center gap-2">
-                            <FileText size={14} /> Edit
-                          </button>
-                          <button onClick={() => { handleApproveRejectToggle(v.id); setActiveMenuId(null); }} className="w-full text-left px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 flex items-center gap-2">
-                            <CheckCircle size={14} /> {v.verification === 'Approved' ? 'Reject KYC' : 'Approve KYC'}
-                          </button>
-                          <button onClick={() => { handleSuspendToggle(v.id); setActiveMenuId(null); }} className="w-full text-left px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 flex items-center gap-2">
-                            <UserX size={14} /> {v.accountStatus === 'Active' ? 'Suspend' : 'Activate'}
-                          </button>
-                          <button onClick={() => { handleDelete(v.id); setActiveMenuId(null); }} className="w-full text-left px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2">
-                            <X size={14} /> Delete
-                          </button>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
                   </td>
                 </tr>
               ))
@@ -399,27 +389,26 @@ export default function Vendors() {
         </table>
       </div>
 
-      {/* Vendor Profile Drawer (Right Side) */}
+      {/* Vendor Profile Modal (Centered) */}
       <AnimatePresence>
         {selectedProfileId && activeProfile && (
-          <div className="fixed inset-0 z-50 overflow-hidden">
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
             {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
               onClick={() => setSelectedProfileId(null)}
             />
 
-            <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
-              <motion.div
-                initial={{ x: '100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="w-screen max-w-md md:max-w-lg bg-white border-l border-slate-200/80 shadow-2xl flex flex-col h-full"
-              >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="relative w-full max-w-xl md:max-w-2xl bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden z-10"
+            >
                 {/* Header */}
                 <div className="bg-white px-5 py-4 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
                   <div className="flex gap-3 items-center">
@@ -650,12 +639,6 @@ export default function Vendors() {
                     </button>
                   )}
                   <button
-                    onClick={() => { showToast(`Edit Form for ${activeProfile.name}`, "info"); setSelectedProfileId(null); }}
-                    className="flex-1 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-bold rounded-xl transition-colors"
-                  >
-                    Edit
-                  </button>
-                  <button
                     onClick={() => handleSuspendFromDrawer(activeProfile.id)}
                     className={`flex-1 py-2 border text-xs font-bold rounded-xl transition-colors ${activeProfile.accountStatus === 'Active'
                         ? 'border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600'
@@ -672,8 +655,7 @@ export default function Vendors() {
                     <X size={16} />
                   </button>
                 </div>
-              </motion.div>
-            </div>
+            </motion.div>
           </div>
         )}
       </AnimatePresence>
