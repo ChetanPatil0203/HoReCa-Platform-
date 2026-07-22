@@ -1,462 +1,598 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions , Alert} from 'react-native';
 import {
-  Megaphone, MonitorPlay, Radio, Presentation, FileText, CheckCircle, Clock,
-  ArrowRight, MapPin, Star, ShieldCheck, Target, BarChart2, Briefcase, Zap, PlusCircle, Package
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Platform,
+  useWindowDimensions,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView
+} from 'react-native';
+import {
+  Send,
+  ClipboardPlus,
+  ClipboardList,
+  FileText,
+  Megaphone,
+  ChevronRight,
+  BadgeCheck,
+  X
 } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
-import OnlineBroadcastPage from './OnlineBroadcastPage';
-import OfflineBroadcastPage from './OfflineBroadcastPage';
-import BrowseAgenciesPage from './BrowseAgenciesPage';
-import AgencyProfilePage from './AgencyProfilePage';
-import AgencyDirectReqPage from './AgencyDirectReqPage';
-import CampaignRequestsPage from './CampaignRequestsPage';
-import AgencyResponsesPage from './AgencyResponsesPage';
-import CompareAgenciesPage from './CompareAgenciesPage';
-import TrackCampaignPage from './TrackCampaignPage';
-import CampaignReviewPage from './CampaignReviewPage';
 
 const NAVY = '#0E2042';
-const GOLD = '#D4AF37';
+const PURPLE = '#8B5CF6';
+const ORANGE = '#EA580C';
 const LIGHT_BG = '#F8FAFC';
+const GRAY_TEXT = '#64748B';
 
 // =====================================
 // MOCK DATA
 // =====================================
-const SUMMARY_STATS = {
-  activeCampaigns: 4,
-  agencyResponses: 12,
-  runningCampaigns: 2,
-  completedCampaigns: 28
-};
 
-const RECENT_REQUESTS = [
-  { id: 'CMP-001', title: 'Summer Festival Promo', category: 'Social Media', status: 'Pending', responses: 5, date: 'Today, 10:30 AM' },
-  { id: 'CMP-002', title: 'New Menu Launch', category: 'Outdoor Branding', status: 'Active', responses: 3, date: 'Yesterday, 02:15 PM' }
+const MY_REQUIREMENTS = [
+  { id: 'REQ-091', title: 'Instagram, Facebook & Content Creation', type: 'online', service: 'Social Media Marketing', mode: 'Common Requirement', status: 'Open', proposals: 12, date: '2 days ago' },
+  { id: 'REQ-092', title: 'New Menu Photoshoot', type: 'offline', service: 'Photography', mode: 'Direct Request', status: 'Agency Selected', proposals: 1, date: '5 days ago' },
+  { id: 'REQ-093', title: 'Website Redesign', type: 'online', service: 'Website Development', mode: 'Common Requirement', status: 'In Progress', proposals: 5, date: '1 week ago' },
+  { id: 'REQ-094', title: 'Highway Hoarding Ads', type: 'offline', service: 'Branding', mode: 'Direct Request', status: 'Completed', proposals: 1, date: '2 weeks ago' },
+  { id: 'REQ-095', title: 'Influencer Marketing Campaign', type: 'online', service: 'Influencer Marketing', mode: 'Common Requirement', status: 'Draft', proposals: 0, date: 'Just now' },
 ];
 
-const UPCOMING_CAMPAIGNS = [
-  { id: 'UC-001', title: 'Diwali Special Offers', agency: 'Creative Minds', date: 'Starts: 10 Nov', type: 'Meta Ads' },
-  { id: 'UC-002', title: 'Highway Hoarding', agency: 'Outfront Media', date: 'Starts: 01 Dec', type: 'Offline' }
+const RECENT_PROPOSALS = [
+  { id: 'PRP-01', agencyName: 'BrandCraft Agency', initials: 'BC', verified: true, service: 'Social Media Marketing', reqName: 'Instagram, Facebook & Content Creation', amount: '₹45,000', duration: '2 Months', status: 'New', time: 'Received 2 hours ago', type: 'online' },
+  { id: 'PRP-02', agencyName: 'Pixel Digital', initials: 'PD', verified: true, service: 'Google Ads', reqName: 'Google Ad Campaigns', amount: '₹30,000', duration: '1 Month', status: 'Under Review', time: 'Received 1 day ago', type: 'online' },
+  { id: 'PRP-03', agencyName: 'Outfront Media', initials: 'OM', verified: true, service: 'Hoardings', reqName: 'Highway Hoarding Ads', amount: '₹1,20,000', duration: '3 Months', status: 'Shortlisted', time: 'Received 3 days ago', type: 'offline' },
+  { id: 'PRP-04', agencyName: 'EventX', initials: 'EX', verified: true, service: 'Event Promotion', reqName: 'Diwali Mela Setup', amount: '₹80,000', duration: '1 Week', status: 'Accepted', time: 'Received 1 week ago', type: 'offline' },
 ];
 
-const PREFERRED_AGENCIES = [
-  { id: 'AGY-001', name: 'Creative Minds', category: 'Digital Marketing', rating: 4.9, campaigns: 15, verified: true },
-  { id: 'AGY-002', name: 'Outfront Media', category: 'Outdoor Ads', rating: 4.8, campaigns: 8, verified: true }
+const ONLINE_SERVICES = ['Social Media Marketing', 'Website Development', 'Influencer Marketing', 'Digital Advertising', 'Content Creation', 'Graphic Design'];
+
+const ONLINE_AGENCIES_MOCK = [
+  { id: 'AGY-O1', name: 'BrandCraft Agency', initials: 'BC', verified: true, location: 'Mumbai, Maharashtra', type: 'online' },
+  { id: 'AGY-O2', name: 'Pixel Digital', initials: 'PD', verified: true, location: 'Delhi, NCR', type: 'online' },
 ];
 
-const TOP_RATED_AGENCIES = [
-  { id: 'AGY-003', name: 'BrandBoosters', category: 'Social Media', rating: 5.0, campaigns: 42, verified: true },
-  { id: 'AGY-004', name: 'PixelPerfect', category: 'Graphic Design', rating: 4.7, campaigns: 24, verified: false }
-];
-
-const ONLINE_CATEGORIES = [
-  { id: 'ONL-1', name: 'Social Media', icon: Target },
-  { id: 'ONL-2', name: 'Meta Ads', icon: MonitorPlay },
-  { id: 'ONL-3', name: 'Google Ads', icon: MonitorPlay },
-  { id: 'ONL-4', name: 'SEO', icon: SearchIconMock },
-  { id: 'ONL-5', name: 'Branding', icon: Briefcase },
-  { id: 'ONL-6', name: 'Graphic Design', icon: Zap },
-  { id: 'ONL-7', name: 'Photography', icon: Zap },
-  { id: 'ONL-8', name: 'Videography', icon: MonitorPlay },
-  { id: 'ONL-9', name: 'Website Design', icon: MonitorPlay }
-];
-
-const OFFLINE_CATEGORIES = [
-  { id: 'OFF-1', name: 'Hoarding', icon: Presentation },
-  { id: 'OFF-2', name: 'Banner Printing', icon: Presentation },
-  { id: 'OFF-3', name: 'Newspaper Ads', icon: FileText },
-  { id: 'OFF-4', name: 'Radio Ads', icon: Radio },
-  { id: 'OFF-5', name: 'Event Promotion', icon: Megaphone },
-  { id: 'OFF-6', name: 'Restaurant Launch', icon: Briefcase },
-  { id: 'OFF-7', name: 'Outdoor Branding', icon: MapPin }
-];
-
-const PERFORMANCE_DATA = [
-  { metric: 'Total Reach', value: '1.2M', change: '+12%', positive: true },
-  { metric: 'Engagement', value: '84.5K', change: '+5.4%', positive: true },
-  { metric: 'Conversions', value: '3,240', change: '-2.1%', positive: false }
-];
-
-// Mocking icons not directly imported
-function SearchIconMock(props) {
-  return <Target {...props} />;
-}
 
 // =====================================
-// REUSABLE COMPONENTS
+// HELPER COMPONENTS
 // =====================================
 
-const SummaryCard = ({ title, value, icon: Icon, bgColor, iconColor, customStyle }) => (
-  <View style={[styles.summaryCard, customStyle]}>
-    <View style={[styles.summaryIconBox, { backgroundColor: bgColor }]}>
-      <Icon size={20} color={iconColor} />
-    </View>
-    <Text style={styles.summaryValue}>{value}</Text>
-    <Text style={styles.summaryLabel}>{title}</Text>
-  </View>
-);
-
-const CampaignRequestCard = ({ request }) => (
-  <View style={styles.requestCard}>
-    <View style={styles.requestHeader}>
-      <Text style={styles.requestTitle}>{request.title}</Text>
-      <View style={[styles.statusBadge,
-      request.status === 'Completed' ? styles.statusSuccess :
-        request.status === 'Active' ? styles.statusPrimary : styles.statusWarning
-      ]}>
-        <Text style={[styles.statusText,
-        request.status === 'Completed' ? styles.statusSuccessText :
-          request.status === 'Active' ? styles.statusPrimaryText : styles.statusWarningText
-        ]}>{request.status}</Text>
-      </View>
-    </View>
-    <Text style={styles.requestMeta}>{request.category} • {request.date}</Text>
-    <View style={styles.requestFooter}>
-      <Text style={styles.requestResponses}>{request.responses} Agency Responses</Text>
-      <TouchableOpacity style={styles.viewBtn}>
-        <Text style={styles.viewBtnText}>View</Text>
-      </TouchableOpacity>
-    </View>
-  </View>
-);
-
-const AgencyCard = ({ agency }) => (
-  <View style={styles.providerCard}>
-    <View style={styles.providerHeader}>
-      <View style={styles.providerAvatar}>
-        <Text style={styles.providerAvatarText}>{agency.name.charAt(0)}</Text>
-      </View>
-      <View style={styles.ratingBox}>
-        <Star size={12} color={GOLD} fill={GOLD} />
-        <Text style={styles.ratingText}>{agency.rating}</Text>
-      </View>
-    </View>
-    <View style={styles.providerNameRow}>
-      <Text style={styles.providerName} numberOfLines={1}>{agency.name}</Text>
-      {agency.verified && <ShieldCheck size={14} color="#16A34A" style={{ marginLeft: 4 }} />}
-    </View>
-    <Text style={styles.providerCategory}>{agency.category}</Text>
-    <Text style={styles.providerJobs}>{agency.campaigns} Campaigns</Text>
-    <TouchableOpacity style={styles.providerBtn}>
-      <Text style={styles.providerBtnText}>View Profile</Text>
-    </TouchableOpacity>
-  </View>
-);
-
-const CategoryItem = ({ category, type }) => {
-  const Icon = category.icon;
-  return (
-    <View style={styles.categoryItem}>
-      <View style={[styles.catIconBox, type === 'offline' && { backgroundColor: '#FEE2E2' }]}>
-        <Icon size={16} color={type === 'offline' ? '#991B1B' : NAVY} />
-      </View>
-      <Text style={styles.categoryItemName}>{category.name}</Text>
-    </View>
-  );
+const getStatusColor = (status) => {
+  switch (status) {
+    case 'Draft': return '#94A3B8';
+    case 'Open': case 'New': return '#3B82F6';
+    case 'Proposal Received': case 'In Progress': case 'Shortlisted': return '#8B5CF6';
+    case 'Agency Selected': case 'Completed': case 'Accepted': return '#10B981';
+    case 'Under Review': return '#F59E0B';
+    case 'Cancelled': case 'Rejected': return '#EF4444';
+    default: return '#94A3B8';
+  }
 };
+
+const getStatusBgColor = (status) => {
+  switch (status) {
+    case 'Draft': return '#F1F5F9';
+    case 'Open': case 'New': return '#EFF6FF';
+    case 'Proposal Received': case 'In Progress': case 'Shortlisted': return '#F5F3FF';
+    case 'Agency Selected': case 'Completed': case 'Accepted': return '#ECFDF5';
+    case 'Under Review': return '#FFFBEB';
+    case 'Cancelled': case 'Rejected': return '#FEF2F2';
+    default: return '#F1F5F9';
+  }
+};
+
 
 // =====================================
 // MAIN SCREEN
 // =====================================
+
 export default function MarketingPage() {
   const { width } = useWindowDimensions();
-  const isMobile = width < 768 || Platform.OS !== 'web';
-  const [currentView, setCurrentView] = useState('home');
-  const [selectedAgency, setSelectedAgency] = useState(null);
-  const [selectedRequest, setSelectedRequest] = useState(null);
+  // Using 700px as the breakpoint for stacking elements vertically
+  const isMobile = width < 700;
+  const isTablet = width >= 700 && width < 1024;
+  
+  const [marketingType, setMarketingType] = useState('online'); // 'online' or 'offline'
+  
+  // Modal states
+  const [directRequestVisible, setDirectRequestVisible] = useState(false);
+  const [postRequirementVisible, setPostRequirementVisible] = useState(false);
+  const [viewRequirementVisible, setViewRequirementVisible] = useState(false);
+  const [viewProposalVisible, setViewProposalVisible] = useState(false);
+  
+  const [selectedReq, setSelectedReq] = useState(null);
+  const [selectedProp, setSelectedProp] = useState(null);
 
-  if (currentView === 'onlineBroadcast') {
+  // Form states for modals (simplified for mockup)
+  const [drStep, setDrStep] = useState(1);
+  const [prStep, setPrStep] = useState(1);
+
+  // Data filtering based on selected type
+  const filteredRequirements = MY_REQUIREMENTS.filter(req => req.type === marketingType);
+  const filteredProposals = RECENT_PROPOSALS.filter(prop => prop.type === marketingType);
+
+  const displayRequirements = filteredRequirements.slice(0, isMobile ? 3 : 4);
+  const displayProposals = filteredProposals.slice(0, isMobile ? 2 : 3);
+
+  const openDirectRequest = () => { setDrStep(1); setDirectRequestVisible(true); };
+  const openPostRequirement = () => { setPrStep(1); setPostRequirementVisible(true); };
+
+  // =====================================
+  // RENDER HELPERS
+  // =====================================
+
+  const renderOverviewSegment = (title, count, icon, accentColor, bgColor) => {
+    const Icon = icon;
     return (
-      <OnlineBroadcastPage
-        onBack={() => setCurrentView('home')}
-        onViewCampaigns={() => setCurrentView('home')} // Link to 'myCampaigns' when it is built
-      />
-    );
-  }
-
-  if (currentView === 'offlineBroadcast') {
-    return (
-      <OfflineBroadcastPage
-        onBack={() => setCurrentView('home')}
-        onViewRequests={() => setCurrentView('campaignRequests')}
-      />
-    );
-  }
-
-  if (currentView === 'campaignRequests') {
-    return (
-      <CampaignRequestsPage
-        onBack={() => setCurrentView('home')}
-        onViewResponses={(req) => {
-          setSelectedRequest(req);
-          setCurrentView('agencyResponses');
-        }}
-        onTrack={(req) => {
-          setSelectedRequest(req);
-          setCurrentView('trackCampaign');
-        }}
-      />
-    );
-  }
-
-  if (currentView === 'agencyResponses') {
-    return (
-      <AgencyResponsesPage
-        request={selectedRequest}
-        onBack={() => setCurrentView('campaignRequests')}
-        onCompare={() => setCurrentView('compareAgencies')}
-        onAccept={(agency) => {
-          // Success/Home link placeholder
-          setCurrentView('home');
-        }}
-      />
-    );
-  }
-
-  if (currentView === 'compareAgencies') {
-    return (
-      <CompareAgenciesPage
-        onBack={() => setCurrentView('agencyResponses')}
-        onAccept={(agency) => {
-          // Success/Home link placeholder
-          setCurrentView('trackCampaign');
-        }}
-      />
-    );
-  }
-
-  if (currentView === 'trackCampaign') {
-    return (
-      <TrackCampaignPage
-        campaign={selectedRequest}
-        onBack={() => setCurrentView('campaignRequests')}
-        onReview={() => setCurrentView('campaignReview')}
-        onBookAgain={() => setCurrentView('onlineBroadcast')}
-      />
-    );
-  }
-
-  if (currentView === 'campaignReview') {
-    return (
-      <CampaignReviewPage
-        onBack={() => setCurrentView('trackCampaign')}
-        onHome={() => setCurrentView('home')}
-      />
-    );
-  }
-
-  if (currentView === 'browseAgencies') {
-    return (
-      <BrowseAgenciesPage
-        onBack={() => setCurrentView('home')}
-        onViewProfile={(agency) => {
-          setSelectedAgency(agency);
-          setCurrentView('agencyProfile');
-        }}
-      />
-    );
-  }
-
-  if (currentView === 'agencyProfile') {
-    return (
-      <AgencyProfilePage
-        agency={selectedAgency}
-        onBack={() => setCurrentView('browseAgencies')}
-        onSendRequirement={(agency) => {
-          setSelectedAgency(agency);
-          setCurrentView('agencyDirectReq');
-        }}
-      />
-    );
-  }
-
-  if (currentView === 'agencyDirectReq') {
-    return (
-      <AgencyDirectReqPage
-        agency={selectedAgency}
-        onBack={() => setCurrentView('agencyProfile')}
-        onHome={() => setCurrentView('home')}
-      />
-    );
-  }
-
-  return (
-    <View style={styles.wrapper}>
-      {/* ── Header ── */}
-      <View style={[styles.pageHeader, isMobile && styles.pageHeaderMobile]}>
-        <View style={{ flex: 1, paddingRight: 12 }}>
-          <Text style={styles.pageTitle}>Marketing</Text>
-          <Text style={styles.pageSubtitle}>Launch digital and offline campaigns to grow your business.</Text>
+      <TouchableOpacity style={[styles.overviewSegment, isMobile && styles.overviewSegmentMobile]}>
+        <View style={styles.overviewSegmentHeader}>
+          <View style={[styles.overviewIconContainer, { backgroundColor: bgColor }]}>
+            <Icon size={20} color={accentColor} />
+          </View>
+          <Text style={styles.overviewCount}>{count}</Text>
         </View>
-        <View style={styles.headerIcons}>
-          <TouchableOpacity style={styles.iconBtn} onPress={() => setCurrentView('campaignRequests')}>
-            <Package size={20} color="#0F172A" />
+        <Text style={styles.overviewTitle}>{title}</Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderRequirementCard = (req) => {
+    if (isMobile) {
+      // Compact Mobile Card
+      return (
+        <View key={req.id} style={styles.reqCard}>
+          <View style={styles.reqCardHeader}>
+            <Text style={styles.reqId}>{req.id}</Text>
+            <View style={[styles.badge, { backgroundColor: getStatusBgColor(req.status) }]}>
+              <Text style={[styles.badgeText, { color: getStatusColor(req.status) }]}>{req.status}</Text>
+            </View>
+          </View>
+          <Text style={styles.reqTitle} numberOfLines={1}>{req.title}</Text>
+          <Text style={styles.reqService}>{req.service}</Text>
+          
+          <View style={styles.reqDetailsRow}>
+            <View style={[styles.modeBadge, req.mode === 'Direct Request' ? styles.modeDirect : styles.modeFeed]}>
+              <Text style={[styles.modeBadgeText, req.mode === 'Direct Request' ? styles.modeDirectText : styles.modeFeedText]}>
+                {req.mode}
+              </Text>
+            </View>
+            <Text style={styles.reqProposals}>{req.proposals} Proposals</Text>
+          </View>
+
+          <View style={styles.reqFooter}>
+            <Text style={styles.reqDate}>Posted {req.date}</Text>
+            <TouchableOpacity style={styles.textActionBtn} onPress={() => { setSelectedReq(req); setViewRequirementVisible(true); }}>
+              <Text style={styles.textActionBtnText}>View Requirement</Text>
+              <ChevronRight size={16} color={NAVY} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+
+    // Desktop/Tablet Horizontal Row
+    return (
+      <View key={req.id} style={styles.reqRow}>
+        <View style={styles.reqRowCol1}>
+          <Text style={styles.reqTitle} numberOfLines={1}>{req.title}</Text>
+          <Text style={styles.reqId}>{req.id}</Text>
+        </View>
+        <View style={styles.reqRowCol2}>
+          <Text style={styles.reqService} numberOfLines={1}>{req.service}</Text>
+          <Text style={styles.reqModeText} numberOfLines={1}>{req.mode}</Text>
+        </View>
+        <View style={styles.reqRowCol3}>
+          <View style={{alignItems: 'flex-start'}}>
+            <View style={[styles.badge, { backgroundColor: getStatusBgColor(req.status) }]}>
+              <Text style={[styles.badgeText, { color: getStatusColor(req.status) }]}>{req.status}</Text>
+            </View>
+          </View>
+        </View>
+        <View style={styles.reqRowCol4}>
+          <Text style={styles.reqProposalsDesktop}>{req.proposals} Proposals</Text>
+          <Text style={styles.reqDate}>{req.date}</Text>
+        </View>
+        <View style={styles.reqRowCol5}>
+          <TouchableOpacity style={styles.viewRowBtn} onPress={() => { setSelectedReq(req); setViewRequirementVisible(true); }}>
+            <Text style={styles.viewRowBtnText}>View</Text>
+            <ChevronRight size={16} color={NAVY} />
           </TouchableOpacity>
         </View>
       </View>
+    );
+  };
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 60 }}>
-        <View style={[styles.contentLayout, !isMobile && styles.contentLayoutWeb]}>
-
-          {/* ── Top Summary Cards ── */}
-          <View style={[styles.summaryGrid, isMobile && { flexWrap: 'wrap' }]}>
-            <SummaryCard customStyle={isMobile && { flexBasis: '46%', flexGrow: 1 }} title="Active Campaigns" value={SUMMARY_STATS.activeCampaigns} icon={Megaphone} bgColor="#FFFBEB" iconColor={GOLD} />
-            <SummaryCard customStyle={isMobile && { flexBasis: '46%', flexGrow: 1 }} title="Agency Responses" value={SUMMARY_STATS.agencyResponses} icon={FileText} bgColor="#EFF6FF" iconColor="#2563EB" />
-            <SummaryCard customStyle={isMobile && { flexBasis: '46%', flexGrow: 1 }} title="Running Campaigns" value={SUMMARY_STATS.runningCampaigns} icon={BarChart2} bgColor="#F3E8FF" iconColor="#9333EA" />
-            <SummaryCard customStyle={isMobile && { flexBasis: '46%', flexGrow: 1 }} title="Completed Campaigns" value={SUMMARY_STATS.completedCampaigns} icon={CheckCircle} bgColor="#DCFCE7" iconColor="#16A34A" />
+  const renderProposalCard = (prop) => (
+    <View key={prop.id} style={styles.reqCard}>
+      <View style={styles.propHeader}>
+        <View style={styles.propAvatar}>
+          <Text style={styles.propAvatarText}>{prop.initials}</Text>
+        </View>
+        <View style={{ flex: 1, paddingRight: 12 }}>
+          <View style={styles.propNameRow}>
+            <Text style={styles.propName} numberOfLines={1}>{prop.agencyName}</Text>
+            {prop.verified && <BadgeCheck size={16} color={PURPLE} style={{ marginLeft: 4 }} />}
           </View>
+          <Text style={styles.propReqName} numberOfLines={1}>{prop.reqName}</Text>
+        </View>
+      </View>
+      
+      <View style={styles.propDetailsGrid}>
+        <View style={styles.propDetailItem}>
+          <Text style={styles.propDetailLabel}>Amount</Text>
+          <Text style={styles.propDetailValue}>{prop.amount}</Text>
+        </View>
+        <View style={styles.propDetailItem}>
+          <Text style={styles.propDetailLabel}>Duration</Text>
+          <Text style={styles.propDetailValue}>{prop.duration}</Text>
+        </View>
+      </View>
 
-          {/* ── Quick Actions ── */}
-          <View style={[styles.actionsRow, isMobile && { flexDirection: 'column' }]}>
-            <TouchableOpacity
-              style={styles.primaryActionCard}
-              onPress={() => setCurrentView('onlineBroadcast')}
-            >
-              <View style={styles.actionHeader}>
-                <View style={styles.primaryIconBox}>
-                  <MonitorPlay size={24} color="#fff" />
+      <View style={styles.reqFooter}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+          <View style={[styles.badge, { backgroundColor: getStatusBgColor(prop.status) }]}>
+            <Text style={[styles.badgeText, { color: getStatusColor(prop.status) }]}>{prop.status}</Text>
+          </View>
+          <Text style={styles.reqDate} numberOfLines={1}>{prop.time}</Text>
+        </View>
+        <TouchableOpacity style={styles.textActionBtn} onPress={() => { setSelectedProp(prop); setViewProposalVisible(true); }}>
+          <Text style={styles.textActionBtnText}>View Proposal</Text>
+          <ChevronRight size={16} color={NAVY} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  return (
+    <View style={styles.container}>
+      {/* ── PAGE HEADER ── */}
+      <View style={[styles.pageHeader, isMobile && styles.pageHeaderMobile]}>
+        <View style={styles.pageHeaderInner}>
+          <Text style={styles.pageTitle}>Marketing</Text>
+          <Text style={styles.pageSubtitle}>Promote your business with verified marketing agencies</Text>
+        </View>
+      </View>
+
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+        <View style={[styles.contentWrapper, !isMobile && styles.contentWrapperDesktop]}>
+          
+          {/* ── PRIMARY REQUIREMENT ACTIONS ── */}
+          <View style={[styles.actionsContainer, isMobile ? styles.actionsContainerMobile : null]}>
+            {/* Direct Request Card */}
+            <TouchableOpacity style={styles.actionCard} onPress={openDirectRequest} activeOpacity={0.9}>
+              <View style={[styles.actionCardBg, styles.actionCardBgOrange]} />
+              <View style={styles.actionCardContent}>
+                <View style={styles.actionCardHeaderRow}>
+                  <View style={[styles.actionIconContainer, styles.actionIconOrange]}>
+                    <Send size={24} color={ORANGE} />
+                  </View>
+                  <View style={[styles.actionBadge, styles.actionBadgeOrange]}>
+                    <Text style={styles.actionBadgeTextOrange}>Quick</Text>
+                  </View>
                 </View>
-                <ArrowRight size={20} color="rgba(255,255,255,0.8)" />
+                <Text style={styles.actionTitle}>Direct Request</Text>
+                <Text style={styles.actionDesc}>Send your requirement directly to one selected marketing agency.</Text>
+                <View style={styles.actionLinkRow}>
+                  <Text style={[styles.actionLinkText, { color: ORANGE }]}>Send Direct Request</Text>
+                  <ChevronRight size={16} color={ORANGE} />
+                </View>
               </View>
-              <Text style={styles.primaryActionTitle}>Online Marketing</Text>
-              <Text style={styles.primaryActionDesc}>Run digital marketing campaigns.</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.secondaryActionCard}
-              onPress={() => setCurrentView('offlineBroadcast')}
-            >
-              <View style={styles.actionHeader}>
-                <View style={styles.secondaryIconBox}>
-                  <Presentation size={24} color={NAVY} />
+            {/* Post Requirement Card */}
+            <TouchableOpacity style={styles.actionCard} onPress={openPostRequirement} activeOpacity={0.9}>
+              <View style={[styles.actionCardBg, styles.actionCardBgPurple]} />
+              <View style={styles.actionCardContent}>
+                <View style={styles.actionCardHeaderRow}>
+                  <View style={[styles.actionIconContainer, styles.actionIconPurple]}>
+                    <ClipboardPlus size={24} color={PURPLE} />
+                  </View>
+                  <View style={[styles.actionBadge, styles.actionBadgePurple]}>
+                    <Text style={styles.actionBadgeTextPurple}>Recommended</Text>
+                  </View>
                 </View>
-                <ArrowRight size={20} color={NAVY} />
+                <Text style={styles.actionTitle}>Post Requirement</Text>
+                <Text style={styles.actionDesc}>Post one requirement and receive proposals from eligible agencies.</Text>
+                <View style={styles.actionLinkRow}>
+                  <Text style={[styles.actionLinkText, { color: PURPLE }]}>Post Requirement</Text>
+                  <ChevronRight size={16} color={PURPLE} />
+                </View>
               </View>
-              <Text style={styles.secondaryActionTitle}>Offline Marketing</Text>
-              <Text style={styles.secondaryActionDesc}>Promote your business using offline media.</Text>
             </TouchableOpacity>
           </View>
 
-          {/* ── Two Column Layout for Grids ── */}
-          <View style={[styles.twoColGrid, isMobile && { flexDirection: 'column' }]}>
+          {/* ── MARKETING TYPE TABS ── */}
+          <View style={styles.tabsContainer}>
+            <TouchableOpacity 
+              style={[styles.tabBtn, marketingType === 'online' && styles.tabBtnActive]}
+              onPress={() => setMarketingType('online')}
+            >
+              <Text style={[styles.tabBtnText, marketingType === 'online' && styles.tabBtnTextActive]}>Online Marketing</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.tabBtn, marketingType === 'offline' && styles.tabBtnActive]}
+              onPress={() => setMarketingType('offline')}
+            >
+              <Text style={[styles.tabBtnText, marketingType === 'offline' && styles.tabBtnTextActive]}>Offline Marketing</Text>
+            </TouchableOpacity>
+          </View>
 
-            {/* Left Column */}
-            <View style={styles.colHalf}>
-              {/* Recent Campaign Requests */}
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Recent Campaign Requests</Text>
-                  <TouchableOpacity onPress={() => setCurrentView('campaignRequests')}><Text style={styles.viewAllText}>View All</Text></TouchableOpacity>
+          {/* ── MARKETING OVERVIEW ── */}
+          <View style={styles.overviewContainer}>
+            <View style={[styles.overviewGrid, isMobile ? styles.overviewGridMobile : null]}>
+              {renderOverviewSegment('Active Requirements', 4, ClipboardList, '#3B82F6', '#EFF6FF')}
+              <View style={styles.overviewDivider} />
+              {renderOverviewSegment('Proposals Received', 12, FileText, '#8B5CF6', '#F5F3FF')}
+              <View style={styles.overviewDivider} />
+              {renderOverviewSegment('Active Campaigns', 3, Megaphone, '#10B981', '#ECFDF5')}
+            </View>
+          </View>
+
+          {/* ── MAIN CONTENT LAYOUT ── */}
+          <View style={[styles.mainContentGrid, isMobile ? styles.mainContentCol : null]}>
+            
+            {/* Left Column (Requirements) */}
+            <View style={isMobile ? styles.columnMobile : styles.columnLeft}>
+              <View style={styles.sectionHeader}>
+                <View>
+                  <Text style={styles.sectionTitle}>My Requirements</Text>
+                  <Text style={styles.sectionSubtitle}>Track your direct and posted marketing requirements</Text>
                 </View>
-                {RECENT_REQUESTS.map(req => <CampaignRequestCard key={req.id} request={req} />)}
+                <TouchableOpacity><Text style={styles.viewAllBtn}>View All</Text></TouchableOpacity>
               </View>
-
-              {/* Performance Summary */}
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Campaign Performance Summary</Text>
-                </View>
-                <View style={styles.perfCard}>
-                  {PERFORMANCE_DATA.map((data, idx) => (
-                    <View key={idx} style={styles.perfRow}>
-                      <Text style={styles.perfMetric}>{data.metric}</Text>
-                      <View style={styles.perfRight}>
-                        <Text style={styles.perfValue}>{data.value}</Text>
-                        <View style={[styles.perfBadge, data.positive ? styles.perfBadgePos : styles.perfBadgeNeg]}>
-                          <Text style={[styles.perfBadgeText, data.positive ? styles.perfBadgeTextPos : styles.perfBadgeTextNeg]}>{data.change}</Text>
-                        </View>
-                      </View>
-                    </View>
-                  ))}
-                </View>
+              
+              <View style={styles.listContainer}>
+                {displayRequirements.length > 0 ? (
+                  displayRequirements.map(renderRequirementCard)
+                ) : (
+                  <View style={styles.emptyState}>
+                    <Text style={styles.emptyStateText}>No active {marketingType} requirements.</Text>
+                  </View>
+                )}
               </View>
-
-              {/* ── Preferred Agencies ── */}
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Preferred Agencies</Text>
-                  <TouchableOpacity onPress={() => setCurrentView('browseAgencies')}><Text style={styles.viewAllText}>View All</Text></TouchableOpacity>
-                </View>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
-                  {PREFERRED_AGENCIES.map(agency => (
-                    <TouchableOpacity key={agency.id} onPress={() => { setSelectedAgency(agency); setCurrentView('agencyProfile'); }}>
-                      <AgencyCard agency={agency} />
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-
             </View>
 
-            {/* Right Column */}
-            <View style={styles.colHalf}>
-              {/* Upcoming Campaigns */}
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Upcoming Campaigns</Text>
-                  <TouchableOpacity onPress={() => Alert.alert('Coming Soon', 'This feature is under development.')}><Text style={styles.viewAllText}>View All</Text></TouchableOpacity>
+            {/* Right Column (Proposals) */}
+            <View style={isMobile ? styles.columnMobile : styles.columnRight}>
+              <View style={styles.sectionHeader}>
+                <View>
+                  <Text style={styles.sectionTitle}>Recent Proposals</Text>
+                  <Text style={styles.sectionSubtitle}>Latest proposals received from marketing agencies</Text>
                 </View>
-                {UPCOMING_CAMPAIGNS.map(cmp => (
-                  <View key={cmp.id} style={styles.upcomingCard}>
-                    <View style={styles.upcomingTop}>
-                      <View style={styles.upcomingIcon}>
-                        <Megaphone size={20} color={NAVY} />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.upcomingTitle}>{cmp.title}</Text>
-                        <Text style={styles.upcomingAgency}>{cmp.agency}</Text>
-                      </View>
-                    </View>
-                    <View style={styles.upcomingBottom}>
-                      <Text style={styles.upcomingDate}>{cmp.date}</Text>
-                      <View style={styles.upcomingBadge}>
-                        <Text style={styles.upcomingBadgeText}>{cmp.type}</Text>
-                      </View>
-                    </View>
-                  </View>
-                ))}
+                <TouchableOpacity><Text style={styles.viewAllBtn}>View All</Text></TouchableOpacity>
               </View>
 
-              {/* Popular Categories */}
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Popular Marketing Categories</Text>
-                </View>
-                <View style={styles.categoriesWrapper}>
-                  <Text style={styles.catHeading}>Online Categories</Text>
-                  <View style={styles.catFlexRow}>
-                    {ONLINE_CATEGORIES.map(cat => <CategoryItem key={cat.id} category={cat} type="online" />)}
+              <View style={styles.listContainer}>
+                {displayProposals.length > 0 ? (
+                  displayProposals.map(renderProposalCard)
+                ) : (
+                  <View style={styles.emptyState}>
+                    <Text style={styles.emptyStateText}>No recent {marketingType} proposals.</Text>
                   </View>
-
-                  <Text style={[styles.catHeading, { marginTop: 16 }]}>Offline Categories</Text>
-                  <View style={styles.catFlexRow}>
-                    {OFFLINE_CATEGORIES.map(cat => <CategoryItem key={cat.id} category={cat} type="offline" />)}
-                  </View>
-                </View>
+                )}
               </View>
-
-              {/* ── Top Rated Agencies ── */}
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Top Rated Agencies</Text>
-                  <TouchableOpacity onPress={() => setCurrentView('browseAgencies')}><Text style={styles.viewAllText}>View All</Text></TouchableOpacity>
-                </View>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
-                  {TOP_RATED_AGENCIES.map(agency => (
-                    <TouchableOpacity key={agency.id} onPress={() => { setSelectedAgency(agency); setCurrentView('agencyProfile'); }}>
-                      <AgencyCard agency={agency} />
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-
             </View>
-
           </View>
 
         </View>
       </ScrollView>
+
+      {/* ── MODALS ── */}
+
+      {/* Direct Request Modal */}
+      <Modal visible={directRequestVisible} animationType="slide" presentationStyle="formSheet" onRequestClose={() => setDirectRequestVisible(false)}>
+        <KeyboardAvoidingView style={styles.modalContainer} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Send Direct Request</Text>
+            <TouchableOpacity onPress={() => setDirectRequestVisible(false)}><X size={24} color={NAVY} /></TouchableOpacity>
+          </View>
+          <ScrollView style={styles.modalBody} contentContainerStyle={styles.modalScrollContent}>
+            <Text style={styles.modalStepText}>Step {drStep} of 5</Text>
+            {drStep === 1 && (
+              <View style={styles.stepContent}>
+                <Text style={styles.stepTitle}>Select Marketing Type</Text>
+                <TouchableOpacity style={styles.optionBtn} onPress={() => setDrStep(2)}>
+                  <Text style={styles.optionBtnText}>Online Marketing</Text>
+                  <ChevronRight size={20} color={GRAY_TEXT} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.optionBtn} onPress={() => setDrStep(2)}>
+                  <Text style={styles.optionBtnText}>Offline Marketing</Text>
+                  <ChevronRight size={20} color={GRAY_TEXT} />
+                </TouchableOpacity>
+              </View>
+            )}
+            {drStep === 2 && (
+              <View style={styles.stepContent}>
+                <Text style={styles.stepTitle}>Select Marketing Service</Text>
+                {ONLINE_SERVICES.map((srv, idx) => (
+                  <TouchableOpacity key={idx} style={styles.optionBtn} onPress={() => setDrStep(3)}>
+                    <Text style={styles.optionBtnText}>{srv}</Text>
+                    <ChevronRight size={20} color={GRAY_TEXT} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+            {drStep === 3 && (
+              <View style={styles.stepContent}>
+                <Text style={styles.stepTitle}>Select Agency</Text>
+                {ONLINE_AGENCIES_MOCK.map((ag, idx) => (
+                  <TouchableOpacity key={idx} style={styles.optionBtn} onPress={() => setDrStep(4)}>
+                    <View>
+                      <Text style={styles.optionBtnText}>{ag.name}</Text>
+                      <Text style={styles.optionSubText}>{ag.location}</Text>
+                    </View>
+                    <ChevronRight size={20} color={GRAY_TEXT} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+            {drStep === 4 && (
+              <View style={styles.stepContent}>
+                <Text style={styles.stepTitle}>Requirement Details</Text>
+                <TextInput style={styles.input} placeholder="Requirement Title" placeholderTextColor={GRAY_TEXT} />
+                <TextInput style={styles.input} placeholder="Marketing Objective" placeholderTextColor={GRAY_TEXT} />
+                <TextInput style={styles.input} placeholder="Budget Range" placeholderTextColor={GRAY_TEXT} />
+                <TextInput style={[styles.input, { height: 100, textAlignVertical: 'top' }]} placeholder="Requirement Description" multiline placeholderTextColor={GRAY_TEXT} />
+                <TouchableOpacity style={styles.primaryBtnLarge} onPress={() => setDrStep(5)}>
+                  <Text style={styles.primaryBtnLargeText}>Review Request</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            {drStep === 5 && (
+              <View style={styles.stepContent}>
+                <Text style={styles.stepTitle}>Review and Send</Text>
+                <View style={styles.reviewBox}>
+                  <Text style={styles.reviewLabel}>Selected Agency:</Text>
+                  <Text style={styles.reviewValue}>BrandCraft Agency</Text>
+                  <Text style={styles.reviewLabel}>Service:</Text>
+                  <Text style={styles.reviewValue}>Social Media Marketing</Text>
+                </View>
+                <TouchableOpacity style={styles.primaryBtnLarge} onPress={() => setDirectRequestVisible(false)}>
+                  <Text style={styles.primaryBtnLargeText}>Send Direct Request</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Post Requirement Modal */}
+      <Modal visible={postRequirementVisible} animationType="slide" presentationStyle="formSheet" onRequestClose={() => setPostRequirementVisible(false)}>
+        <KeyboardAvoidingView style={styles.modalContainer} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Post Requirement</Text>
+            <TouchableOpacity onPress={() => setPostRequirementVisible(false)}><X size={24} color={NAVY} /></TouchableOpacity>
+          </View>
+          <ScrollView style={styles.modalBody} contentContainerStyle={styles.modalScrollContent}>
+            <Text style={styles.modalStepText}>Step {prStep} of 5</Text>
+            {prStep === 1 && (
+              <View style={styles.stepContent}>
+                <Text style={styles.stepTitle}>Select Marketing Type</Text>
+                <TouchableOpacity style={styles.optionBtn} onPress={() => setPrStep(2)}>
+                  <Text style={styles.optionBtnText}>Online Marketing</Text>
+                  <ChevronRight size={20} color={GRAY_TEXT} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.optionBtn} onPress={() => setPrStep(2)}>
+                  <Text style={styles.optionBtnText}>Offline Marketing</Text>
+                  <ChevronRight size={20} color={GRAY_TEXT} />
+                </TouchableOpacity>
+              </View>
+            )}
+            {prStep === 2 && (
+              <View style={styles.stepContent}>
+                <Text style={styles.stepTitle}>Select Marketing Service</Text>
+                {ONLINE_SERVICES.map((srv, idx) => (
+                  <TouchableOpacity key={idx} style={styles.optionBtn} onPress={() => setPrStep(3)}>
+                    <Text style={styles.optionBtnText}>{srv}</Text>
+                    <ChevronRight size={20} color={GRAY_TEXT} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+            {prStep === 3 && (
+              <View style={styles.stepContent}>
+                <Text style={styles.stepTitle}>Requirement Details</Text>
+                <TextInput style={styles.input} placeholder="Requirement Title" placeholderTextColor={GRAY_TEXT} />
+                <TextInput style={styles.input} placeholder="Marketing Objective" placeholderTextColor={GRAY_TEXT} />
+                <TextInput style={styles.input} placeholder="Budget Range" placeholderTextColor={GRAY_TEXT} />
+                <TextInput style={[styles.input, { height: 100, textAlignVertical: 'top' }]} placeholder="Requirement Description" multiline placeholderTextColor={GRAY_TEXT} />
+                <TouchableOpacity style={styles.primaryBtnLarge} onPress={() => setPrStep(4)}>
+                  <Text style={styles.primaryBtnLargeText}>Preview Eligibility</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            {prStep === 4 && (
+              <View style={styles.stepContent}>
+                <Text style={styles.stepTitle}>Agency Eligibility Preview</Text>
+                <View style={styles.reviewBox}>
+                  <Text style={styles.reviewLabel}>This requirement will be visible to eligible verified marketing agencies.</Text>
+                  <Text style={[styles.reviewValue, { color: PURPLE, marginTop: 12 }]}>Estimated matching agencies: 12</Text>
+                </View>
+                <TouchableOpacity style={styles.primaryBtnLarge} onPress={() => setPrStep(5)}>
+                  <Text style={styles.primaryBtnLargeText}>Review and Post</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            {prStep === 5 && (
+              <View style={styles.stepContent}>
+                <Text style={styles.stepTitle}>Review</Text>
+                <View style={styles.reviewBox}>
+                  <Text style={styles.reviewLabel}>Service:</Text>
+                  <Text style={styles.reviewValue}>Social Media Marketing</Text>
+                  <Text style={styles.reviewLabel}>Visibility:</Text>
+                  <Text style={styles.reviewValue}>Marketing Agency Common Feed Wall</Text>
+                </View>
+                <TouchableOpacity style={styles.primaryBtnLarge} onPress={() => setPostRequirementVisible(false)}>
+                  <Text style={styles.primaryBtnLargeText}>Post Requirement</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* View Requirement Modal */}
+      <Modal visible={viewRequirementVisible} animationType="slide" transparent={true} onRequestClose={() => setViewRequirementVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContentCentered}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Requirement Details</Text>
+              <TouchableOpacity onPress={() => setViewRequirementVisible(false)}><X size={24} color={NAVY} /></TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalBody}>
+              {selectedReq && (
+                <View style={styles.reviewBox}>
+                  <Text style={styles.reviewLabel}>ID:</Text>
+                  <Text style={styles.reviewValue}>{selectedReq.id}</Text>
+                  <Text style={styles.reviewLabel}>Title:</Text>
+                  <Text style={styles.reviewValue}>{selectedReq.title}</Text>
+                  <Text style={styles.reviewLabel}>Service:</Text>
+                  <Text style={styles.reviewValue}>{selectedReq.service}</Text>
+                  <Text style={styles.reviewLabel}>Status:</Text>
+                  <Text style={styles.reviewValue}>{selectedReq.status}</Text>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* View Proposal Modal */}
+      <Modal visible={viewProposalVisible} animationType="slide" transparent={true} onRequestClose={() => setViewProposalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContentCentered}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Proposal Details</Text>
+              <TouchableOpacity onPress={() => setViewProposalVisible(false)}><X size={24} color={NAVY} /></TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalBody}>
+              {selectedProp && (
+                <View style={styles.reviewBox}>
+                  <Text style={styles.reviewLabel}>Agency:</Text>
+                  <Text style={styles.reviewValue}>{selectedProp.agencyName}</Text>
+                  <Text style={styles.reviewLabel}>Requirement:</Text>
+                  <Text style={styles.reviewValue}>{selectedProp.reqName}</Text>
+                  <Text style={styles.reviewLabel}>Amount:</Text>
+                  <Text style={styles.reviewValue}>{selectedProp.amount}</Text>
+                  <Text style={styles.reviewLabel}>Duration:</Text>
+                  <Text style={styles.reviewValue}>{selectedProp.duration}</Text>
+                  <View style={{ marginTop: 24, gap: 12 }}>
+                    <TouchableOpacity style={[styles.primaryBtnLarge, { backgroundColor: '#10B981' }]} onPress={() => setViewProposalVisible(false)}>
+                      <Text style={styles.primaryBtnLargeText}>Accept Proposal</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.primaryBtnLarge, { backgroundColor: '#EF4444' }]} onPress={() => setViewProposalVisible(false)}>
+                      <Text style={styles.primaryBtnLargeText}>Reject Proposal</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -464,116 +600,137 @@ export default function MarketingPage() {
 // =====================================
 // STYLES
 // =====================================
+
 const styles = StyleSheet.create({
-  wrapper: { flex: 1, backgroundColor: LIGHT_BG },
-  pageHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 24, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: colors.border },
+  container: { flex: 1, backgroundColor: LIGHT_BG },
+  pageHeader: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: colors.border },
+  pageHeaderInner: { width: '100%', maxWidth: 1320, alignSelf: 'center', paddingHorizontal: 32, paddingVertical: 24 },
   pageHeaderMobile: { paddingHorizontal: 16, paddingVertical: 16 },
   pageTitle: { fontSize: 24, fontWeight: '900', color: NAVY, marginBottom: 4 },
-  pageSubtitle: { fontSize: 14, color: '#64748B' },
-  headerIcons: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  iconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  scroll: { flex: 1 },
-  contentLayout: { padding: 16, gap: 24 },
-  contentLayoutWeb: { padding: 32, maxWidth: 1200, alignSelf: 'center', width: '100%', gap: 32 },
-
-  // Summary Cards
-  summaryGrid: { flexDirection: 'row', gap: 16 },
-  summaryCard: { flex: 1, backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border },
-  summaryIconBox: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  summaryValue: { fontSize: 28, fontWeight: '900', color: NAVY, marginBottom: 4 },
-  summaryLabel: { fontSize: 13, color: '#64748B', fontWeight: '500' },
+  pageSubtitle: { fontSize: 14, color: GRAY_TEXT },
+  
+  scroll: { flex: 1, width: '100%' },
+  scrollContent: { paddingBottom: 120, width: '100%', alignItems: 'center' },
+  contentWrapper: { padding: 16, gap: 24, width: '100%' },
+  contentWrapperDesktop: { paddingHorizontal: 32, paddingVertical: 24, maxWidth: 1320, flex: 1 },
 
   // Actions
-  actionsRow: { flexDirection: 'row', gap: 16 },
-  primaryActionCard: { flex: 1, backgroundColor: NAVY, borderRadius: 16, padding: 24 },
-  secondaryActionCard: { flex: 1, backgroundColor: '#fff', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: colors.border },
-  actionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
-  primaryIconBox: { width: 48, height: 48, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
-  secondaryIconBox: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
-  primaryActionTitle: { fontSize: 20, fontWeight: '800', color: '#fff', marginBottom: 8 },
-  primaryActionDesc: { fontSize: 14, color: 'rgba(255,255,255,0.7)', lineHeight: 20 },
-  secondaryActionTitle: { fontSize: 20, fontWeight: '800', color: NAVY, marginBottom: 8 },
-  secondaryActionDesc: { fontSize: 14, color: '#64748B', lineHeight: 20 },
+  actionsContainer: { flexDirection: 'row', gap: 24, width: '100%' },
+  actionsContainerMobile: { flexDirection: 'column', gap: 16 },
+  actionCard: { flex: 1, backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: colors.border, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 },
+  actionCardContent: { padding: 20 },
+  actionCardBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.03 },
+  actionCardBgOrange: { backgroundColor: ORANGE },
+  actionCardBgPurple: { backgroundColor: PURPLE },
+  actionCardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
+  actionIconContainer: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  actionIconOrange: { backgroundColor: '#FFF7ED' },
+  actionIconPurple: { backgroundColor: '#F5F3FF' },
+  actionBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  actionBadgeOrange: { backgroundColor: '#FFEDD5' },
+  actionBadgePurple: { backgroundColor: '#EDE9FE' },
+  actionBadgeTextOrange: { color: '#C2410C', fontSize: 12, fontWeight: '700' },
+  actionBadgeTextPurple: { color: '#6D28D9', fontSize: 12, fontWeight: '700' },
+  actionTitle: { fontSize: 18, fontWeight: '800', color: NAVY, marginBottom: 6 },
+  actionDesc: { fontSize: 13, color: GRAY_TEXT, lineHeight: 18, marginBottom: 16 },
+  actionLinkRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  actionLinkText: { fontSize: 13, fontWeight: '700' },
 
-  // Sections & Grids
-  twoColGrid: { flexDirection: 'row', gap: 24 },
-  colHalf: { flex: 1, gap: 24 },
-  section: { gap: 16 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  sectionTitle: { fontSize: 18, fontWeight: '800', color: NAVY },
-  viewAllText: { fontSize: 14, fontWeight: '600', color: '#2563EB' },
-  horizontalScroll: { gap: 16, paddingRight: 16 },
+  // Tabs
+  tabsContainer: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 12, padding: 4, borderWidth: 1, borderColor: colors.border, width: '100%' },
+  tabBtn: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 8 },
+  tabBtnActive: { backgroundColor: NAVY },
+  tabBtnText: { fontSize: 15, fontWeight: '700', color: GRAY_TEXT },
+  tabBtnTextActive: { color: '#fff' },
 
-  // Request Card
-  requestCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.border },
-  requestHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
-  requestTitle: { fontSize: 16, fontWeight: '800', color: NAVY, flex: 1, paddingRight: 12 },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  statusWarning: { backgroundColor: '#FEF3C7' },
-  statusWarningText: { color: '#D97706', fontSize: 11, fontWeight: '700' },
-  statusSuccess: { backgroundColor: '#DCFCE7' },
-  statusSuccessText: { color: '#16A34A', fontSize: 11, fontWeight: '700' },
-  statusPrimary: { backgroundColor: '#EFF6FF' },
-  statusPrimaryText: { color: '#2563EB', fontSize: 11, fontWeight: '700' },
-  requestMeta: { fontSize: 13, color: '#64748B', marginBottom: 16 },
-  requestFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
-  requestResponses: { fontSize: 13, fontWeight: '700', color: '#2563EB' },
-  viewBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: colors.border },
-  viewBtnText: { fontSize: 12, fontWeight: '700', color: NAVY },
+  // Overview
+  overviewContainer: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: colors.border, overflow: 'hidden', width: '100%' },
+  overviewGrid: { flexDirection: 'row', alignItems: 'center' },
+  overviewGridMobile: { flexWrap: 'wrap' },
+  overviewSegment: { flex: 1, padding: 20, alignItems: 'center' },
+  overviewSegmentMobile: { minWidth: '33%', flexBasis: '33%', flexGrow: 1 },
+  overviewDivider: { width: 1, height: '60%', backgroundColor: colors.border },
+  overviewIconContainer: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
+  overviewSegmentHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  overviewCount: { fontSize: 24, fontWeight: '900', color: NAVY },
+  overviewTitle: { fontSize: 13, color: GRAY_TEXT, fontWeight: '600', textAlign: 'center' },
 
-  // Upcoming Campaigns
-  upcomingCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.border },
-  upcomingTop: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 },
-  upcomingIcon: { width: 40, height: 40, borderRadius: 8, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  upcomingTitle: { fontSize: 15, fontWeight: '800', color: NAVY },
-  upcomingAgency: { fontSize: 13, color: '#64748B', marginTop: 2 },
-  upcomingBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
-  upcomingDate: { fontSize: 13, fontWeight: '700', color: NAVY },
-  upcomingBadge: { backgroundColor: '#F8FAFC', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: colors.border },
-  upcomingBadgeText: { fontSize: 11, fontWeight: '600', color: '#475569' },
+  // Sections
+  mainContentGrid: { flexDirection: 'row', gap: 24, width: '100%', alignItems: 'flex-start' },
+  mainContentCol: { flexDirection: 'column' },
+  columnLeft: { flex: 1.45, gap: 16 },
+  columnRight: { flex: 0.75, minWidth: 340, gap: 16 },
+  columnMobile: { width: '100%', gap: 16 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4, marginTop: 4 },
+  sectionTitle: { fontSize: 18, fontWeight: '900', color: NAVY, marginBottom: 2 },
+  sectionSubtitle: { fontSize: 13, color: GRAY_TEXT },
+  viewAllBtn: { fontSize: 13, fontWeight: '700', color: '#2563EB' },
+  listContainer: { gap: 12 },
+  emptyState: { padding: 32, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: colors.border, borderStyle: 'dashed' },
+  emptyStateText: { color: GRAY_TEXT, fontSize: 14 },
 
-  // Performance Summary
-  perfCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.border },
-  perfRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  perfMetric: { fontSize: 14, fontWeight: '600', color: '#475569' },
-  perfRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  perfValue: { fontSize: 16, fontWeight: '800', color: NAVY },
-  perfBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-  perfBadgePos: { backgroundColor: '#DCFCE7' },
-  perfBadgeNeg: { backgroundColor: '#FEF2F2' },
-  perfBadgeText: { fontSize: 11, fontWeight: '700' },
-  perfBadgeTextPos: { color: '#16A34A' },
-  perfBadgeTextNeg: { color: '#DC2626' },
+  // Request Mobile Card
+  reqCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.border },
+  reqCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  reqId: { fontSize: 12, fontWeight: '700', color: GRAY_TEXT },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  badgeText: { fontSize: 11, fontWeight: '700' },
+  reqTitle: { fontSize: 15, fontWeight: '800', color: NAVY, marginBottom: 4 },
+  reqService: { fontSize: 13, color: GRAY_TEXT, marginBottom: 12 },
+  reqDetailsRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+  modeBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, borderWidth: 1 },
+  modeDirect: { backgroundColor: '#FFF7ED', borderColor: '#FED7AA' },
+  modeFeed: { backgroundColor: '#F5F3FF', borderColor: '#DDD6FE' },
+  modeDirectText: { color: '#C2410C', fontSize: 11, fontWeight: '600' },
+  modeFeedText: { color: '#6D28D9', fontSize: 11, fontWeight: '600' },
+  reqProposals: { fontSize: 13, fontWeight: '600', color: NAVY },
+  reqFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
+  reqDate: { fontSize: 12, color: GRAY_TEXT },
+  textActionBtn: { flexDirection: 'row', alignItems: 'center' },
+  textActionBtnText: { fontSize: 13, fontWeight: '700', color: NAVY, marginRight: 2 },
 
-  // Categories
-  categoriesWrapper: { backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border },
-  catHeading: { fontSize: 13, fontWeight: '800', color: '#64748B', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
-  catFlexRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  categoryItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', paddingRight: 12, borderRadius: 20, borderWidth: 1, borderColor: colors.border },
-  catIconBox: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginRight: 8 },
-  categoryItemName: { fontSize: 13, fontWeight: '600', color: NAVY },
+  // Request Desktop Row
+  reqRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: colors.border },
+  reqRowCol1: { flex: 2, paddingRight: 12 },
+  reqRowCol2: { flex: 1.5, paddingRight: 12 },
+  reqRowCol3: { flex: 1, paddingRight: 12 },
+  reqRowCol4: { flex: 1, paddingRight: 12 },
+  reqRowCol5: { width: 80, alignItems: 'flex-end' },
+  reqModeText: { fontSize: 11, color: GRAY_TEXT, marginTop: 4, fontWeight: '600' },
+  reqProposalsDesktop: { fontSize: 13, fontWeight: '600', color: NAVY, marginBottom: 4 },
+  viewRowBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, paddingHorizontal: 10, backgroundColor: '#F8FAFC', borderRadius: 6, borderWidth: 1, borderColor: colors.border },
+  viewRowBtnText: { fontSize: 12, fontWeight: '700', color: NAVY, marginRight: 2 },
 
-  // Agency Card
-  providerCard: { width: 240, backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.border },
-  providerHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
-  providerAvatar: { width: 40, height: 40, borderRadius: 8, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
-  providerAvatarText: { fontSize: 16, fontWeight: '800', color: NAVY },
-  ratingBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFBEB', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
-  ratingText: { fontSize: 11, fontWeight: '700', color: GOLD, marginLeft: 4 },
-  providerNameRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
-  providerName: { fontSize: 15, fontWeight: '800', color: NAVY, flex: 1 },
-  providerCategory: { fontSize: 12, color: '#64748B', marginBottom: 12 },
-  providerJobs: { fontSize: 12, fontWeight: '600', color: '#475569', marginBottom: 16 },
-  providerBtn: { paddingVertical: 8, borderRadius: 6, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: colors.border, alignItems: 'center' },
-  providerBtnText: { fontSize: 12, fontWeight: '700', color: NAVY }
+  // Proposal Card specific
+  propHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 16 },
+  propAvatar: { width: 40, height: 40, borderRadius: 8, backgroundColor: '#F5F3FF', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  propAvatarText: { fontSize: 16, fontWeight: '800', color: PURPLE },
+  propNameRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
+  propName: { fontSize: 15, fontWeight: '800', color: NAVY },
+  propReqName: { fontSize: 12, color: GRAY_TEXT },
+  propDetailsGrid: { flexDirection: 'row', gap: 16, marginBottom: 16, backgroundColor: '#F8FAFC', padding: 12, borderRadius: 8 },
+  propDetailItem: { flex: 1 },
+  propDetailLabel: { fontSize: 11, color: GRAY_TEXT, marginBottom: 4 },
+  propDetailValue: { fontSize: 14, fontWeight: '800', color: NAVY },
+
+  // Modals
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  modalContentCentered: { width: '90%', maxWidth: 500, backgroundColor: '#fff', borderRadius: 16, maxHeight: '80%' },
+  modalContainer: { flex: 1, backgroundColor: '#fff' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: colors.border },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: NAVY },
+  modalBody: { flex: 1, padding: 20 },
+  modalScrollContent: { paddingBottom: 40 },
+  modalStepText: { fontSize: 12, fontWeight: '700', color: PURPLE, marginBottom: 16, textTransform: 'uppercase', letterSpacing: 1 },
+  stepContent: { gap: 16 },
+  stepTitle: { fontSize: 20, fontWeight: '800', color: NAVY, marginBottom: 8 },
+  optionBtn: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#F8FAFC', borderRadius: 12, borderWidth: 1, borderColor: colors.border },
+  optionBtnText: { fontSize: 16, fontWeight: '600', color: NAVY },
+  optionSubText: { fontSize: 13, color: GRAY_TEXT, marginTop: 4 },
+  input: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 16, fontSize: 15, color: NAVY },
+  primaryBtnLarge: { backgroundColor: NAVY, padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 16 },
+  primaryBtnLargeText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  reviewBox: { backgroundColor: '#F8FAFC', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: colors.border },
+  reviewLabel: { fontSize: 13, color: GRAY_TEXT, marginBottom: 4 },
+  reviewValue: { fontSize: 16, fontWeight: '700', color: NAVY, marginBottom: 12 },
 });

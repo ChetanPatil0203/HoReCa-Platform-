@@ -57,7 +57,7 @@ const SummaryCard = ({ title, value, icon: Icon, bgColor, iconColor, customStyle
   </View>
 );
 
-const ServiceRequestCard = ({ request }) => (
+const ServiceRequestCard = ({ request, onView }) => (
   <View style={styles.requestCard}>
     <View style={styles.requestHeader}>
       <Text style={styles.requestTitle}>{request.title}</Text>
@@ -74,7 +74,7 @@ const ServiceRequestCard = ({ request }) => (
     <Text style={styles.requestMeta}>{request.category} • {request.date}</Text>
     <View style={styles.requestFooter}>
       <Text style={styles.requestResponses}>{request.responses} Responses</Text>
-      <TouchableOpacity style={styles.viewBtn}>
+      <TouchableOpacity style={styles.viewBtn} onPress={onView}>
         <Text style={styles.viewBtnText}>View</Text>
       </TouchableOpacity>
     </View>
@@ -237,7 +237,7 @@ export default function ServicePage() {
     return (
       <DirectRequirementPage 
         provider={selectedProvider}
-        onBack={() => setCurrentView('providerProfile')}
+        onBack={() => setCurrentView('browseProviders')}
         onHome={() => setCurrentView('home')}
       />
     );
@@ -249,7 +249,6 @@ export default function ServicePage() {
       <View style={[styles.pageHeader, isMobile && styles.pageHeaderMobile]}>
         <View style={{ flex: 1, paddingRight: 12 }}>
           <Text style={styles.pageTitle}>Service Providers</Text>
-          <Text style={styles.pageSubtitle}>Manage your facility maintenance and service providers</Text>
         </View>
         <View style={styles.headerIcons}>
           <TouchableOpacity style={styles.iconBtn} onPress={() => setCurrentView('requests')}>
@@ -308,7 +307,16 @@ export default function ServicePage() {
                 <TouchableOpacity onPress={() => setCurrentView('requests')}><Text style={styles.viewAllText}>View All</Text></TouchableOpacity>
               </View>
               <View style={styles.cardsList}>
-                {RECENT_REQUESTS.map(req => <ServiceRequestCard key={req.id} request={req} />)}
+                {RECENT_REQUESTS.map(req => (
+                  <ServiceRequestCard 
+                    key={req.id} 
+                    request={req} 
+                    onView={() => {
+                      setSelectedRequest(req);
+                      setCurrentView('providerResponses');
+                    }}
+                  />
+                ))}
               </View>
             </View>
 

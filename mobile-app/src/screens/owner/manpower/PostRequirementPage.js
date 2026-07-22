@@ -65,9 +65,7 @@ export default function PostRequirementPage({ onBack, onViewRequirements }) {
           <Text style={styles.successDesc}>Your manpower requirement has been shared with all verified manpower agencies in our network.</Text>
           
           <View style={styles.successActions}>
-            <TouchableOpacity style={styles.primarySuccessBtn} onPress={onViewRequirements}>
-              <Text style={styles.primarySuccessText}>View My Requirements</Text>
-            </TouchableOpacity>
+
             <TouchableOpacity style={styles.secondarySuccessBtn} onPress={onBack}>
               <Text style={styles.secondarySuccessText}>Back Home</Text>
             </TouchableOpacity>

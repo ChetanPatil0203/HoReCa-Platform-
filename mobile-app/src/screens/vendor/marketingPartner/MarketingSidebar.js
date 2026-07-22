@@ -3,14 +3,14 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform }
 import {
   LayoutDashboard, Mail, Megaphone, Briefcase,
   DollarSign, Bell, Settings, LogOut,
-  HelpCircle, X, FolderOpen
+  HelpCircle, X, FolderOpen, FileText
 } from 'lucide-react-native';
 
 const NAV = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { key: "requests", label: "Requests", icon: Mail },
+  { key: "proposals", label: "Proposals", icon: FileText },
   { key: "campaigns", label: "Campaigns", icon: Megaphone },
-  { key: "portfolio", label: "Portfolio", icon: FolderOpen },
   { key: "team", label: "Team", icon: Briefcase },
   { key: "revenue", label: "Revenue", icon: DollarSign },
   { key: "notifications", label: "Notifications", icon: Bell },

@@ -247,6 +247,6 @@ const styles = StyleSheet.create({
   actionsRow: { flexDirection: 'row', gap: 12 },
   secondaryBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: NAVY, alignItems: 'center' },
   secondaryBtnText: { color: NAVY, fontSize: 14, fontWeight: 'bold' },
-  primaryBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: GOLD, alignItems: 'center' },
+  primaryBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: NAVY, alignItems: 'center' },
   primaryBtnText: { color: '#fff', fontSize: 14, fontWeight: 'bold' }
 });

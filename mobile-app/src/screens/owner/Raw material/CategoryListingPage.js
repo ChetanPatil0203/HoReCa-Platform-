@@ -120,7 +120,7 @@ function FilterDrawer({ visible, onClose, onApply, initialFilters, catColor }) {
   const [inStockOnly, setInStockOnly] = useState(initialFilters.inStockOnly);
 
   const DELIVERY_OPTS = ['Any', 'Same Day', 'Next Day', '2 Days'];
-  const RATING_OPTS   = [0, 4.0, 4.3, 4.5, 4.7];
+  const RATING_OPTS = [0, 4.0, 4.3, 4.5, 4.7];
 
   const handleApply = () => {
     onApply({
@@ -185,9 +185,9 @@ function FilterDrawer({ visible, onClose, onApply, initialFilters, catColor }) {
                     {r === 0
                       ? <Text style={[fd.chipText, minRating === r && fd.chipTextActive]}>Any</Text>
                       : <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                          <Star size={11} color={minRating === r ? '#fff' : '#F59E0B'} fill={minRating === r ? '#fff' : '#F59E0B'} />
-                          <Text style={[fd.chipText, minRating === r && fd.chipTextActive]}>{r}+</Text>
-                        </View>
+                        <Star size={11} color={minRating === r ? '#fff' : '#F59E0B'} fill={minRating === r ? '#fff' : '#F59E0B'} />
+                        <Text style={[fd.chipText, minRating === r && fd.chipTextActive]}>{r}+</Text>
+                      </View>
                     }
                   </TouchableOpacity>
                 ))}
@@ -249,7 +249,7 @@ const fd = StyleSheet.create({
     width: 320, backgroundColor: '#fff', flex: 1,
     ...Platform.select({ web: { boxShadow: '-4px 0 24px rgba(0,0,0,0.12)' } }),
   },
-  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16,  flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: colors.border },
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: colors.border },
   title: { fontSize: 17, fontWeight: '800', color: '#0F172A' },
   closeBtn: { padding: 4 },
   section: { padding: 20, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
@@ -325,14 +325,14 @@ export default function CategoryListingPage({ category, cartItems = [], onCartUp
   const isMobile = width < 768 || Platform.OS !== 'web';
 
   const catColor = category?.color || GOLD;
-  const catBg    = category?.bg    || '#FFFBEB';
+  const catBg = category?.bg || '#FFFBEB';
   const allProducts = CATEGORY_PRODUCTS[category?.id] || [];
 
   // ── State ──────────────────────────────────────────────────
-  const [search, setSearch]           = useState('');
-  const [sortId, setSortId]           = useState('price-asc');
-  const [showSort, setShowSort]       = useState(false);
-  const [showFilter, setShowFilter]   = useState(false);
+  const [search, setSearch] = useState('');
+  const [sortId, setSortId] = useState('price-asc');
+  const [showSort, setShowSort] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
   const [activeFilters, setActiveFilters] = useState({
     priceMax: 99999,
     minRating: 0,
@@ -358,23 +358,23 @@ export default function CategoryListingPage({ category, cartItems = [], onCartUp
     }
 
     // Quick filter
-    if (activeQuickFilter === 'In Stock')   list = list.filter(p => p.inStock);
-    if (activeQuickFilter === 'Same Day')   list = list.filter(p => p.delivery === 'Same Day');
-    if (activeQuickFilter === '⭐ 4.5+')   list = list.filter(p => p.rating >= 4.5);
+    if (activeQuickFilter === 'In Stock') list = list.filter(p => p.inStock);
+    if (activeQuickFilter === 'Same Day') list = list.filter(p => p.delivery === 'Same Day');
+    if (activeQuickFilter === '⭐ 4.5+') list = list.filter(p => p.rating >= 4.5);
 
     // Advanced filters
     list = list.filter(p => p.price <= activeFilters.priceMax);
     list = list.filter(p => p.rating >= activeFilters.minRating);
     if (activeFilters.delivery !== 'Any') list = list.filter(p => p.delivery === activeFilters.delivery);
-    if (activeFilters.inStockOnly)        list = list.filter(p => p.inStock);
+    if (activeFilters.inStockOnly) list = list.filter(p => p.inStock);
 
     // Sort
     switch (sortId) {
-      case 'price-asc':  list.sort((a, b) => a.price - b.price); break;
+      case 'price-asc': list.sort((a, b) => a.price - b.price); break;
       case 'price-desc': list.sort((a, b) => b.price - a.price); break;
-      case 'rating':     list.sort((a, b) => b.rating - a.rating); break;
-      case 'delivery':   list.sort((a, b) => (DELIVERY_RANK[a.delivery] ?? 9) - (DELIVERY_RANK[b.delivery] ?? 9)); break;
-      case 'orders':     list.sort((a, b) => b.orders - a.orders); break;
+      case 'rating': list.sort((a, b) => b.rating - a.rating); break;
+      case 'delivery': list.sort((a, b) => (DELIVERY_RANK[a.delivery] ?? 9) - (DELIVERY_RANK[b.delivery] ?? 9)); break;
+      case 'orders': list.sort((a, b) => b.orders - a.orders); break;
       default: break;
     }
     return list;
@@ -392,7 +392,7 @@ export default function CategoryListingPage({ category, cartItems = [], onCartUp
     onCartUpdate && onCartUpdate(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
-        return prev.map(item => 
+        return prev.map(item =>
           item.id === product.id ? { ...item, qty: item.qty + 1 } : item
         );
       }

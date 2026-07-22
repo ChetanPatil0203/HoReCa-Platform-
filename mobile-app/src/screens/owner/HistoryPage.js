@@ -1,375 +1,454 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform } from 'react-native';
-import { Clock, Search, Download, Package, Users, Wrench, Megaphone, CheckCircle, XCircle, ShoppingBag, CircleCheck, Clock3 } from 'lucide-react-native';
-import { colors } from '../../theme/colors';
+import { 
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, 
+  Platform, Dimensions, Modal, KeyboardAvoidingView, FlatList,
+  TouchableWithoutFeedback
+} from 'react-native';
+import { 
+  History, Search, SlidersHorizontal, Package, UsersRound, Wrench, 
+  Megaphone, ChevronRight, ListChecks, Clock3, CircleCheck, 
+  MoreVertical, Download, CalendarRange, X
+} from 'lucide-react-native';
 
-const HISTORY_DATA = [
-  { id: "ORD-287", category: "raw-material", title: "Premium Basmati Rice", vendor: "Metro Fresh Supplies", qty: "500 kg", date: "14 Jun 2026", amount: "₹18,500", status: "Accepted", invoice: "INV-2026-287" },
-  { id: "ORD-286", category: "manpower", title: "Weekend Kitchen Staff (2)", vendor: "Elite Staffing Co.", qty: "2 persons", date: "13 Jun 2026", amount: "₹6,400", status: "Pending", invoice: "—" },
-  { id: "ORD-285", category: "service", title: "Deep Kitchen Cleaning", vendor: "ProClean Services", qty: "Full property", date: "13 Jun 2026", amount: "₹8,500", status: "Accepted", invoice: "INV-2026-285" },
-  { id: "ORD-284", category: "marketing", title: "June Social Campaign", vendor: "BrandCraft Agency", qty: "30 days", date: "12 Jun 2026", amount: "₹35,000", status: "New", invoice: "—" },
-  { id: "ORD-283", category: "raw-material", title: "Fresh Vegetables Pack", vendor: "Metro Fresh Supplies", qty: "200 kg", date: "11 Jun 2026", amount: "₹12,200", status: "Accepted", invoice: "INV-2026-283" },
-  { id: "ORD-279", category: "raw-material", title: "Atlantic Salmon Fillet", vendor: "Pacific Seafood Co.", qty: "50 kg", date: "08 Jun 2026", amount: "₹24,000", status: "Accepted", invoice: "INV-2026-279" },
-];
+const { width } = Dimensions.get('window');
+const isMobile = width < 768;
 
-const CAT_META = {
-  "raw-material": { icon: Package, color: "#D4940A", label: "Raw Material" },
-  "manpower": { icon: Users, color: "#3B7FE0", label: "Manpower" },
-  "service": { icon: Wrench, color: "#0FA668", label: "Service" },
-  "marketing": { icon: Megaphone, color: "#9B5CF6", label: "Marketing" },
+const NAVY = '#071B3A';
+const WHITE = '#FFFFFF';
+const LIGHT_BG = '#F8FAFC';
+const MUTED = '#94A3B8';
+const GRAY = '#64748B';
+
+const COLORS = {
+  'raw-material': '#D97706', // Soft orange/gold
+  'manpower': '#3B82F6', // Soft blue
+  'service': '#10B981', // Soft green
+  'marketing': '#8B5CF6', // Soft purple
 };
 
-const STATUS_STYLES = {
-  Accepted: { bg: "rgba(15,166,104,0.12)", color: "#0FA668", icon: CheckCircle },
-  Pending: { bg: "rgba(212,148,10,0.12)", color: "#D4940A", icon: Clock },
-  New: { bg: "rgba(59,127,224,0.12)", color: "#3B7FE0", icon: Clock },
-  Rejected: { bg: "rgba(208,64,64,0.12)", color: "#D04040", icon: XCircle },
+const BG_COLORS = {
+  'raw-material': '#FEF3C7',
+  'manpower': '#EFF6FF',
+  'service': '#D1FAE5',
+  'marketing': '#F5F3FF',
+};
+
+const HISTORY_DATA = [
+  { 
+    id: "ORD-287", category: "raw-material", title: "Premium Basmati Rice", 
+    vendor: "Metro Fresh Supplies", qty: "500 kg", date: "15 Jul 2026", amount: "₹45,000", 
+    status: "In Progress", timeline: ["Order Placed", "Accepted", "Processing"]
+  },
+  { 
+    id: "REQ-286", category: "manpower", title: "Weekend Kitchen Staff", 
+    vendor: "Elite Staffing Agency", qty: "2 Staff", date: "20 Jul 2026", amount: null, 
+    status: "Candidates Submitted", timeline: ["Open", "Candidates Submitted"]
+  },
+  { 
+    id: "SRV-285", category: "service", title: "Deep Kitchen Cleaning", 
+    vendor: "ProClean Services", qty: null, date: "22 Jul 2026", amount: "₹8,500", 
+    status: "Accepted", timeline: ["Request Sent", "Quote Received", "Accepted"]
+  },
+  { 
+    id: "MKT-284", category: "marketing", title: "June Social Campaign", 
+    vendor: "BrandCraft Agency", qty: "1 Month", date: "01 Jun 2026", amount: "₹35,000", 
+    status: "Active", timeline: ["Request Sent", "Proposal Accepted", "Campaign Active"]
+  },
+  { 
+    id: "ORD-283", category: "raw-material", title: "Fresh Vegetables Pack", 
+    vendor: "Metro Fresh Supplies", qty: "200 kg", date: "10 Jun 2026", amount: "₹12,200", 
+    status: "Delivered", timeline: ["Order Placed", "Accepted", "Processing", "Dispatched", "Delivered"]
+  },
+  { 
+    id: "SRV-279", category: "service", title: "AC Maintenance", 
+    vendor: "CoolBreeze Tech", qty: null, date: "08 Jun 2026", amount: "₹4,000", 
+    status: "Completed", timeline: ["Request Sent", "Quote Accepted", "Scheduled", "In Progress", "Completed"]
+  },
+];
+
+const CAT_LABELS = {
+  'raw-material': 'RAW MATERIAL',
+  'manpower': 'MANPOWER',
+  'service': 'SERVICE',
+  'marketing': 'MARKETING'
+};
+
+const getStatusStyle = (status) => {
+  const s = status.toLowerCase();
+  if (s.includes('progress') || s.includes('active') || s.includes('processing') || s.includes('submitted')) {
+    return { bg: '#FEF3C7', text: '#D97706' }; // Orange
+  }
+  if (s.includes('completed') || s.includes('delivered') || s.includes('closed')) {
+    return { bg: '#D1FAE5', text: '#10B981' }; // Green
+  }
+  if (s.includes('cancelled') || s.includes('rejected')) {
+    return { bg: '#FEE2E2', text: '#EF4444' }; // Red
+  }
+  return { bg: '#EFF6FF', text: '#3B82F6' }; // Blue (New, Open, Accepted, Scheduled)
 };
 
 export default function HistoryPage() {
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("All");
 
+  const [detailsModal, setDetailsModal] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  
+  const [moreMenu, setMoreMenu] = useState(false);
+  const [filterSheet, setFilterSheet] = useState(false);
+
   const filtered = HISTORY_DATA.filter(o => {
-    const matchSearch = o.title.toLowerCase().includes(search.toLowerCase()) || o.vendor.toLowerCase().includes(search.toLowerCase()) || o.id.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = o.title.toLowerCase().includes(search.toLowerCase()) || 
+                        o.vendor.toLowerCase().includes(search.toLowerCase()) || 
+                        o.id.toLowerCase().includes(search.toLowerCase());
     const matchCat = filterCat === "All" || o.category === filterCat;
     return matchSearch && matchCat;
   });
 
-  const completedOrdersCount = HISTORY_DATA.filter(o => ['Completed', 'Delivered'].includes(o.status)).length;
-  const pendingOrdersCount = HISTORY_DATA.filter(o => !['Completed', 'Delivered', 'Cancelled', 'Rejected'].includes(o.status)).length;
+  const totalCount = HISTORY_DATA.length;
+  const completedCount = HISTORY_DATA.filter(o => ['Completed', 'Delivered', 'Closed'].includes(o.status)).length;
+  const inProgressCount = totalCount - completedCount - HISTORY_DATA.filter(o => ['Cancelled', 'Rejected'].includes(o.status)).length;
+
+  const renderCard = ({ item }) => {
+    const statStyle = getStatusStyle(item.status);
+    const catColor = COLORS[item.category];
+    const catBg = BG_COLORS[item.category];
+
+    return (
+      <View style={[styles.card, !isMobile && { width: '48%', marginRight: '2%' }]}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.recordId}>{item.id}</Text>
+          <View style={[styles.badge, { backgroundColor: statStyle.bg }]}>
+            <Text style={[styles.badgeText, { color: statStyle.text }]}>{item.status}</Text>
+          </View>
+        </View>
+
+        <View style={[styles.badge, { backgroundColor: catBg, alignSelf: 'flex-start', marginBottom: 12 }]}>
+          <Text style={[styles.badgeText, { color: catColor }]}>{CAT_LABELS[item.category]}</Text>
+        </View>
+
+        <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
+        <Text style={styles.cardProvider} numberOfLines={1}>{item.vendor}</Text>
+
+        <View style={styles.metaRow}>
+          <View style={styles.metaLeft}>
+            {item.qty && <Text style={styles.metaText}>{item.qty} · </Text>}
+            {item.amount && <Text style={styles.metaText}>{item.amount}</Text>}
+          </View>
+          <Text style={styles.metaText}>{item.date}</Text>
+        </View>
+
+        <View style={styles.cardFooter}>
+          <TouchableOpacity 
+            style={styles.actionBtn} 
+            onPress={() => { setSelectedRecord(item); setDetailsModal(true); }}>
+            <Text style={[styles.actionText, { color: catColor }]}>View Details</Text>
+            <ChevronRight size={16} color={catColor} />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
+  const renderDetailsModal = () => {
+    if (!selectedRecord) return null;
+    const catColor = COLORS[selectedRecord.category];
+    const statStyle = getStatusStyle(selectedRecord.status);
+
+    let modalTitle = 'Activity Details';
+    if (selectedRecord.category === 'raw-material') modalTitle = 'Raw Material Order Details';
+    if (selectedRecord.category === 'manpower') modalTitle = 'Manpower Requirement Details';
+    if (selectedRecord.category === 'service') modalTitle = 'Service Booking Details';
+    if (selectedRecord.category === 'marketing') modalTitle = 'Marketing Project Details';
+
+    return (
+      <Modal visible={detailsModal} transparent animationType="slide">
+        <View style={styles.overlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{modalTitle}</Text>
+              <TouchableOpacity onPress={() => setDetailsModal(false)}><X size={24} color={GRAY} /></TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalScroll}>
+              <View style={styles.detailHeader}>
+                <View>
+                  <Text style={styles.detailId}>{selectedRecord.id}</Text>
+                  <View style={[styles.badge, { backgroundColor: statStyle.bg, alignSelf: 'flex-start', marginTop: 4 }]}>
+                    <Text style={[styles.badgeText, { color: statStyle.text }]}>{selectedRecord.status}</Text>
+                  </View>
+                </View>
+                <View style={[styles.badge, { backgroundColor: BG_COLORS[selectedRecord.category] }]}>
+                  <Text style={[styles.badgeText, { color: catColor }]}>{CAT_LABELS[selectedRecord.category]}</Text>
+                </View>
+              </View>
+
+              <Text style={styles.detailTitle}>{selectedRecord.title}</Text>
+              <Text style={styles.detailProvider}>{selectedRecord.vendor}</Text>
+
+              <View style={styles.infoGrid}>
+                {selectedRecord.qty && (
+                  <View style={styles.infoGridItem}>
+                    <Text style={styles.infoLabel}>QUANTITY / DURATION</Text>
+                    <Text style={styles.infoValue}>{selectedRecord.qty}</Text>
+                  </View>
+                )}
+                {selectedRecord.amount && (
+                  <View style={styles.infoGridItem}>
+                    <Text style={styles.infoLabel}>AMOUNT</Text>
+                    <Text style={styles.infoValue}>{selectedRecord.amount}</Text>
+                  </View>
+                )}
+                <View style={styles.infoGridItem}>
+                  <Text style={styles.infoLabel}>DATE</Text>
+                  <Text style={styles.infoValue}>{selectedRecord.date}</Text>
+                </View>
+              </View>
+
+              <Text style={styles.sectionHeading}>Status Timeline</Text>
+              <View style={styles.timelineBox}>
+                {selectedRecord.timeline.map((step, idx) => (
+                  <View key={idx} style={styles.timelineStep}>
+                    <View style={styles.timelineDot} />
+                    {idx !== selectedRecord.timeline.length - 1 && <View style={styles.timelineLine} />}
+                    <Text style={styles.timelineText}>{step}</Text>
+                  </View>
+                ))}
+              </View>
+
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
+  const renderMoreMenu = () => (
+    <Modal visible={moreMenu} transparent animationType="fade">
+      <TouchableWithoutFeedback onPress={() => setMoreMenu(false)}>
+        <View style={styles.menuOverlay}>
+          <TouchableWithoutFeedback>
+            <View style={styles.menuContent}>
+              <TouchableOpacity style={styles.menuItem} onPress={() => setMoreMenu(false)}>
+                <Download size={18} color={NAVY} /><Text style={styles.menuText}>Export History</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.menuItem} onPress={() => setMoreMenu(false)}>
+                <CalendarRange size={18} color={NAVY} /><Text style={styles.menuText}>Select Date Range</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+    </Modal>
+  );
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <View style={[styles.iconBox, { backgroundColor: "rgba(212,148,10,0.1)" }]}>
-            <Clock size={24} color="#D4940A" />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingHorizontal: isMobile ? (width < 340 ? 12 : 16) : 24 }]}>
+        
+        {/* Header */}
+        <View style={styles.pageHeader}>
+          <View style={{ flex: 1 }}>
+            <View style={styles.titleRow}>
+              <History size={22} color={NAVY} />
+              <Text style={styles.pageTitle}>Activity History</Text>
+            </View>
+            <Text style={styles.pageSubtitle}>Track orders, hiring requests, service bookings and marketing projects</Text>
           </View>
-          <View>
-            <Text style={styles.pageTitle}>Order History</Text>
-            <Text style={styles.pageDesc}>Complete record of all past and ongoing orders</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Summary Stats */}
-      <View style={styles.statsGrid}>
-        <View style={styles.statCard}>
-          <View style={[styles.statIconBox, { backgroundColor: 'rgba(124, 58, 237, 0.1)' }]}>
-            <ShoppingBag size={20} color="#7C3AED" />
-          </View>
-          <Text style={[styles.statValue, { color: colors.dark }]}>{HISTORY_DATA.length}</Text>
-          <Text style={styles.statLabel}>Total Orders</Text>
-        </View>
-
-        <View style={styles.statCard}>
-          <View style={[styles.statIconBox, { backgroundColor: 'rgba(16, 185, 129, 0.1)' }]}>
-            <CircleCheck size={20} color="#10B981" />
-          </View>
-          <Text style={[styles.statValue, { color: colors.dark }]}>{completedOrdersCount}</Text>
-          <Text style={styles.statLabel}>Completed</Text>
-        </View>
-
-        <View style={styles.statCard}>
-          <View style={[styles.statIconBox, { backgroundColor: 'rgba(245, 158, 11, 0.1)' }]}>
-            <Clock3 size={20} color="#F59E0B" />
-          </View>
-          <Text style={[styles.statValue, { color: colors.dark }]}>{pendingOrdersCount}</Text>
-          <Text style={styles.statLabel}>Pending</Text>
-        </View>
-      </View>
-
-      {/* Table Section */}
-      <View style={styles.tableCard}>
-        <View style={styles.tableControls}>
-          <View style={styles.searchBox}>
-            <Search size={16} color={colors.muted} />
-            <TextInput 
-              style={styles.searchInput}
-              placeholder="Search orders, vendors..."
-              value={search}
-              onChangeText={setSearch}
-              placeholderTextColor={colors.muted}
-            />
-          </View>
-          
-          <View style={styles.categoryFilters}>
-            {["All", "raw-material", "manpower", "service", "marketing"].map(cat => {
-              const meta = cat !== "All" ? CAT_META[cat] : null;
-              const isActive = filterCat === cat;
-              return (
-                <TouchableOpacity 
-                  key={cat}
-                  onPress={() => setFilterCat(cat)}
-                  style={[
-                    styles.catBtn,
-                    isActive && { backgroundColor: meta ? meta.color : "#D4940A" }
-                  ]}
-                >
-                  <Text style={[
-                    styles.catBtnText,
-                    isActive && { color: "#fff", fontWeight: 'bold' }
-                  ]}>
-                    {cat === "All" ? "All" : meta.label}
-                  </Text>
-                </TouchableOpacity>
-              )
-            })}
-          </View>
-
-          <TouchableOpacity style={styles.exportBtn}>
-            <Download size={14} color={colors.muted} />
-            <Text style={styles.exportBtnText}>Export</Text>
+          <TouchableOpacity style={styles.moreBtn} onPress={() => setMoreMenu(true)}>
+            <MoreVertical size={20} color={NAVY} />
           </TouchableOpacity>
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ width: '100%' }}>
-            <View style={{ minWidth: 900, width: '100%' }}>
-              <View style={styles.tableHeader}>
-                <Text style={[styles.th, { flex: 1.5 }]}>Order ID</Text>
-                <Text style={[styles.th, { flex: 1.5 }]}>Category</Text>
-                <Text style={[styles.th, { flex: 3 }]}>Item / Service</Text>
-                <Text style={[styles.th, { flex: 2 }]}>Vendor</Text>
-                <Text style={[styles.th, { flex: 1 }]}>Qty</Text>
-                <Text style={[styles.th, { flex: 1.5 }]}>Date</Text>
-                <Text style={[styles.th, { flex: 1.5 }]}>Amount</Text>
-                <Text style={[styles.th, { flex: 1.5 }]}>Status</Text>
-                <Text style={[styles.th, { flex: 1.5 }]}>Invoice</Text>
-              </View>
-              
-              {filtered.map((order, i) => {
-                const meta = CAT_META[order.category];
-                const CatIcon = meta.icon;
-                const ss = STATUS_STYLES[order.status];
-                const StatusIcon = ss.icon;
-                return (
-                  <View key={order.id} style={styles.tableRow}>
-                    <Text style={[styles.tdId, { flex: 1.5, color: meta.color }]}>{order.id}</Text>
-                    
-                    <View style={[{ flex: 1.5 }, styles.catCell]}>
-                      <CatIcon size={12} color={meta.color} />
-                      <Text style={[styles.catCellText, { color: meta.color }]}>{meta.label}</Text>
-                    </View>
+        {/* Overview Card */}
+        <View style={styles.overviewCard}>
+          <Text style={styles.overviewCardTitle}>History Overview</Text>
+          <View style={styles.overviewCols}>
+            <TouchableOpacity style={styles.overviewCol}>
+              <View style={[styles.iconBox, { backgroundColor: '#EFF6FF' }]}><ListChecks size={18} color={'#3B82F6'} /></View>
+              <Text style={styles.overviewVal}>{totalCount}</Text>
+              <Text style={styles.overviewLabel}>Total Records</Text>
+            </TouchableOpacity>
+            <View style={styles.overviewDivider} />
+            <TouchableOpacity style={styles.overviewCol}>
+              <View style={[styles.iconBox, { backgroundColor: '#FEF3C7' }]}><Clock3 size={18} color={'#F59E0B'} /></View>
+              <Text style={styles.overviewVal}>{inProgressCount}</Text>
+              <Text style={styles.overviewLabel}>In Progress</Text>
+            </TouchableOpacity>
+            <View style={styles.overviewDivider} />
+            <TouchableOpacity style={styles.overviewCol}>
+              <View style={[styles.iconBox, { backgroundColor: '#D1FAE5' }]}><CircleCheck size={18} color={'#10B981'} /></View>
+              <Text style={styles.overviewVal}>{completedCount}</Text>
+              <Text style={styles.overviewLabel}>Completed</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
-                    <Text style={[styles.tdTitle, { flex: 3 }]} numberOfLines={1}>{order.title}</Text>
-                    <Text style={[styles.td, { flex: 2 }]} numberOfLines={1}>{order.vendor}</Text>
-                    <Text style={[styles.td, { flex: 1 }]}>{order.qty}</Text>
-                    <Text style={[styles.td, { flex: 1.5 }]}>{order.date}</Text>
-                    <Text style={[styles.tdAmount, { flex: 1.5 }]}>{order.amount}</Text>
-                    
-                    <View style={[{ flex: 1.5 }]}>
-                      <View style={[styles.statusBadge, { backgroundColor: ss.bg }]}>
-                        <StatusIcon size={10} color={ss.color} />
-                        <Text style={[styles.statusText, { color: ss.color }]}>{order.status}</Text>
-                      </View>
-                    </View>
-                    
-                    <Text style={[styles.tdId, { flex: 1.5, color: order.invoice === "—" ? colors.muted : "#3B7FE0" }]}>
-                      {order.invoice}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
-        </ScrollView>
-      </View>
+        {/* Search & Filter */}
+        <View style={styles.searchFilterRow}>
+          <View style={styles.searchBox}>
+            <Search size={18} color={MUTED} />
+            <TextInput 
+              style={styles.searchInput} 
+              placeholder="Search by ID, item, service or provider..." 
+              value={search}
+              onChangeText={setSearch}
+            />
+          </View>
+          <TouchableOpacity style={styles.filterBtn}>
+            <SlidersHorizontal size={20} color={NAVY} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Category Pills */}
+        <View style={styles.pillsWrap}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillsScroll}>
+            <TouchableOpacity style={[styles.pill, filterCat === 'All' && styles.pillActive]} onPress={() => setFilterCat('All')}>
+              <Text style={[styles.pillText, filterCat === 'All' && styles.pillTextActive]}>All</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={[styles.pill, filterCat === 'raw-material' && styles.pillActive]} onPress={() => setFilterCat('raw-material')}>
+              <Package size={14} color={filterCat === 'raw-material' ? WHITE : NAVY} style={{marginRight: 6}}/>
+              <Text style={[styles.pillText, filterCat === 'raw-material' && styles.pillTextActive]}>Raw Material</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={[styles.pill, filterCat === 'manpower' && styles.pillActive]} onPress={() => setFilterCat('manpower')}>
+              <UsersRound size={14} color={filterCat === 'manpower' ? WHITE : NAVY} style={{marginRight: 6}}/>
+              <Text style={[styles.pillText, filterCat === 'manpower' && styles.pillTextActive]}>Manpower</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={[styles.pill, filterCat === 'service' && styles.pillActive]} onPress={() => setFilterCat('service')}>
+              <Wrench size={14} color={filterCat === 'service' ? WHITE : NAVY} style={{marginRight: 6}}/>
+              <Text style={[styles.pillText, filterCat === 'service' && styles.pillTextActive]}>Services</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={[styles.pill, filterCat === 'marketing' && styles.pillActive]} onPress={() => setFilterCat('marketing')}>
+              <Megaphone size={14} color={filterCat === 'marketing' ? WHITE : NAVY} style={{marginRight: 6}}/>
+              <Text style={[styles.pillText, filterCat === 'marketing' && styles.pillTextActive]}>Marketing</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+
+        {/* Desktop Table Header (only if on web & large screen) */}
+        {!isMobile && (
+          <View style={styles.desktopTableHeader}>
+            <Text style={[styles.th, { flex: 1.5 }]}>Record ID</Text>
+            <Text style={[styles.th, { flex: 1.5 }]}>Category</Text>
+            <Text style={[styles.th, { flex: 3 }]}>Activity</Text>
+            <Text style={[styles.th, { flex: 2 }]}>Provider</Text>
+            <Text style={[styles.th, { flex: 2 }]}>Status</Text>
+            <Text style={[styles.th, { flex: 1 }]}></Text>
+          </View>
+        )}
+
+        {/* List */}
+        {filtered.length === 0 ? (
+          <View style={styles.emptyState}>
+            <History size={48} color={MUTED} style={{ marginBottom: 16 }} />
+            <Text style={styles.emptyTitle}>No activity history found</Text>
+            <Text style={styles.emptyDesc}>Your orders, hiring requests, service bookings and marketing projects will appear here.</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={filtered}
+            keyExtractor={item => item.id}
+            renderItem={renderCard}
+            scrollEnabled={false}
+            numColumns={isMobile ? 1 : 2}
+            key={isMobile ? 'mobile' : 'desktop'}
+            columnWrapperStyle={!isMobile && { justifyContent: 'flex-start' }}
+          />
+        )}
+
+      </ScrollView>
+
+      {renderDetailsModal()}
+      {renderMoreMenu()}
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingBottom: 40,
-  },
-  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16, 
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  pageTitle: {
-    fontSize: 24,
-    fontWeight: '900',
-    color: colors.dark,
-  },
-  pageDesc: {
-    fontSize: 12,
-    color: colors.muted,
-    marginTop: 4,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-    marginBottom: 24,
-  },
-  statCard: {
-    flex: 1,
-    minWidth: 120,
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...Platform.select({ web: { boxShadow: '0 4px 18px rgba(0,0,0,0.03)' } }),
-  },
-  statIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: '900',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: colors.muted,
-  },
-  tableCard: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    overflow: 'hidden',
-    ...Platform.select({ web: { boxShadow: '0 4px 18px rgba(0,0,0,0.03)' } }),
-  },
-  tableControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    gap: 16,
-    flexWrap: 'wrap',
-  },
-  searchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    height: 40,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    flex: 1,
-    minWidth: 200,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 8,
-    fontSize: 14,
-    outlineStyle: 'none',
-  },
-  categoryFilters: {
-    flexDirection: 'row',
-    gap: 8,
-    display: Platform.OS === 'web' && Platform.isPad === false ? 'flex' : 'none',
-  },
-  catBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: 'rgba(15,23,42,0.03)',
-  },
-  catBtnText: {
-    fontSize: 12,
-    color: colors.muted,
-  },
-  exportBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: 'rgba(15,23,42,0.03)',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  exportBtnText: {
-    fontSize: 12,
-    color: colors.muted,
-    marginLeft: 6,
-  },
-  tableHeader: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: '#F8FAFC',
-  },
-  th: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: colors.muted,
-  },
-  tableRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-    alignItems: 'center',
-  },
-  tdId: {
-    fontFamily: Platform.OS === 'web' ? 'monospace' : 'System',
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  catCell: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  catCellText: {
-    fontSize: 12,
-    marginLeft: 4,
-  },
-  tdTitle: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: colors.dark,
-  },
-  td: {
-    fontSize: 12,
-    color: colors.sub,
-  },
-  tdAmount: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: colors.dark,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    marginLeft: 4,
-  },
+  container: { flex: 1, backgroundColor: LIGHT_BG },
+  scrollContent: { paddingBottom: 115, maxWidth: 1320, alignSelf: 'center', width: '100%', paddingTop: 24 },
+  
+  pageHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  pageTitle: { fontSize: 24, fontWeight: 'bold', color: NAVY },
+  pageSubtitle: { fontSize: 13, color: GRAY },
+  moreBtn: { padding: 8, backgroundColor: WHITE, borderRadius: 8, borderWidth: 1, borderColor: '#E2E8F0' },
+
+  overviewCard: { backgroundColor: WHITE, borderRadius: 18, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 2, elevation: 1 },
+  overviewCardTitle: { fontSize: 14, fontWeight: 'bold', color: NAVY, marginBottom: 16, textAlign: 'center' },
+  overviewCols: { flexDirection: 'row', alignItems: 'center' },
+  overviewCol: { flex: 1, alignItems: 'center' },
+  overviewDivider: { width: 1, height: 40, backgroundColor: '#E2E8F0' },
+  iconBox: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  overviewVal: { fontSize: 20, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
+  overviewLabel: { fontSize: 12, color: GRAY },
+
+  searchFilterRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: WHITE, paddingHorizontal: 14, height: 44, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0' },
+  searchInput: { flex: 1, marginLeft: 8, fontSize: 14, color: NAVY },
+  filterBtn: { width: 44, height: 44, backgroundColor: WHITE, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center' },
+
+  pillsWrap: { marginBottom: 16 },
+  pillsScroll: { gap: 8 },
+  pill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: WHITE, borderWidth: 1, borderColor: '#E2E8F0' },
+  pillActive: { backgroundColor: NAVY, borderColor: NAVY },
+  pillText: { fontSize: 13, color: NAVY, fontWeight: '500' },
+  pillTextActive: { color: WHITE },
+
+  card: { backgroundColor: WHITE, borderRadius: 18, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 2, elevation: 1 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  recordId: { fontSize: 14, fontWeight: 'bold', color: NAVY },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  badgeText: { fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase' },
+  
+  cardTitle: { fontSize: 16, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
+  cardProvider: { fontSize: 14, color: GRAY, marginBottom: 12 },
+
+  metaRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  metaLeft: { flexDirection: 'row' },
+  metaText: { fontSize: 13, color: GRAY, fontWeight: '500' },
+
+  cardFooter: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingLeft: 12 },
+  actionText: { fontSize: 13, fontWeight: 'bold', marginRight: 2 },
+
+  desktopTableHeader: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#E2E8F0', backgroundColor: '#F8FAFC', marginBottom: 12, borderRadius: 8 },
+  th: { fontSize: 12, fontWeight: 'bold', color: GRAY, textTransform: 'uppercase' },
+
+  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 32 },
+  emptyTitle: { fontSize: 16, fontWeight: 'bold', color: NAVY, marginBottom: 8 },
+  emptyDesc: { fontSize: 14, color: GRAY, textAlign: 'center', lineHeight: 20 },
+
+  // Modals & Menus
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 16 },
+  modalContainer: { backgroundColor: WHITE, borderRadius: 20, width: '100%', maxWidth: 580, maxHeight: '84%', overflow: 'hidden' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY },
+  modalScroll: { padding: 20 },
+  
+  detailHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
+  detailId: { fontSize: 18, fontWeight: 'bold', color: NAVY },
+  detailTitle: { fontSize: 20, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
+  detailProvider: { fontSize: 16, color: GRAY, marginBottom: 20 },
+
+  infoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, backgroundColor: '#F8FAFC', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 24 },
+  infoGridItem: { width: isMobile ? '100%' : '45%', marginBottom: 8 },
+  infoLabel: { fontSize: 11, color: MUTED, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 4 },
+  infoValue: { fontSize: 14, color: NAVY, fontWeight: '600' },
+
+  sectionHeading: { fontSize: 16, fontWeight: 'bold', color: NAVY, marginBottom: 16 },
+  timelineBox: { paddingLeft: 8, marginBottom: 32 },
+  timelineStep: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 24, position: 'relative' },
+  timelineDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#3B82F6', marginTop: 4, marginRight: 16, zIndex: 2 },
+  timelineLine: { position: 'absolute', top: 16, left: 5, width: 2, height: 32, backgroundColor: '#EFF6FF', zIndex: 1 },
+  timelineText: { fontSize: 14, color: NAVY, fontWeight: '500' },
+
+  menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.1)' },
+  menuContent: { position: 'absolute', top: 80, right: 16, backgroundColor: WHITE, borderRadius: 12, padding: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5, minWidth: 200 },
+  menuItem: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 12 },
+  menuText: { fontSize: 14, fontWeight: '500', color: NAVY },
 });

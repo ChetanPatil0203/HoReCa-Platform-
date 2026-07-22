@@ -1,248 +1,331 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, Modal, TextInput, KeyboardAvoidingView, Platform, ToastAndroid, Dimensions } from 'react-native';
+import React, { useState, useRef } from 'react';
 import { 
-  Users, CheckCircle, Clock, XCircle, Briefcase, 
-  Plus, Edit, Eye, UserX, UserCheck, Calendar, MapPin, 
-  Phone, Mail, X, FileText, ChevronDown 
+  View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, 
+  Modal, TextInput, KeyboardAvoidingView, Platform, Dimensions, 
+  TouchableWithoutFeedback 
+} from 'react-native';
+import { 
+  UsersRound, UserRoundCheck, BriefcaseBusiness, UserPlus, Search, 
+  SlidersHorizontal, ChevronRight, MoreVertical, Pencil, CalendarClock, 
+  UserRoundX, X, UploadCloud 
 } from 'lucide-react-native';
 
-const { height } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
+const isMobile = width < 768;
+
+const NAVY = '#071B3A';
+const PURPLE = '#8B5CF6';
+const BLUE = '#3B82F6';
+const GREEN = '#10B981';
+const GRAY = '#64748B';
+const RED = '#EF4444';
+const WHITE = '#FFFFFF';
+const MUTED = '#94A3B8';
+const LIGHT_BG = '#F8FAFC';
+
+// Mock Data
+const MOCK_TEAM = [
+  { 
+    id: 'EMP-01', initials: 'AK', name: 'Aarav Kumar', role: 'Campaign Manager', 
+    skills: ['Strategy', 'Client Handling', 'Planning'], 
+    availability: 'Assigned', 
+    campaigns: [{ name: 'Azure Palace Summer Launch', role: 'Campaign Lead' }]
+  },
+  { 
+    id: 'EMP-02', initials: 'SM', name: 'Sneha Mishra', role: 'Social Media Manager', 
+    skills: ['Instagram', 'Reels', 'Facebook'], 
+    availability: 'Available', 
+    campaigns: [] 
+  },
+  { 
+    id: 'EMP-03', initials: 'RJ', name: 'Rohan Joshi', role: 'Graphic Designer', 
+    skills: ['Photoshop', 'Illustrator', 'Figma', 'After Effects'], 
+    availability: 'Available', 
+    campaigns: [] 
+  },
+  { 
+    id: 'EMP-04', initials: 'PK', name: 'Priya Kapoor', role: 'Content Writer', 
+    skills: ['Copywriting', 'Blogs'], 
+    availability: 'Unavailable', 
+    campaigns: [] 
+  },
+];
 
 const ROLES = [
-  "Campaign Manager", "Account Manager", "Social Media Manager", 
-  "Graphic Designer", "Content Writer", "Video Editor", 
-  "Photographer", "Videographer", "SEO Executive", 
-  "Meta Ads Specialist", "Google Ads Specialist", "Web Developer"
+  "Campaign Manager", "Social Media Manager", "Graphic Designer", 
+  "Content Writer", "Photographer", "Videographer", 
+  "Performance Marketer", "Web Developer", "Brand Strategist", "Account Manager"
 ];
 
-const MOCK_TEAM = [
-  { id: 'EMP-01', initials: 'AK', name: 'Aarav Kumar', role: 'Campaign Manager', skills: 'Strategy, Client Handling', availability: 'Busy', currentCampaign: 'Azure Palace Summer Launch', currentTask: 'Campaign Planning' },
-  { id: 'EMP-02', initials: 'SM', name: 'Sneha Mishra', role: 'Social Media Manager', skills: 'Instagram, Reels, Facebook', availability: 'Available', currentCampaign: 'None', currentTask: 'None' },
-  { id: 'EMP-03', initials: 'RJ', name: 'Rohan Joshi', role: 'Graphic Designer', skills: 'Photoshop, Illustrator, Figma', availability: 'Available', currentCampaign: 'None', currentTask: 'None' },
-  { id: 'EMP-04', initials: 'PK', name: 'Priya Kapoor', role: 'Content Writer', skills: 'Copywriting, Blogs', availability: 'On Leave', currentCampaign: 'None', currentTask: 'None' },
-];
-
-const MOCK_CAMPAIGNS = ["Azure Palace Summer Launch", "Weekend Brunch Influencer Push", "New Menu Launch PR"];
+const ACTIVE_CAMPAIGNS = ["Azure Palace Summer Launch", "Weekend Brunch Influencer Push"];
 
 export default function MarketingTeamScreen() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState('All');
+  
+  // Modals visibility
   const [addModalVisible, setAddModalVisible] = useState(false);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [moreMenuVisible, setMoreMenuVisible] = useState(false);
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [assignModalVisible, setAssignModalVisible] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [manageModalVisible, setManageModalVisible] = useState(false);
+  const [availModalVisible, setAvailModalVisible] = useState(false);
+  const [removeModalVisible, setRemoveModalVisible] = useState(false);
+  
+  const [selectedEmp, setSelectedEmp] = useState(null);
+  const [modalMode, setModalMode] = useState('Add'); // Add or Edit
 
-  // Add Employee Form State
-  const [newRole, setNewRole] = useState('Campaign Manager');
-  const [showRoleDropdown, setShowRoleDropdown] = useState(false);
+  // Form States (simplified for mockup)
+  const [formName, setFormName] = useState('');
+  const [formRole, setFormRole] = useState('Campaign Manager');
+  const [formCampaign, setFormCampaign] = useState('');
 
-  // Assign Campaign Form State
-  const [assignCampaign, setAssignCampaign] = useState('Azure Palace Summer Launch');
-  const [showCampDropdown, setShowCampDropdown] = useState(false);
-  const [assignRole, setAssignRole] = useState('');
-  const [assignStart, setAssignStart] = useState('');
-  const [assignEnd, setAssignEnd] = useState('');
+  const openMoreMenu = (emp) => {
+    setSelectedEmp(emp);
+    setMoreMenuVisible(true);
+  };
 
   const openAssign = (emp) => {
-    setSelectedEmployee(emp);
+    setSelectedEmp(emp);
     setAssignModalVisible(true);
   };
 
-  const handleAssignSubmit = () => {
-    if (selectedEmployee?.availability === 'Busy' || selectedEmployee?.availability === 'On Leave') {
-      if (Platform.OS === 'android') {
-         ToastAndroid.show("Cannot assign! Employee is " + selectedEmployee.availability, ToastAndroid.SHORT);
-      }
-      return;
-    }
-    if (Platform.OS === 'android') {
-      ToastAndroid.show("Employee assigned successfully.", ToastAndroid.SHORT);
-    }
-    setAssignModalVisible(false);
+  const openManage = (emp) => {
+    setSelectedEmp(emp);
+    setManageModalVisible(true);
   };
 
   const getAvailColor = (avail) => {
     switch (avail) {
-      case 'Available': return { bg: '#D1FAE5', text: '#059669', icon: CheckCircle };
-      case 'Busy': return { bg: '#FEE2E2', text: '#EF4444', icon: Briefcase };
-      case 'On Leave': return { bg: '#FEF3C7', text: '#D97706', icon: Clock };
-      case 'Inactive': return { bg: '#F1F5F9', text: '#475569', icon: XCircle };
-      default: return { bg: '#F1F5F9', text: '#475569', icon: CheckCircle };
+      case 'Available': return { bg: '#D1FAE5', text: '#059669' };
+      case 'Assigned': return { bg: '#F3E8FF', text: '#7E22CE' };
+      case 'Unavailable': return { bg: '#F1F5F9', text: '#475569' };
+      default: return { bg: '#F1F5F9', text: '#475569' };
     }
   };
 
-  const renderKPIs = () => (
-    <View style={styles.kpiWrapper}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.kpiScroll}>
-        <View style={styles.kpiCard}>
-          <Text style={styles.kpiLabel}>Total Team</Text>
-          <View style={styles.kpiRow}><Users size={20} color="#0F172A"/><Text style={styles.kpiVal}>14</Text></View>
-        </View>
-        <View style={styles.kpiCard}>
-          <Text style={styles.kpiLabel}>Available</Text>
-          <View style={styles.kpiRow}><CheckCircle size={20} color="#10B981"/><Text style={[styles.kpiVal, {color: '#10B981'}]}>8</Text></View>
-        </View>
-        <View style={styles.kpiCard}>
-          <Text style={styles.kpiLabel}>Busy</Text>
-          <View style={styles.kpiRow}><Briefcase size={20} color="#EF4444"/><Text style={[styles.kpiVal, {color: '#EF4444'}]}>4</Text></View>
-        </View>
-        <View style={styles.kpiCard}>
-          <Text style={styles.kpiLabel}>On Leave</Text>
-          <View style={styles.kpiRow}><Clock size={20} color="#F59E0B"/><Text style={[styles.kpiVal, {color: '#F59E0B'}]}>2</Text></View>
-        </View>
-        <View style={styles.kpiCard}>
-          <Text style={styles.kpiLabel}>Inactive</Text>
-          <View style={styles.kpiRow}><XCircle size={20} color="#64748B"/><Text style={[styles.kpiVal, {color: '#64748B'}]}>0</Text></View>
-        </View>
-      </ScrollView>
-    </View>
-  );
-
-  const renderEmployeeCard = ({ item }) => {
+  const renderTeamCard = ({ item }) => {
     const avail = getAvailColor(item.availability);
-    const Icon = avail.icon;
+    const visibleSkills = item.skills.slice(0, 3);
+    const extraSkillsCount = item.skills.length - 3;
+    
     return (
-      <View style={styles.card}>
+      <View style={[styles.card, !isMobile && { width: '48%', marginRight: '2%' }]}>
         <View style={styles.cardHeader}>
-          <View style={styles.avatarBox}><Text style={styles.avatarInitials}>{item.initials}</Text></View>
-          <View style={styles.headerInfo}>
-             <Text style={styles.empName}>{item.name}</Text>
-             <Text style={styles.empRole}>{item.role}</Text>
+          <View style={styles.cardHeaderLeft}>
+            <View style={styles.avatarBox}><Text style={styles.avatarText}>{item.initials}</Text></View>
+            <View style={styles.headerInfo}>
+              <Text style={styles.empName}>{item.name}</Text>
+              <Text style={styles.empRole}>{item.role}</Text>
+            </View>
           </View>
-          <View style={[styles.badge, { backgroundColor: avail.bg }]}>
-             <Icon size={12} color={avail.text} />
-             <Text style={[styles.badgeText, { color: avail.text }]}>{item.availability}</Text>
+          <View style={styles.cardHeaderRight}>
+            <View style={[styles.badge, { backgroundColor: avail.bg }]}>
+              <Text style={[styles.badgeText, { color: avail.text }]}>{item.availability}</Text>
+            </View>
+            <TouchableOpacity style={styles.moreBtn} onPress={() => openMoreMenu(item)}>
+              <MoreVertical size={20} color={MUTED} />
+            </TouchableOpacity>
           </View>
         </View>
 
-        <Text style={styles.skillsText}>Skills: {item.skills}</Text>
-
-        <View style={styles.assignmentBox}>
-           <Text style={styles.assignLabel}>Current Campaign</Text>
-           <Text style={styles.assignVal}>{item.currentCampaign}</Text>
-           <Text style={styles.assignLabel}>Current Task</Text>
-           <Text style={styles.assignVal}>{item.currentTask}</Text>
+        <View style={styles.skillsRow}>
+          {visibleSkills.map(skill => (
+            <View key={skill} style={styles.skillChip}><Text style={styles.skillChipText}>{skill}</Text></View>
+          ))}
+          {extraSkillsCount > 0 && (
+            <View style={styles.skillChip}><Text style={styles.skillChipText}>+{extraSkillsCount} more</Text></View>
+          )}
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.actionsRow}>
-           <TouchableOpacity style={styles.btnOutline}><Eye size={16} color="#8B5CF6"/><Text style={styles.btnOutlineText}>View</Text></TouchableOpacity>
-           <TouchableOpacity style={styles.btnOutline}><Edit size={16} color="#8B5CF6"/><Text style={styles.btnOutlineText}>Edit</Text></TouchableOpacity>
-           <TouchableOpacity style={styles.btnPrimary} onPress={() => openAssign(item)}><UserCheck size={16} color="#fff"/><Text style={styles.btnPrimaryText}>Assign Campaign</Text></TouchableOpacity>
-           <TouchableOpacity style={styles.btnDangerOutline}><UserX size={16} color="#EF4444"/><Text style={styles.btnDangerText}>Deactivate</Text></TouchableOpacity>
-        </ScrollView>
+        {item.campaigns && item.campaigns.length > 0 ? (
+          <View style={styles.campaignStrip}>
+            <Text style={styles.campStripLabel}>Current Campaign</Text>
+            <Text style={styles.campStripTitle} numberOfLines={2}>{item.campaigns[0].name}</Text>
+            <Text style={styles.campStripRole}>Campaign Role: {item.campaigns[0].role}</Text>
+            {item.campaigns.length > 1 && (
+              <Text style={styles.campStripExtra}>+{item.campaigns.length - 1} more campaign</Text>
+            )}
+          </View>
+        ) : (
+          <View style={styles.noCampStrip}>
+            <View style={styles.dotGreen} />
+            <Text style={styles.noCampText}>Available for Campaign Assignment</Text>
+          </View>
+        )}
+
+        <View style={styles.cardFooter}>
+          <TouchableOpacity style={styles.textActionBtn} onPress={() => { setSelectedEmp(item); setProfileModalVisible(true); }}>
+            <Text style={styles.textActionText}>View Profile</Text>
+            <ChevronRight size={16} color={NAVY} />
+          </TouchableOpacity>
+          
+          {item.availability === 'Assigned' ? (
+            <TouchableOpacity style={styles.primaryActionBtn} onPress={() => openManage(item)}>
+              <Text style={styles.primaryActionText}>Manage Assignment</Text>
+            </TouchableOpacity>
+          ) : item.availability === 'Available' ? (
+            <TouchableOpacity style={styles.primaryActionBtn} onPress={() => openAssign(item)}>
+              <Text style={styles.primaryActionText}>Assign Campaign</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
       </View>
     );
   };
 
-  const renderAddModal = () => (
-    <Modal visible={addModalVisible} animationType="slide">
-      <KeyboardAvoidingView style={styles.modalContainer} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={styles.modalHeader}>
-           <Text style={styles.modalTitle}>Add New Employee</Text>
-           <TouchableOpacity onPress={() => setAddModalVisible(false)}><X size={24} color="#0F172A"/></TouchableOpacity>
+  // -------------------------------------------------------------
+  // Modals
+  // -------------------------------------------------------------
+
+  const renderMoreMenu = () => (
+    <Modal visible={moreMenuVisible} transparent animationType="fade" onRequestClose={() => setMoreMenuVisible(false)}>
+      <TouchableWithoutFeedback onPress={() => setMoreMenuVisible(false)}>
+        <View style={styles.menuOverlay}>
+          <TouchableWithoutFeedback>
+            <View style={styles.menuContent}>
+              <TouchableOpacity style={styles.menuItem} onPress={() => { setMoreMenuVisible(false); setModalMode('Edit'); setAddModalVisible(true); }}>
+                <Pencil size={18} color={NAVY} />
+                <Text style={styles.menuText}>Edit Member</Text>
+              </TouchableOpacity>
+              
+              {selectedEmp?.availability === 'Assigned' && (
+                <TouchableOpacity style={styles.menuItem} onPress={() => { setMoreMenuVisible(false); openManage(selectedEmp); }}>
+                  <BriefcaseBusiness size={18} color={NAVY} />
+                  <Text style={styles.menuText}>Manage Assignment</Text>
+                </TouchableOpacity>
+              )}
+              
+              <TouchableOpacity style={styles.menuItem} onPress={() => { setMoreMenuVisible(false); setAvailModalVisible(true); }}>
+                <CalendarClock size={18} color={NAVY} />
+                <Text style={styles.menuText}>Change Availability</Text>
+              </TouchableOpacity>
+              
+              <View style={styles.menuDivider} />
+              
+              <TouchableOpacity style={styles.menuItem} onPress={() => { setMoreMenuVisible(false); setRemoveModalVisible(true); }}>
+                <UserRoundX size={18} color={RED} />
+                <Text style={[styles.menuText, { color: RED }]}>Remove Member</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableWithoutFeedback>
         </View>
-        <ScrollView style={styles.modalScroll} contentContainerStyle={{padding: 16}}>
-           
-           <View style={{alignItems: 'center', marginBottom: 24}}>
-             <View style={styles.uploadPhotoBox}>
-                <Plus size={24} color="#94A3B8"/>
-                <Text style={styles.uploadPhotoText}>Upload Photo</Text>
-             </View>
-           </View>
-
-           <Text style={styles.label}>Full Name</Text>
-           <TextInput style={styles.input} placeholder="e.g. Rahul Sharma" />
-           
-           <View style={styles.row}>
-             <View style={styles.col}><Text style={styles.label}>Phone</Text><TextInput style={styles.input} placeholder="+91..." keyboardType="phone-pad" /></View>
-             <View style={styles.col}><Text style={styles.label}>Email</Text><TextInput style={styles.input} placeholder="name@agency.com" keyboardType="email-address" /></View>
-           </View>
-
-           <Text style={styles.label}>Role</Text>
-           <TouchableOpacity style={styles.dropdownBtn} onPress={() => setShowRoleDropdown(!showRoleDropdown)}>
-              <Text style={styles.dropdownText}>{newRole}</Text>
-              <ChevronDown size={20} color="#64748B" />
-           </TouchableOpacity>
-           {showRoleDropdown && (
-              <View style={styles.dropdownList}>
-                {ROLES.map(r => (
-                  <TouchableOpacity key={r} style={styles.dropdownItem} onPress={() => { setNewRole(r); setShowRoleDropdown(false); }}>
-                    <Text style={styles.dropdownItemText}>{r}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-           )}
-
-           <Text style={styles.label}>Core Skills</Text>
-           <TextInput style={styles.input} placeholder="e.g. Photoshop, Premiere Pro..." />
-
-           <View style={styles.row}>
-             <View style={styles.col}><Text style={styles.label}>Experience (Years)</Text><TextInput style={styles.input} placeholder="e.g. 3" keyboardType="numeric" /></View>
-             <View style={styles.col}><Text style={styles.label}>Joining Date</Text><TextInput style={styles.input} placeholder="DD/MM/YYYY" /></View>
-           </View>
-
-           <Text style={styles.label}>Working Hours</Text>
-           <TextInput style={styles.input} placeholder="e.g. 10 AM - 7 PM" />
-           
-           <Text style={styles.label}>Emergency Contact</Text>
-           <TextInput style={styles.input} placeholder="Name & Phone" />
-
-           <Text style={styles.label}>ID Proof Upload</Text>
-           <TouchableOpacity style={styles.fileUploadBox}>
-              <FileText size={20} color="#94A3B8"/>
-              <Text style={styles.fileUploadText}>Tap to upload PDF/JPG</Text>
-           </TouchableOpacity>
-
-        </ScrollView>
-        <View style={styles.modalFooter}>
-           <TouchableOpacity style={styles.btnPrimaryFull} onPress={() => setAddModalVisible(false)}><Text style={styles.btnPrimaryFullText}>Save Employee</Text></TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 
-  const renderAssignModal = () => (
-    <Modal visible={assignModalVisible} transparent={true} animationType="fade">
+  const renderAddEditModal = () => (
+    <Modal visible={addModalVisible} transparent animationType="slide">
       <View style={styles.bottomSheetOverlay}>
-        <TouchableOpacity style={{flex: 1}} onPress={() => setAssignModalVisible(false)} />
-        <View style={styles.bottomSheetContainer}>
-           <View style={styles.sheetHandle} />
-           <Text style={styles.sheetTitle}>Assign to Campaign</Text>
-           <Text style={styles.sheetSubtitle}>Assigning {selectedEmployee?.name} ({selectedEmployee?.role})</Text>
-
-           {selectedEmployee?.availability === 'Busy' || selectedEmployee?.availability === 'On Leave' ? (
-             <View style={styles.warningBox}>
-                <XCircle size={20} color="#EF4444" />
-                <Text style={styles.warningText}>This employee is currently {selectedEmployee?.availability} and cannot be assigned to overlapping campaigns.</Text>
-             </View>
-           ) : null}
-
-           <Text style={styles.label}>Select Campaign</Text>
-           <TouchableOpacity style={styles.dropdownBtn} onPress={() => setShowCampDropdown(!showCampDropdown)}>
-              <Text style={styles.dropdownText}>{assignCampaign}</Text>
-              <ChevronDown size={20} color="#64748B" />
-           </TouchableOpacity>
-           {showCampDropdown && (
-              <View style={styles.dropdownList}>
-                {MOCK_CAMPAIGNS.map(c => (
-                  <TouchableOpacity key={c} style={styles.dropdownItem} onPress={() => { setAssignCampaign(c); setShowCampDropdown(false); }}>
-                    <Text style={styles.dropdownItemText}>{c}</Text>
-                  </TouchableOpacity>
-                ))}
+        <KeyboardAvoidingView style={styles.modalCentered} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+          <View style={styles.modalHeader}>
+            <View>
+              <Text style={styles.modalTitle}>{modalMode === 'Add' ? 'Add Team Member' : 'Edit Team Member'}</Text>
+              {modalMode === 'Add' && <Text style={styles.modalSubtitle}>Add a member to your marketing agency team</Text>}
+            </View>
+            <TouchableOpacity onPress={() => setAddModalVisible(false)}><X size={24} color={GRAY} /></TouchableOpacity>
+          </View>
+          <ScrollView style={styles.modalScroll}>
+            <Text style={styles.inputLabel}>Full Name *</Text>
+            <TextInput style={styles.input} placeholder="e.g. Rahul Sharma" />
+            
+            <View style={isMobile ? null : styles.row}>
+              <View style={isMobile ? null : styles.col}>
+                <Text style={styles.inputLabel}>Email Address *</Text>
+                <TextInput style={styles.input} placeholder="name@agency.com" keyboardType="email-address" />
               </View>
-           )}
+              <View style={isMobile ? null : styles.col}>
+                <Text style={styles.inputLabel}>Mobile Number *</Text>
+                <TextInput style={styles.input} placeholder="+91..." keyboardType="phone-pad" />
+              </View>
+            </View>
 
-           <Text style={styles.label}>Role in Campaign</Text>
-           <TextInput style={styles.input} placeholder="e.g. Lead Designer" value={assignRole} onChangeText={setAssignRole} />
+            <Text style={styles.inputLabel}>Team Role *</Text>
+            <View style={styles.pseudoSelect}>
+              <Text style={styles.pseudoSelectText}>{formRole}</Text>
+              <ChevronRight size={16} color={MUTED} />
+            </View>
 
-           <View style={styles.row}>
-             <View style={styles.col}><Text style={styles.label}>Start Date</Text><TextInput style={styles.input} placeholder="DD/MM/YYYY" value={assignStart} onChangeText={setAssignStart} /></View>
-             <View style={styles.col}><Text style={styles.label}>End Date</Text><TextInput style={styles.input} placeholder="DD/MM/YYYY" value={assignEnd} onChangeText={setAssignEnd} /></View>
-           </View>
+            <Text style={styles.inputLabel}>Primary Skills *</Text>
+            <TextInput style={styles.input} placeholder="e.g. Strategy, Social Media" />
+          </ScrollView>
+          <View style={styles.modalFooterActions}>
+            <TouchableOpacity style={styles.btnOutlineModal} onPress={() => setAddModalVisible(false)}>
+              <Text style={styles.btnOutlineTextBlack}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.btnPrimaryModal} onPress={() => setAddModalVisible(false)}>
+              <Text style={styles.btnPrimaryText}>{modalMode === 'Add' ? 'Add Team Member' : 'Save Changes'}</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </View>
+    </Modal>
+  );
 
-           <TouchableOpacity 
-             style={[styles.btnPrimaryFull, (selectedEmployee?.availability === 'Busy' || selectedEmployee?.availability === 'On Leave') && { backgroundColor: '#CBD5E1' }]}
-             onPress={handleAssignSubmit}
-           >
-             <Text style={styles.btnPrimaryFullText}>Confirm Assignment</Text>
-           </TouchableOpacity>
+  const renderRemoveModal = () => {
+    const hasDependencies = selectedEmp?.campaigns && selectedEmp.campaigns.length > 0;
+    return (
+      <Modal visible={removeModalVisible} transparent animationType="fade">
+        <View style={styles.bottomSheetOverlay}>
+          <View style={styles.dialogContent}>
+            <View style={styles.dialogHeader}>
+              <Text style={styles.dialogTitle}>{hasDependencies ? 'Cannot remove this team member' : 'Remove this team member?'}</Text>
+            </View>
+            <Text style={styles.dialogText}>
+              {hasDependencies 
+                ? 'This member is currently assigned to active campaign work. Reassign or remove their campaign assignments first.' 
+                : 'The member will no longer have access to the agency workspace.'}
+            </Text>
+            <View style={styles.modalFooterActions}>
+              <TouchableOpacity style={styles.btnOutlineModal} onPress={() => setRemoveModalVisible(false)}>
+                <Text style={styles.btnOutlineTextBlack}>Cancel</Text>
+              </TouchableOpacity>
+              {hasDependencies ? (
+                <TouchableOpacity style={styles.btnPrimaryModal} onPress={() => { setRemoveModalVisible(false); openManage(selectedEmp); }}>
+                  <Text style={styles.btnPrimaryText}>Manage Assignments</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity style={[styles.btnPrimaryModal, { backgroundColor: RED }]} onPress={() => setRemoveModalVisible(false)}>
+                  <Text style={styles.btnPrimaryText}>Remove Member</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
+  const renderProfileModal = () => (
+    <Modal visible={profileModalVisible} transparent animationType="slide">
+      <View style={styles.bottomSheetOverlay}>
+        <View style={styles.modalCentered}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Member Profile</Text>
+            <TouchableOpacity onPress={() => setProfileModalVisible(false)}><X size={24} color={GRAY} /></TouchableOpacity>
+          </View>
+          <ScrollView style={styles.modalScroll}>
+            <View style={styles.profTop}>
+              <View style={[styles.avatarBox, { width: 64, height: 64, borderRadius: 32 }]}><Text style={{fontSize: 24, color: WHITE, fontWeight: 'bold'}}>{selectedEmp?.initials}</Text></View>
+              <Text style={styles.profName}>{selectedEmp?.name}</Text>
+              <Text style={styles.profRole}>{selectedEmp?.role}</Text>
+              <View style={[styles.badge, { backgroundColor: getAvailColor(selectedEmp?.availability).bg, marginTop: 8 }]}>
+                <Text style={[styles.badgeText, { color: getAvailColor(selectedEmp?.availability).text }]}>{selectedEmp?.availability}</Text>
+              </View>
+            </View>
+            <View style={styles.profDetailRow}><Text style={styles.profLabel}>Skills</Text><Text style={styles.profVal}>{selectedEmp?.skills?.join(', ')}</Text></View>
+            <View style={styles.profDetailRow}><Text style={styles.profLabel}>Email</Text><Text style={styles.profVal}>contact@agency.com</Text></View>
+            <View style={styles.profDetailRow}><Text style={styles.profLabel}>Mobile</Text><Text style={styles.profVal}>+91 98765 43210</Text></View>
+          </ScrollView>
+          <View style={styles.modalFooterActions}>
+            <TouchableOpacity style={styles.btnOutlineModal} onPress={() => { setProfileModalVisible(false); setModalMode('Edit'); setAddModalVisible(true); }}>
+              <Text style={styles.btnOutlineTextBlack}>Edit Member</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.btnPrimaryModal} onPress={() => { setProfileModalVisible(false); selectedEmp?.availability === 'Assigned' ? openManage(selectedEmp) : openAssign(selectedEmp); }}>
+              <Text style={styles.btnPrimaryText}>{selectedEmp?.availability === 'Assigned' ? 'Manage Assignment' : 'Assign Campaign'}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
@@ -250,156 +333,181 @@ export default function MarketingTeamScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-         <Text style={styles.headerTitle}>Team Directory</Text>
-         <TouchableOpacity style={styles.addBtn} onPress={() => setAddModalVisible(true)}>
-            <Plus size={20} color="#fff" />
-            <Text style={styles.addBtnText}>Add Employee</Text>
-         </TouchableOpacity>
-      </View>
-      
-      {renderKPIs()}
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingHorizontal: isMobile ? (width < 340 ? 12 : 16) : 24 }]}>
+        
+        <View style={[styles.header, width < 340 && { flexDirection: 'column', alignItems: 'flex-start' }]}>
+          <View style={{ flex: 1, paddingRight: width < 340 ? 0 : 12, marginBottom: width < 340 ? 12 : 0 }}>
+            <Text style={styles.pageTitle}>Team</Text>
+            <Text style={styles.pageSubtitle}>Manage team members, skills and campaign assignments</Text>
+          </View>
+          <TouchableOpacity style={styles.addBtn} onPress={() => { setModalMode('Add'); setAddModalVisible(true); }}>
+            <UserPlus size={18} color={WHITE} />
+            <Text style={styles.addBtnText}>Add Team Member</Text>
+          </TouchableOpacity>
+        </View>
 
-      <FlatList
-        data={MOCK_TEAM}
-        keyExtractor={item => item.id}
-        renderItem={renderEmployeeCard}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-      />
+        <View style={styles.overviewCard}>
+          <Text style={styles.overviewCardTitle}>Team Overview</Text>
+          <View style={styles.overviewCols}>
+            <TouchableOpacity style={styles.overviewCol}>
+              <UsersRound size={20} color={BLUE} />
+              <Text style={styles.overviewVal}>14</Text>
+              <Text style={styles.overviewLabel}>Total Members</Text>
+            </TouchableOpacity>
+            <View style={styles.overviewDivider} />
+            <TouchableOpacity style={styles.overviewCol}>
+              <UserRoundCheck size={20} color={GREEN} />
+              <Text style={styles.overviewVal}>8</Text>
+              <Text style={styles.overviewLabel}>Available</Text>
+            </TouchableOpacity>
+            <View style={styles.overviewDivider} />
+            <TouchableOpacity style={styles.overviewCol}>
+              <BriefcaseBusiness size={20} color={PURPLE} />
+              <Text style={styles.overviewVal}>4</Text>
+              <Text style={styles.overviewLabel}>Assigned</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
-      {renderAddModal()}
-      {renderAssignModal()}
+        <View style={styles.searchFilterRow}>
+          <View style={styles.searchBox}>
+            <Search size={18} color={MUTED} />
+            <TextInput style={styles.searchInput} placeholder="Search by member, role, or skill..." />
+          </View>
+          <TouchableOpacity style={styles.filterBtn} onPress={() => setFilterModalVisible(true)}>
+            <SlidersHorizontal size={20} color={NAVY} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.pillsWrap}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillsScroll}>
+            {['All', 'Available', 'Assigned', 'Unavailable'].map(f => (
+              <TouchableOpacity key={f} style={[styles.pill, activeFilter === f && styles.pillActive]} onPress={() => setActiveFilter(f)}>
+                <Text style={[styles.pillText, activeFilter === f && styles.pillTextActive]}>{f}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        <FlatList
+          data={MOCK_TEAM}
+          keyExtractor={item => item.id}
+          renderItem={renderTeamCard}
+          scrollEnabled={false}
+          numColumns={isMobile ? 1 : 2}
+          key={isMobile ? 'mobile' : 'desktop'}
+          columnWrapperStyle={!isMobile && styles.cardRow}
+        />
+
+      </ScrollView>
+
+      {renderAddEditModal()}
+      {renderMoreMenu()}
+      {renderRemoveModal()}
+      {renderProfileModal()}
+      {/* Note: Assign/Manage modals would follow the same pattern as Profile modal */}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1, backgroundColor: '#F8FAFC',
-  },
-  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16, 
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0',
-  },
-  headerTitle: {
-    fontSize: 20, fontWeight: 'bold', color: '#0F172A',
-  },
-  addBtn: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#8B5CF6', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, gap: 6,
-  },
-  addBtnText: {
-    color: '#fff', fontWeight: 'bold', fontSize: 13,
-  },
-  kpiWrapper: {
-    backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', paddingVertical: 12,
-  },
-  kpiScroll: {
-    paddingHorizontal: 16, gap: 12,
-  },
-  kpiCard: {
-    backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 8, padding: 12, width: 120,
-  },
-  kpiLabel: {
-    fontSize: 12, color: '#64748B', marginBottom: 8,
-  },
-  kpiRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-  },
-  kpiVal: {
-    fontSize: 20, fontWeight: 'bold', color: '#0F172A',
-  },
-  listContainer: {
-    padding: 16, paddingBottom: 40,
-  },
-  card: {
-    backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0', elevation: 1,
-  },
-  cardHeader: {
-    flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12,
-  },
-  avatarBox: {
-    width: 48, height: 48, borderRadius: 24, backgroundColor: '#8B5CF6', alignItems: 'center', justifyContent: 'center', marginRight: 12,
-  },
-  avatarInitials: {
-    color: '#fff', fontSize: 18, fontWeight: 'bold',
-  },
-  headerInfo: {
-    flex: 1,
-  },
-  empName: {
-    fontSize: 16, fontWeight: 'bold', color: '#0F172A', marginBottom: 2,
-  },
-  empRole: {
-    fontSize: 13, color: '#475569',
-  },
-  badge: {
-    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, gap: 4,
-  },
-  badgeText: {
-    fontSize: 10, fontWeight: 'bold',
-  },
-  skillsText: {
-    fontSize: 13, color: '#334155', fontStyle: 'italic', marginBottom: 12,
-  },
-  assignmentBox: {
-    backgroundColor: '#F1F5F9', padding: 12, borderRadius: 8, marginBottom: 16,
-  },
-  assignLabel: {
-    fontSize: 11, color: '#64748B', fontWeight: '600', textTransform: 'uppercase', marginBottom: 4,
-  },
-  assignVal: {
-    fontSize: 13, color: '#0F172A', fontWeight: '500', marginBottom: 8,
-  },
-  actionsRow: {
-    gap: 8,
-  },
-  btnPrimary: {
-    flexDirection: 'row', backgroundColor: '#8B5CF6', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, alignItems: 'center', gap: 6,
-  },
-  btnPrimaryText: {
-    color: '#fff', fontWeight: 'bold', fontSize: 13,
-  },
-  btnOutline: {
-    flexDirection: 'row', backgroundColor: '#F5F3FF', borderWidth: 1, borderColor: '#DDD6FE', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, alignItems: 'center', gap: 6,
-  },
-  btnOutlineText: {
-    color: '#8B5CF6', fontWeight: 'bold', fontSize: 13,
-  },
-  btnDangerOutline: {
-    flexDirection: 'row', backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, alignItems: 'center', gap: 6,
-  },
-  btnDangerText: {
-    color: '#EF4444', fontWeight: 'bold', fontSize: 13,
-  },
+  container: { flex: 1, backgroundColor: LIGHT_BG },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 24, paddingBottom: 16, backgroundColor: LIGHT_BG },
+  pageTitle: { fontSize: 24, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
+  pageSubtitle: { fontSize: 13, color: GRAY },
+  addBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: NAVY, paddingHorizontal: 16, height: 42, borderRadius: 10, gap: 8, justifyContent: 'center' },
+  addBtnText: { color: WHITE, fontWeight: 'bold', fontSize: 14 },
   
-  // Modals
-  modalContainer: { flex: 1, backgroundColor: '#F8FAFC' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#0F172A' },
-  modalScroll: { flex: 1 },
-  label: { fontSize: 13, color: '#475569', marginBottom: 6, fontWeight: '500' },
-  input: { borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: '#0F172A', marginBottom: 16, backgroundColor: '#fff' },
+  scrollContent: { paddingBottom: 115, maxWidth: 1320, alignSelf: 'center', width: '100%' },
+
+  overviewCard: { backgroundColor: WHITE, borderRadius: 18, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 2, elevation: 1 },
+  overviewCardTitle: { fontSize: 14, fontWeight: 'bold', color: NAVY, marginBottom: 16, textAlign: 'center' },
+  overviewCols: { flexDirection: 'row', alignItems: 'center' },
+  overviewCol: { flex: 1, alignItems: 'center' },
+  overviewDivider: { width: 1, height: 40, backgroundColor: '#E2E8F0' },
+  overviewVal: { fontSize: 24, fontWeight: 'bold', color: NAVY, marginVertical: 4 },
+  overviewLabel: { fontSize: 12, color: GRAY },
+
+  searchFilterRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: WHITE, paddingHorizontal: 14, height: 44, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0' },
+  searchInput: { flex: 1, marginLeft: 8, fontSize: 14, color: NAVY },
+  filterBtn: { width: 44, height: 44, backgroundColor: WHITE, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center' },
+
+  pillsWrap: { marginBottom: 16 },
+  pillsScroll: { gap: 8 },
+  pill: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: WHITE, borderWidth: 1, borderColor: '#E2E8F0' },
+  pillActive: { backgroundColor: NAVY, borderColor: NAVY },
+  pillText: { fontSize: 13, color: NAVY, fontWeight: '500' },
+  pillTextActive: { color: WHITE },
+
+  cardRow: { justifyContent: 'flex-start' },
+  card: { backgroundColor: WHITE, borderRadius: 18, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 2, elevation: 1 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+  cardHeaderLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  avatarBox: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F3E8FF', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  avatarText: { color: PURPLE, fontSize: 16, fontWeight: 'bold' },
+  headerInfo: { flex: 1 },
+  empName: { fontSize: 16, fontWeight: 'bold', color: NAVY, marginBottom: 2 },
+  empRole: { fontSize: 13, color: GRAY, fontWeight: '500' },
+  cardHeaderRight: { flexDirection: 'row', alignItems: 'center' },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  badgeText: { fontSize: 10, fontWeight: 'bold' },
+  moreBtn: { padding: 4, marginLeft: 8 },
+
+  skillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 },
+  skillChip: { backgroundColor: '#F8FAFC', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: '#F1F5F9' },
+  skillChipText: { fontSize: 11, color: GRAY, fontWeight: '500' },
+
+  campaignStrip: { backgroundColor: '#F5F3FF', borderRadius: 10, padding: 12, marginBottom: 16 },
+  campStripLabel: { fontSize: 10, fontWeight: 'bold', color: PURPLE, textTransform: 'uppercase', marginBottom: 4 },
+  campStripTitle: { fontSize: 14, fontWeight: 'bold', color: NAVY, marginBottom: 2 },
+  campStripRole: { fontSize: 12, color: NAVY, opacity: 0.8 },
+  campStripExtra: { fontSize: 11, color: PURPLE, marginTop: 4, fontWeight: '600' },
+
+  noCampStrip: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 6 },
+  dotGreen: { width: 6, height: 6, borderRadius: 3, backgroundColor: GREEN },
+  noCampText: { fontSize: 12, color: GREEN, fontWeight: '500' },
+
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
+  textActionBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingRight: 16 },
+  textActionText: { fontSize: 13, fontWeight: 'bold', color: NAVY, marginRight: 2 },
+  primaryActionBtn: { backgroundColor: NAVY, paddingHorizontal: 14, height: 40, borderRadius: 10, justifyContent: 'center' },
+  primaryActionText: { color: WHITE, fontSize: 13, fontWeight: 'bold' },
+
+  // Modals & Menus
+  menuOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.2)' },
+  menuContent: { backgroundColor: WHITE, borderRadius: 14, width: 220, padding: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
+  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 12, gap: 12 },
+  menuText: { fontSize: 14, fontWeight: '500', color: NAVY },
+  menuDivider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 4 },
+
+  bottomSheetOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 16 },
+  modalCentered: { backgroundColor: WHITE, borderRadius: 20, width: '100%', maxWidth: 500, maxHeight: '90%', overflow: 'hidden' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 20, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
+  modalSubtitle: { fontSize: 13, color: GRAY },
+  modalScroll: { padding: 20 },
+  inputLabel: { fontSize: 13, fontWeight: '600', color: NAVY, marginBottom: 6 },
+  input: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 14, height: 44, fontSize: 14, color: NAVY, marginBottom: 16 },
+  pseudoSelect: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 14, height: 44, marginBottom: 16 },
+  pseudoSelectText: { fontSize: 14, color: NAVY },
   row: { flexDirection: 'row', gap: 12 },
   col: { flex: 1 },
-  uploadPhotoBox: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#CBD5E1', borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
-  uploadPhotoText: { fontSize: 10, color: '#64748B', marginTop: 4 },
-  fileUploadBox: { borderWidth: 1, borderColor: '#CBD5E1', borderStyle: 'dashed', borderRadius: 8, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', padding: 16, marginBottom: 24, flexDirection: 'row', gap: 8 },
-  fileUploadText: { fontSize: 13, color: '#64748B' },
-  modalFooter: { padding: 16, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#E2E8F0' },
-  btnPrimaryFull: { backgroundColor: '#8B5CF6', paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
-  btnPrimaryFullText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
-  dropdownBtn: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 12, marginBottom: 16, backgroundColor: '#fff' },
-  dropdownText: { fontSize: 14, color: '#0F172A' },
-  dropdownList: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 8, marginBottom: 16, marginTop: -12, maxHeight: 150 },
-  dropdownItem: { padding: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  dropdownItemText: { fontSize: 14, color: '#334155' },
-  
-  // Bottom Sheet
-  bottomSheetOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  bottomSheetContainer: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: height * 0.8 },
-  sheetHandle: { width: 40, height: 4, backgroundColor: '#CBD5E1', borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
-  sheetTitle: { fontSize: 18, fontWeight: 'bold', color: '#0F172A', marginBottom: 4 },
-  sheetSubtitle: { fontSize: 13, color: '#64748B', marginBottom: 20 },
-  warningBox: { flexDirection: 'row', backgroundColor: '#FEF2F2', padding: 12, borderRadius: 8, marginBottom: 20, alignItems: 'flex-start', gap: 8 },
-  warningText: { flex: 1, fontSize: 13, color: '#EF4444', lineHeight: 18 }
+  modalFooterActions: { flexDirection: 'row', justifyContent: 'flex-end', padding: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9', backgroundColor: WHITE, gap: 12 },
+  btnOutlineModal: { paddingHorizontal: 16, height: 44, borderRadius: 10, justifyContent: 'center', borderWidth: 1, borderColor: '#E2E8F0' },
+  btnOutlineTextBlack: { color: NAVY, fontWeight: 'bold', fontSize: 14 },
+  btnPrimaryModal: { paddingHorizontal: 20, height: 44, borderRadius: 10, justifyContent: 'center', backgroundColor: NAVY },
+  btnPrimaryText: { color: WHITE, fontWeight: 'bold', fontSize: 14 },
+
+  dialogContent: { backgroundColor: WHITE, borderRadius: 20, width: '100%', maxWidth: 400, overflow: 'hidden' },
+  dialogHeader: { padding: 20, paddingBottom: 10 },
+  dialogTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY },
+  dialogText: { fontSize: 14, color: GRAY, paddingHorizontal: 20, paddingBottom: 20, lineHeight: 20 },
+
+  profTop: { alignItems: 'center', marginBottom: 24 },
+  profName: { fontSize: 20, fontWeight: 'bold', color: NAVY, marginTop: 12, marginBottom: 4 },
+  profRole: { fontSize: 14, color: GRAY },
+  profDetailRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  profLabel: { fontSize: 13, color: GRAY, flex: 1 },
+  profVal: { fontSize: 14, fontWeight: '500', color: NAVY, flex: 2, textAlign: 'right' },
 });

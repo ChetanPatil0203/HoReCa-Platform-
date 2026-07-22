@@ -8,6 +8,7 @@ export default function CategoryCard({ category, onPress }) {
       style={[styles.card, { backgroundColor: category.bg, borderColor: category.color + '30' }]}
       onPress={() => onPress && onPress(category)}
       activeOpacity={0.75}
+      disabled={!onPress}
     >
       <View style={[styles.emojiBox, { backgroundColor: category.color + '18' }]}>
         <Text style={styles.emoji}>{category.emoji}</Text>

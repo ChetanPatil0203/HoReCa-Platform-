@@ -2,7 +2,7 @@ import React, { useState, useContext } from 'react';
 import { View, Text, StyleSheet, Platform, useWindowDimensions, TouchableOpacity, Image, TouchableWithoutFeedback } from 'react-native';
 import { 
   Menu, Bell, Search, LayoutDashboard, ClipboardList, Megaphone, FolderOpen, Users, DollarSign, HelpCircle, Settings, LogOut,
-  Home, Inbox, User, Plus, ImagePlus, UserPlus
+  Home, Inbox, User, Plus, ImagePlus, UserPlus, FileText
 } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
 import { colors } from '../../../theme/colors';
@@ -10,11 +10,11 @@ import { colors } from '../../../theme/colors';
 import RoleBasedMobileDrawer from '../../../components/navigation/RoleBasedMobileDrawer';
 import MarketingDashboardHome from './MarketingDashboardHome';
 import MarketingRequestsScreen from './MarketingRequestsScreen';
+import MarketingProposalsScreen from './MarketingProposalsScreen';
 import MarketingProposalForm from './MarketingProposalForm';
 import MarketingCampaignsScreen from './MarketingCampaignsScreen';
 import MarketingCreativeApprovalScreen from './MarketingCreativeApprovalScreen';
 import MarketingTeamScreen from './MarketingTeamScreen';
-import MarketingPortfolioScreen from './MarketingPortfolioScreen';
 import MarketingProfileScreen from './MarketingProfileScreen';
 import MarketingRevenueScreen from './MarketingRevenueScreen';
 import MarketingNotificationsScreen from './MarketingNotificationsScreen';
@@ -50,11 +50,11 @@ export default function MarketingDashboard() {
     switch (activePage) {
       case "dashboard": return <MarketingDashboardHome setActivePage={setActivePage} handleSendProposal={handleSendProposal} />;
       case "requests": return <MarketingRequestsScreen setActivePage={setActivePage} handleSendProposal={handleSendProposal} />;
+      case "proposals": return <MarketingProposalsScreen setActivePage={setActivePage} />;
       case "send_proposal": return <MarketingProposalForm setActivePage={setActivePage} requirement={selectedRequirement} />;
       case "campaigns": return <MarketingCampaignsScreen setActivePage={setActivePage} handleUploadCreative={handleUploadCreative} />;
       case "upload_creative": return <MarketingCreativeApprovalScreen setActivePage={setActivePage} campaign={selectedCampaign} />;
       case "team": return <MarketingTeamScreen setActivePage={setActivePage} />;
-      case "portfolio": return <MarketingPortfolioScreen setActivePage={setActivePage} />;
       case "revenue": return <MarketingRevenueScreen setActivePage={setActivePage} />;
       case "notifications": return <MarketingNotificationsScreen setActivePage={setActivePage} />;
       case "settings": return <MarketingSettingsScreen setActivePage={setActivePage} />;
@@ -67,8 +67,8 @@ export default function MarketingDashboard() {
   const navItems = [
     { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { key: "requests", label: "Requests", icon: ClipboardList },
+    { key: "proposals", label: "Proposals", icon: FileText },
     { key: "campaigns", label: "Campaigns", icon: Megaphone },
-    { key: "portfolio", label: "Portfolio", icon: FolderOpen },
     { key: "team", label: "Team", icon: Users },
     { key: "revenue", label: "Revenue", icon: DollarSign },
     { key: "notifications", label: "Notifications", icon: Bell },
@@ -156,10 +156,6 @@ export default function MarketingDashboard() {
             <View style={styles.bottomNavWrapper}>
               {plusMenuOpen && (
                 <View style={styles.floatingMenu}>
-                  <TouchableOpacity style={styles.floatingMenuItem} onPress={() => { setPlusMenuOpen(false); setActivePage('portfolio'); }}>
-                    <View style={styles.floatingMenuIconBox}><ImagePlus size={16} color={PURPLE} /></View>
-                    <Text style={styles.floatingMenuText}>Add Portfolio Work</Text>
-                  </TouchableOpacity>
                   <TouchableOpacity style={styles.floatingMenuItem} onPress={() => { setPlusMenuOpen(false); setActivePage('team'); }}>
                     <View style={styles.floatingMenuIconBox}><UserPlus size={16} color={PURPLE} /></View>
                     <Text style={styles.floatingMenuText}>Add Team Member</Text>
