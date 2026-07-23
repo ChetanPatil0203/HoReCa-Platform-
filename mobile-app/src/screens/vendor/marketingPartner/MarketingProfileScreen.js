@@ -21,11 +21,7 @@ const AVAILABLE_SERVICES = [
   "Digital Advertising", "Content Creation"
 ];
 
-const MOCK_PORTFOLIO = [
-  { id: 'PF-1', title: 'Summer Social Campaign', category: 'Social Media Marketing', client: 'Azure Palace Hotel', result: 'Increased campaign engagement across social channels.' },
-  { id: 'PF-2', title: 'Autumn Menu Photography', category: 'Photography', client: 'Spice Route Restaurant', result: 'High-quality menu captures for online delivery apps.' },
-  { id: 'PF-3', title: 'Brand Identity Refresh', category: 'Branding', client: 'The Meridian Hotel', result: 'Complete visual identity overhaul and brand guidelines.' }
-];
+
 
 const MOCK_DOCUMENTS = [
   { id: 'DOC-1', name: 'GST Certificate', ref: '27ABCDE1234F1Z5', status: 'Verified', filename: 'gst_cert.pdf', required: true },
@@ -65,8 +61,7 @@ export default function MarketingProfileScreen({ setActivePage }) {
   const [manageServicesVisible, setManageServicesVisible] = useState(false);
   const [tempServices, setTempServices] = useState([...selectedServices]);
 
-  const [viewProjectVisible, setViewProjectVisible] = useState(false);
-  const [selectedProject, setSelectedProject] = useState(null);
+
 
   const [docDetailsVisible, setDocDetailsVisible] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
@@ -105,10 +100,7 @@ export default function MarketingProfileScreen({ setActivePage }) {
     setManageServicesVisible(false);
   };
 
-  const openProject = (project) => {
-    setSelectedProject(project);
-    setViewProjectVisible(true);
-  };
+
 
   const openDoc = (doc) => {
     setSelectedDoc(doc);
@@ -244,39 +236,6 @@ export default function MarketingProfileScreen({ setActivePage }) {
           </View>
         </View>
 
-        {/* 4. Portfolio Highlights */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <View>
-              <View style={styles.iconTitleBox}>
-                <Images size={20} color={PURPLE} style={{marginRight: 10}} />
-                <Text style={styles.cardTitle}>Portfolio Highlights</Text>
-              </View>
-              <Text style={styles.cardSubtitle}>Selected projects and creative work from your agency</Text>
-            </View>
-            <TouchableOpacity style={styles.btnTextAction} onPress={() => setActivePage('portfolio')}>
-              <Text style={styles.btnTextActionText}>Manage Portfolio</Text>
-              <ChevronRight size={16} color={PURPLE} />
-            </TouchableOpacity>
-          </View>
-          
-          <View style={[styles.portfolioGrid, !isMobile && {flexDirection: 'row'}]}>
-            {MOCK_PORTFOLIO.map(pf => (
-              <TouchableOpacity key={pf.id} style={[styles.pfCard, !isMobile && {flex: 1}]} onPress={() => openProject(pf)}>
-                <View style={styles.pfThumbnail}><FileImage size={24} color="#CBD5E1" /></View>
-                <View style={styles.pfContent}>
-                  <Text style={styles.pfTitle} numberOfLines={2}>{pf.title}</Text>
-                  <Text style={styles.pfMeta}>{pf.category} · {pf.client}</Text>
-                  <Text style={styles.pfResult} numberOfLines={1}>{pf.result}</Text>
-                  <View style={styles.pfLink}>
-                    <Text style={styles.pfLinkText}>View Project</Text>
-                    <ChevronRight size={14} color={NAVY} />
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
 
         {/* 5. Licences & Documents */}
         <View style={styles.card}>
@@ -430,43 +389,6 @@ export default function MarketingProfileScreen({ setActivePage }) {
         </TouchableWithoutFeedback>
       </Modal>
 
-      {/* View Portfolio Modal */}
-      <Modal visible={viewProjectVisible} animationType="fade" transparent={true} onRequestClose={() => setViewProjectVisible(false)}>
-        <TouchableWithoutFeedback onPress={() => setViewProjectVisible(false)}>
-          <View style={styles.modalOverlayCenter}>
-            <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={[styles.centerModalContent, isMobile ? {width: '95%'} : {maxWidth: 600, width: '100%'}, {maxHeight: '85%'}]}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>Project Details</Text>
-                  <TouchableOpacity onPress={() => setViewProjectVisible(false)}><XCircle size={24} color={MUTED} /></TouchableOpacity>
-                </View>
-                {selectedProject && (
-                  <ScrollView style={styles.modalBody}>
-                    <View style={styles.pfPreviewImg}><FileImage size={40} color="#94A3B8" /></View>
-                    <Text style={styles.pfDetailTitle}>{selectedProject.title}</Text>
-                    <Text style={styles.pfDetailSub}>{selectedProject.category} · {selectedProject.client}</Text>
-                    
-                    <View style={styles.pfDetailBox}>
-                      <Text style={styles.pfDetailLabel}>RESULTS</Text>
-                      <Text style={styles.pfDetailValue}>{selectedProject.result}</Text>
-                    </View>
-                    
-                    <View style={{height: 20}} />
-                  </ScrollView>
-                )}
-                <View style={styles.modalFooterActions}>
-                  <TouchableOpacity style={styles.btnModalOutline} onPress={() => setViewProjectVisible(false)}>
-                    <Text style={styles.btnModalOutlineText}>Close</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.btnModalPrimary} onPress={() => { setViewProjectVisible(false); setActivePage('portfolio'); }}>
-                    <Text style={styles.btnModalPrimaryText}>Open Full Portfolio</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
 
       {/* Document Details Modal */}
       <Modal visible={docDetailsVisible} animationType="fade" transparent={true} onRequestClose={() => setDocDetailsVisible(false)}>

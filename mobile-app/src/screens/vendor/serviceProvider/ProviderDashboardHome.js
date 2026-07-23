@@ -120,20 +120,18 @@ export default function ProviderDashboardHome({ onNavigate }) {
           <Text style={styles.sectionTitle}>Overview</Text>
           <View style={styles.overviewGrid}>
             {OVERVIEW_DATA.map((item, idx) => (
-              <TouchableOpacity 
+              <View 
                 key={idx} 
                 style={[styles.overviewCard, isLargeScreen && { width: '23%' }]} 
-                onPress={() => onNavigate && onNavigate(item.navigateTo)}
               >
                 <View style={styles.overviewTop}>
                   <View style={[styles.iconBox, { backgroundColor: item.bg }]}>
                     <item.icon size={20} color={item.color} />
                   </View>
-                  <ChevronRight size={16} color="#CBD5E1" />
                 </View>
                 <Text style={styles.overviewValue}>{item.value}</Text>
                 <Text style={styles.overviewLabel}>{item.label}</Text>
-              </TouchableOpacity>
+              </View>
             ))}
           </View>
         </View>

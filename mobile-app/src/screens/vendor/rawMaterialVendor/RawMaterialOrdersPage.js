@@ -193,22 +193,7 @@ export default function RawMaterialOrdersPage() {
             <View style={[styles.statusBadge, { backgroundColor: sStyle.bg }]}>
               <Text style={[styles.statusText, { color: sStyle.text }]}>{item.status.toUpperCase()}</Text>
             </View>
-            {moreOptions.length > 0 && (
-              <View style={{position: 'relative'}}>
-                <TouchableOpacity onPress={() => setActiveMenuId(isMenuOpen ? null : item.id)} style={styles.moreBtn}>
-                  <MoreVertical size={18} color={MUTED} />
-                </TouchableOpacity>
-                {isMenuOpen && (
-                  <View style={styles.dropdownMenu}>
-                    {moreOptions.map((opt, i) => (
-                      <TouchableOpacity key={i} style={styles.dropdownItem} onPress={() => { setActiveMenuId(null); opt.action(); }}>
-                        <Text style={[styles.dropdownText, {color: opt.color}]}>{opt.label}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
-              </View>
-            )}
+
           </View>
         </View>
 

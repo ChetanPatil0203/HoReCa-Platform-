@@ -358,7 +358,7 @@ export default function FeedWallPage() {
                     <View style={styles.proposalStatusBanner}>
                       {item.status === 'Proposal Sent' && (
                         <View style={styles.proposalBannerInner}>
-                          <CheckCircle2 size={14} color="#7C3AED" />
+                          <CheckCircle size={14} color="#7C3AED" />
                           <Text style={[styles.proposalStatusText, { color: '#7C3AED' }]}>
                             Proposal submitted — awaiting client review ({item.budget})
                           </Text>
@@ -366,7 +366,7 @@ export default function FeedWallPage() {
                       )}
                       {item.status === 'Accepted' && (
                         <View style={styles.proposalBannerInner}>
-                          <CheckCircle2 size={14} color="#10B981" />
+                          <CheckCircle size={14} color="#10B981" />
                           <Text style={[styles.proposalStatusText, { color: '#10B981' }]}>
                             Accepted — client has been notified
                           </Text>

@@ -90,49 +90,45 @@ export default function MarketingDashboardHome({ setActivePage, handleSendPropos
         {/* 2. Overview */}
         <Text style={styles.sectionTitle}>Overview</Text>
         <View style={styles.overviewGrid}>
-          <TouchableOpacity style={[styles.overviewCard, { width: isMobile ? '48%' : '23.5%' }]} onPress={() => setActivePage('opportunities')}>
+          <View style={[styles.overviewCard, { width: isMobile ? '48%' : '23.5%' }]}>
             <View style={styles.overviewCardTop}>
               <View style={[styles.overviewIconWrap, {backgroundColor: '#F5F3FF'}]}>
                 <Megaphone size={18} color={PURPLE} />
               </View>
-              <ChevronRight size={16} color={MUTED} />
             </View>
             <Text style={styles.overviewCount}>12</Text>
             <Text style={styles.overviewLabel}>Open Opportunities</Text>
-          </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity style={[styles.overviewCard, { width: isMobile ? '48%' : '23.5%' }]} onPress={() => setActivePage('requests')}>
+          <View style={[styles.overviewCard, { width: isMobile ? '48%' : '23.5%' }]}>
             <View style={styles.overviewCardTop}>
               <View style={[styles.overviewIconWrap, {backgroundColor: '#EFF6FF'}]}>
                 <Inbox size={18} color={BLUE} />
               </View>
-              <ChevronRight size={16} color={MUTED} />
             </View>
             <Text style={styles.overviewCount}>4</Text>
             <Text style={styles.overviewLabel}>Direct Requests</Text>
-          </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity style={[styles.overviewCard, { width: isMobile ? '48%' : '23.5%' }]} onPress={() => setActivePage('campaigns')}>
+          <View style={[styles.overviewCard, { width: isMobile ? '48%' : '23.5%' }]}>
             <View style={styles.overviewCardTop}>
               <View style={[styles.overviewIconWrap, {backgroundColor: '#F0FDF4'}]}>
                 <Rocket size={18} color={GREEN} />
               </View>
-              <ChevronRight size={16} color={MUTED} />
             </View>
             <Text style={styles.overviewCount}>3</Text>
             <Text style={styles.overviewLabel}>Active Campaigns</Text>
-          </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity style={[styles.overviewCard, { width: isMobile ? '48%' : '23.5%' }]} onPress={() => setActivePage('campaigns')}>
+          <View style={[styles.overviewCard, { width: isMobile ? '48%' : '23.5%' }]}>
             <View style={styles.overviewCardTop}>
               <View style={[styles.overviewIconWrap, {backgroundColor: '#FFFBEB'}]}>
                 <FileClock size={18} color={ORANGE} />
               </View>
-              <ChevronRight size={16} color={MUTED} />
             </View>
             <Text style={styles.overviewCount}>2</Text>
             <Text style={styles.overviewLabel}>Pending Approvals</Text>
-          </TouchableOpacity>
+          </View>
         </View>
 
         <View style={!isMobile && styles.desktopGrid}>
@@ -211,7 +207,7 @@ export default function MarketingDashboardHome({ setActivePage, handleSendPropos
             <Text style={styles.sectionTitle}>Open Opportunities</Text>
             <Text style={styles.sectionSubtitle}>Marketing requirements matching your services</Text>
           </View>
-          <TouchableOpacity onPress={() => setActivePage('opportunities')}><Text style={styles.actionLink}>View Feed Wall &gt;</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => setActivePage('feed')}><Text style={styles.actionLink}>View Feed Wall &gt;</Text></TouchableOpacity>
         </View>
 
         <View style={styles.oppsGrid}>

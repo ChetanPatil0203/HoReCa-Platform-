@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import AppNavigator from './src/navigation/AppNavigator';
+import RootNavigator from './src/navigation/RootNavigator';
 import { checkBackendHealth } from './src/services/api.service';
 import { View } from 'react-native';
 import { AuthProvider } from './src/context/AuthContext';
@@ -22,7 +22,7 @@ export default function App() {
     <SafeAreaProvider style={{ flex: 1 }}>
       <AuthProvider>
         <NavigationContainer>
-          <AppNavigator />
+          <RootNavigator />
         </NavigationContainer>
       </AuthProvider>
     </SafeAreaProvider>

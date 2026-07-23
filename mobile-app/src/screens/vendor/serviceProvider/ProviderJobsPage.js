@@ -1,22 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   View, Text, StyleSheet, FlatList, TouchableOpacity, 
   SafeAreaView, useWindowDimensions, Modal, TextInput, 
-  ScrollView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard
+  ScrollView, KeyboardAvoidingView, Platform, Pressable, Alert 
 } from 'react-native';
 import { 
-  Search, SlidersHorizontal, MapPin, Calendar, CheckCircle, 
-  Clock, IndianRupee, XCircle, Users, Briefcase, ChevronRight, Wrench, CalendarDays, UserRound
+  Search, SlidersHorizontal, ChevronRight, MoreVertical, 
+  UserRound, Users, XCircle, CheckCircle, MapPin,
+  CircleCheck, BadgeCheck, Wrench, FileText
 } from 'lucide-react-native';
 
 const NAVY = '#071B3A';
 const GOLD = '#F6B800';
-const LIGHT_BG = '#F8FAFC';
+const GREEN = '#10B981';
+const BG = '#F8FAFC';
 const WHITE = '#FFFFFF';
 
-const TABS = ['Scheduled', 'Assigned', 'In Progress', 'Completed'];
-
-const MOCK_JOBS = [
+const INITIAL_JOBS = [
   {
     id: "SRV-452",
     client: "Grand Hotel & Spa",
@@ -26,627 +26,825 @@ const MOCK_JOBS = [
     date: "18 Oct 2026",
     time: "10:00 AM",
     amount: "₹18,000",
-    assignedTeam: "Unassigned",
+    assignedTeam: null,
     status: "Scheduled",
+    currentStage: null,
+    progress: 0,
     notes: "Requires deep cleaning of 25 split units.",
     contact: "Mr. Sharma (Manager)"
   },
   {
-    id: "SRV-451",
+    id: "SRV-453",
     client: "Cafe Zephyr",
     businessType: "Cafe",
-    service: "Plumbing Repair",
+    service: "Commercial Oven Repair",
     location: "Andheri East",
-    date: "16 Oct 2026",
+    date: "19 Oct 2026",
     time: "02:00 PM",
-    amount: "₹2,500",
-    assignedTeam: "Rahul S.",
-    status: "Assigned",
-    notes: "Fix leaking sink in main kitchen.",
+    amount: "₹8,500",
+    assignedTeam: "Rahul S. + 2 Members",
+    status: "Team Assigned",
+    currentStage: null,
+    progress: 0,
+    notes: "Fix heating coil.",
     contact: "Sarah (Owner)"
   },
   {
-    id: "SRV-449",
-    client: "The Gourmet Kitchen",
-    businessType: "Restaurant",
-    service: "Exhaust Fan Installation",
-    location: "Lower Parel",
-    date: "15 Oct 2026",
+    id: "SRV-454",
+    client: "The Meridian Hotel",
+    businessType: "Hotel",
+    service: "Pest Control Service",
+    location: "Mumbai",
+    date: "20 Oct 2026",
     time: "11:30 AM",
-    amount: "₹25,000",
+    amount: "₹12,000",
     assignedTeam: "Amit K.",
     status: "In Progress",
-    notes: "Install new heavy-duty exhaust fan in main cooking area.",
-    contact: "Chef Ravi"
+    currentStage: "Treatment in Progress",
+    progress: 60,
+    notes: "Full property treatment.",
+    contact: "Manager"
   },
   {
-    id: "SRV-448",
-    client: "Sunset Resort",
-    businessType: "Resort",
-    service: "HVAC Annual Maintenance",
-    location: "Juhu",
-    date: "14 Oct 2026",
+    id: "SRV-455",
+    client: "Spice Route Restaurant",
+    businessType: "Restaurant",
+    service: "Kitchen Equipment Repair",
+    location: "Lower Parel",
+    date: "20 Oct 2026",
     time: "09:00 AM",
-    amount: "₹45,000",
-    assignedTeam: "Rahul S.",
+    amount: "₹12,000",
+    assignedTeam: "Vikram R.",
     status: "Completed",
-    notes: "Full annual maintenance of all central units.",
-    contact: "Admin Desk"
+    currentStage: "Completed",
+    progress: 100,
+    notes: "Replaced faulty burners.",
+    contact: "Chef"
   }
 ];
 
+const TABS = ['Scheduled', 'Team Assigned', 'In Progress', 'Awaiting Confirmation', 'Completed', 'Cancelled'];
+const MOCK_TEAM_MEMBERS = [
+  { id: 'tm1', name: 'Rahul Sharma', role: 'Senior AC Technician', skills: ['AC Deep Cleaning', 'Equipment Handling', 'Safety Compliance'], availability: 'Available', workload: '1 Active Assignment', active: true, canLead: true },
+  { id: 'tm2', name: 'Amit Kumar', role: 'AC Technician', skills: ['AC Deep Cleaning', 'Safety Compliance'], availability: 'Busy', conflictTime: '9:00 AM - 11:00 AM', workload: '2 Active Assignments', active: true, canLead: false },
+  { id: 'tm3', name: 'Vikram Rao', role: 'Support Technician', skills: ['Equipment Handling'], availability: 'Available', workload: '0 Active Assignments', active: true, canLead: false },
+  { id: 'tm4', name: 'Suresh Patil', role: 'Senior Electrician', skills: ['Electrical Repair', 'Safety Compliance'], availability: 'Available', workload: '1 Active Assignment', active: true, canLead: true }
+];
+
+const REQUIRED_SKILLS = ['AC Deep Cleaning', 'Equipment Handling', 'Safety Compliance'];
+const TOOLS_EQUIPMENT = ['AC Cleaning Kit', 'Pressure Washer', 'Vacuum Machine', 'Safety Gloves', 'Safety Mask', 'Ladder', 'Cleaning Chemicals', 'Other'];
+
 export default function ProviderJobsPage() {
   const { width } = useWindowDimensions();
-  const isSmallScreen = width < 360;
-  const modalWidth = Math.min(width * 0.9, 540);
+  const isLargeScreen = width >= 768;
 
   const [activeTab, setActiveTab] = useState('Scheduled');
-  const [jobs, setJobs] = useState(MOCK_JOBS);
-  const [selectedJob, setSelectedJob] = useState(null);
+  const [jobs, setJobs] = useState(INITIAL_JOBS);
+  const [search, setSearch] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
   
-  // Modal states
-  const [assignModalVisible, setAssignModalVisible] = useState(false);
-  const [startJobModalVisible, setStartJobModalVisible] = useState(false);
-  const [completionModalVisible, setCompletionModalVisible] = useState(false);
+  const [activeMenuId, setActiveMenuId] = useState(null);
+  const [selectedJob, setSelectedJob] = useState(null);
+
+  // Modals state
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
+  const [assignModalVisible, setAssignModalVisible] = useState(false);
+  const [startModalVisible, setStartModalVisible] = useState(false);
+  const [progressModalVisible, setProgressModalVisible] = useState(false);
+  const [completeModalVisible, setCompleteModalVisible] = useState(false);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
 
   // Form states
-  const [assignForm, setAssignForm] = useState({ tech: '', phone: '', arrival: '', notes: '' });
-  const [completionForm, setCompletionForm] = useState({ notes: '', amount: '', additional: '', otp: '' });
+  const [assignForm, setAssignForm] = useState({ 
+    lead: '', members: [], reportingDate: '', reportingTime: '', duration: '', 
+    instructions: '', notifyTeam: true 
+  });
+  const [assignConflictError, setAssignConflictError] = useState('');
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [leadDropdownOpen, setLeadDropdownOpen] = useState(false);
+  const [memberDropdownOpen, setMemberDropdownOpen] = useState(false);
+  const [progressForm, setProgressForm] = useState({ percent: '', stage: '', update: '', nextStep: '' });
+  const [completeForm, setCompleteForm] = useState({ note: '', summary: '', amount: '' });
 
-  const getStatusColor = (status) => {
-    switch(status) {
-      case 'Scheduled': return { bg: '#DBEAFE', text: '#1D4ED8', border: '#3B82F6' };
-      case 'Assigned': return { bg: '#F3E8FF', text: '#7E22CE', border: '#A855F7' };
-      case 'In Progress': return { bg: '#FFEDD5', text: '#C2410C', border: '#F97316' };
-      case 'Completed': return { bg: '#DCFCE7', text: '#15803D', border: '#22C55E' };
-      case 'Cancelled': return { bg: '#FEE2E2', text: '#B91C1C', border: '#EF4444' };
-      default: return { bg: '#F1F5F9', text: '#64748B', border: '#94A3B8' };
-    }
+  const showToast = (msg) => {
+    if (Platform.OS === 'web') { window.alert(msg); }
+    else { Alert.alert('Success', msg); }
   };
 
-  const getCounts = () => {
-    const counts = { 'Scheduled': 0, 'Assigned': 0, 'In Progress': 0, 'Completed': 0 };
-    jobs.forEach(j => {
-      if(counts[j.status] !== undefined) counts[j.status]++;
+  const getFilteredJobs = () => {
+    return jobs.filter(j => {
+      if (j.status !== activeTab) return false;
+      if (search && !j.service.toLowerCase().includes(search.toLowerCase()) && !j.id.toLowerCase().includes(search.toLowerCase())) return false;
+      return true;
     });
+  };
+
+  const filteredJobs = getFilteredJobs();
+  
+  const tabCounts = useMemo(() => {
+    const counts = {};
+    TABS.forEach(t => counts[t] = 0);
+    jobs.forEach(j => { if (counts[j.status] !== undefined) counts[j.status]++; });
     return counts;
+  }, [jobs]);
+
+  // Modal handlers
+  const handleAssignTeam = () => {
+    if (!assignForm.lead) {
+      if (Platform.OS === 'web') { window.alert('Please select a team lead.'); } else { Alert.alert('Required', 'Please select a team lead.'); }
+      return;
+    }
+    if (!assignForm.reportingDate || !assignForm.reportingTime || !assignForm.duration) {
+      if (Platform.OS === 'web') { window.alert('Please complete all required fields (Date, Time, Duration).'); } else { Alert.alert('Required', 'Please complete all required fields.'); }
+      return;
+    }
+
+    // Mock conflict check
+    const selectedMembers = MOCK_TEAM_MEMBERS.filter(m => m.id === assignForm.lead || assignForm.members.includes(m.id));
+    const hasConflict = selectedMembers.find(m => m.availability === 'Busy');
+    if (hasConflict) {
+      setAssignConflictError(`${hasConflict.name} is assigned to another service work (${hasConflict.conflictTime}).`);
+      return;
+    }
+
+    setIsAssigning(true);
+    setTimeout(() => {
+      const leadMember = MOCK_TEAM_MEMBERS.find(m => m.id === assignForm.lead);
+      setJobs(prev => prev.map(j => j.id === selectedJob.id ? { ...j, status: 'Team Assigned', assignedTeam: leadMember ? leadMember.name : assignForm.lead } : j));
+      setIsAssigning(false);
+      setAssignModalVisible(false);
+      showToast('Team assigned successfully.');
+    }, 800);
   };
 
-  const counts = getCounts();
-  const filteredJobs = jobs.filter(j => j.status === activeTab);
-
-  const openModal = (job, type) => {
-    setSelectedJob(job);
-    if (type === 'Assign Team') setAssignModalVisible(true);
-    else if (type === 'Start Service') setStartJobModalVisible(true);
-    else if (type === 'Complete Service') setCompletionModalVisible(true);
-    else if (type === 'Service Details') setDetailsModalVisible(true);
+  const handleStartWork = () => {
+    setJobs(prev => prev.map(j => j.id === selectedJob.id ? { ...j, status: 'In Progress', currentStage: 'Inspection Started', progress: 10 } : j));
+    setStartModalVisible(false);
+    showToast('Service work started successfully.');
   };
 
-  const handleStartJob = () => {
-    setJobs(prev => prev.map(j => j.id === selectedJob.id ? { ...j, status: 'In Progress' } : j));
-    setStartJobModalVisible(false);
+  const handleUpdateProgress = () => {
+    const p = parseInt(progressForm.percent);
+    if (isNaN(p) || p < 0 || p > 100) {
+      if (Platform.OS === 'web') { window.alert('Progress must be between 0 and 100.'); }
+      else { Alert.alert('Invalid', 'Progress must be between 0 and 100.'); }
+      return;
+    }
+    setJobs(prev => prev.map(j => j.id === selectedJob.id ? { ...j, currentStage: progressForm.stage || j.currentStage, progress: p } : j));
+    setProgressModalVisible(false);
+    showToast('Work progress updated successfully.');
   };
 
-  const handleAssignSubmit = () => {
-    if (!assignForm.tech) return alert("Please select a technician");
-    setJobs(prev => prev.map(j => j.id === selectedJob.id ? { ...j, status: 'Assigned', assignedTeam: assignForm.tech } : j));
-    setAssignModalVisible(false);
-    setAssignForm({ tech: '', phone: '', arrival: '', notes: '' });
+  const handleMarkCompleted = () => {
+    setJobs(prev => prev.map(j => j.id === selectedJob.id ? { ...j, status: 'Awaiting Confirmation', progress: 100, currentStage: 'Pending Client Confirmation' } : j));
+    setCompleteModalVisible(false);
+    showToast('Work completion submitted for client confirmation.');
   };
 
-  const handleCompleteSubmit = () => {
-    if (!completionForm.notes || !completionForm.otp) return alert("Notes and OTP are required");
-    setJobs(prev => prev.map(j => j.id === selectedJob.id ? { ...j, status: 'Completed' } : j));
-    setCompletionModalVisible(false);
-    setCompletionForm({ notes: '', amount: '', additional: '', otp: '' });
-  };
+  const renderBadge = (status) => {
+    let bg = '#F1F5F9'; let color = '#64748B';
+    if (status === 'Scheduled') { bg = '#EFF6FF'; color = '#2563EB'; }
+    else if (status === 'Team Assigned') { bg = '#F5F3FF'; color = '#7C3AED'; }
+    else if (status === 'In Progress') { bg = '#FFF7ED'; color = '#EA580C'; }
+    else if (status === 'Awaiting Confirmation') { bg = '#FEF2F2'; color = '#EF4444'; }
+    else if (status === 'Completed') { bg = '#ECFDF5'; color = '#059669'; }
+    else if (status === 'Cancelled') { bg = '#FEF2F2'; color = '#DC2626'; }
 
-  // Full progress tracker for modal only
-  const renderProgress = (status) => {
-    const states = ['Scheduled', 'Assigned', 'In Progress', 'Completed'];
-    const currentIndex = states.indexOf(status);
-    const colorStyle = getStatusColor(status);
-    
     return (
-      <View style={styles.modalProgressContainer}>
-        {states.map((s, idx) => (
-          <View key={s} style={styles.modalProgressStep}>
-            <View style={[
-              styles.modalProgressDot, 
-              idx < currentIndex && styles.modalProgressDotDone,
-              idx === currentIndex && { backgroundColor: colorStyle.border }
-            ]}>
-              {idx < currentIndex && <CheckCircle size={8} color={WHITE} />}
-            </View>
-            <Text style={[
-              styles.modalProgressLabel, 
-              idx === currentIndex && { color: colorStyle.border, fontWeight: 'bold' },
-              idx < currentIndex && styles.modalProgressLabelDone
-            ]} numberOfLines={1}>{s}</Text>
-            {idx < states.length - 1 && (
-              <View style={[styles.modalProgressLine, idx < currentIndex && styles.modalProgressLineDone]} />
-            )}
-          </View>
-        ))}
+      <View style={[styles.statusBadge, { backgroundColor: bg }]}>
+        <Text style={[styles.statusBadgeText, { color }]}>{status.toUpperCase()}</Text>
       </View>
     );
   };
 
-  const renderJobCard = ({ item }) => {
-    const sColor = getStatusColor(item.status);
-    
-    return (
-      <View style={styles.card}>
-        {/* Top Row */}
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardId}>{item.id}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: sColor.bg }]}>
-            <Text style={[styles.statusText, { color: sColor.text }]}>{item.status.toUpperCase()}</Text>
+  const renderItem = ({ item }) => (
+    <View style={styles.card}>
+      {/* Top Row */}
+      <View style={styles.cardHeaderRow}>
+        <Text style={styles.reqId}>{item.id}</Text>
+        {renderBadge(item.status)}
+      </View>
+      
+      {/* Service & Client */}
+      <Text style={styles.cardTitle} numberOfLines={2}>{item.service}</Text>
+      <Text style={styles.clientInfo} numberOfLines={1}>
+        <Text style={{fontWeight: '600', color: NAVY}}>{item.client}</Text>
+      </Text>
+      <Text style={styles.locationText} numberOfLines={1}>{item.location}</Text>
+
+      {/* 2-Column Schedule & Amount */}
+      <View style={styles.infoRow}>
+        <View style={styles.infoCol}>
+          <Text style={styles.infoLabel}>Schedule</Text>
+          <Text style={styles.infoValue}>{item.date} · {item.time}</Text>
+        </View>
+        <View style={styles.infoCol}>
+          <Text style={styles.infoLabel}>Service Amount</Text>
+          <Text style={styles.infoValue}>{item.amount}</Text>
+        </View>
+      </View>
+
+      {/* Team Assignment State */}
+      <View style={styles.teamStateBox}>
+        {!item.assignedTeam ? (
+          <View style={styles.teamUnassigned}>
+            <UserRound size={14} color="#EA580C" style={{marginRight: 6}} />
+            <Text style={styles.teamUnassignedText}>Team not assigned</Text>
+          </View>
+        ) : (
+          <View style={styles.teamAssigned}>
+            <Users size={14} color="#059669" style={{marginRight: 6}} />
+            <Text style={styles.teamLabel}>Team </Text>
+            <Text style={styles.teamAssignedText}>{item.assignedTeam}</Text>
+          </View>
+        )}
+      </View>
+
+      {/* Progress & Stage */}
+      {(item.status === 'In Progress' || item.status === 'Awaiting Confirmation') && (
+        <View style={styles.progressContainer}>
+          <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4}}>
+            <Text style={styles.stageLabel}>Current Stage: <Text style={{fontWeight: '600', color: NAVY}}>{item.currentStage}</Text></Text>
+            <Text style={styles.stageLabel}>Progress <Text style={{fontWeight: '700', color: NAVY}}>{item.progress}%</Text></Text>
+          </View>
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${item.progress}%` }]} />
           </View>
         </View>
+      )}
+
+      {/* Actions */}
+      <View style={styles.actionRow}>
+        <TouchableOpacity style={styles.detailsBtn} onPress={() => { setSelectedJob(item); setDetailsModalVisible(true); }}>
+          <Text style={styles.detailsBtnText}>View Details</Text>
+          <ChevronRight size={16} color={NAVY} />
+        </TouchableOpacity>
         
-        {/* Main Row */}
-        <View style={styles.serviceSection}>
-          <View style={styles.serviceIconBox}>
-            <Wrench size={20} color={NAVY} />
-          </View>
-          <View style={styles.serviceInfo}>
-            <Text style={styles.serviceName} numberOfLines={1}>{item.service}</Text>
-            <Text style={styles.clientName} numberOfLines={1}>{item.client}</Text>
-          </View>
-        </View>
-        
-        {/* Information Row */}
-        <View style={styles.compactRow}>
-          <MapPin size={14} color="#64748B" />
-          <Text style={styles.compactText}>{item.location}</Text>
-        </View>
-        <View style={styles.compactRow}>
-          <CalendarDays size={14} color="#64748B" />
-          <Text style={styles.compactText}>{item.date} · {item.time}</Text>
-        </View>
-        
-        <View style={[styles.compactRow, { marginTop: 4 }]}>
-          <View style={styles.amountTeamGroup}>
-            <View style={styles.infoPair}>
-              <IndianRupee size={14} color="#64748B" />
-              <Text style={styles.amountText}>{item.amount}</Text>
-            </View>
-            <View style={styles.infoPair}>
-              <UserRound size={14} color="#64748B" />
-              <Text style={styles.teamLabelText}>Team: </Text>
-              {item.assignedTeam === 'Unassigned' ? (
-                <Text style={styles.unassignedText}>Unassigned</Text>
-              ) : (
-                <Text style={styles.assignedText}>{item.assignedTeam}</Text>
-              )}
-            </View>
-          </View>
-        </View>
-        
-        {/* Action Footer */}
-        <View style={styles.cardFooter}>
-          <TouchableOpacity style={styles.btnViewDetails} onPress={() => openModal(item, 'Service Details')}>
-            <Text style={styles.btnViewDetailsText}>View Details</Text>
-            <ChevronRight size={16} color={NAVY} />
-          </TouchableOpacity>
-          
+        <View style={styles.actionRight}>
           {item.status === 'Scheduled' && (
-            <TouchableOpacity style={styles.btnPrimaryNav} onPress={() => openModal(item, 'Assign Team')}>
-              <Text style={styles.btnPrimaryNavText}>Assign Team</Text>
+            <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: NAVY }]} onPress={() => { 
+              setSelectedJob(item); 
+              setAssignForm({ lead: '', members: [], reportingDate: '', reportingTime: '', duration: '', instructions: '', notifyTeam: true });
+              setAssignConflictError('');
+              setAssignModalVisible(true); 
+            }}>
+              <Text style={styles.primaryBtnText}>Assign Team</Text>
             </TouchableOpacity>
           )}
-          {item.status === 'Assigned' && (
-            <TouchableOpacity style={styles.btnPrimaryNav} onPress={() => openModal(item, 'Start Service')}>
-              <Text style={styles.btnPrimaryNavText}>Start Service</Text>
+          {item.status === 'Team Assigned' && (
+            <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: NAVY }]} onPress={() => { setSelectedJob(item); setStartModalVisible(true); }}>
+              <Text style={styles.primaryBtnText}>Start Work</Text>
             </TouchableOpacity>
           )}
           {item.status === 'In Progress' && (
-            <TouchableOpacity style={styles.btnPrimaryNav} onPress={() => openModal(item, 'Complete Service')}>
-              <Text style={styles.btnPrimaryNavText}>Complete Service</Text>
+            item.progress < 100 ? (
+              <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: GREEN }]} onPress={() => { setSelectedJob(item); setProgressForm({ percent: item.progress.toString(), stage: item.currentStage, update: '', nextStep: '' }); setProgressModalVisible(true); }}>
+                <Text style={styles.primaryBtnText}>Update Progress</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: '#F59E0B' }]} onPress={() => { setSelectedJob(item); setCompleteModalVisible(true); }}>
+                <Text style={styles.primaryBtnText}>Submit Completion</Text>
+              </TouchableOpacity>
+            )
+          )}
+          {item.status === 'Awaiting Confirmation' && (
+            <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: '#7C3AED' }]} onPress={() => showToast('Viewing submission details...')}>
+              <Text style={styles.primaryBtnText}>View Submission</Text>
             </TouchableOpacity>
           )}
           {item.status === 'Completed' && (
-            <TouchableOpacity style={styles.btnPrimaryNav} onPress={() => openModal(item, 'Service Details')}>
-              <Text style={styles.btnPrimaryNavText}>View Summary</Text>
+            <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: '#fff', borderWidth: 1, borderColor: NAVY }]} onPress={() => { setSelectedJob(item); setDetailsModalVisible(true); }}>
+              <Text style={[styles.primaryBtnText, { color: NAVY }]}>View Summary</Text>
             </TouchableOpacity>
           )}
+
         </View>
       </View>
-    );
-  };
+    </View>
+  );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+    <Pressable style={styles.container} onPress={() => setActiveMenuId(null)}>
+      <View style={[styles.mainWrapper, isLargeScreen && styles.mainWrapperDesktop]}>
         
         {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.headerTitle}>Service Work</Text>
-            <Text style={styles.headerSubtitle}>Manage scheduled, ongoing and completed service work</Text>
+        <View style={styles.pageHeader}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.pageTitle}>Work Management</Text>
+            <Text style={styles.pageSubtitle}>Manage scheduled, active and completed service jobs</Text>
           </View>
           <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.iconBtn}>
+            <TouchableOpacity style={styles.headerBtn} onPress={() => setShowSearch(!showSearch)}>
               <Search size={20} color={NAVY} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn}>
+            <TouchableOpacity style={styles.headerBtn} onPress={() => setFilterModalVisible(true)}>
               <SlidersHorizontal size={20} color={NAVY} />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Segmented Status Pills */}
-        <View style={styles.tabWrapper}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabContainer}>
-            {TABS.map((tab) => (
+        {showSearch && (
+          <View style={styles.searchRow}>
+            <TextInput 
+              style={styles.searchInput} 
+              placeholder="Search service work..."
+              value={search}
+              onChangeText={setSearch}
+              placeholderTextColor="#94A3B8"
+            />
+          </View>
+        )}
+
+        {/* Tabs */}
+        <View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabScroll}>
+            {TABS.map(tab => (
               <TouchableOpacity 
-                key={tab}
-                style={[styles.tabPill, activeTab === tab && styles.activeTabPill]}
+                key={tab} 
+                style={[styles.tabItem, activeTab === tab && styles.tabItemActive]}
                 onPress={() => setActiveTab(tab)}
               >
-                <Text style={[styles.tabPillText, activeTab === tab && styles.activeTabPillText]}>
-                  {tab}
-                </Text>
-                <View style={[styles.tabBadge, activeTab === tab && styles.activeTabBadge]}>
-                  <Text style={[styles.tabBadgeText, activeTab === tab && styles.activeTabBadgeText]}>{counts[tab]}</Text>
+                <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</Text>
+                <View style={[styles.badgePill, activeTab === tab && styles.badgePillActive]}>
+                  <Text style={[styles.badgeText, activeTab === tab && styles.badgeTextActive]}>{tabCounts[tab]}</Text>
                 </View>
               </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
 
-        {/* Content List */}
+        {/* List */}
         <FlatList
           data={filteredJobs}
           keyExtractor={item => item.id}
-          renderItem={renderJobCard}
+          renderItem={renderItem}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
+          ListEmptyComponent={() => (
             <View style={styles.emptyState}>
-              <View style={styles.emptyIconBox}>
-                <Briefcase size={32} color="#94A3B8" />
-              </View>
-              <Text style={styles.emptyTitle}>No {activeTab.toLowerCase()} services</Text>
-              <Text style={styles.emptyText}>
-                {activeTab === 'Scheduled' && 'Newly scheduled services will appear here.'}
-                {activeTab === 'Assigned' && 'Services with assigned teams will appear here.'}
-                {activeTab === 'In Progress' && 'Started services will appear here.'}
-                {activeTab === 'Completed' && 'Completed services will appear here.'}
-              </Text>
+              <View style={styles.emptyIconBox}><Search size={24} color="#94A3B8" /></View>
+              <Text style={styles.emptyTitle}>No {activeTab.toLowerCase()} service work</Text>
+              <Text style={styles.emptySub}>Jobs matching this status will appear here.</Text>
             </View>
-          }
+          )}
         />
+      </View>
 
-        {/* View Details Center Modal */}
-        <Modal visible={detailsModalVisible} animationType="fade" transparent={true} onRequestClose={() => setDetailsModalVisible(false)}>
-          <TouchableWithoutFeedback onPress={() => setDetailsModalVisible(false)}>
-            <View style={styles.modalOverlayCenter}>
-              <TouchableWithoutFeedback onPress={() => {}}>
-                <View style={[styles.centerModalContent, { width: modalWidth, maxHeight: '82%' }]}>
-                  <View style={styles.modalHeader}>
-                    <View>
-                      <Text style={styles.modalTitle}>Service Details</Text>
-                      <Text style={styles.modalSubtitle}>{selectedJob?.id}</Text>
-                    </View>
-                    <TouchableOpacity onPress={() => setDetailsModalVisible(false)}>
-                      <XCircle size={24} color="#64748B" />
-                    </TouchableOpacity>
-                  </View>
-                  
-                  <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-                    {selectedJob && (
-                      <>
-                        {renderProgress(selectedJob.status)}
-
-                        <View style={styles.modalDataBlock}>
-                          <Text style={styles.modalLabel}>Service</Text>
-                          <Text style={styles.modalValue}>{selectedJob.service}</Text>
-                        </View>
-                        <View style={styles.modalDataBlock}>
-                          <Text style={styles.modalLabel}>Business</Text>
-                          <Text style={styles.modalValue}>{selectedJob.client}</Text>
-                        </View>
-                        <View style={styles.modalGrid}>
-                          <View style={styles.modalGridCol}>
-                            <Text style={styles.modalLabel}>Location</Text>
-                            <Text style={styles.modalValue}>{selectedJob.location}</Text>
-                          </View>
-                          <View style={styles.modalGridCol}>
-                            <Text style={styles.modalLabel}>Contact</Text>
-                            <Text style={styles.modalValue}>{selectedJob.contact}</Text>
-                          </View>
-                        </View>
-                        
-                        <View style={styles.modalGrid}>
-                          <View style={styles.modalGridCol}>
-                            <Text style={styles.modalLabel}>Scheduled</Text>
-                            <Text style={styles.modalValue}>{selectedJob.date} • {selectedJob.time}</Text>
-                          </View>
-                          <View style={styles.modalGridCol}>
-                            <Text style={styles.modalLabel}>Amount</Text>
-                            <Text style={styles.modalValue}>{selectedJob.amount}</Text>
-                          </View>
-                        </View>
-                        
-                        <View style={styles.modalGrid}>
-                          <View style={styles.modalGridCol}>
-                            <Text style={styles.modalLabel}>Assigned Team</Text>
-                            <Text style={styles.modalValue}>{selectedJob.assignedTeam}</Text>
-                          </View>
-                          <View style={styles.modalGridCol}>
-                            <Text style={styles.modalLabel}>Status</Text>
-                            <Text style={[styles.modalValue, {color: getStatusColor(selectedJob.status).border}]}>{selectedJob.status}</Text>
-                          </View>
-                        </View>
-
-                        <View style={styles.modalDataBlock}>
-                          <Text style={styles.modalLabel}>Notes</Text>
-                          <Text style={styles.modalDescText}>{selectedJob.notes}</Text>
-                        </View>
-                        <View style={{height: 20}}/>
-                      </>
-                    )}
-                  </ScrollView>
-                </View>
-              </TouchableWithoutFeedback>
+      {/* Details Modal */}
+      <Modal visible={detailsModalVisible} transparent animationType="fade" onRequestClose={() => setDetailsModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Service Work Details</Text>
+              <TouchableOpacity onPress={() => setDetailsModalVisible(false)}><XCircle size={20} color="#64748B" /></TouchableOpacity>
             </View>
-          </TouchableWithoutFeedback>
-        </Modal>
-
-        {/* Assign Team Center Modal */}
-        <Modal visible={assignModalVisible} animationType="fade" transparent={true} onRequestClose={() => setAssignModalVisible(false)}>
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View style={styles.modalOverlayCenter}>
-              <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{width: '100%', alignItems: 'center'}}>
-                <View style={[styles.centerModalContent, { width: modalWidth }]}>
-                  <View style={styles.modalHeader}>
-                    <View>
-                      <Text style={styles.modalTitle}>Assign Team</Text>
-                    </View>
-                    <TouchableOpacity onPress={() => setAssignModalVisible(false)}>
-                      <XCircle size={24} color="#64748B" />
-                    </TouchableOpacity>
-                  </View>
-                  
-                  <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-                    {selectedJob && (
-                      <View style={styles.quoteContextBox}>
-                        <Text style={styles.quoteContextTitle}>{selectedJob.service}</Text>
-                        <Text style={styles.quoteContextSub}>{selectedJob.client}</Text>
-                        <Text style={styles.quoteContextSub}>{selectedJob.date} • {selectedJob.time}</Text>
-                      </View>
-                    )}
-
-                    <Text style={styles.inputLabel}>Select Technician / Team *</Text>
-                    <TextInput style={styles.input} placeholder="e.g. Rahul S." value={assignForm.tech} onChangeText={(t) => setAssignForm({...assignForm, tech: t})} />
-                    
-                    <Text style={styles.inputLabel}>Expected Arrival Time</Text>
-                    <TextInput style={styles.input} placeholder="e.g. 10:15 AM" value={assignForm.arrival} onChangeText={(t) => setAssignForm({...assignForm, arrival: t})} />
-                    
-                    <Text style={styles.inputLabel}>Internal Note</Text>
-                    <TextInput style={styles.input} placeholder="Optional notes" value={assignForm.notes} onChangeText={(t) => setAssignForm({...assignForm, notes: t})} />
-                    <View style={{height: 10}}/>
-                  </ScrollView>
-                  
-                  <View style={styles.modalFooterActions}>
-                    <TouchableOpacity style={styles.btnOutline} onPress={() => setAssignModalVisible(false)}>
-                      <Text style={styles.btnOutlineText}>Cancel</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={[styles.btnPrimaryGoldFull, { opacity: assignForm.tech ? 1 : 0.6 }]} onPress={handleAssignSubmit}>
-                      <Text style={styles.btnPrimaryGoldText}>Confirm Assignment</Text>
-                    </TouchableOpacity>
-                  </View>
+            {selectedJob && (
+              <ScrollView style={{padding: 20}}>
+                <Text style={styles.detailTitle}>{selectedJob.service}</Text>
+                <Text style={styles.detailClient}>{selectedJob.client} · {selectedJob.businessType}</Text>
+                
+                <View style={styles.detailBox}>
+                  <Text style={styles.boxLabel}>Schedule & Amount</Text>
+                  <Text style={styles.boxValue}>{selectedJob.date} at {selectedJob.time}</Text>
+                  <Text style={styles.boxValue}>{selectedJob.amount}</Text>
                 </View>
-              </KeyboardAvoidingView>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>
 
-        {/* Start Job Center Modal */}
-        <Modal visible={startJobModalVisible} animationType="fade" transparent={true} onRequestClose={() => setStartJobModalVisible(false)}>
-          <View style={styles.modalOverlayCenter}>
-            <View style={styles.confirmBox}>
-              <Text style={styles.confirmTitle}>Start this service?</Text>
+                <View style={styles.detailBox}>
+                  <Text style={styles.boxLabel}>Assigned Team</Text>
+                  <Text style={styles.boxValue}>{selectedJob.assignedTeam || "Not assigned yet"}</Text>
+                </View>
+
+                <Text style={styles.boxLabel}>Work Scope & Notes</Text>
+                <Text style={styles.detailDesc}>{selectedJob.notes}</Text>
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Assign Team Modal */}
+      <Modal visible={assignModalVisible} transparent animationType="slide" onRequestClose={() => setAssignModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center'}}>
+            <View style={[styles.modalCard, { width: '92%', maxWidth: 520, maxHeight: '85%' }]}>
+              <View style={styles.modalHeader}>
+                <View>
+                  <Text style={styles.modalTitle}>Assign Team</Text>
+                  <Text style={styles.modalSubtitle}>Select available team members for this service work</Text>
+                </View>
+                <TouchableOpacity onPress={() => setAssignModalVisible(false)}><XCircle size={20} color="#64748B" /></TouchableOpacity>
+              </View>
               
-              <View style={styles.quoteContextBox}>
-                <Text style={styles.modalLabel}>Service:</Text>
-                <Text style={styles.quoteContextTitle}>{selectedJob?.service}</Text>
-                <View style={{height: 8}} />
-                <Text style={styles.modalLabel}>Business:</Text>
-                <Text style={styles.quoteContextTitle}>{selectedJob?.client}</Text>
-                <View style={{height: 8}} />
-                <Text style={styles.modalLabel}>Assigned Team:</Text>
-                <Text style={styles.quoteContextTitle}>{selectedJob?.assignedTeam}</Text>
-              </View>
+              <ScrollView style={{padding: 20}} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                
+                {/* 1. Work Summary */}
+                <View style={[styles.detailBox, {flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', padding: 12, marginBottom: 16, marginTop: 4}]}>
+                  <View style={{backgroundColor: '#E2E8F0', padding: 8, borderRadius: 8, marginRight: 12}}>
+                    <Wrench size={18} color={NAVY} />
+                  </View>
+                  <View style={{flex: 1}}>
+                    <Text style={{fontWeight: '700', fontSize: 14, color: NAVY}}>{selectedJob?.service}</Text>
+                    <Text style={{fontSize: 12, color: '#64748B', marginTop: 2}}>{selectedJob?.client} · {selectedJob?.date} at {selectedJob?.time}</Text>
+                    <Text style={{fontSize: 12, color: '#64748B'}}>{selectedJob?.location}</Text>
+                  </View>
+                </View>
 
-              <View style={styles.confirmActions}>
-                <TouchableOpacity style={[styles.btnOutline, { flex: 1, marginRight: 12 }]} onPress={() => setStartJobModalVisible(false)}>
-                  <Text style={styles.btnOutlineText}>Cancel</Text>
+                {assignConflictError ? (
+                  <View style={styles.conflictBox}>
+                    <Text style={styles.conflictText}>{assignConflictError}</Text>
+                    <TouchableOpacity onPress={() => setAssignConflictError('')}><Text style={styles.conflictAction}>Resolve</Text></TouchableOpacity>
+                  </View>
+                ) : null}
+
+                {/* 2. Team Lead */}
+                <Text style={styles.label}>Team Lead *</Text>
+                <TouchableOpacity style={styles.selectBox} onPress={() => setLeadDropdownOpen(!leadDropdownOpen)}>
+                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                    <CheckCircle size={18} color={assignForm.lead ? NAVY : '#94A3B8'} style={{marginRight: 10}} />
+                    <Text style={[styles.selectBoxText, !assignForm.lead && {color: '#94A3B8'}]}>
+                      {assignForm.lead ? MOCK_TEAM_MEMBERS.find(m => m.id === assignForm.lead)?.name : 'Select team lead'}
+                    </Text>
+                  </View>
+                  <ChevronRight size={16} color="#94A3B8" style={{transform: [{rotate: leadDropdownOpen ? '90deg' : '0deg'}]}} />
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.btnPrimaryNav, { flex: 1, height: 44, borderRadius: 12, justifyContent: 'center' }]} onPress={handleStartJob}>
-                  <Text style={[styles.btnPrimaryNavText, {textAlign: 'center'}]}>Start Service</Text>
+                {leadDropdownOpen && (
+                  <View style={styles.dropdownMenu}>
+                    {MOCK_TEAM_MEMBERS.filter(m => m.canLead && m.active).map(m => (
+                      <TouchableOpacity key={m.id} style={styles.dropdownItem} onPress={() => { setAssignForm({...assignForm, lead: m.id, members: assignForm.members.filter(id => id !== m.id)}); setLeadDropdownOpen(false); }}>
+                        <Text style={styles.dropdownItemTitle}>{m.name} <Text style={{fontSize: 12, color: '#64748B', fontWeight: 'normal'}}>· {m.role}</Text></Text>
+                        <Text style={styles.dropdownItemSub}>{m.skills[0]} · {m.availability} · {m.workload}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+
+                {/* 3. Team Members */}
+                <Text style={[styles.label, {marginTop: 16}]}>Team Members</Text>
+                <TouchableOpacity style={styles.selectBox} onPress={() => setMemberDropdownOpen(!memberDropdownOpen)}>
+                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                    <Users size={18} color={assignForm.members.length ? NAVY : '#94A3B8'} style={{marginRight: 10}} />
+                    <Text style={[styles.selectBoxText, !assignForm.members.length && {color: '#94A3B8'}]}>
+                      {assignForm.members.length ? `${assignForm.members.length} team member(s) selected` : 'Select supporting team members'}
+                    </Text>
+                  </View>
+                  <ChevronRight size={16} color="#94A3B8" style={{transform: [{rotate: memberDropdownOpen ? '90deg' : '0deg'}]}} />
+                </TouchableOpacity>
+                {memberDropdownOpen && (
+                  <View style={styles.dropdownMenu}>
+                    {MOCK_TEAM_MEMBERS.filter(m => m.active && m.id !== assignForm.lead).map(m => {
+                      const isSel = assignForm.members.includes(m.id);
+                      return (
+                        <TouchableOpacity key={m.id} style={[styles.dropdownItem, isSel && {backgroundColor: '#F8FAFC'}]} onPress={() => {
+                          const next = isSel ? assignForm.members.filter(id => id !== m.id) : [...assignForm.members, m.id];
+                          setAssignForm({...assignForm, members: next});
+                        }}>
+                          <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+                            <View>
+                              <Text style={styles.dropdownItemTitle}>{m.name} <Text style={{fontSize: 12, color: '#64748B', fontWeight: 'normal'}}>· {m.role}</Text></Text>
+                              <Text style={styles.dropdownItemSub}>{m.skills[0]} · {m.availability} · {m.workload}</Text>
+                            </View>
+                            {isSel && <CheckCircle size={16} color={GREEN} />}
+                          </View>
+                        </TouchableOpacity>
+                      )
+                    })}
+                  </View>
+                )}
+                {assignForm.members.length > 0 && (
+                  <View style={[styles.chipsContainer, {marginTop: 8}]}>
+                    {assignForm.members.map(id => {
+                      const mem = MOCK_TEAM_MEMBERS.find(m => m.id === id);
+                      return (
+                        <TouchableOpacity key={id} style={styles.removableChip} onPress={() => setAssignForm({...assignForm, members: assignForm.members.filter(mid => mid !== id)})}>
+                          <Text style={styles.removableChipText}>{mem?.name}</Text>
+                          <XCircle size={14} color="#64748B" style={{marginLeft: 4}} />
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                )}
+
+                {/* 4 & 5. Reporting Date & Time */}
+                <View style={[styles.formRow, {marginTop: 16}]}>
+                  <View style={[styles.formGroup, {flex: 1}]}>
+                    <Text style={styles.label}>Reporting Date *</Text>
+                    <View style={styles.inputWrapper}>
+                      <CircleCheck size={18} color="#94A3B8" style={styles.inputIcon} />
+                      <TextInput style={[styles.input, {paddingLeft: 40}]} value={assignForm.reportingDate} onChangeText={t => setAssignForm({...assignForm, reportingDate: t})} placeholder={selectedJob?.date} />
+                    </View>
+                  </View>
+                  <View style={[styles.formGroup, {flex: 1}]}>
+                    <Text style={styles.label}>Reporting Time *</Text>
+                    <View style={styles.inputWrapper}>
+                      <CircleCheck size={18} color="#94A3B8" style={styles.inputIcon} />
+                      <TextInput style={[styles.input, {paddingLeft: 40}]} value={assignForm.reportingTime} onChangeText={t => setAssignForm({...assignForm, reportingTime: t})} placeholder="e.g. 09:30 AM" />
+                    </View>
+                  </View>
+                </View>
+
+                {/* 6. Expected Duration */}
+                <Text style={styles.label}>Expected Duration *</Text>
+                <View style={styles.inputWrapper}>
+                  <CircleCheck size={18} color="#94A3B8" style={styles.inputIcon} />
+                  <TextInput style={[styles.input, {paddingLeft: 40}]} value={assignForm.duration} onChangeText={t => setAssignForm({...assignForm, duration: t})} placeholder="e.g. 1 Hour, Half Day, Custom" />
+                </View>
+
+                {/* 7. Assignment Instructions */}
+                <Text style={[styles.label, {marginTop: 16}]}>Assignment Instructions</Text>
+                <View style={styles.inputWrapper}>
+                  <FileText size={18} color="#94A3B8" style={[styles.inputIcon, {top: 12}]} />
+                  <TextInput style={[styles.input, {height: 80, textAlignVertical: 'top', paddingLeft: 40, paddingTop: 12}]} multiline maxLength={400} value={assignForm.instructions} onChangeText={t => setAssignForm({...assignForm, instructions: t})} placeholder="Add responsibilities, access instructions or safety notes..." />
+                </View>
+
+                {/* 8. Required Skills Compact Check */}
+                <View style={{marginTop: 16}}>
+                  {(() => {
+                    const selectedMembers = MOCK_TEAM_MEMBERS.filter(m => m.id === assignForm.lead || (assignForm.members || []).includes(m.id));
+                    const missingSkill = REQUIRED_SKILLS.find(skill => !selectedMembers.some(m => (m.skills || []).includes(skill)));
+                    
+                    if (!assignForm.lead) return null; // Don't show until lead is selected
+                    
+                    if (missingSkill) {
+                      return (
+                        <View style={{flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF2F2', padding: 10, borderRadius: 8}}>
+                          <XCircle size={16} color="#EF4444" style={{marginRight: 8}} />
+                          <Text style={{fontSize: 13, color: '#991B1B', flex: 1}}>Required skill missing: <Text style={{fontWeight: '600'}}>{missingSkill}</Text></Text>
+                        </View>
+                      );
+                    }
+                    return (
+                      <View style={{flexDirection: 'row', alignItems: 'center', backgroundColor: '#ECFDF5', padding: 10, borderRadius: 8}}>
+                        <CheckCircle size={16} color="#059669" style={{marginRight: 8}} />
+                        <Text style={{fontSize: 13, color: '#065F46'}}>Required skills covered</Text>
+                      </View>
+                    );
+                  })()}
+                </View>
+
+                {/* 9. Notify Team */}
+                <View style={[styles.formRow, {marginTop: 16, marginBottom: 12, alignItems: 'center'}]}>
+                  <TouchableOpacity onPress={() => setAssignForm({...assignForm, notifyTeam: !assignForm.notifyTeam})}>
+                    {assignForm.notifyTeam ? <CheckCircle size={20} color={GREEN} /> : <View style={styles.uncheckCircle} />}
+                  </TouchableOpacity>
+                  <View style={{marginLeft: 10, flex: 1}}>
+                    <Text style={[styles.label, {marginBottom: 0}]}>Notify selected team</Text>
+                    <Text style={{fontSize: 12, color: '#64748B'}}>Send work and reporting details to assigned members.</Text>
+                  </View>
+                </View>
+
+              </ScrollView>
+              <View style={styles.modalFooter}>
+                <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setAssignModalVisible(false)} disabled={isAssigning}><Text style={styles.modalCancelText}>Cancel</Text></TouchableOpacity>
+                <TouchableOpacity style={[styles.modalSubmitBtn, isAssigning && {opacity: 0.7}]} onPress={handleAssignTeam} disabled={isAssigning}>
+                  <Text style={styles.modalSubmitText}>{isAssigning ? 'Assigning...' : 'Assign Team'}</Text>
                 </TouchableOpacity>
               </View>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
+
+      {/* Start Work Confirmation */}
+      <Modal visible={startModalVisible} transparent animationType="fade" onRequestClose={() => setStartModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, {maxWidth: 400}]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Start this service work?</Text>
+              <TouchableOpacity onPress={() => setStartModalVisible(false)}><XCircle size={20} color="#64748B" /></TouchableOpacity>
+            </View>
+            <View style={{padding: 20}}>
+              <Text style={styles.boxLabel}>Service</Text><Text style={styles.boxValue}>{selectedJob?.service}</Text>
+              <View style={{height: 12}} />
+              <Text style={styles.boxLabel}>Client</Text><Text style={styles.boxValue}>{selectedJob?.client}</Text>
+              <View style={{height: 12}} />
+              <Text style={styles.boxLabel}>Scheduled Time</Text><Text style={styles.boxValue}>{selectedJob?.date} · {selectedJob?.time}</Text>
+            </View>
+            <View style={styles.modalFooter}>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setStartModalVisible(false)}><Text style={styles.modalCancelText}>Cancel</Text></TouchableOpacity>
+              <TouchableOpacity style={[styles.modalSubmitBtn, {backgroundColor: NAVY}]} onPress={handleStartWork}><Text style={styles.modalSubmitText}>Start Work</Text></TouchableOpacity>
             </View>
           </View>
-        </Modal>
+        </View>
+      </Modal>
 
-        {/* Complete Job Center Modal */}
-        <Modal visible={completionModalVisible} animationType="fade" transparent={true} onRequestClose={() => setCompletionModalVisible(false)}>
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View style={styles.modalOverlayCenter}>
-              <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{width: '100%', alignItems: 'center'}}>
-                <View style={[styles.centerModalContent, { width: modalWidth, maxHeight: '82%' }]}>
-                  <View style={styles.modalHeader}>
-                    <View>
-                      <Text style={styles.modalTitle}>Complete Service</Text>
-                      <Text style={styles.modalSubtitle}>{selectedJob?.id}</Text>
-                    </View>
-                    <TouchableOpacity onPress={() => setCompletionModalVisible(false)}>
-                      <XCircle size={24} color="#64748B" />
-                    </TouchableOpacity>
-                  </View>
-                  
-                  <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-                    <Text style={styles.inputLabel}>Service Completion Notes *</Text>
-                    <TextInput style={styles.textArea} placeholder="Describe work done..." multiline numberOfLines={3} value={completionForm.notes} onChangeText={(t) => setCompletionForm({...completionForm, notes: t})} />
-                    
-                    <Text style={styles.inputLabel}>Customer Confirmation OTP *</Text>
-                    <TextInput style={styles.input} placeholder="OTP provided by client" keyboardType="numeric" value={completionForm.otp} onChangeText={(t) => setCompletionForm({...completionForm, otp: t})} />
+      {/* Update Progress Modal */}
+      <Modal visible={progressModalVisible} transparent animationType="slide" onRequestClose={() => setProgressModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{width: '100%', alignItems: 'center'}}>
+            <View style={[styles.modalCard, { maxHeight: '90%' }]}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Update Work Progress</Text>
+                <TouchableOpacity onPress={() => setProgressModalVisible(false)}><XCircle size={20} color="#64748B" /></TouchableOpacity>
+              </View>
+              <ScrollView style={{padding: 20}} keyboardShouldPersistTaps="handled">
+                <Text style={styles.label}>Progress Percentage (0-100) *</Text>
+                <TextInput style={styles.input} keyboardType="numeric" value={progressForm.percent} onChangeText={t => setProgressForm({...progressForm, percent: t})} placeholder="e.g. 75" />
+                
+                <Text style={[styles.label, {marginTop: 16}]}>Current Stage *</Text>
+                <TextInput style={styles.input} value={progressForm.stage} onChangeText={t => setProgressForm({...progressForm, stage: t})} placeholder="e.g. Testing Equipment" />
 
-                    <View style={styles.formRow}>
-                      <View style={styles.formCol}>
-                        <Text style={styles.inputLabel}>Final Amount</Text>
-                        <TextInput style={styles.input} placeholder="₹" keyboardType="numeric" value={completionForm.amount} onChangeText={(t) => setCompletionForm({...completionForm, amount: t})} />
-                      </View>
-                      <View style={styles.formCol}>
-                        <Text style={styles.inputLabel}>Additional Chg</Text>
-                        <TextInput style={styles.input} placeholder="₹" keyboardType="numeric" value={completionForm.additional} onChangeText={(t) => setCompletionForm({...completionForm, additional: t})} />
-                      </View>
-                    </View>
-                    <View style={{height: 10}}/>
-                  </ScrollView>
-                  
-                  <View style={styles.modalFooterActions}>
-                    <TouchableOpacity style={styles.btnOutline} onPress={() => setCompletionModalVisible(false)}>
-                      <Text style={styles.btnOutlineText}>Cancel</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={[styles.btnPrimaryGoldFull, { opacity: (completionForm.notes && completionForm.otp) ? 1 : 0.6 }]} onPress={handleCompleteSubmit}>
-                      <Text style={styles.btnPrimaryGoldText}>Complete Service</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </KeyboardAvoidingView>
+                <Text style={[styles.label, {marginTop: 16}]}>Work Update</Text>
+                <TextInput style={[styles.input, {height: 80, textAlignVertical: 'top'}]} multiline value={progressForm.update} onChangeText={t => setProgressForm({...progressForm, update: t})} placeholder="What was completed today?" />
+              </ScrollView>
+              <View style={styles.modalFooter}>
+                <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setProgressModalVisible(false)}><Text style={styles.modalCancelText}>Cancel</Text></TouchableOpacity>
+                <TouchableOpacity style={[styles.modalSubmitBtn, {backgroundColor: GREEN}]} onPress={handleUpdateProgress}><Text style={styles.modalSubmitText}>Save Update</Text></TouchableOpacity>
+              </View>
             </View>
-          </TouchableWithoutFeedback>
-        </Modal>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
 
-      </View>
-    </SafeAreaView>
+      {/* Submit Completion Modal */}
+      <Modal visible={completeModalVisible} transparent animationType="slide" onRequestClose={() => setCompleteModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{width: '100%', alignItems: 'center'}}>
+            <View style={[styles.modalCard, { maxHeight: '90%' }]}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Submit for Client Confirmation</Text>
+                <TouchableOpacity onPress={() => setCompleteModalVisible(false)}><XCircle size={20} color="#64748B" /></TouchableOpacity>
+              </View>
+              <ScrollView style={{padding: 20}} keyboardShouldPersistTaps="handled">
+                <Text style={styles.label}>Final Amount (₹)</Text>
+                <TextInput style={styles.input} value={completeForm.amount} onChangeText={t => setCompleteForm({...completeForm, amount: t})} placeholder={selectedJob?.amount} />
+                
+                <Text style={[styles.label, {marginTop: 16}]}>Work Summary *</Text>
+                <TextInput style={[styles.input, {height: 80, textAlignVertical: 'top'}]} multiline value={completeForm.summary} onChangeText={t => setCompleteForm({...completeForm, summary: t})} placeholder="Summary of completed work..." />
+              </ScrollView>
+              <View style={styles.modalFooter}>
+                <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setCompleteModalVisible(false)}><Text style={styles.modalCancelText}>Cancel</Text></TouchableOpacity>
+                <TouchableOpacity style={[styles.modalSubmitBtn, {backgroundColor: '#EA580C'}]} onPress={handleMarkCompleted}><Text style={styles.modalSubmitText}>Submit Completion</Text></TouchableOpacity>
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
+
+      {/* Filter Bottom Sheet */}
+      <Modal visible={filterModalVisible} transparent animationType="slide" onRequestClose={() => setFilterModalVisible(false)}>
+        <View style={[styles.modalOverlay, {justifyContent: 'flex-end', padding: 0}]}>
+          <View style={[styles.modalCard, {borderRadius: 0, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxWidth: '100%', maxHeight: '60%'}]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Advanced Filters</Text>
+              <TouchableOpacity onPress={() => setFilterModalVisible(false)}><XCircle size={20} color="#64748B" /></TouchableOpacity>
+            </View>
+            <ScrollView style={{padding: 20}}>
+              <Text style={styles.label}>Scheduled Date</Text>
+              <View style={styles.chipsContainer}>
+                <View style={styles.filterChip}><Text style={styles.filterChipText}>Today</Text></View>
+                <View style={styles.filterChip}><Text style={styles.filterChipText}>Tomorrow</Text></View>
+                <View style={styles.filterChip}><Text style={styles.filterChipText}>Next 7 Days</Text></View>
+              </View>
+            </ScrollView>
+            <View style={styles.modalFooter}>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setFilterModalVisible(false)}><Text style={styles.modalCancelText}>Clear Filters</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.modalSubmitBtn} onPress={() => setFilterModalVisible(false)}><Text style={styles.modalSubmitText}>Apply Filters</Text></TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: LIGHT_BG },
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: BG },
+  mainWrapper: { flex: 1, width: '100%', alignSelf: 'center' },
+  mainWrapperDesktop: { maxWidth: 1100, paddingHorizontal: 24 },
   
-  header: { 
-    paddingTop: 30, paddingBottom: 16, 
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', 
-    paddingHorizontal: 16, backgroundColor: WHITE,
-    borderBottomWidth: 1, borderBottomColor: '#E8EDF4',
-  },
-  headerLeft: { flex: 1, paddingRight: 8 },
-  headerTitle: { fontSize: 22, fontWeight: 'bold', color: NAVY, marginBottom: 2 },
-  headerSubtitle: { fontSize: 13, color: '#64748B' },
-  headerActions: { flexDirection: 'row' },
-  iconBtn: { padding: 8, marginLeft: 8, backgroundColor: '#F8FAFC', borderRadius: 8 },
-  
-  tabWrapper: { backgroundColor: WHITE, paddingBottom: 16, paddingTop: 12, borderBottomWidth: 1, borderBottomColor: '#E8EDF4' },
-  tabContainer: { paddingHorizontal: 16, gap: 10 },
-  tabPill: { 
-    flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 16, 
-    borderRadius: 20, backgroundColor: WHITE, 
-    borderWidth: 1, borderColor: '#E2E8F0',
-  },
-  activeTabPill: { backgroundColor: NAVY, borderColor: NAVY, shadowColor: NAVY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
-  tabPillText: { fontSize: 13, fontWeight: '600', color: '#64748B', marginRight: 6 },
-  activeTabPillText: { color: WHITE },
-  tabBadge: { backgroundColor: '#F1F5F9', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10 },
-  activeTabBadge: { backgroundColor: 'rgba(255,255,255,0.2)' },
-  tabBadgeText: { fontSize: 10, fontWeight: 'bold', color: '#475569' },
-  activeTabBadgeText: { color: WHITE },
+  pageHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 },
+  pageTitle: { fontSize: 22, fontWeight: 'bold', color: NAVY },
+  pageSubtitle: { fontSize: 13, color: '#64748B', marginTop: 4 },
+  headerActions: { flexDirection: 'row', gap: 12 },
+  headerBtn: { padding: 8, backgroundColor: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#E2E8F0' },
 
-  listContent: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 110 },
-  
-  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 32 },
-  emptyIconBox: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#E8EDF4', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  emptyTitle: { fontSize: 17, fontWeight: 'bold', color: NAVY, marginBottom: 8 },
-  emptyText: { color: '#64748B', fontSize: 14, textAlign: 'center', lineHeight: 20 },
-  
-  // Refined Premium Compact Card
-  card: { 
-    backgroundColor: WHITE, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 14, marginBottom: 12, 
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, 
-    shadowOpacity: 0.03, shadowRadius: 8, elevation: 2,
-    borderWidth: 1, borderColor: '#E6EBF2',
-  },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  cardId: { fontSize: 12, fontWeight: 'bold', color: '#94A3B8' },
+  searchRow: { paddingHorizontal: 16, marginBottom: 12 },
+  searchInput: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 12, height: 44, fontSize: 14, color: NAVY },
+
+  tabScroll: { paddingHorizontal: 16, gap: 10, paddingBottom: 8 },
+  tabItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 24, backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0' },
+  tabItemActive: { backgroundColor: NAVY, borderColor: NAVY, shadowColor: NAVY, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 3 },
+  tabText: { fontSize: 13, fontWeight: '600', color: '#64748B', marginRight: 8 },
+  tabTextActive: { color: '#fff' },
+  badgePill: { backgroundColor: '#F1F5F9', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10 },
+  badgePillActive: { backgroundColor: '#334155' },
+  badgeText: { fontSize: 11, fontWeight: 'bold', color: '#475569' },
+  badgeTextActive: { color: '#fff' },
+
+  listContent: { padding: 16, paddingBottom: 120 },
+
+  card: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
+  cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  reqId: { fontSize: 14, fontWeight: 'bold', color: '#64748B' },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  statusText: { fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase' },
+  statusBadgeText: { fontSize: 11, fontWeight: 'bold' },
   
-  serviceSection: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  serviceIconBox: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#F8FAFC', alignItems: 'center', justifyContent: 'center', marginRight: 12, borderWidth: 1, borderColor: '#E8EDF4' },
-  serviceInfo: { flex: 1 },
-  serviceName: { fontSize: 16, fontWeight: 'bold', color: NAVY, marginBottom: 2 },
-  clientName: { fontSize: 13, color: '#475569', fontWeight: '500' },
-  
-  compactRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6, gap: 6 },
-  compactText: { fontSize: 13, color: '#475569' },
-  
-  amountTeamGroup: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingRight: 4 },
-  infoPair: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  amountText: { fontSize: 14, color: NAVY, fontWeight: 'bold' },
-  teamLabelText: { fontSize: 13, color: '#475569', marginLeft: 4 },
-  unassignedText: { fontSize: 13, fontWeight: 'bold', color: '#EF4444' },
-  assignedText: { fontSize: 13, fontWeight: 'bold', color: '#7E22CE' },
+  cardTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
+  clientInfo: { fontSize: 15, color: '#475569', marginBottom: 2 },
+  locationText: { fontSize: 13, color: '#94A3B8', marginBottom: 16 },
 
-  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#E8EDF4', paddingTop: 14, marginTop: 8 },
-  btnViewDetails: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, minHeight: 44, justifyContent: 'center' },
-  btnViewDetailsText: { fontSize: 13, fontWeight: 'bold', color: NAVY, marginRight: 2 },
-  
-  btnPrimaryNav: { backgroundColor: NAVY, paddingHorizontal: 16, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  btnPrimaryNavText: { color: WHITE, fontSize: 13, fontWeight: 'bold' },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16, gap: 16 },
+  infoCol: { flex: 1 },
+  infoLabel: { fontSize: 11, color: '#94A3B8', marginBottom: 4 },
+  infoValue: { fontSize: 14, fontWeight: 'bold', color: NAVY },
 
-  // Center Modal Styles
-  modalOverlayCenter: { flex: 1, backgroundColor: 'rgba(3, 15, 38, 0.55)', justifyContent: 'center', alignItems: 'center', padding: 16 },
-  centerModalContent: { backgroundColor: WHITE, borderRadius: 20, padding: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY, marginBottom: 2 },
-  modalSubtitle: { fontSize: 13, color: '#64748B', fontWeight: '500' },
-  
-  modalBody: { flexShrink: 1 },
-  modalDataBlock: { marginBottom: 16 },
-  modalLabel: { fontSize: 12, color: '#94A3B8', marginBottom: 4, textTransform: 'uppercase', fontWeight: '600' },
-  modalValue: { fontSize: 15, color: '#1E293B', fontWeight: '500' },
-  modalDescText: { fontSize: 14, color: '#475569', lineHeight: 22 },
-  
-  modalGrid: { flexDirection: 'row', marginBottom: 16 },
-  modalGridCol: { flex: 1, paddingRight: 8 },
-  
-  modalFooterActions: { flexDirection: 'row', gap: 12, marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
-  btnOutline: { flex: 1, height: 44, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  btnOutlineText: { color: '#475569', fontWeight: 'bold', fontSize: 14 },
-  btnPrimaryGoldFull: { flex: 1.5, height: 44, backgroundColor: GOLD, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  btnPrimaryGoldText: { color: WHITE, fontWeight: 'bold', fontSize: 14 },
-  
-  // Progress tracker inside modal
-  modalProgressContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, paddingHorizontal: 4 },
-  modalProgressStep: { alignItems: 'center', flex: 1, position: 'relative' },
-  modalProgressLine: { position: 'absolute', top: 5, left: '50%', width: '100%', height: 2, backgroundColor: '#E2E8F0', zIndex: 1 },
-  modalProgressLineDone: { backgroundColor: '#22C55E' },
-  modalProgressDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#E2E8F0', marginBottom: 6, zIndex: 2, alignItems: 'center', justifyContent: 'center' },
-  modalProgressDotDone: { backgroundColor: '#22C55E' },
-  modalProgressLabel: { fontSize: 10, color: '#94A3B8', fontWeight: '500' },
-  modalProgressLabelDone: { color: '#475569' },
+  teamStateBox: { marginBottom: 16 },
+  teamUnassigned: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF7ED', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, alignSelf: 'flex-start' },
+  teamUnassignedText: { fontSize: 13, fontWeight: '600', color: '#EA580C' },
+  teamAssigned: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start' },
+  teamLabel: { fontSize: 13, color: '#64748B' },
+  teamAssignedText: { fontSize: 13, fontWeight: '600', color: NAVY },
 
-  // Forms
-  quoteContextBox: { backgroundColor: '#F8FAFC', padding: 12, borderRadius: 10, marginBottom: 20, borderWidth: 1, borderColor: '#F1F5F9' },
-  quoteContextTitle: { fontSize: 14, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
-  quoteContextSub: { fontSize: 12, color: '#64748B' },
-  formRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
-  formCol: { flex: 1 },
-  inputLabel: { fontSize: 12, fontWeight: '600', color: '#475569', marginBottom: 6 },
-  input: { backgroundColor: WHITE, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 12, height: 44, fontSize: 14, color: NAVY, marginBottom: 16 },
-  textArea: { backgroundColor: WHITE, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: NAVY, minHeight: 80, textAlignVertical: 'top', marginBottom: 16 },
+  progressContainer: { marginBottom: 16 },
+  stageLabel: { fontSize: 12, color: '#64748B' },
+  progressTrack: { height: 6, backgroundColor: '#F1F5F9', borderRadius: 3, marginTop: 4 },
+  progressFill: { height: '100%', backgroundColor: GREEN, borderRadius: 3 },
+
+  actionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 16 },
+  detailsBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, minHeight: 44 },
+  detailsBtnText: { fontSize: 14, fontWeight: 'bold', color: NAVY, marginRight: 4 },
   
-  // Confirmation Modal
-  confirmBox: { backgroundColor: WHITE, borderRadius: 20, padding: 24, width: '100%', maxWidth: 340, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 },
-  confirmTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY, marginBottom: 16, textAlign: 'center' },
-  confirmActions: { flexDirection: 'row', width: '100%', marginTop: 16 },
+  actionRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  primaryBtn: { paddingHorizontal: 16, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  primaryBtnText: { fontSize: 14, fontWeight: 'bold', color: '#fff' },
+  moreBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+
+  moreMenu: { position: 'absolute', bottom: 44, right: 0, width: 200, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 10, zIndex: 100 },
+  modalCard: { backgroundColor: WHITE, borderRadius: 20, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 10 },
+  menuItem: { paddingHorizontal: 16, paddingVertical: 12, minHeight: 44, justifyContent: 'center' },
+  menuText: { fontSize: 14, fontWeight: '500', color: NAVY },
+  menuTextDestructive: { fontSize: 14, fontWeight: '600', color: '#EF4444' },
+
+  emptyState: { alignItems: 'center', justifyContent: 'center', padding: 40 },
+  emptyIconBox: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  emptyTitle: { fontSize: 16, fontWeight: 'bold', color: '#475569', marginBottom: 8 },
+  emptySub: { fontSize: 14, color: '#94A3B8', textAlign: 'center' },
+
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(3,15,38,0.55)', justifyContent: 'center', alignItems: 'center', padding: 16 },
+  modalCard: { backgroundColor: '#fff', width: '100%', maxWidth: 540, maxHeight: '85%', borderRadius: 20, overflow: 'hidden' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY },
+  modalFooter: { flexDirection: 'row', padding: 20, gap: 12, borderTopWidth: 1, borderTopColor: '#F1F5F9', backgroundColor: '#fff' },
+  modalCancelBtn: { flex: 1, paddingVertical: 12, borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center' },
+  modalCancelText: { fontSize: 14, fontWeight: '600', color: NAVY },
+  modalSubmitBtn: { flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center' },
+  modalSubmitText: { fontSize: 14, fontWeight: 'bold', color: '#fff' },
+
+  detailTitle: { fontSize: 20, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
+  detailClient: { fontSize: 15, color: '#64748B', marginBottom: 20 },
+  detailBox: { backgroundColor: '#F8FAFC', padding: 12, borderRadius: 10, marginBottom: 16 },
+  boxLabel: { fontSize: 12, color: '#64748B', marginBottom: 4 },
+  boxValue: { fontSize: 14, fontWeight: '600', color: NAVY },
+  detailDesc: { fontSize: 14, color: '#475569', lineHeight: 22, marginTop: 4, marginBottom: 20 },
+
+  quoteContextBox: { backgroundColor: '#F8FAFC', padding: 16, borderRadius: 12, marginBottom: 20 },
+  qcClient: { fontSize: 12, color: '#64748B', marginBottom: 4 },
+  qcTitle: { fontSize: 16, fontWeight: 'bold', color: NAVY },
+  qcMeta: { fontSize: 12, color: '#64748B', marginTop: 4 },
+
+  label: { fontSize: 13, fontWeight: '600', color: '#1E293B', marginBottom: 8 },
+  input: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 12, height: 44, fontSize: 14, color: NAVY },
+
+  chipsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  filterChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0' },
+  filterChipActive: { backgroundColor: NAVY, borderColor: NAVY },
+  filterChipText: { fontSize: 13, color: '#475569', fontWeight: '500' },
+  filterChipTextActive: { color: '#fff' },
+
+  conflictBox: { backgroundColor: '#FEF2F2', padding: 12, borderRadius: 10, marginBottom: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  conflictText: { fontSize: 13, color: '#DC2626', flex: 1, marginRight: 8 },
+  conflictAction: { fontSize: 13, fontWeight: 'bold', color: '#DC2626', textDecorationLine: 'underline' },
+
+  selectBox: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 12, height: 46 },
+  selectBoxText: { fontSize: 14, color: NAVY, fontWeight: '500' },
+  dropdownMenu: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, marginTop: 4, maxHeight: 180, overflow: 'hidden' },
+  dropdownItem: { padding: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  dropdownItemTitle: { fontSize: 14, fontWeight: 'bold', color: NAVY, marginBottom: 2 },
+  dropdownItemSub: { fontSize: 12, color: '#64748B' },
+  
+  removableChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1F5F9', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16 },
+  removableChipText: { fontSize: 12, fontWeight: '600', color: NAVY },
+
+  inputWrapper: { position: 'relative', justifyContent: 'center' },
+  inputIcon: { position: 'absolute', left: 12, zIndex: 1 },
+
+  skillsCheckArea: { backgroundColor: '#F8FAFC', padding: 12, borderRadius: 10, marginTop: 16 },
+  skillsCheckTitle: { fontSize: 13, fontWeight: 'bold', color: NAVY },
+  skillChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, borderWidth: 1 },
+  skillCovered: { backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' },
+  skillMissing: { backgroundColor: '#FFF7ED', borderColor: '#FED7AA' },
+  skillTextCovered: { fontSize: 11, fontWeight: '600', color: '#059669' },
+  skillTextMissing: { fontSize: 11, fontWeight: '600', color: '#EA580C' },
+  skillsHelpText: { fontSize: 11, color: '#64748B', marginTop: 8 },
+
+  toggleWrap: { width: 44, height: 24, borderRadius: 12, backgroundColor: '#E2E8F0', justifyContent: 'center', paddingHorizontal: 2 },
+  toggleActive: { backgroundColor: GREEN },
+  toggleKnob: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#fff', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 1 },
+  toggleKnobActive: { transform: [{translateX: 20}] },
+
+  readonlyBox: { backgroundColor: '#F1F5F9', padding: 12, borderRadius: 10 },
+  readonlyBoxText: { fontSize: 13, color: '#475569', marginBottom: 4 },
+
+  uncheckCircle: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: '#CBD5E1' }
 });

@@ -1,306 +1,257 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, Image } from 'react-native';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldX, ChevronDown } from 'lucide-react-native';
-import { colors } from '../../theme/colors';
-import { typography } from '../../theme/typography';
-import CustomInput from '../../components/CustomInput';
-import PrimaryButton from '../../components/PrimaryButton';
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Modal, ScrollView, SafeAreaView } from 'react-native';
+import { Mail, ArrowRight, AlertCircle, Building2, Zap, ChevronRight, X } from 'lucide-react-native';
+
+import AuthScreenWrapper from '../../components/auth/AuthScreenWrapper';
+import AuthCard from '../../components/auth/AuthCard';
+import AuthTabs from '../../components/auth/AuthTabs';
+import FormField from '../../components/auth/FormField';
+import PasswordField from '../../components/auth/PasswordField';
+import PrimaryButton from '../../components/auth/PrimaryButton';
 import { AuthContext } from '../../context/AuthContext';
+import { AUTH_COLORS } from '../../components/auth/AuthTheme';
 
 export default function LoginScreen({ navigation }) {
+  const { width } = useWindowDimensions();
+  const isNarrow = width < 340;
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [demoOpen, setDemoOpen] = useState(false);
+
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  
+  const [isLoading, setIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
+  
+  const [demoModalVisible, setDemoModalVisible] = useState(false);
   
   const { login } = useContext(AuthContext);
 
-  const DEMO_ACCOUNTS = [
-    { label: "Hotel Owner Demo", email: "owner@themeridian.com", role: "owner" },
-    { label: "Raw Material Vendor", email: "vendor@metrofresh.com", role: "vendor", vendorType: "raw-material" },
-    { label: "Manpower Agency Vendor", email: "vendor@elitemanpower.com", role: "manpower", vendorType: "manpower" },
-    { label: "Service Provider Vendor", email: "vendor@proclean.com", role: "serviceProvider", vendorType: "service" },
-    { label: "Marketing Agency Vendor", email: "vendor@brandcraft.com", role: "marketing", vendorType: "marketing" },
-  ];
+  const validate = () => {
+    let isValid = true;
+    setEmailError('');
+    setPasswordError('');
+    setLoginError('');
+
+    if (!email) {
+      setEmailError('Enter your email address.');
+      isValid = false;
+    } else if (!/^\S+@\S+\.\S+$/.test(email)) {
+      setEmailError('Enter a valid email address.');
+      isValid = false;
+    }
+
+    if (!password) {
+      setPasswordError('Enter your password.');
+      isValid = false;
+    } else if (password.length < 8) {
+      setPasswordError('Password must contain at least 8 characters.');
+      isValid = false;
+    }
+
+    return isValid;
+  };
 
   const handleLogin = () => {
-    setError('');
-    const demo = DEMO_ACCOUNTS.find(d => d.email === email.trim().toLowerCase());
-    if (demo) {
-      login(demo.role, 'mock-jwt-token', demo.vendorType || 'raw-material');
-    } else if (email && password.length >= 6) {
-      // Basic mock login fallback
-      login('owner', 'mock-jwt-token');
-    } else {
-      setError('Please enter a valid email and password (min 6 chars).');
-    }
+    if (!validate()) return;
+    
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+      login('owner', 'demo-token');
+    }, 1500);
+  };
+
+  const handleDemoSelect = (panel) => {
+    setDemoModalVisible(false);
+    if (panel === 'Owner Panel') login('owner', 'demo-token');
+    else if (panel === 'Super Admin Panel') login('superadmin', 'demo-token');
+    else if (panel === 'Service Provider Panel') login('serviceProvider', 'demo-token');
+    else if (panel === 'Manpower Agent Panel') login('manpower', 'demo-token');
+    else if (panel === 'Raw Material Vendor Panel') login('vendor', 'demo-token');
+    else if (panel === 'Marketing Agency Panel') login('marketing', 'demo-token');
+  };
+
+  const isFormValid = () => {
+    return email && /^\S+@\S+\.\S+$/.test(email) && password && password.length >= 8;
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          
-          <View style={styles.header}>
-             <Image source={require('../../assets/HoReCa_Logo.png')} style={styles.logo} resizeMode="contain" />
+    <AuthScreenWrapper>
+      
+      {/* Brand Identity */}
+      <View style={styles.brandContainer}>
+        <View style={styles.brandIconBox}>
+          <Building2 size={24} color={AUTH_COLORS.accent} />
+        </View>
+        <Text style={styles.brandName}>
+          <Text style={{ color: AUTH_COLORS.card }}>HRC </Text>
+          <Text style={{ color: AUTH_COLORS.accent }}>HUB</Text>
+        </Text>
+        <Text style={styles.brandSub}>HoReCa Business Partner</Text>
+      </View>
+
+      <AuthCard>
+        <AuthTabs activeTab="login" onTabChange={(tab) => tab === 'register' && navigation.navigate('RegisterStepOne')} />
+        
+        {/* Login Introduction */}
+        <Text style={styles.heading}>Welcome back</Text>
+        <Text style={styles.subtitle}>Enter your credentials to access your HRC HUB business account.</Text>
+
+        <FormField 
+          label="EMAIL ADDRESS *" 
+          icon={Mail} 
+          placeholder="business@email.com"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+          returnKeyType="next"
+          value={email}
+          onChangeText={(val) => { setEmail(val); setEmailError(''); setLoginError(''); }}
+          error={emailError}
+        />
+
+        <PasswordField 
+          label="PASSWORD *" 
+          placeholder="Enter your password"
+          returnKeyType="done"
+          value={password}
+          onChangeText={(val) => { setPassword(val); setPasswordError(''); setLoginError(''); }}
+          error={passwordError}
+          containerStyle={{ marginBottom: 12 }}
+        />
+
+        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} style={styles.forgotLink} accessibilityRole="button">
+          <Text style={styles.forgotText}>Forgot Password?</Text>
+        </TouchableOpacity>
+
+        {/* Inline Error Banner */}
+        {!!loginError && (
+          <View style={styles.errorBanner}>
+            <AlertCircle size={18} color={AUTH_COLORS.error} style={{ marginRight: 8 }} />
+            <Text style={styles.errorBannerText}>{loginError}</Text>
           </View>
+        )}
 
-          <View style={styles.formCard}>
-            {/* Sliding Pill Tab Switcher */}
-            <View style={styles.tabSwitcher}>
-               <View style={[styles.tabSlider, { left: 4 }]} />
-               <TouchableOpacity style={styles.tabButton}>
-                  <Text style={[styles.tabText, { color: colors.dark }]}>SIGN IN</Text>
-               </TouchableOpacity>
-               <TouchableOpacity style={styles.tabButton} onPress={() => navigation.navigate('Register')}>
-                  <Text style={[styles.tabText, { color: colors.muted }]}>REGISTER</Text>
-               </TouchableOpacity>
+        <PrimaryButton 
+          title={isLoading ? "SIGNING IN..." : "SIGN IN"} 
+          icon={isLoading ? null : ArrowRight} 
+          onPress={handleLogin} 
+          loading={isLoading} 
+          disabled={!isFormValid()}
+        />
+
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>OR</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        {/* Demo Access Button */}
+        <TouchableOpacity 
+          style={styles.demoBtn} 
+          onPress={() => setDemoModalVisible(true)}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+        >
+          <Zap size={20} color={AUTH_COLORS.accent} style={{ marginRight: 8 }} />
+          <Text style={styles.demoBtnText}>QUICK DEMO ACCESS</Text>
+        </TouchableOpacity>
+        <Text style={styles.demoHelper}>Explore the application using demo business data.</Text>
+
+        {/* Registration Prompt */}
+        <View style={[styles.regPrompt, isNarrow && { flexDirection: 'column', alignItems: 'center' }]}>
+          <Text style={styles.regPromptText}>Don't have a business account? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('RegisterStepOne')} accessibilityRole="button">
+            <Text style={styles.regPromptLink}>Create a business profile</Text>
+          </TouchableOpacity>
+        </View>
+      </AuthCard>
+
+      {/* Demo Selection Modal */}
+      <Modal visible={demoModalVisible} transparent animationType="slide" onRequestClose={() => setDemoModalVisible(false)}>
+        <SafeAreaView style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Demo Account</Text>
+              <TouchableOpacity onPress={() => setDemoModalVisible(false)} style={styles.closeBtn}>
+                <X size={24} color={AUTH_COLORS.primary} />
+              </TouchableOpacity>
             </View>
-
-            <View style={styles.titleContainer}>
-              <Text style={styles.title}>Welcome back</Text>
-              <Text style={styles.subtitle}>Enter your credentials to access your control panel.</Text>
-            </View>
-
-            {error ? (
-              <View style={styles.errorBanner}>
-                <ShieldX size={14} color={colors.error} />
-                <Text style={styles.errorBannerText}>{error}</Text>
-              </View>
-            ) : null}
-
-            <View style={styles.form}>
-              <CustomInput
-                label="Email Address"
-                value={email}
-                onChangeText={setEmail}
-                placeholder="name@company.com"
-                keyboardType="email-address"
-                icon={Mail}
-                required
-              />
-
-              <View style={styles.passwordGroup}>
-                <CustomInput
-                  label="Password"
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="••••••••••••"
-                  secureTextEntry={!showPassword}
-                  icon={Lock}
-                  required
-                  suffix={
-                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                      {showPassword ? <EyeOff size={16} color={colors.muted} /> : <Eye size={16} color={colors.muted} />}
-                    </TouchableOpacity>
-                  }
-                />
-                <TouchableOpacity style={styles.forgotPassword}>
-                  <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            <ScrollView style={styles.demoList}>
+              {[
+                'Super Admin Panel',
+                'Owner Panel',
+                'Service Provider Panel',
+                'Manpower Agent Panel',
+                'Raw Material Vendor Panel',
+                'Marketing Agency Panel'
+              ].map((panel, idx) => (
+                <TouchableOpacity key={idx} style={styles.demoItem} onPress={() => handleDemoSelect(panel)}>
+                  <Text style={styles.demoItemText}>{panel}</Text>
+                  <ChevronRight size={20} color={AUTH_COLORS.muted} />
                 </TouchableOpacity>
-              </View>
-
-              <PrimaryButton title="SIGN IN" onPress={handleLogin} style={styles.submitBtn} />
-            </View>
-
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>QUICK DEMO LOGIN</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            {/* DEMO BUTTONS */}
-            <View style={{ flexDirection: 'column', gap: 10, marginTop: 12 }}>
-              <PrimaryButton 
-                title="Login as Hotel Owner" 
-                onPress={() => login('owner', 'mock-jwt-token')} 
-                style={{ backgroundColor: '#0F172A' }}
-              />
-              <PrimaryButton 
-                title="Login as Raw Material Vendor" 
-                onPress={() => login('vendor', 'mock-jwt-token', 'raw-material')} 
-                style={{ backgroundColor: '#1E40AF' }}
-              />
-              <PrimaryButton 
-                title="Login as Manpower Vendor" 
-                onPress={() => login('manpower', 'mock-jwt-token', 'manpower')} 
-                style={{ backgroundColor: '#2563EB' }}
-              />
-              <PrimaryButton 
-                title="Login as Service Provider Vendor" 
-                onPress={() => login('serviceProvider', 'mock-jwt-token', 'service')} 
-                style={{ backgroundColor: '#10B981' }}
-              />
-              <PrimaryButton 
-                title="Login as Marketing Vendor" 
-                onPress={() => login('marketing', 'mock-jwt-token', 'marketing')} 
-                style={{ backgroundColor: '#8B5CF6' }}
-              />
-            </View>
-
+              ))}
+            </ScrollView>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </SafeAreaView>
+      </Modal>
+
+    </AuthScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#060D1E',
+  brandContainer: { 
+    alignItems: 'center', 
+    marginBottom: 24, 
+    marginTop: 16, 
+    backgroundColor: AUTH_COLORS.primary,
+    paddingVertical: 18,
+    paddingHorizontal: 32,
+    borderRadius: 20
   },
-  container: {
-    flex: 1,
+  brandIconBox: { 
+    backgroundColor: 'rgba(255,255,255,0.1)', 
+    width: 44, 
+    height: 44, 
+    borderRadius: 12, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    marginBottom: 10
   },
-  scrollContent: {
-    flexGrow: 1,
-    padding: 24,
-    justifyContent: 'center',
-  },
-  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16, 
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  logo: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
-  },
-  formCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 24,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 5,
-  },
-  tabSwitcher: {
-    flexDirection: 'row',
-    backgroundColor: colors.border,
-    borderRadius: 16,
-    padding: 4,
-    marginBottom: 32,
-    position: 'relative',
-  },
-  tabSlider: {
-    position: 'absolute',
-    top: 4,
-    bottom: 4,
-    width: '49%',
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  tabButton: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    zIndex: 1,
-  },
-  tabText: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-  },
-  titleContainer: {
-    marginBottom: 24,
-  },
-  title: {
-    ...typography.h2,
-    color: colors.dark,
-    marginBottom: 4,
-  },
-  subtitle: {
-    ...typography.bodySmall,
-    color: colors.body,
-  },
-  errorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.error + '15',
-    borderWidth: 1,
-    borderColor: colors.error + '40',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 20,
-  },
-  errorBannerText: {
-    ...typography.caption,
-    color: colors.error,
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-  form: {
-    marginBottom: 24,
-  },
-  passwordGroup: {
-    marginBottom: 20,
-  },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginTop: -8,
-  },
-  forgotPasswordText: {
-    ...typography.caption,
-    color: colors.primary,
-    fontWeight: 'bold',
-  },
-  submitBtn: {
-    marginTop: 8,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.border,
-  },
-  dividerText: {
-    ...typography.caption,
-    color: colors.muted,
-    marginHorizontal: 12,
-    fontWeight: 'bold',
-  },
-  demoContainer: {
-    alignItems: 'center',
-  },
-  demoButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 8,
-  },
-  demoText: {
-    ...typography.caption,
-    color: colors.muted,
-    marginRight: 4,
-  },
-  demoList: {
-    width: '100%',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    marginTop: 8,
-    overflow: 'hidden',
-  },
-  demoItem: {
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  demoItemText: {
-    ...typography.bodySmall,
-    color: colors.dark,
-  }
+  brandName: { fontSize: 20, fontWeight: '900', letterSpacing: 0.5, marginBottom: 2 },
+  brandSub: { fontSize: 13, color: '#A0B3C6', fontWeight: '500' }, // slightly lighter than muted for dark bg
+
+  heading: { fontSize: 26, fontWeight: 'bold', color: AUTH_COLORS.primary, marginBottom: 8, marginTop: 24 },
+  subtitle: { fontSize: 14, color: AUTH_COLORS.muted, marginBottom: 24, lineHeight: 20 },
+  
+  forgotLink: { alignSelf: 'flex-end', paddingVertical: 4, paddingHorizontal: 4, marginBottom: 20, marginTop: 2 },
+  forgotText: { fontSize: 13, fontWeight: '600', color: AUTH_COLORS.primary },
+  
+  errorBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF7ED', padding: 12, borderRadius: 12, marginBottom: 16, borderWidth: 1, borderColor: '#FFEDD5' },
+  errorBannerText: { fontSize: 13, color: '#C2410C', fontWeight: '500', flex: 1 },
+
+  dividerRow: { flexDirection: 'row', alignItems: 'center', marginTop: 24, marginBottom: 20 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: AUTH_COLORS.border },
+  dividerText: { marginHorizontal: 16, fontSize: 13, color: AUTH_COLORS.muted, fontWeight: 'bold' },
+  
+  demoBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%', height: 50, backgroundColor: AUTH_COLORS.input, borderWidth: 1, borderColor: AUTH_COLORS.border, borderRadius: 14 },
+  demoBtnText: { fontSize: 14, fontWeight: 'bold', color: AUTH_COLORS.text },
+  demoHelper: { fontSize: 12, color: AUTH_COLORS.muted, textAlign: 'center', marginTop: 8, marginBottom: 24 },
+
+  regPrompt: { flexDirection: 'row', justifyContent: 'center', marginTop: 8, flexWrap: 'wrap' },
+  regPromptText: { fontSize: 14, color: AUTH_COLORS.muted },
+  regPromptLink: { fontSize: 14, fontWeight: '600', color: AUTH_COLORS.primary },
+
+  // Modal styles
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(7,27,58,0.5)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: AUTH_COLORS.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '80%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: AUTH_COLORS.border },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: AUTH_COLORS.primary },
+  closeBtn: { padding: 4 },
+  demoList: { paddingHorizontal: 8, paddingBottom: 32 },
+  demoItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: AUTH_COLORS.border },
+  demoItemText: { fontSize: 15, color: AUTH_COLORS.text, fontWeight: '500' }
 });

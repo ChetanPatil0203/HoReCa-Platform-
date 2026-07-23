@@ -1,8 +1,13 @@
-import React, { useContext } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions, Alert, Platform } from 'react-native';
+import React, { useContext, useState } from 'react';
+import { 
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, 
+  useWindowDimensions, Alert, Platform, Modal, TextInput, 
+  KeyboardAvoidingView, Pressable, SafeAreaView, ActivityIndicator
+} from 'react-native';
 import { 
   Phone, Mail, MapPin, 
-  FileText, ChevronRight, BadgeCheck, Pencil, LogOut
+  FileText, ChevronRight, BadgeCheck, Pencil, LogOut,
+  X, Save, UserRound
 } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
 
@@ -13,6 +18,63 @@ export default function ManpowerProfilePage() {
   const { width } = useWindowDimensions();
   const isLargeScreen = width >= 768;
   const { logout } = useContext(AuthContext);
+
+  // Modal & Form State
+  const [isEditProfileVisible, setIsEditProfileVisible] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [toastMsg, setToastMsg] = useState("");
+
+  const [profile, setProfile] = useState({
+    agencyName: 'Elite Manpower Agency',
+    contactPerson: 'Rahul Sharma',
+    mobile: '9876543210',
+    email: 'info@elitemanpower.com',
+    address: '123 Business Hub',
+    city: 'Jalgaon',
+    state: 'Maharashtra',
+    pincode: '425001'
+  });
+
+  const [profileForm, setProfileForm] = useState({ ...profile });
+  const [errors, setErrors] = useState({});
+
+  const showToast = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(""), 3000);
+  };
+
+  const handleOpenEdit = () => {
+    setProfileForm({ ...profile });
+    setErrors({});
+    setIsEditProfileVisible(true);
+  };
+
+  const validateForm = () => {
+    let newErrors = {};
+    if (!profileForm.agencyName.trim()) newErrors.agencyName = 'Enter the agency name.';
+    if (!profileForm.contactPerson.trim()) newErrors.contactPerson = 'Enter the contact person name.';
+    if (!profileForm.mobile.trim() || !/^\d{10}$/.test(profileForm.mobile)) newErrors.mobile = 'Enter a valid 10-digit mobile number.';
+    if (!profileForm.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profileForm.email)) newErrors.email = 'Enter a valid email address.';
+    if (!profileForm.city.trim()) newErrors.city = 'Enter the city.';
+    if (!profileForm.state.trim()) newErrors.state = 'Enter the state.';
+    if (!profileForm.pincode.trim() || !/^\d{6}$/.test(profileForm.pincode)) newErrors.pincode = 'Enter a valid 6-digit pincode.';
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSaveProfile = () => {
+    if (!validateForm()) return;
+
+    setIsSaving(true);
+    // Simulate API call
+    setTimeout(() => {
+      setProfile({ ...profileForm });
+      setIsSaving(false);
+      setIsEditProfileVisible(false);
+      showToast("Profile updated successfully.");
+    }, 1000);
+  };
 
   const handleLogout = () => {
     if (Platform.OS === 'web') {
@@ -75,10 +137,10 @@ export default function ManpowerProfilePage() {
             <View style={styles.heroTop}>
               <View style={styles.heroInfoRow}>
                 <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>EM</Text>
+                  <Text style={styles.avatarText}>{profile.agencyName.charAt(0)}</Text>
                 </View>
                 <View style={styles.profileInfo}>
-                  <Text style={styles.agencyName}>Elite Manpower Agency</Text>
+                  <Text style={styles.agencyName}>{profile.agencyName}</Text>
                   
                   <View style={styles.badgesRow}>
                     <View style={styles.verifiedBadge}>
@@ -94,7 +156,7 @@ export default function ManpowerProfilePage() {
               </View>
 
               {isLargeScreen && (
-                <TouchableOpacity style={styles.editBtn}>
+                <TouchableOpacity style={styles.editBtn} onPress={handleOpenEdit}>
                   <Pencil size={14} color={NAVY} />
                   <Text style={styles.editBtnText}>Edit Profile</Text>
                 </TouchableOpacity>
@@ -104,13 +166,13 @@ export default function ManpowerProfilePage() {
             <View style={styles.contactDivider} />
 
             <View style={styles.contactInfo}>
-              <View style={styles.contactRow}><Phone size={16} color="#64748B" /><Text style={styles.contactText}>+91 98765 43210</Text></View>
-              <View style={styles.contactRow}><Mail size={16} color="#64748B" /><Text style={styles.contactText}>info@elitemanpower.com</Text></View>
-              <View style={styles.contactRow}><MapPin size={16} color="#64748B" /><Text style={styles.contactText}>Jalgaon, Maharashtra</Text></View>
+              <View style={styles.contactRow}><Phone size={16} color="#64748B" /><Text style={styles.contactText}>+91 {profile.mobile.substring(0,5)} {profile.mobile.substring(5,10)}</Text></View>
+              <View style={styles.contactRow}><Mail size={16} color="#64748B" /><Text style={styles.contactText}>{profile.email}</Text></View>
+              <View style={styles.contactRow}><MapPin size={16} color="#64748B" /><Text style={styles.contactText}>{profile.city}, {profile.state}</Text></View>
             </View>
 
             {!isLargeScreen && (
-              <TouchableOpacity style={[styles.editBtn, styles.editBtnMobile]}>
+              <TouchableOpacity style={[styles.editBtn, styles.editBtnMobile]} onPress={handleOpenEdit}>
                 <Pencil size={14} color={NAVY} />
                 <Text style={styles.editBtnText}>Edit Profile</Text>
               </TouchableOpacity>
@@ -124,7 +186,9 @@ export default function ManpowerProfilePage() {
               <View style={[styles.card, styles.flexCard]}>
                 <View style={styles.cardHeader}>
                   <Text style={styles.cardTitle}>Business Information</Text>
-                  <TouchableOpacity><Text style={styles.editText}>Edit</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => Platform.OS === 'web' ? window.alert('Coming Soon: Business Information edit will be available soon.') : Alert.alert('Coming Soon', 'Business Information edit will be available soon.')}>
+                    <Text style={styles.editText}>Edit</Text>
+                  </TouchableOpacity>
                 </View>
 
                 <View style={styles.businessGrid}>
@@ -164,7 +228,9 @@ export default function ManpowerProfilePage() {
                     <Text style={styles.cardTitle}>Roles / Services Offered</Text>
                     <Text style={styles.cardSubtitle}>Staff categories provided by your agency</Text>
                   </View>
-                  <TouchableOpacity><Text style={styles.editText}>Manage</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={() => Platform.OS === 'web' ? window.alert('Coming Soon: Roles / Services management will be available soon.') : Alert.alert('Coming Soon', 'Roles / Services management will be available soon.')}>
+                    <Text style={styles.editText}>Manage</Text>
+                  </TouchableOpacity>
                 </View>
 
                 <View style={styles.chipsContainer}>
@@ -189,7 +255,7 @@ export default function ManpowerProfilePage() {
               </View>
               <View>
                 {documents.map((doc, idx) => (
-                  <TouchableOpacity key={idx} style={[styles.docItem, idx === documents.length - 1 && {borderBottomWidth: 0}]}>
+                  <View key={idx} style={[styles.docItem, idx === documents.length - 1 && {borderBottomWidth: 0}]}>
                     <View style={styles.docLeft}>
                       <View style={styles.docIconWrap}>
                         <FileText size={20} color={NAVY} />
@@ -205,7 +271,7 @@ export default function ManpowerProfilePage() {
                       </View>
                       <ChevronRight size={18} color="#94A3B8" style={{marginLeft: 12}} />
                     </View>
-                  </TouchableOpacity>
+                  </View>
                 ))}
               </View>
             </View>
@@ -221,6 +287,174 @@ export default function ManpowerProfilePage() {
 
         </View>
       </ScrollView>
+
+      {/* Edit Profile Modal */}
+      <Modal 
+        visible={isEditProfileVisible} 
+        transparent 
+        animationType="fade" 
+        onRequestClose={() => setIsEditProfileVisible(false)}
+      >
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setIsEditProfileVisible(false)}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{width: '100%', alignItems: 'center'}}>
+            <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
+              
+              <View style={styles.modalHeader}>
+                <View>
+                  <Text style={styles.modalTitle}>Edit Agency Profile</Text>
+                  <Text style={styles.modalSubtitle}>Update your agency contact and business details</Text>
+                </View>
+                <TouchableOpacity onPress={() => setIsEditProfileVisible(false)} style={styles.closeBtn}>
+                  <X size={20} color="#64748B" />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{padding: 20}} keyboardShouldPersistTaps="handled">
+                <View style={styles.formGroup}>
+                  <Text style={styles.inputLabel}>Agency Name</Text>
+                  <View style={[styles.inputWrapper, errors.agencyName && styles.inputError]}>
+                    <TextInput 
+                      style={styles.input} 
+                      value={profileForm.agencyName}
+                      onChangeText={(val) => setProfileForm({...profileForm, agencyName: val})}
+                      placeholder="e.g. Elite Manpower Agency"
+                    />
+                  </View>
+                  {errors.agencyName && <Text style={styles.errorText}>{errors.agencyName}</Text>}
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.inputLabel}>Contact Person</Text>
+                  <View style={[styles.inputWrapper, errors.contactPerson && styles.inputError]}>
+                    <UserRound size={18} color="#94A3B8" style={{marginLeft: 12}} />
+                    <TextInput 
+                      style={styles.inputWithIcon} 
+                      value={profileForm.contactPerson}
+                      onChangeText={(val) => setProfileForm({...profileForm, contactPerson: val})}
+                      placeholder="Enter contact person name"
+                    />
+                  </View>
+                  {errors.contactPerson && <Text style={styles.errorText}>{errors.contactPerson}</Text>}
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.inputLabel}>Mobile Number</Text>
+                  <View style={[styles.inputWrapper, errors.mobile && styles.inputError]}>
+                    <Phone size={18} color="#94A3B8" style={{marginLeft: 12}} />
+                    <TextInput 
+                      style={styles.inputWithIcon} 
+                      value={profileForm.mobile}
+                      keyboardType="numeric"
+                      maxLength={10}
+                      onChangeText={(val) => setProfileForm({...profileForm, mobile: val})}
+                      placeholder="10-digit mobile number"
+                    />
+                  </View>
+                  {errors.mobile && <Text style={styles.errorText}>{errors.mobile}</Text>}
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.inputLabel}>Email Address</Text>
+                  <View style={[styles.inputWrapper, errors.email && styles.inputError]}>
+                    <Mail size={18} color="#94A3B8" style={{marginLeft: 12}} />
+                    <TextInput 
+                      style={styles.inputWithIcon} 
+                      value={profileForm.email}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      onChangeText={(val) => setProfileForm({...profileForm, email: val})}
+                      placeholder="e.g. info@agency.com"
+                    />
+                  </View>
+                  {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.inputLabel}>Business Address (Optional)</Text>
+                  <View style={styles.inputWrapper}>
+                    <MapPin size={18} color="#94A3B8" style={{marginLeft: 12}} />
+                    <TextInput 
+                      style={styles.inputWithIcon} 
+                      value={profileForm.address}
+                      onChangeText={(val) => setProfileForm({...profileForm, address: val})}
+                      placeholder="Flat, building, street..."
+                    />
+                  </View>
+                </View>
+
+                <View style={{flexDirection: 'row', gap: 12}}>
+                  <View style={[styles.formGroup, {flex: 1}]}>
+                    <Text style={styles.inputLabel}>City</Text>
+                    <View style={[styles.inputWrapper, errors.city && styles.inputError]}>
+                      <TextInput 
+                        style={styles.input} 
+                        value={profileForm.city}
+                        onChangeText={(val) => setProfileForm({...profileForm, city: val})}
+                        placeholder="e.g. Jalgaon"
+                      />
+                    </View>
+                    {errors.city && <Text style={styles.errorText}>{errors.city}</Text>}
+                  </View>
+
+                  <View style={[styles.formGroup, {flex: 1}]}>
+                    <Text style={styles.inputLabel}>State</Text>
+                    <View style={[styles.inputWrapper, errors.state && styles.inputError]}>
+                      <TextInput 
+                        style={styles.input} 
+                        value={profileForm.state}
+                        onChangeText={(val) => setProfileForm({...profileForm, state: val})}
+                        placeholder="e.g. Maharashtra"
+                      />
+                    </View>
+                    {errors.state && <Text style={styles.errorText}>{errors.state}</Text>}
+                  </View>
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.inputLabel}>Pincode</Text>
+                  <View style={[styles.inputWrapper, errors.pincode && styles.inputError]}>
+                    <TextInput 
+                      style={styles.input} 
+                      value={profileForm.pincode}
+                      keyboardType="numeric"
+                      maxLength={6}
+                      onChangeText={(val) => setProfileForm({...profileForm, pincode: val})}
+                      placeholder="6-digit PIN"
+                    />
+                  </View>
+                  {errors.pincode && <Text style={styles.errorText}>{errors.pincode}</Text>}
+                </View>
+                
+              </ScrollView>
+
+              <View style={styles.modalFooter}>
+                <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setIsEditProfileVisible(false)}>
+                  <Text style={styles.modalCancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.modalSaveBtn} onPress={handleSaveProfile} disabled={isSaving}>
+                  {isSaving ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <>
+                      <Save size={16} color="#fff" />
+                      <Text style={styles.modalSaveText}>Save Changes</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+
+            </Pressable>
+          </KeyboardAvoidingView>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Toast Notification */}
+      {toastMsg ? (
+        <View style={styles.toastContainer}>
+          <Text style={styles.toastText}>{toastMsg}</Text>
+        </View>
+      ) : null}
+
     </View>
   );
 }
@@ -293,5 +527,30 @@ const styles = StyleSheet.create({
   statusBadgeText: { fontSize: 12, fontWeight: 'bold' },
 
   logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: '#FECACA', paddingVertical: 16, borderRadius: 16 },
-  logoutText: { fontSize: 15, fontWeight: 'bold', color: '#EF4444', marginLeft: 8 }
+  logoutText: { fontSize: 15, fontWeight: 'bold', color: '#EF4444', marginLeft: 8 },
+
+  // Edit Profile Modal Styles
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(3, 15, 38, 0.55)', justifyContent: 'center', alignItems: 'center', padding: 16 },
+  modalCard: { backgroundColor: '#fff', borderRadius: 20, width: '100%', maxWidth: 520, maxHeight: '85%', overflow: 'hidden', borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 20, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
+  modalSubtitle: { fontSize: 13, color: '#64748B' },
+  closeBtn: { padding: 4, borderRadius: 20, backgroundColor: '#F1F5F9' },
+  
+  formGroup: { marginBottom: 16 },
+  inputLabel: { fontSize: 13, fontWeight: '600', color: '#1E293B', marginBottom: 6 },
+  inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, height: 48 },
+  inputError: { borderColor: '#EF4444', backgroundColor: '#FEF2F2' },
+  input: { flex: 1, paddingHorizontal: 16, fontSize: 14, color: NAVY, height: '100%' },
+  inputWithIcon: { flex: 1, paddingHorizontal: 12, fontSize: 14, color: NAVY, height: '100%' },
+  errorText: { fontSize: 12, color: '#EF4444', marginTop: 4 },
+
+  modalFooter: { flexDirection: 'row', gap: 12, padding: 20, borderTopWidth: 1, borderTopColor: '#F1F5F9', backgroundColor: '#fff' },
+  modalCancelBtn: { flex: 1, paddingVertical: 12, borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' },
+  modalCancelText: { fontSize: 14, fontWeight: '600', color: NAVY },
+  modalSaveBtn: { flex: 1, flexDirection: 'row', paddingVertical: 12, borderRadius: 10, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center' },
+  modalSaveText: { fontSize: 14, fontWeight: 'bold', color: '#fff', marginLeft: 8 },
+
+  toastContainer: { position: 'absolute', bottom: 40, alignSelf: 'center', backgroundColor: '#1E293B', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24, elevation: 5 },
+  toastText: { color: '#fff', fontSize: 14, fontWeight: '600' }
 });

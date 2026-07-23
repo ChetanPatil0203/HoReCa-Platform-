@@ -411,9 +411,10 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
       </Modal>
 
       {/* Send Candidates Modal */}
-      <Modal visible={sendCandVisible} animationType="slide" transparent={false} onRequestClose={() => setSendCandVisible(false)}>
-        <SafeAreaView style={{flex: 1, backgroundColor: '#F8FAFC'}}>
-          <View style={[styles.popupHeader, {backgroundColor: '#fff'}]}>
+      <Modal visible={sendCandVisible} animationType="fade" transparent={true} onRequestClose={() => setSendCandVisible(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setSendCandVisible(false)}>
+          <Pressable style={[styles.popupCard, { flexShrink: 1, maxHeight: '85%', width: '100%', maxWidth: 500, alignSelf: 'center' }]}>
+            <View style={[styles.popupHeader, {backgroundColor: '#fff'}]}>
             <TouchableOpacity onPress={() => setSendCandVisible(false)} style={styles.modalCloseBtn}>
               <X size={24} color="#1E293B" />
             </TouchableOpacity>
@@ -448,7 +449,8 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
               <Text style={styles.primaryBtnLargeText}>Send {selectedCands.length} Candidates</Text>
             </TouchableOpacity>
           </View>
-        </SafeAreaView>
+          </Pressable>
+        </TouchableOpacity>
       </Modal>
 
       {/* Toast */}

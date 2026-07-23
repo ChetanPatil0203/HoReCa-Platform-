@@ -1,529 +1,615 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   View, Text, StyleSheet, FlatList, TouchableOpacity, 
-  SafeAreaView, useWindowDimensions, Modal, TextInput, 
-  ScrollView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard
+  useWindowDimensions, Modal, TextInput, ScrollView, KeyboardAvoidingView, Platform, Pressable, Alert 
 } from 'react-native';
 import { 
-  Calendar, MapPin, Search, Filter, 
-  XCircle, FileText, IndianRupee, Bell, AlertCircle, Bookmark, ClipboardList, ChevronRight
+  Search, SlidersHorizontal, ChevronRight, MoreVertical, 
+  XCircle, Send, CheckCircle, MapPin, FileText
 } from 'lucide-react-native';
 
 const NAVY = '#071B3A';
 const GOLD = '#F6B800';
-const LIGHT_BG = '#F8FAFC';
+const BG = '#F8FAFC';
 const WHITE = '#FFFFFF';
+const GREEN = '#10B981';
 
-const MOCK_DIRECT_REQUESTS = {
-  'New': [
-    {
-      id: "REQ-310",
-      client: "The Meridian Hotel",
-      service: "AC Deep Cleaning",
-      description: "Deep cleaning required for 15 split ACs and 5 window ACs in guest rooms. Need to be completed by this weekend.",
-      budget: "₹15,000 – ₹20,000",
-      date: "24 Jul 2026",
-      location: "Bandra West",
-      fullLocation: "Bandra West, Mumbai",
-      priority: "High",
-      status: "New",
-      attachments: ["Photos.zip", "ScopeOfWork.pdf"]
-    }
-  ],
-  'Responded': [],
-  'Accepted': [],
-  'Declined': [],
-  'Closed': []
-};
+const INITIAL_REQUESTS = [
+  {
+    id: "REQ-310",
+    client: "The Meridian Hotel",
+    businessType: "Hotel",
+    service: "AC Deep Cleaning",
+    location: "Bandra West, Mumbai",
+    date: "24 Jul 2026",
+    budget: "₹15,000 – ₹20,000",
+    time: "Flexible",
+    priority: "New", // New, Quote Sent, Accepted, Declined, Closed
+    priorityBadge: "High Priority", // optional secondary badge
+    status: "New",
+    requestedAt: "3 hours ago",
+    description: "Deep cleaning required for 15 split ACs and 5 window ACs in guest rooms. Need to be completed by this weekend.",
+    attachments: 2,
+    source: "Direct Request"
+  },
+  {
+    id: "REQ-311",
+    client: "Cafe Zephyr",
+    businessType: "Cafe",
+    service: "Plumbing Repair",
+    location: "Andheri East, Mumbai",
+    date: "25 Jul 2026",
+    budget: "Open to Quotes",
+    time: "Morning",
+    priority: "New",
+    priorityBadge: "New",
+    status: "New",
+    requestedAt: "yesterday",
+    description: "Fix leaking sink in main kitchen. Fast response required.",
+    attachments: 0,
+    source: "Direct Request"
+  },
+  {
+    id: "REQ-309",
+    client: "Grand Hotel & Spa",
+    businessType: "Hotel",
+    service: "Kitchen Exhaust Cleaning",
+    location: "South Mumbai",
+    date: "20 Jul 2026",
+    budget: "₹8,000",
+    time: "Night (12 AM - 4 AM)",
+    priority: "Quote Sent",
+    priorityBadge: "Quote Sent",
+    status: "Quote Sent",
+    requestedAt: "2 days ago",
+    description: "Exhaust cleaning for main commercial kitchen.",
+    attachments: 1,
+    source: "Direct Request"
+  }
+];
+
+const TABS = ['New', 'Quote Sent', 'Accepted', 'Declined', 'Closed'];
 
 export default function ProviderRequestsPage() {
   const { width } = useWindowDimensions();
-  const isSmallScreen = width < 380;
-  
-  // Try to constrain modal max width on tablets/web
-  const modalWidth = Math.min(width * 0.9, 520);
+  const isLargeScreen = width >= 768;
 
   const [activeTab, setActiveTab] = useState('New');
-  const [requests, setRequests] = useState(MOCK_DIRECT_REQUESTS);
-  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [requests, setRequests] = useState(INITIAL_REQUESTS);
+  const [search, setSearch] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
   
-  // Modal states
+  const [activeMenuId, setActiveMenuId] = useState(null);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+
+  // Modals state
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
   const [quoteModalVisible, setQuoteModalVisible] = useState(false);
   const [declineModalVisible, setDeclineModalVisible] = useState(false);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [viewQuoteModalVisible, setViewQuoteModalVisible] = useState(false);
 
   // Form states
-  const [quoteForm, setQuoteForm] = useState({
-    amount: '', date: '', duration: '', teamSize: '', 
-    description: '', services: '', additional: '', 
-    terms: '', validUntil: ''
+  const [quoteForm, setQuoteForm] = useState({ 
+    amount: '', pricingType: 'Fixed', visitCharge: '', date: '', time: '', compTime: '', warranty: '', workIncl: '', terms: '', validity: '' 
   });
+  const [declineReason, setDeclineReason] = useState('Location not serviceable');
+  const [declineOther, setDeclineOther] = useState('');
 
-  const TABS = ['New', 'Responded', 'Accepted', 'Declined', 'Closed'];
-
-  const handleOpenDetails = (req) => {
-    setSelectedRequest(req);
-    setDetailsModalVisible(true);
+  const showToast = (msg) => {
+    if (Platform.OS === 'web') { window.alert(msg); }
+    else { Alert.alert('Success', msg); }
   };
 
-  const handleOpenQuote = (req = selectedRequest) => {
-    if(!req) return;
-    setSelectedRequest(req);
-    setDetailsModalVisible(false); // Close details if open
-    setQuoteModalVisible(true);
+  const getFilteredRequests = () => {
+    return requests.filter(r => {
+      if (r.status !== activeTab) return false;
+      if (search && !r.service.toLowerCase().includes(search.toLowerCase()) && !r.id.toLowerCase().includes(search.toLowerCase()) && !r.client.toLowerCase().includes(search.toLowerCase())) return false;
+      return true;
+    });
   };
 
-  const handleOpenDecline = (req = selectedRequest) => {
-    if(!req) return;
-    setSelectedRequest(req);
-    setDetailsModalVisible(false);
-    setDeclineModalVisible(true);
-  };
+  const filteredRequests = getFilteredRequests();
+  
+  const tabCounts = useMemo(() => {
+    const counts = {};
+    TABS.forEach(t => counts[t] = 0);
+    requests.forEach(r => { if (counts[r.status] !== undefined) counts[r.status]++; });
+    return counts;
+  }, [requests]);
 
-  const submitQuote = () => {
-    if(!quoteForm.amount || !quoteForm.date || !quoteForm.duration || !quoteForm.description || !quoteForm.validUntil) {
-      alert("Please fill all required fields");
+  const handleSendQuote = () => {
+    if (!quoteForm.amount || !quoteForm.date || !quoteForm.compTime || !quoteForm.workIncl || !quoteForm.terms || !quoteForm.validity) {
+      if (Platform.OS === 'web') { window.alert('Please fill all required fields.'); }
+      else { Alert.alert('Required', 'Please fill all required fields.'); }
       return;
     }
-    
-    // Move to Responded
-    const updatedReq = { ...selectedRequest, status: 'Responded' };
-    setRequests(prev => ({
-      ...prev,
-      'New': prev['New'].filter(r => r.id !== selectedRequest.id),
-      'Responded': [...prev['Responded'], updatedReq]
-    }));
-    
+    setRequests(prev => prev.map(r => r.id === selectedRequest.id ? { ...r, status: 'Quote Sent', priorityBadge: 'Quote Sent' } : r));
     setQuoteModalVisible(false);
-    setQuoteForm({ amount: '', date: '', duration: '', teamSize: '', description: '', services: '', additional: '', terms: '', validUntil: '' });
+    showToast('Quotation submitted successfully.');
   };
 
-  const submitDecline = () => {
-    const updatedReq = { ...selectedRequest, status: 'Declined' };
-    setRequests(prev => ({
-      ...prev,
-      'New': prev['New'].filter(r => r.id !== selectedRequest.id),
-      'Declined': [...prev['Declined'], updatedReq]
-    }));
+  const handleConfirmDecline = () => {
+    if (declineReason === 'Other' && !declineOther.trim()) {
+      if (Platform.OS === 'web') { window.alert('Please specify a reason.'); }
+      else { Alert.alert('Required', 'Please specify a reason.'); }
+      return;
+    }
+    setRequests(prev => prev.map(r => r.id === selectedRequest.id ? { ...r, status: 'Declined', priorityBadge: 'Declined' } : r));
     setDeclineModalVisible(false);
+    showToast('Direct request declined.');
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'New': return { bg: '#DBEAFE', text: '#1D4ED8' }; // Soft blue
-      case 'Responded': return { bg: '#FFEDD5', text: '#C2410C' }; // Soft orange
-      case 'Accepted': return { bg: '#DCFCE7', text: '#15803D' }; // Soft green
-      case 'Declined': return { bg: '#FEE2E2', text: '#B91C1C' }; // Soft red
-      default: return { bg: '#F1F5F9', text: '#64748B' }; // Soft gray
-    }
-  };
-
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'High': return { bg: '#FEE2E2', text: '#EF4444' };
-      case 'Medium': return { bg: '#FFEDD5', text: '#F59E0B' };
-      default: return { bg: '#F1F5F9', text: '#64748B' };
-    }
-  };
-
-  const renderDirectRequest = ({ item }) => {
-    const sColor = getStatusColor(item.status);
-    const pColor = getPriorityColor(item.priority);
+  const renderBadge = (item) => {
+    // Show one meaningful badge based on status/priority
+    let text = item.priorityBadge || item.status;
+    let bg = '#F1F5F9'; let color = '#64748B';
+    
+    if (text === 'New') { bg = '#EFF6FF'; color = '#2563EB'; }
+    else if (text === 'High Priority') { bg = '#FEF2F2'; color = '#EF4444'; }
+    else if (text === 'Quote Sent') { bg = '#F5F3FF'; color = '#7C3AED'; }
+    else if (text === 'Accepted') { bg = '#ECFDF5'; color = '#059669'; }
+    else if (text === 'Declined') { bg = '#FEF2F2'; color = '#DC2626'; }
+    else if (text === 'Closed') { bg = '#F1F5F9'; color = '#64748B'; }
 
     return (
-      <View style={styles.card}>
-        {/* Top Row */}
-        <View style={styles.cardHeader}>
-          <View style={styles.cardHeaderLeft}>
-            <Text style={styles.cardId}>{item.id}</Text>
-            <View style={styles.directBadge}>
-              <Text style={styles.directBadgeText}>DIRECT REQUEST</Text>
-            </View>
-          </View>
-          <View style={[styles.statusBadge, { backgroundColor: sColor.bg }]}>
-            <Text style={[styles.statusText, { color: sColor.text }]}>{item.status.toUpperCase()}</Text>
-          </View>
-        </View>
-        
-        {/* Main Info */}
-        <View style={styles.cardBody}>
-          <Text style={styles.serviceName} numberOfLines={1}>{item.service}</Text>
-          <Text style={styles.businessText} numberOfLines={1}>{item.client} · {item.location}</Text>
-          
-          <View style={styles.metaRow}>
-            <View style={styles.metaItem}>
-              <Calendar size={14} color="#64748B" />
-              <Text style={styles.metaText}>{item.date}</Text>
-            </View>
-            <View style={styles.metaItem}>
-              <IndianRupee size={14} color="#64748B" />
-              <Text style={styles.metaText}>{item.budget}</Text>
-            </View>
-          </View>
-          
-          {item.priority && (
-            <View style={[styles.priorityBadge, { backgroundColor: pColor.bg }]}>
-              <Text style={[styles.priorityText, { color: pColor.text }]}>{item.priority} Priority</Text>
-            </View>
-          )}
-        </View>
-        
-        {/* Footer Actions */}
-        <View style={styles.cardFooter}>
-          <TouchableOpacity style={styles.btnViewDetails} onPress={() => handleOpenDetails(item)}>
-            <Text style={styles.btnViewDetailsText}>View Details</Text>
-            <ChevronRight size={16} color={NAVY} />
-          </TouchableOpacity>
-          
-          {item.status === 'New' && (
-            <TouchableOpacity style={styles.btnPrimaryGold} onPress={() => handleOpenQuote(item)}>
-              <Text style={styles.btnPrimaryGoldText}>Send Quote</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+      <View style={[styles.statusBadge, { backgroundColor: bg }]}>
+        <Text style={[styles.statusBadgeText, { color }]}>{text.toUpperCase()}</Text>
       </View>
     );
   };
 
+  const renderItem = ({ item }) => (
+    <View style={styles.card}>
+      {/* Top Row */}
+      <View style={styles.cardHeaderRow}>
+        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+          <Text style={styles.reqId}>{item.id}</Text>
+          <View style={styles.sourceBadge}>
+            <Text style={styles.sourceBadgeText}>{item.source}</Text>
+          </View>
+        </View>
+        {renderBadge(item)}
+      </View>
+      
+      {/* Service & Client */}
+      <Text style={styles.cardTitle} numberOfLines={2}>{item.service}</Text>
+      <Text style={styles.clientInfo} numberOfLines={1}>
+        <Text style={{fontWeight: '600', color: NAVY}}>{item.client}</Text> · {item.businessType}
+      </Text>
+      <Text style={styles.locationText} numberOfLines={1}>{item.location}</Text>
+
+      {/* 2-Column Details */}
+      <View style={styles.infoRow}>
+        <View style={styles.infoCol}>
+          <Text style={styles.infoLabel}>Preferred Date</Text>
+          <Text style={styles.infoValue}>{item.date}</Text>
+        </View>
+        <View style={styles.infoCol}>
+          <Text style={styles.infoLabel}>Budget</Text>
+          <Text style={styles.infoValue}>{item.budget}</Text>
+        </View>
+      </View>
+
+      <Text style={styles.requestedText}>Requested {item.requestedAt}</Text>
+
+      {/* Actions */}
+      <View style={styles.actionRow}>
+        <TouchableOpacity style={styles.detailsBtn} onPress={() => { setSelectedRequest(item); setDetailsModalVisible(true); }}>
+          <Text style={styles.detailsBtnText}>View Details</Text>
+          <ChevronRight size={16} color={NAVY} />
+        </TouchableOpacity>
+        
+        <View style={styles.actionRight}>
+          {item.status === 'New' && (
+            <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: NAVY }]} onPress={() => { setSelectedRequest(item); setQuoteForm({ amount: '', pricingType: 'Fixed', visitCharge: '', date: '', time: '', compTime: '', warranty: '', workIncl: '', terms: '', validity: '' }); setQuoteModalVisible(true); }}>
+              <Text style={styles.primaryBtnText}>Send Quote</Text>
+            </TouchableOpacity>
+          )}
+          {item.status === 'Quote Sent' && (
+            <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: '#7C3AED' }]} onPress={() => { setSelectedRequest(item); setViewQuoteModalVisible(true); }}>
+              <Text style={styles.primaryBtnText}>View Quote</Text>
+            </TouchableOpacity>
+          )}
+          {item.status === 'Accepted' && (
+            <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: GREEN }]} onPress={() => showToast('Opening work record...')}>
+              <Text style={styles.primaryBtnText}>Open Work</Text>
+            </TouchableOpacity>
+          )}
+
+        </View>
+      </View>
+    </View>
+  );
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+    <Pressable style={styles.container} onPress={() => setActiveMenuId(null)}>
+      <View style={[styles.mainWrapper, isLargeScreen && styles.mainWrapperDesktop]}>
         
         {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.headerTitle}>Requests</Text>
-            <Text style={styles.headerSubtitle}>Service requests sent directly to your business</Text>
+        <View style={styles.pageHeader}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.pageTitle}>Direct Requests</Text>
+            <Text style={styles.pageSubtitle}>Service requests sent directly to your business</Text>
+          </View>
+          <View style={styles.headerActions}>
+            <TouchableOpacity style={styles.headerBtn} onPress={() => setShowSearch(!showSearch)}>
+              <Search size={20} color={NAVY} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.headerBtn} onPress={() => setFilterModalVisible(true)}>
+              <SlidersHorizontal size={20} color={NAVY} />
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Status Tabs */}
-        <View style={styles.tabWrapper}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabContainer}>
-            {TABS.map((tab) => (
+        {showSearch && (
+          <View style={styles.searchRow}>
+            <TextInput 
+              style={styles.searchInput} 
+              placeholder="Search direct requests..."
+              value={search}
+              onChangeText={setSearch}
+              placeholderTextColor="#94A3B8"
+            />
+          </View>
+        )}
+
+        {/* Tabs */}
+        <View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabScroll}>
+            {TABS.map(tab => (
               <TouchableOpacity 
-                key={tab}
-                style={[styles.tabPill, activeTab === tab && styles.activeTabPill]}
+                key={tab} 
+                style={[styles.tabItem, activeTab === tab && styles.tabItemActive]}
                 onPress={() => setActiveTab(tab)}
               >
-                <Text style={[styles.tabPillText, activeTab === tab && styles.activeTabPillText]}>
-                  {tab}
-                </Text>
+                <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</Text>
+                <View style={[styles.badgePill, activeTab === tab && styles.badgePillActive]}>
+                  <Text style={[styles.badgeText, activeTab === tab && styles.badgeTextActive]}>{tabCounts[tab]}</Text>
+                </View>
               </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
 
-        {/* Content List */}
+        {/* List */}
         <FlatList
-          data={requests[activeTab]}
+          data={filteredRequests}
           keyExtractor={item => item.id}
-          renderItem={renderDirectRequest}
+          renderItem={renderItem}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
+          ListEmptyComponent={() => (
             <View style={styles.emptyState}>
-              <View style={styles.emptyIconBox}>
-                <ClipboardList size={32} color="#94A3B8" />
-              </View>
-              <Text style={styles.emptyTitle}>No requests</Text>
-              <Text style={styles.emptyText}>Service requests will appear here.</Text>
+              <View style={styles.emptyIconBox}><Search size={24} color="#94A3B8" /></View>
+              <Text style={styles.emptyTitle}>No {activeTab.toLowerCase()} requests</Text>
+              <Text style={styles.emptySub}>Direct requests matching this status will appear here.</Text>
             </View>
-          }
+          )}
         />
+      </View>
 
-        {/* View Details Center Modal */}
-        <Modal visible={detailsModalVisible} animationType="fade" transparent={true} onRequestClose={() => setDetailsModalVisible(false)}>
-          <TouchableWithoutFeedback onPress={() => setDetailsModalVisible(false)}>
-            <View style={styles.modalOverlayCenter}>
-              <TouchableWithoutFeedback onPress={() => {}}>
-                <View style={[styles.centerModalContent, { width: modalWidth, maxHeight: '85%' }]}>
-                  <View style={styles.modalHeader}>
-                    <View>
-                      <Text style={styles.modalTitle}>Request Details</Text>
-                      <Text style={styles.modalSubtitle}>{selectedRequest?.id}</Text>
-                    </View>
-                    <TouchableOpacity onPress={() => setDetailsModalVisible(false)}>
-                      <XCircle size={24} color="#64748B" />
-                    </TouchableOpacity>
-                  </View>
-                  
-                  <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-                    {selectedRequest && (
-                      <>
-                        <View style={styles.modalDataBlock}>
-                          <Text style={styles.modalLabel}>Service</Text>
-                          <Text style={styles.modalValue}>{selectedRequest.service}</Text>
-                        </View>
-                        <View style={styles.modalDataBlock}>
-                          <Text style={styles.modalLabel}>Business</Text>
-                          <Text style={styles.modalValue}>{selectedRequest.client}</Text>
-                        </View>
-                        <View style={styles.modalDataBlock}>
-                          <Text style={styles.modalLabel}>Location</Text>
-                          <Text style={styles.modalValue}>{selectedRequest.fullLocation}</Text>
-                        </View>
-                        
-                        <View style={styles.modalGrid}>
-                          <View style={styles.modalGridCol}>
-                            <Text style={styles.modalLabel}>Preferred Date</Text>
-                            <Text style={styles.modalValue}>{selectedRequest.date}</Text>
-                          </View>
-                          <View style={styles.modalGridCol}>
-                            <Text style={styles.modalLabel}>Budget</Text>
-                            <Text style={styles.modalValue}>{selectedRequest.budget}</Text>
-                          </View>
-                        </View>
-                        
-                        <View style={styles.modalGrid}>
-                          <View style={styles.modalGridCol}>
-                            <Text style={styles.modalLabel}>Status</Text>
-                            <Text style={styles.modalValue}>{selectedRequest.status}</Text>
-                          </View>
-                          <View style={styles.modalGridCol}>
-                            <Text style={styles.modalLabel}>Priority</Text>
-                            <Text style={[styles.modalValue, {color: getPriorityColor(selectedRequest.priority).text}]}>{selectedRequest.priority} Priority</Text>
-                          </View>
-                        </View>
-
-                        <View style={styles.modalDataBlock}>
-                          <Text style={styles.modalLabel}>Request Notes</Text>
-                          <Text style={styles.modalDescText}>{selectedRequest.description}</Text>
-                        </View>
-                        
-                        {selectedRequest.attachments && selectedRequest.attachments.length > 0 && (
-                          <View style={styles.modalDataBlock}>
-                            <Text style={styles.modalLabel}>Attachments</Text>
-                            {selectedRequest.attachments.map((att, i) => (
-                              <Text key={i} style={styles.attachmentText}>• {att}</Text>
-                            ))}
-                          </View>
-                        )}
-                        <View style={{height: 20}}/>
-                      </>
-                    )}
-                  </ScrollView>
-                  
-                  {selectedRequest?.status === 'New' && (
-                    <View style={styles.modalFooterActions}>
-                      <TouchableOpacity style={styles.btnOutlineRed} onPress={() => handleOpenDecline(selectedRequest)}>
-                        <Text style={styles.btnOutlineRedText}>Decline</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity style={styles.btnPrimaryGoldFull} onPress={() => handleOpenQuote(selectedRequest)}>
-                        <Text style={styles.btnPrimaryGoldText}>Send Quote</Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </View>
-              </TouchableWithoutFeedback>
+      {/* Details Modal */}
+      <Modal visible={detailsModalVisible} transparent animationType="fade" onRequestClose={() => setDetailsModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Direct Request Details</Text>
+              <TouchableOpacity onPress={() => setDetailsModalVisible(false)}><XCircle size={20} color="#64748B" /></TouchableOpacity>
             </View>
-          </TouchableWithoutFeedback>
-        </Modal>
-
-        {/* Send Quote Center Modal */}
-        <Modal visible={quoteModalVisible} animationType="fade" transparent={true} onRequestClose={() => setQuoteModalVisible(false)}>
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View style={styles.modalOverlayCenter}>
-              <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{width: '100%', alignItems: 'center'}}>
-                <View style={[styles.centerModalContent, { width: modalWidth, maxHeight: '85%' }]}>
-                  <View style={styles.modalHeader}>
-                    <View>
-                      <Text style={styles.modalTitle}>Send Quote</Text>
-                      <Text style={styles.modalSubtitle}>Create a quotation for {selectedRequest?.service}</Text>
-                    </View>
-                    <TouchableOpacity onPress={() => setQuoteModalVisible(false)}>
-                      <XCircle size={24} color="#64748B" />
-                    </TouchableOpacity>
-                  </View>
-                  
-                  <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-                    {selectedRequest && (
-                      <View style={styles.quoteContextBox}>
-                        <Text style={styles.quoteContextTitle}>{selectedRequest.client}</Text>
-                        <Text style={styles.quoteContextSub}>Budget: {selectedRequest.budget}  •  Pref. Date: {selectedRequest.date}</Text>
-                      </View>
-                    )}
-
-                    <View style={styles.formRow}>
-                      <View style={styles.formCol}>
-                        <Text style={styles.inputLabel}>Quote Amount *</Text>
-                        <View style={styles.inputPrefixBox}>
-                          <Text style={styles.inputPrefix}>₹</Text>
-                          <TextInput style={styles.inputWithPrefix} keyboardType="numeric" value={quoteForm.amount} onChangeText={(t) => setQuoteForm({...quoteForm, amount: t})} />
-                        </View>
-                      </View>
-                      <View style={styles.formCol}>
-                        <Text style={styles.inputLabel}>Service Date *</Text>
-                        <TextInput style={styles.input} placeholder="e.g. 24 Jul 2026" value={quoteForm.date} onChangeText={(t) => setQuoteForm({...quoteForm, date: t})} />
-                      </View>
-                    </View>
-
-                    <View style={styles.formRow}>
-                      <View style={styles.formCol}>
-                        <Text style={styles.inputLabel}>Est. Duration *</Text>
-                        <TextInput style={styles.input} placeholder="e.g. 4 Hours" value={quoteForm.duration} onChangeText={(t) => setQuoteForm({...quoteForm, duration: t})} />
-                      </View>
-                      <View style={styles.formCol}>
-                        <Text style={styles.inputLabel}>Team Size</Text>
-                        <TextInput style={styles.input} placeholder="e.g. 2" keyboardType="numeric" value={quoteForm.teamSize} onChangeText={(t) => setQuoteForm({...quoteForm, teamSize: t})} />
-                      </View>
-                    </View>
-                    
-                    <Text style={styles.inputLabel}>Quote Description *</Text>
-                    <TextInput style={styles.textArea} placeholder="Brief description of work to be done..." multiline numberOfLines={3} value={quoteForm.description} onChangeText={(t) => setQuoteForm({...quoteForm, description: t})} />
-                    
-                    <Text style={styles.inputLabel}>Valid Until *</Text>
-                    <TextInput style={styles.input} placeholder="e.g. 30 Jul 2026" value={quoteForm.validUntil} onChangeText={(t) => setQuoteForm({...quoteForm, validUntil: t})} />
-
-                    <View style={{height: 20}}/>
-                  </ScrollView>
-                  
-                  <View style={styles.modalFooterActions}>
-                    <TouchableOpacity style={styles.btnOutline} onPress={() => setQuoteModalVisible(false)}>
-                      <Text style={styles.btnOutlineText}>Cancel</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={[styles.btnPrimaryGoldFull, { opacity: (quoteForm.amount && quoteForm.date && quoteForm.duration && quoteForm.description && quoteForm.validUntil) ? 1 : 0.6 }]} onPress={submitQuote}>
-                      <Text style={styles.btnPrimaryGoldText}>Submit Quote</Text>
-                    </TouchableOpacity>
-                  </View>
+            {selectedRequest && (
+              <ScrollView style={{padding: 20}}>
+                <Text style={styles.detailTitle}>{selectedRequest.service}</Text>
+                <Text style={styles.detailClient}>{selectedRequest.client} · {selectedRequest.businessType}</Text>
+                
+                <View style={styles.detailBox}>
+                  <Text style={styles.boxLabel}>Schedule & Budget</Text>
+                  <Text style={styles.boxValue}>{selectedRequest.date} ({selectedRequest.time})</Text>
+                  <Text style={styles.boxValue}>{selectedRequest.budget}</Text>
                 </View>
-              </KeyboardAvoidingView>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>
 
-        {/* Decline Confirmation Modal */}
-        <Modal visible={declineModalVisible} animationType="fade" transparent={true} onRequestClose={() => setDeclineModalVisible(false)}>
-          <View style={styles.modalOverlayCenter}>
-            <View style={styles.confirmBox}>
-              <Text style={styles.confirmTitle}>Decline this request?</Text>
-              <Text style={styles.confirmText}>You will no longer be able to send a quote unless the request is reopened.</Text>
-              <View style={styles.confirmActions}>
-                <TouchableOpacity style={[styles.btnOutline, { flex: 1, marginRight: 12 }]} onPress={() => setDeclineModalVisible(false)}>
-                  <Text style={styles.btnOutlineText}>Cancel</Text>
+                <View style={styles.detailBox}>
+                  <Text style={styles.boxLabel}>Request Details</Text>
+                  <Text style={styles.boxValue}>ID: {selectedRequest.id}</Text>
+                  <Text style={styles.boxValue}>Source: {selectedRequest.source}</Text>
+                  <Text style={styles.boxValue}>Status: {selectedRequest.status}</Text>
+                </View>
+
+                <Text style={styles.boxLabel}>Scope of Work</Text>
+                <Text style={styles.detailDesc}>{selectedRequest.description}</Text>
+
+                {selectedRequest.attachments > 0 && (
+                  <View style={styles.attachmentBox}>
+                    <FileText size={16} color="#2563EB" />
+                    <Text style={styles.attachText}>{selectedRequest.attachments} Attachment(s) Available</Text>
+                  </View>
+                )}
+              </ScrollView>
+            )}
+            <View style={styles.modalFooter}>
+              {selectedRequest?.status === 'New' && (
+                <TouchableOpacity style={styles.modalCancelBtn} onPress={() => { setDetailsModalVisible(false); setDeclineModalVisible(true); }}>
+                  <Text style={[styles.modalCancelText, {color: '#EF4444'}]}>Decline Request</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.btnPrimaryRed, { flex: 1 }]} onPress={submitDecline}>
-                  <Text style={styles.btnPrimaryRedText}>Decline Request</Text>
+              )}
+              {selectedRequest?.status === 'New' ? (
+                <TouchableOpacity style={[styles.modalSubmitBtn, {backgroundColor: NAVY}]} onPress={() => { setDetailsModalVisible(false); setQuoteForm({ amount: '', pricingType: 'Fixed', visitCharge: '', date: '', time: '', compTime: '', warranty: '', workIncl: '', terms: '', validity: '' }); setQuoteModalVisible(true); }}>
+                  <Text style={styles.modalSubmitText}>Send Quote</Text>
                 </TouchableOpacity>
-              </View>
+              ) : (
+                <TouchableOpacity style={[styles.modalSubmitBtn, {backgroundColor: NAVY}]} onPress={() => setDetailsModalVisible(false)}>
+                  <Text style={styles.modalSubmitText}>Close</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
-        </Modal>
+        </View>
+      </Modal>
 
-      </View>
-    </SafeAreaView>
+      {/* Send Quote Modal */}
+      <Modal visible={quoteModalVisible} transparent animationType="slide" onRequestClose={() => setQuoteModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{width: '100%', alignItems: 'center'}}>
+            <View style={[styles.modalCard, { maxHeight: '90%' }]}>
+              <View style={styles.modalHeader}>
+                <View>
+                  <Text style={styles.modalTitle}>Send Quote</Text>
+                  <Text style={styles.modalSubtitle}>Submit your quotation for {selectedRequest?.service}</Text>
+                </View>
+                <TouchableOpacity onPress={() => setQuoteModalVisible(false)}><XCircle size={20} color="#64748B" /></TouchableOpacity>
+              </View>
+              <ScrollView style={{padding: 20}} keyboardShouldPersistTaps="handled">
+                <View style={styles.quoteContextBox}>
+                  <Text style={styles.qcClient}>{selectedRequest?.client}</Text>
+                  <Text style={styles.qcMeta}>{selectedRequest?.location}</Text>
+                  <View style={{flexDirection: 'row', justifyContent: 'space-between', marginTop: 8}}>
+                    <Text style={styles.qcMeta}>Budget: <Text style={{fontWeight: '700', color: NAVY}}>{selectedRequest?.budget}</Text></Text>
+                    <Text style={styles.qcMeta}>Date: <Text style={{fontWeight: '700', color: NAVY}}>{selectedRequest?.date}</Text></Text>
+                  </View>
+                </View>
+
+                <View style={styles.formRow}>
+                  <View style={[styles.formGroup, {flex: 1}]}>
+                    <Text style={styles.label}>Quoted Amount (₹) *</Text>
+                    <TextInput style={styles.input} keyboardType="numeric" value={quoteForm.amount} onChangeText={t => setQuoteForm({...quoteForm, amount: t})} placeholder="e.g. 18000" />
+                  </View>
+                  <View style={[styles.formGroup, {flex: 1}]}>
+                    <Text style={styles.label}>Pricing Type *</Text>
+                    <TextInput style={styles.input} value={quoteForm.pricingType} onChangeText={t => setQuoteForm({...quoteForm, pricingType: t})} placeholder="e.g. Fixed" />
+                  </View>
+                </View>
+
+                <View style={styles.formRow}>
+                  <View style={[styles.formGroup, {flex: 1}]}>
+                    <Text style={styles.label}>Available Date *</Text>
+                    <TextInput style={styles.input} value={quoteForm.date} onChangeText={t => setQuoteForm({...quoteForm, date: t})} placeholder="e.g. 24 Jul 2026" />
+                  </View>
+                  <View style={[styles.formGroup, {flex: 1}]}>
+                    <Text style={styles.label}>Est. Comp. Time *</Text>
+                    <TextInput style={styles.input} value={quoteForm.compTime} onChangeText={t => setQuoteForm({...quoteForm, compTime: t})} placeholder="e.g. 2 Days" />
+                  </View>
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.label}>Work Included *</Text>
+                  <TextInput style={[styles.input, {height: 60, textAlignVertical: 'top'}]} multiline value={quoteForm.workIncl} onChangeText={t => setQuoteForm({...quoteForm, workIncl: t})} placeholder="Describe what is included..." />
+                </View>
+
+                <View style={styles.formRow}>
+                  <View style={[styles.formGroup, {flex: 1}]}>
+                    <Text style={styles.label}>Payment Terms *</Text>
+                    <TextInput style={styles.input} value={quoteForm.terms} onChangeText={t => setQuoteForm({...quoteForm, terms: t})} placeholder="e.g. 50% Advance" />
+                  </View>
+                  <View style={[styles.formGroup, {flex: 1}]}>
+                    <Text style={styles.label}>Valid Until *</Text>
+                    <TextInput style={styles.input} value={quoteForm.validity} onChangeText={t => setQuoteForm({...quoteForm, validity: t})} placeholder="e.g. 30 Jul 2026" />
+                  </View>
+                </View>
+              </ScrollView>
+              <View style={styles.modalFooter}>
+                <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setQuoteModalVisible(false)}><Text style={styles.modalCancelText}>Cancel</Text></TouchableOpacity>
+                <TouchableOpacity style={[styles.modalSubmitBtn, {backgroundColor: NAVY}]} onPress={handleSendQuote}><Text style={styles.modalSubmitText}>Send Quote</Text></TouchableOpacity>
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
+
+      {/* View Quote Modal */}
+      <Modal visible={viewQuoteModalVisible} transparent animationType="fade" onRequestClose={() => setViewQuoteModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Submitted Quotation</Text>
+              <TouchableOpacity onPress={() => setViewQuoteModalVisible(false)}><XCircle size={20} color="#64748B" /></TouchableOpacity>
+            </View>
+            {selectedRequest && (
+              <ScrollView style={{padding: 20}}>
+                <Text style={styles.boxLabel}>Request</Text>
+                <Text style={styles.boxValue}>{selectedRequest.service}</Text>
+                <Text style={styles.detailClient}>{selectedRequest.client}</Text>
+
+                <View style={styles.detailBox}>
+                  <Text style={styles.boxLabel}>Quoted Amount</Text>
+                  <Text style={styles.boxValue}>₹18,000 (Fixed)</Text>
+                  <View style={{height: 12}} />
+                  <Text style={styles.boxLabel}>Availability</Text>
+                  <Text style={styles.boxValue}>24 Jul 2026 (Est. 2 Days)</Text>
+                </View>
+                
+                <Text style={styles.boxLabel}>Payment Terms</Text>
+                <Text style={styles.boxValue}>50% Advance, 50% on completion</Text>
+                <View style={{height: 12}} />
+                <Text style={styles.boxLabel}>Quote Status</Text>
+                <Text style={[styles.boxValue, {color: '#7C3AED'}]}>Awaiting Client Response</Text>
+              </ScrollView>
+            )}
+            <View style={styles.modalFooter}>
+              <TouchableOpacity style={[styles.modalSubmitBtn, {backgroundColor: NAVY}]} onPress={() => setViewQuoteModalVisible(false)}>
+                <Text style={styles.modalSubmitText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Decline Request Modal */}
+      <Modal visible={declineModalVisible} transparent animationType="fade" onRequestClose={() => setDeclineModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, {maxWidth: 400}]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Decline this direct request?</Text>
+              <TouchableOpacity onPress={() => setDeclineModalVisible(false)}><XCircle size={20} color="#64748B" /></TouchableOpacity>
+            </View>
+            <ScrollView style={{padding: 20}}>
+              {["Service not available", "Preferred date unavailable", "Budget not suitable", "Location not serviceable", "Current workload is full", "Other"].map(rsn => (
+                <TouchableOpacity key={rsn} style={styles.radioRow} onPress={() => setDeclineReason(rsn)}>
+                  <View style={[styles.radioCircle, declineReason === rsn && styles.radioActive]} />
+                  <Text style={styles.radioText}>{rsn}</Text>
+                </TouchableOpacity>
+              ))}
+              {declineReason === 'Other' && (
+                <TextInput style={[styles.input, {marginTop: 8}]} placeholder="Please specify reason" value={declineOther} onChangeText={setDeclineOther} />
+              )}
+            </ScrollView>
+            <View style={styles.modalFooter}>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setDeclineModalVisible(false)}><Text style={styles.modalCancelText}>Cancel</Text></TouchableOpacity>
+              <TouchableOpacity style={[styles.modalSubmitBtn, {backgroundColor: '#EF4444'}]} onPress={handleConfirmDecline}><Text style={styles.modalSubmitText}>Decline Request</Text></TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Filter Bottom Sheet */}
+      <Modal visible={filterModalVisible} transparent animationType="slide" onRequestClose={() => setFilterModalVisible(false)}>
+        <View style={[styles.modalOverlay, {justifyContent: 'flex-end', padding: 0}]}>
+          <View style={[styles.modalCard, {borderRadius: 0, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxWidth: '100%', maxHeight: '60%'}]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Advanced Filters</Text>
+              <TouchableOpacity onPress={() => setFilterModalVisible(false)}><XCircle size={20} color="#64748B" /></TouchableOpacity>
+            </View>
+            <ScrollView style={{padding: 20}}>
+              <Text style={styles.label}>Request Status</Text>
+              <View style={styles.chipsContainer}>
+                <View style={styles.filterChip}><Text style={styles.filterChipText}>New</Text></View>
+                <View style={styles.filterChip}><Text style={styles.filterChipText}>Quote Sent</Text></View>
+                <View style={styles.filterChip}><Text style={styles.filterChipText}>Accepted</Text></View>
+              </View>
+            </ScrollView>
+            <View style={styles.modalFooter}>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setFilterModalVisible(false)}><Text style={styles.modalCancelText}>Clear Filters</Text></TouchableOpacity>
+              <TouchableOpacity style={[styles.modalSubmitBtn, {backgroundColor: NAVY}]} onPress={() => setFilterModalVisible(false)}><Text style={styles.modalSubmitText}>Apply Filters</Text></TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: LIGHT_BG },
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: BG },
+  mainWrapper: { flex: 1, width: '100%', alignSelf: 'center' },
+  mainWrapperDesktop: { maxWidth: 1100, paddingHorizontal: 24 },
   
-  header: { 
-    minHeight: 85, paddingTop: 30, paddingBottom: 16, 
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', 
-    paddingHorizontal: 20, backgroundColor: WHITE,
-    borderBottomWidth: 1, borderBottomColor: '#F1F5F9',
-    zIndex: 10
-  },
-  headerLeft: { flex: 1 },
-  headerTitle: { fontSize: 22, fontWeight: 'bold', color: NAVY, marginBottom: 2 },
-  headerSubtitle: { fontSize: 13, color: '#64748B' },
+  pageHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 },
+  pageTitle: { fontSize: 22, fontWeight: 'bold', color: NAVY },
+  pageSubtitle: { fontSize: 13, color: '#64748B', marginTop: 4 },
+  headerActions: { flexDirection: 'row', gap: 12 },
+  headerBtn: { padding: 8, backgroundColor: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#E2E8F0' },
+
+  searchRow: { paddingHorizontal: 16, marginBottom: 12 },
+  searchInput: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 12, height: 44, fontSize: 14, color: NAVY },
+
+  tabScroll: { paddingHorizontal: 16, gap: 10, paddingBottom: 8 },
+  tabItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 24, backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0' },
+  tabItemActive: { backgroundColor: NAVY, borderColor: NAVY, shadowColor: NAVY, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 3 },
+  tabText: { fontSize: 13, fontWeight: '600', color: '#64748B', marginRight: 8 },
+  tabTextActive: { color: '#fff' },
+  badgePill: { backgroundColor: '#F1F5F9', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10 },
+  badgePillActive: { backgroundColor: '#334155' },
+  badgeText: { fontSize: 11, fontWeight: 'bold', color: '#475569' },
+  badgeTextActive: { color: '#fff' },
+
+  listContent: { padding: 16, paddingBottom: 120 },
+
+  card: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
+  cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  reqId: { fontSize: 14, fontWeight: 'bold', color: '#64748B', marginRight: 8 },
+  sourceBadge: { backgroundColor: '#F1F5F9', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  sourceBadgeText: { fontSize: 10, fontWeight: 'bold', color: '#64748B' },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  statusBadgeText: { fontSize: 11, fontWeight: 'bold' },
   
-  tabWrapper: { backgroundColor: LIGHT_BG, paddingVertical: 16 },
-  tabContainer: { paddingHorizontal: 20, gap: 10 },
-  tabPill: { 
-    paddingVertical: 8, paddingHorizontal: 16, 
-    borderRadius: 20, backgroundColor: WHITE, 
-    borderWidth: 1, borderColor: '#E2E8F0',
-    alignItems: 'center', justifyContent: 'center'
-  },
-  activeTabPill: { backgroundColor: NAVY, borderColor: NAVY },
-  tabPillText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
-  activeTabPillText: { color: GOLD },
+  cardTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
+  clientInfo: { fontSize: 15, color: '#475569', marginBottom: 2 },
+  locationText: { fontSize: 13, color: '#94A3B8', marginBottom: 16 },
+
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12, gap: 16 },
+  infoCol: { flex: 1 },
+  infoLabel: { fontSize: 11, color: '#94A3B8', marginBottom: 4 },
+  infoValue: { fontSize: 14, fontWeight: 'bold', color: NAVY },
+
+  requestedText: { fontSize: 12, color: '#94A3B8', marginBottom: 16 },
+
+  actionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 16 },
+  detailsBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, minHeight: 44 },
+  detailsBtnText: { fontSize: 14, fontWeight: 'bold', color: NAVY, marginRight: 4 },
   
-  listContent: { paddingHorizontal: 16, paddingBottom: 100 },
-  
-  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 32 },
+  actionRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  primaryBtn: { paddingHorizontal: 16, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  primaryBtnText: { fontSize: 14, fontWeight: 'bold', color: '#fff' },
+  moreBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+
+  moreMenu: { position: 'absolute', bottom: 44, right: 0, width: 200, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 10, zIndex: 100 },
+  menuItem: { paddingHorizontal: 16, paddingVertical: 12, minHeight: 44, justifyContent: 'center' },
+  menuText: { fontSize: 14, fontWeight: '500', color: NAVY },
+  menuTextDestructive: { fontSize: 14, fontWeight: '600', color: '#EF4444' },
+
+  emptyState: { alignItems: 'center', justifyContent: 'center', padding: 40 },
   emptyIconBox: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  emptyTitle: { fontSize: 17, fontWeight: 'bold', color: NAVY, marginBottom: 8 },
-  emptyText: { color: '#64748B', fontSize: 14, textAlign: 'center', lineHeight: 20 },
-  
-  card: { 
-    backgroundColor: WHITE, borderRadius: 16, padding: 14, marginBottom: 12, 
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, 
-    shadowOpacity: 0.03, shadowRadius: 8, elevation: 2,
-    borderWidth: 1, borderColor: '#E8EDF4'
-  },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  cardHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  cardId: { fontSize: 13, fontWeight: 'bold', color: '#94A3B8' },
-  directBadge: { backgroundColor: '#F3E8FF', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-  directBadgeText: { fontSize: 9, fontWeight: 'bold', color: '#7E22CE' },
-  statusBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-  statusText: { fontSize: 9, fontWeight: 'bold' },
-  
-  cardBody: { marginBottom: 12 },
-  serviceName: { fontSize: 16, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
-  businessText: { fontSize: 13, color: '#475569', fontWeight: '500', marginBottom: 10 },
-  
-  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginBottom: 10 },
-  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  metaText: { fontSize: 13, color: '#1E293B', fontWeight: '600' },
-  
-  priorityBadge: { alignSelf: 'flex-start', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-  priorityText: { fontSize: 10, fontWeight: 'bold' },
-  
-  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  btnViewDetails: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, minHeight: 44, justifyContent: 'center' },
-  btnViewDetailsText: { fontSize: 14, fontWeight: 'bold', color: NAVY, marginRight: 2 },
-  
-  btnPrimaryGold: { backgroundColor: GOLD, paddingHorizontal: 16, height: 42, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  btnPrimaryGoldText: { color: WHITE, fontWeight: 'bold', fontSize: 14 },
-  
-  // Center Modal Styles
-  modalOverlayCenter: { flex: 1, backgroundColor: 'rgba(3, 15, 38, 0.55)', justifyContent: 'center', alignItems: 'center', padding: 16 },
-  centerModalContent: { backgroundColor: WHITE, borderRadius: 20, padding: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY, marginBottom: 2 },
-  modalSubtitle: { fontSize: 13, color: '#64748B', fontWeight: '500' },
-  
-  modalBody: { flexShrink: 1 },
-  modalDataBlock: { marginBottom: 16 },
-  modalLabel: { fontSize: 12, color: '#94A3B8', marginBottom: 4, textTransform: 'uppercase', fontWeight: '600' },
-  modalValue: { fontSize: 15, color: '#1E293B', fontWeight: '500' },
-  modalDescText: { fontSize: 14, color: '#475569', lineHeight: 22 },
-  attachmentText: { fontSize: 14, color: '#3B82F6', marginBottom: 4, fontWeight: '500' },
-  
-  modalGrid: { flexDirection: 'row', marginBottom: 16 },
-  modalGridCol: { flex: 1, paddingRight: 8 },
-  
-  modalFooterActions: { flexDirection: 'row', gap: 12, marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
-  btnOutlineRed: { flex: 1, height: 44, borderWidth: 1, borderColor: '#FECACA', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  btnOutlineRedText: { color: '#EF4444', fontWeight: 'bold', fontSize: 14 },
-  btnOutline: { flex: 1, height: 44, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  btnOutlineText: { color: '#475569', fontWeight: 'bold', fontSize: 14 },
-  btnPrimaryGoldFull: { flex: 1.5, height: 44, backgroundColor: GOLD, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  
-  // Quote Modal Specific
-  quoteContextBox: { backgroundColor: '#F8FAFC', padding: 12, borderRadius: 10, marginBottom: 20, borderWidth: 1, borderColor: '#F1F5F9' },
-  quoteContextTitle: { fontSize: 14, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
-  quoteContextSub: { fontSize: 12, color: '#64748B' },
-  
-  formRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
-  formCol: { flex: 1 },
-  inputLabel: { fontSize: 12, fontWeight: '600', color: '#475569', marginBottom: 6 },
-  input: { backgroundColor: WHITE, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 12, height: 44, fontSize: 14, color: NAVY },
-  inputPrefixBox: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, backgroundColor: WHITE, overflow: 'hidden' },
-  inputPrefix: { paddingHorizontal: 12, color: '#64748B', fontWeight: '600', fontSize: 14, backgroundColor: '#F8FAFC', height: '100%', textAlignVertical: 'center', borderRightWidth: 1, borderRightColor: '#E2E8F0' },
-  inputWithPrefix: { flex: 1, height: 44, paddingHorizontal: 12, fontSize: 14, color: NAVY },
-  textArea: { backgroundColor: WHITE, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: NAVY, minHeight: 80, textAlignVertical: 'top', marginBottom: 16 },
-  
-  // Decline Confirmation Specific
-  confirmBox: { backgroundColor: WHITE, borderRadius: 20, padding: 24, width: '100%', maxWidth: 320, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 },
-  confirmTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY, marginBottom: 8, textAlign: 'center' },
-  confirmText: { fontSize: 14, color: '#64748B', textAlign: 'center', marginBottom: 24, lineHeight: 20 },
-  confirmActions: { flexDirection: 'row', width: '100%' },
-  btnPrimaryRed: { backgroundColor: '#EF4444', height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  btnPrimaryRedText: { color: WHITE, fontSize: 14, fontWeight: 'bold' }
+  emptyTitle: { fontSize: 16, fontWeight: 'bold', color: '#475569', marginBottom: 8 },
+  emptySub: { fontSize: 14, color: '#94A3B8', textAlign: 'center' },
+
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(3,15,38,0.55)', justifyContent: 'center', alignItems: 'center', padding: 16 },
+  modalCard: { backgroundColor: '#fff', width: '100%', maxWidth: 540, maxHeight: '85%', borderRadius: 20, overflow: 'hidden' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY },
+  modalSubtitle: { fontSize: 13, color: '#64748B', marginTop: 4 },
+  modalFooter: { flexDirection: 'row', padding: 20, gap: 12, borderTopWidth: 1, borderTopColor: '#F1F5F9', backgroundColor: '#fff' },
+  modalCancelBtn: { flex: 1, paddingVertical: 12, borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center' },
+  modalCancelText: { fontSize: 14, fontWeight: '600', color: NAVY },
+  modalSubmitBtn: { flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center' },
+  modalSubmitText: { fontSize: 14, fontWeight: 'bold', color: '#fff' },
+
+  detailTitle: { fontSize: 20, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
+  detailClient: { fontSize: 15, color: '#64748B', marginBottom: 20 },
+  detailBox: { backgroundColor: '#F8FAFC', padding: 12, borderRadius: 10, marginBottom: 16 },
+  boxLabel: { fontSize: 12, color: '#64748B', marginBottom: 4 },
+  boxValue: { fontSize: 14, fontWeight: '600', color: NAVY },
+  detailDesc: { fontSize: 14, color: '#475569', lineHeight: 22, marginTop: 4, marginBottom: 20 },
+  attachmentBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EFF6FF', padding: 12, borderRadius: 8, marginTop: 12 },
+  attachText: { fontSize: 13, color: '#2563EB', fontWeight: '600', marginLeft: 8 },
+
+  quoteContextBox: { backgroundColor: '#F8FAFC', padding: 16, borderRadius: 12, marginBottom: 20 },
+  qcClient: { fontSize: 12, color: '#64748B', marginBottom: 4 },
+  qcTitle: { fontSize: 16, fontWeight: 'bold', color: NAVY },
+  qcMeta: { fontSize: 12, color: '#64748B', marginTop: 4 },
+
+  formGroup: { marginBottom: 16 },
+  formRow: { flexDirection: 'row', gap: 12 },
+  label: { fontSize: 13, fontWeight: '600', color: '#1E293B', marginBottom: 8 },
+  input: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 12, height: 44, fontSize: 14, color: NAVY },
+
+  radioRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  radioCircle: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: '#CBD5E1', marginRight: 12 },
+  radioActive: { borderColor: NAVY, backgroundColor: NAVY },
+  radioText: { fontSize: 14, color: NAVY },
+
+  chipsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  filterChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0' },
+  filterChipActive: { backgroundColor: NAVY, borderColor: NAVY },
+  filterChipText: { fontSize: 13, color: '#475569', fontWeight: '500' },
+  filterChipTextActive: { color: '#fff' }
 });

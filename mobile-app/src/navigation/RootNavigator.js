@@ -33,7 +33,7 @@ const getAuthenticatedScreen = (userRole) => {
   }
 };
 
-export default function AppNavigator() {
+export default function RootNavigator() {
   const { userToken, userRole, isLoading } = useContext(AuthContext);
 
   if (isLoading) {

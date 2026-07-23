@@ -161,22 +161,7 @@ export default function RawMaterialDeliveriesPage() {
               <Text style={[styles.statusText, { color: sStyle.text }]}>{item.status.toUpperCase()}</Text>
             </View>
             
-            {menuOptions.length > 0 && (
-              <View style={{position: 'relative', marginLeft: 4}}>
-                <TouchableOpacity style={styles.moreBtn} onPress={() => setActiveMenuId(isMenuOpen ? null : item.id)}>
-                  <MoreVertical size={20} color={MUTED} />
-                </TouchableOpacity>
-                {isMenuOpen && (
-                  <View style={styles.dropdownMenu}>
-                    {menuOptions.map((opt, i) => (
-                      <TouchableOpacity key={i} style={styles.dropdownItem} onPress={() => handleAction(item, opt)}>
-                        <Text style={[styles.dropdownText, (opt === 'Cancel Delivery' || opt === 'Report Delay') && {color: '#EF4444'}]}>{opt}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
-              </View>
-            )}
+
           </View>
         </View>
 

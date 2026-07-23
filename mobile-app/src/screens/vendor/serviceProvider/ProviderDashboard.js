@@ -16,6 +16,7 @@ import ProviderNotificationsPage from './ProviderNotificationsPage';
 import ProviderSupportPage from './ProviderSupportPage';
 import ProviderSettingsPage from './ProviderSettingsPage';
 import ProviderProfilePage from './ProviderProfilePage';
+import ProviderFeedWallPage from './ProviderFeedWallPage';
 
 const PRIMARY = '#081A3A';
 const ACCENT = '#6C4CF6';
@@ -76,6 +77,7 @@ export default function ProviderDashboard() {
       case "support": return <ProviderSupportPage />;
       case "settings": return <ProviderSettingsPage />;
       case "profile": return <ProviderProfilePage />;
+      case "feed": return <ProviderFeedWallPage />;
       default: return <View style={styles.placeholder}><Text style={styles.placeholderText}>{activePage} Under Construction</Text></View>;
     }
   };

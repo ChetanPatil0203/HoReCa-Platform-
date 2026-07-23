@@ -291,17 +291,16 @@ export default function ProviderProfilePage() {
 
       {/* Edit Profile Modal */}
       <Modal visible={editProfileVisible} animationType="fade" transparent={true} onRequestClose={() => setEditProfileVisible(false)}>
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.modalOverlayCenter}>
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{width: '100%', alignItems: 'center'}}>
-              <View style={[styles.centerModalContent, { width: modalWidth, maxHeight: '82%' }]}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>Edit Business Profile</Text>
-                  <TouchableOpacity onPress={() => setEditProfileVisible(false)}>
-                    <XCircle size={24} color="#64748B" />
-                  </TouchableOpacity>
-                </View>
-                <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+        <View style={styles.modalOverlayCenter}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{width: '100%', alignItems: 'center'}}>
+            <View style={[styles.centerModalContent, { width: modalWidth, maxHeight: '82%' }]}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Edit Business Profile</Text>
+                <TouchableOpacity onPress={() => setEditProfileVisible(false)}>
+                  <XCircle size={24} color="#64748B" />
+                </TouchableOpacity>
+              </View>
+              <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                   <Text style={styles.inputLabel}>Business Name</Text>
                   <TextInput style={styles.input} value={profileForm.businessName} onChangeText={t => setProfileForm({...profileForm, businessName: t})} />
                   
@@ -344,7 +343,6 @@ export default function ProviderProfilePage() {
               </View>
             </KeyboardAvoidingView>
           </View>
-        </TouchableWithoutFeedback>
       </Modal>
 
       {/* Manage Services Modal */}
@@ -530,7 +528,7 @@ const styles = StyleSheet.create({
   modalFooterActions: { flexDirection: 'row', gap: 12, marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
   btnOutline: { flex: 1, height: 44, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   btnOutlineText: { color: '#475569', fontWeight: 'bold', fontSize: 14 },
-  btnPrimaryGoldFull: { flex: 1.5, height: 44, backgroundColor: GOLD, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  btnPrimaryGoldFull: { flex: 1.5, height: 44, backgroundColor: NAVY, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   btnPrimaryGoldText: { color: WHITE, fontWeight: 'bold', fontSize: 14 },
 
   btnLogout: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent', paddingVertical: 14, borderRadius: 30, marginTop: 8, marginBottom: 24, borderWidth: 1, borderColor: '#FCA5A5' },

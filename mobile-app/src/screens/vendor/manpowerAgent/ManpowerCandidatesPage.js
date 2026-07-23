@@ -278,9 +278,6 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
                           <Text style={styles.linkText}>View Profile</Text>
                           <ChevronRight size={14} color={NAVY} />
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.moreContextBtn}>
-                          <MoreVertical size={16} color="#64748B" />
-                        </TouchableOpacity>
                       </>
                     )}
                   </View>
@@ -293,9 +290,8 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
 
       {/* Main More Menu Bottom Sheet (Simplified with standard Modal for now) */}
       <Modal visible={moreVisible} transparent={true} animationType="fade" onRequestClose={() => setMoreVisible(false)}>
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setMoreVisible(false)}>
-          <View style={styles.bottomMenu}>
-            <View style={styles.menuDragHandle} />
+        <TouchableOpacity style={styles.modalOverlayCenter} activeOpacity={1} onPress={() => setMoreVisible(false)}>
+          <View style={styles.centerMenuBox}>
             <TouchableOpacity style={styles.menuItem}>
               <Upload size={20} color={NAVY} style={styles.menuIcon} />
               <Text style={styles.menuItemText}>Import Candidates</Text>
@@ -313,9 +309,9 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
       </Modal>
 
       {/* Advanced Filter Modal */}
-      <Modal visible={advancedFilterVisible} transparent={true} animationType="slide" onRequestClose={() => setAdvancedFilterVisible(false)}>
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setAdvancedFilterVisible(false)}>
-          <View style={styles.bottomSheet}>
+      <Modal visible={advancedFilterVisible} transparent={true} animationType="fade" onRequestClose={() => setAdvancedFilterVisible(false)}>
+        <TouchableOpacity style={styles.modalOverlayCenter} activeOpacity={1} onPress={() => setAdvancedFilterVisible(false)}>
+          <View style={styles.profileModalBox}>
             <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle}>Advanced Filters</Text>
               <TouchableOpacity onPress={() => setAdvancedFilterVisible(false)}><X size={24} color="#1E293B" /></TouchableOpacity>
@@ -367,8 +363,8 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
       </Modal>
 
       {/* Add Candidate Form Modal */}
-      <Modal visible={addVisible} transparent={true} animationType="slide" onRequestClose={() => setAddVisible(false)}>
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setAddVisible(false)}>
+      <Modal visible={addVisible} transparent={true} animationType="fade" onRequestClose={() => setAddVisible(false)}>
+        <TouchableOpacity style={styles.modalOverlayCenter} activeOpacity={1} onPress={() => setAddVisible(false)}>
           <View style={[styles.bottomSheet, { maxHeight: '90%' }]}>
             <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle}>Add Candidate</Text>
@@ -421,17 +417,18 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
       </Modal>
 
       {/* Candidate Profile Modal */}
-      <Modal visible={profileVisible} animationType="slide" onRequestClose={() => setProfileVisible(false)}>
-        <SafeAreaView style={styles.modalFullContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setProfileVisible(false)} style={styles.modalCloseBtn}><X size={24} color="#1E293B" /></TouchableOpacity>
-            <Text style={styles.modalTitle}>Candidate Profile</Text>
-            <View style={{ width: 40 }} />
-          </View>
+      <Modal visible={profileVisible} animationType="fade" transparent={true} onRequestClose={() => setProfileVisible(false)}>
+        <TouchableOpacity style={styles.modalOverlayCenter} activeOpacity={1} onPress={() => setProfileVisible(false)}>
+          <View style={styles.profileModalBox}>
+            <View style={styles.modalHeader}>
+              <TouchableOpacity onPress={() => setProfileVisible(false)} style={styles.modalCloseBtn}><X size={24} color="#1E293B" /></TouchableOpacity>
+              <Text style={styles.modalTitle}>Candidate Profile</Text>
+              <View style={{ width: 40 }} />
+            </View>
 
-          {selectedCand && (
-            <ScrollView style={styles.modalContent}>
-              <View style={styles.profHeaderRow}>
+            {selectedCand && (
+              <ScrollView style={styles.modalContent}>
+                <View style={styles.profHeaderRow}>
                 <View style={styles.profAvatarLarge}><Text style={styles.profAvatarTextLarge}>{selectedCand.name.charAt(0)}</Text></View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.profName}>{selectedCand.name}</Text>
@@ -464,9 +461,10 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
                   {selectedCand.skills.map(s => <View key={s} style={styles.skillBadge}><Text style={styles.skillText}>{s}</Text></View>)}
                 </View>
               </View>
-            </ScrollView>
-          )}
-        </SafeAreaView>
+              </ScrollView>
+            )}
+          </View>
+        </TouchableOpacity>
       </Modal>
 
       {/* Toast */}
@@ -542,13 +540,12 @@ const styles = StyleSheet.create({
   emptySub: { fontSize: 14, color: '#64748B', marginBottom: 24 },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.4)', justifyContent: 'flex-end' },
-  bottomMenu: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
-  menuDragHandle: { width: 40, height: 4, backgroundColor: '#E2E8F0', borderRadius: 2, alignSelf: 'center', marginBottom: 24 },
+  centerMenuBox: { backgroundColor: '#fff', borderRadius: 24, padding: 16, width: '100%', maxWidth: 400, overflow: 'hidden' },
   menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   menuIcon: { marginRight: 16 },
   menuItemText: { fontSize: 16, color: NAVY, fontWeight: '500' },
 
-  bottomSheet: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '80%' },
+  bottomSheet: { backgroundColor: '#fff', borderRadius: 24, maxHeight: '90%', width: '100%', maxWidth: 500, overflow: 'hidden' },
   sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   sheetTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY },
   sheetContent: { padding: 20 },
@@ -567,10 +564,11 @@ const styles = StyleSheet.create({
   btnConfirmText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
 
   modalFullContainer: { flex: 1, backgroundColor: '#F8FAFC' },
+  profileModalBox: { backgroundColor: '#fff', borderRadius: 24, width: '100%', maxWidth: 500, maxHeight: '85%', overflow: 'hidden' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
   modalCloseBtn: { padding: 4 },
   modalTitle: { fontSize: 16, fontWeight: 'bold', color: NAVY },
-  modalContent: { flex: 1, padding: 16, backgroundColor: '#fff' },
+  modalContent: { padding: 20, backgroundColor: '#fff' },
 
   formSectionTitle: { fontSize: 16, fontWeight: 'bold', color: NAVY, marginBottom: 16, marginTop: 8 },
   inputLabel: { fontSize: 13, fontWeight: 'bold', color: '#475569', marginBottom: 8 },
