@@ -4,12 +4,13 @@ import {
   useWindowDimensions, Modal, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, TouchableWithoutFeedback
 } from 'react-native';
 import {
-  Search, SlidersHorizontal, Package, ChevronRight, XCircle, MoreVertical, 
-  MapPin, CalendarDays, UserRound, Truck
+  Menu, Bell, Search, SlidersHorizontal, Package, ChevronRight, X, XCircle,
+  MoreVertical, CheckCircle, Truck, User, Home, ClipboardList,
+  Plus, MapPin, CalendarDays, UserRound
 } from 'lucide-react-native';
 
 const NAVY = '#071B3A';
-const GOLD = '#F6B800';
+const GOLD = '#071B3A';
 const BG = '#F8FAFC';
 const WHITE = '#FFFFFF';
 const MUTED = '#64748B';
@@ -43,6 +44,11 @@ export default function RawMaterialDeliveriesPage() {
 
   const [activeFilter, setActiveFilter] = useState('All');
   const [deliveries, setDeliveries] = useState(MOCK_DELIVERIES);
+  const [searchActive, setSearchActive] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterVisible, setFilterVisible] = useState(false);
+  const [clientFilter, setClientFilter] = useState('All');
+  const [tempClientFilter, setTempClientFilter] = useState('All');
   
   // Modals & Menus
   const [activeMenuId, setActiveMenuId] = useState(null);
@@ -59,7 +65,19 @@ export default function RawMaterialDeliveriesPage() {
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
 
-  const filteredDeliveries = deliveries.filter(d => activeFilter === 'All' ? true : d.status === activeFilter);
+  const filteredDeliveries = deliveries.filter(d => {
+    if (activeFilter !== 'All' && d.status !== activeFilter) return false;
+    if (clientFilter !== 'All' && d.client !== clientFilter) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      if (!d.id.toLowerCase().includes(q) && 
+          !d.orderId.toLowerCase().includes(q) && 
+          !d.client.toLowerCase().includes(q) && 
+          !d.product.toLowerCase().includes(q) && 
+          !(d.driver && d.driver.toLowerCase().includes(q))) return false;
+    }
+    return true;
+  });
   
   const counts = STATUS_CHIPS.reduce((acc, status) => {
     acc[status] = deliveries.filter(d => d.status === status).length;
@@ -224,10 +242,28 @@ export default function RawMaterialDeliveriesPage() {
               <Text style={styles.pageSubtitle}>Manage scheduled and active order deliveries</Text>
             </View>
             <View style={styles.pageHeaderActions}>
-              <TouchableOpacity style={styles.iconBtn}><Search size={22} color={NAVY} /></TouchableOpacity>
-              <TouchableOpacity style={styles.iconBtn}><SlidersHorizontal size={22} color={NAVY} /></TouchableOpacity>
+              <TouchableOpacity style={styles.iconBtn} onPress={() => setSearchActive(!searchActive)}><Search size={22} color={NAVY} /></TouchableOpacity>
+              <TouchableOpacity style={styles.iconBtn} onPress={() => setFilterVisible(true)}><SlidersHorizontal size={22} color={NAVY} /></TouchableOpacity>
             </View>
           </View>
+
+          {/* Search bar */}
+          {searchActive && (
+            <View style={styles.searchFilterContainer}>
+              <View style={styles.searchBox}>
+                <Search size={18} color={MUTED} style={{marginRight: 8}} />
+                <TextInput 
+                  style={styles.searchInput} 
+                  placeholder="Search by ID, order, client, product or driver..." 
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+                {searchQuery !== '' && (
+                  <TouchableOpacity onPress={() => setSearchQuery('')}><XCircle size={18} color={MUTED} /></TouchableOpacity>
+                )}
+              </View>
+            </View>
+          )}
 
           <View style={styles.tabsContainer}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsScroll}>
@@ -408,6 +444,37 @@ export default function RawMaterialDeliveriesPage() {
         </TouchableWithoutFeedback>
       </Modal>
 
+      {/* Filter Bottom Sheet */}
+      <Modal visible={filterVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlayBottom}>
+          <View style={[styles.bottomSheet, {height: 'auto', paddingBottom: 40}]}>
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>Filters</Text>
+              <TouchableOpacity onPress={() => setFilterVisible(false)}><XCircle size={24} color={MUTED} /></TouchableOpacity>
+            </View>
+            <View style={styles.sheetBody}>
+              <Text style={styles.inputLabel}>Client / Hotel</Text>
+              <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20}}>
+                {['All', 'The Meridian Grand', 'Azure Palace Hotel', 'Café Zephyr'].map(cl => (
+                  <TouchableOpacity 
+                    key={cl} 
+                    style={[styles.filterChip, tempClientFilter === cl && styles.filterChipActive]} 
+                    onPress={() => setTempClientFilter(cl)}
+                  >
+                    <Text style={[styles.filterChipText, tempClientFilter === cl && styles.filterChipTextActive]}>{cl}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={styles.modalFooterActions}>
+                <TouchableOpacity style={styles.btnModalOutline} onPress={() => { setTempClientFilter('All'); setClientFilter('All'); setFilterVisible(false); }}><Text style={styles.btnModalOutlineText}>Clear Filters</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.btnModalPrimary} onPress={() => { setClientFilter(tempClientFilter); setFilterVisible(false); }}><Text style={styles.btnModalPrimaryText}>Apply Filters</Text></TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -463,7 +530,7 @@ const styles = StyleSheet.create({
   textActionBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingRight: 16 },
   textActionText: { fontSize: 14, fontWeight: 'bold', color: NAVY, marginRight: 4 },
   primaryActionBtn: { backgroundColor: GOLD, paddingHorizontal: 16, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  primaryActionText: { fontSize: 14, fontWeight: 'bold', color: NAVY },
+  primaryActionText: { fontSize: 14, fontWeight: 'bold', color: WHITE },
 
   emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
   emptyText: { fontSize: 14, color: MUTED, marginTop: 12 },
@@ -497,5 +564,16 @@ const styles = StyleSheet.create({
   detailBlock: { paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   detailLabel: { fontSize: 11, fontWeight: 'bold', color: MUTED, marginBottom: 8, textTransform: 'uppercase' },
   detailValue: { fontSize: 15, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
-  detailSubValue: { fontSize: 14, color: MUTED }
+  detailSubValue: { fontSize: 14, color: MUTED },
+  searchFilterContainer: { paddingHorizontal: 16, paddingBottom: 16 },
+  searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: WHITE, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 12, height: 44, marginBottom: 12 },
+  searchInput: { flex: 1, fontSize: 14, color: NAVY },
+  modalOverlayBottom: { flex: 1, backgroundColor: 'rgba(3, 15, 38, 0.55)', justifyContent: 'flex-end' },
+  bottomSheet: { backgroundColor: WHITE, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' },
+  sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  sheetTitle: { fontSize: 16, fontWeight: '800', color: NAVY },
+  sheetBody: { padding: 20 },
+  filterChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', marginRight: 8, marginBottom: 8 },
+  filterChipActive: { backgroundColor: NAVY, borderColor: NAVY },
+  filterChipTextActive: { color: WHITE },
 });

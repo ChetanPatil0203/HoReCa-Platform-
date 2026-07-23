@@ -62,14 +62,14 @@ export default function MarketingCreativeApprovalScreen({ setActivePage, campaig
             <Text style={styles.fileName}>summer_promo_v1.0.png</Text>
          </View>
          <TouchableOpacity style={styles.btnSmallIcon}>
-            <FileDown size={16} color="#8B5CF6" />
+            <FileDown size={16} color="#071B3A" />
          </TouchableOpacity>
       </View>
 
       <Text style={styles.label}>Upload Revised File</Text>
-      <TouchableOpacity style={[styles.uploadBox, { borderColor: '#8B5CF6', backgroundColor: '#F5F3FF' }]} onPress={() => setFileUploaded(true)}>
-         <UploadCloud size={32} color="#8B5CF6" />
-         <Text style={[styles.uploadText, {color: '#8B5CF6'}]}>{fileUploaded ? 'summer_promo_v1.1.png Uploaded' : 'Tap to upload revised file'}</Text>
+      <TouchableOpacity style={[styles.uploadBox, { borderColor: '#071B3A', backgroundColor: '#E0F2FE' }]} onPress={() => setFileUploaded(true)}>
+         <UploadCloud size={32} color="#071B3A" />
+         <Text style={[styles.uploadText, {color: '#071B3A'}]}>{fileUploaded ? 'summer_promo_v1.1.png Uploaded' : 'Tap to upload revised file'}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
     fontSize: 12, color: '#64748B', marginTop: 2,
   },
   simText: {
-    fontSize: 10, color: '#8B5CF6', fontWeight: 'bold', backgroundColor: '#F5F3FF', padding: 6, borderRadius: 4,
+    fontSize: 10, color: '#071B3A', fontWeight: 'bold', backgroundColor: '#E0F2FE', padding: 6, borderRadius: 4,
   },
   scrollArea: {
     flex: 1,
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     fontSize: 13, color: '#475569', fontWeight: '500',
   },
   btnSmallIcon: {
-    padding: 6, backgroundColor: '#F5F3FF', borderRadius: 6,
+    padding: 6, backgroundColor: '#E0F2FE', borderRadius: 6,
   },
 
   footer: {
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     fontSize: 14, fontWeight: 'bold', color: '#475569',
   },
   btnSubmit: {
-    flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#8B5CF6',
+    flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#071B3A',
     borderRadius: 8, paddingVertical: 12, gap: 8,
   },
   btnSubmitText: {

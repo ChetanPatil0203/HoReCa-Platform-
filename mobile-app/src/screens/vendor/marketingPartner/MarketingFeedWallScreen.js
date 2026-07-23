@@ -9,7 +9,7 @@ import {
 
 const NAVY = '#071B3A';
 const BG = '#F8FAFC';
-const PURPLE = '#8B5CF6';
+const PURPLE = '#071B3A';
 
 const INITIAL_FEED = [
   { 

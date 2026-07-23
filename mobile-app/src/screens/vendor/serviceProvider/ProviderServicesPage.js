@@ -73,6 +73,9 @@ export default function ProviderServicesPage() {
   const [services, setServices] = useState(MOCK_SERVICES);
   const [filterMode, setFilterMode] = useState('All'); // All, Active, Inactive
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedPricingType, setSelectedPricingType] = useState('All');
 
   // Modals
   const [formModalVisible, setFormModalVisible] = useState(false);
@@ -99,6 +102,8 @@ export default function ProviderServicesPage() {
 
   const filteredServices = services.filter(s => {
     if (filterMode !== 'All' && s.status !== filterMode) return false;
+    if (selectedCategory !== 'All' && s.category !== selectedCategory) return false;
+    if (selectedPricingType !== 'All' && s.pricingType !== selectedPricingType) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       if (!s.name.toLowerCase().includes(q) && !s.category.toLowerCase().includes(q)) return false;
@@ -346,7 +351,7 @@ export default function ProviderServicesPage() {
             onChangeText={setSearchQuery}
           />
         </View>
-        <TouchableOpacity style={styles.filterBtn}>
+        <TouchableOpacity style={styles.filterBtn} onPress={() => setFilterModalVisible(true)}>
           <SlidersHorizontal size={18} color={NAVY} />
         </TouchableOpacity>
       </View>
@@ -597,6 +602,73 @@ export default function ProviderServicesPage() {
             </TouchableWithoutFeedback>
           </Modal>
 
+          {/* Category/Pricing Filter Modal */}
+          <Modal visible={filterModalVisible} animationType="slide" transparent={true} onRequestClose={() => setFilterModalVisible(false)}>
+            <TouchableWithoutFeedback onPress={() => setFilterModalVisible(false)}>
+              <View style={styles.modalOverlayBottom}>
+                <TouchableWithoutFeedback onPress={() => {}}>
+                  <View style={[styles.bottomSheet, { width: width }]}>
+                    <View style={styles.sheetHeader}>
+                      <Text style={styles.sheetTitle}>Filter Services</Text>
+                      <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
+                        <XCircle size={22} color={NAVY} />
+                      </TouchableOpacity>
+                    </View>
+                    
+                    <ScrollView style={styles.sheetBody}>
+                      <Text style={styles.inputLabel}>Service Category</Text>
+                      <View style={styles.chipsContainer}>
+                        {['All', 'Cleaning Services', 'Plumbing Services', 'Fire Safety Services'].map(cat => (
+                          <TouchableOpacity 
+                            key={cat} 
+                            style={[styles.filterChip, selectedCategory === cat && styles.filterChipActive]}
+                            onPress={() => setSelectedCategory(cat)}
+                          >
+                            <Text style={[styles.filterChipText, selectedCategory === cat && styles.filterChipTextActive]}>{cat}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+
+                      <Text style={[styles.inputLabel, {marginTop: 16}]}>Pricing Type</Text>
+                      <View style={styles.chipsContainer}>
+                        {['All', 'Fixed Price', 'Starting From', 'Per Hour', 'Inspection Required'].map(pt => (
+                          <TouchableOpacity 
+                            key={pt} 
+                            style={[styles.filterChip, selectedPricingType === pt && styles.filterChipActive]}
+                            onPress={() => setSelectedPricingType(pt)}
+                          >
+                            <Text style={[styles.filterChipText, selectedPricingType === pt && styles.filterChipTextActive]}>{pt}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                      
+                      <View style={{height: 30}}/>
+                    </ScrollView>
+                    
+                    <View style={styles.modalFooterActions}>
+                      <TouchableOpacity 
+                        style={[styles.btnModalOutline, {flex: 1}]} 
+                        onPress={() => {
+                          setSelectedCategory('All');
+                          setSelectedPricingType('All');
+                          setFilterModalVisible(false);
+                        }}
+                      >
+                        <Text style={styles.btnModalOutlineText}>Clear Filters</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.btnModalPrimary, {flex: 1.5}]} 
+                        onPress={() => setFilterModalVisible(false)}
+                      >
+                        <Text style={styles.btnModalPrimaryText}>Apply Filters</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </TouchableWithoutFeedback>
+              </View>
+            </TouchableWithoutFeedback>
+          </Modal>
+
         </View>
       </TouchableWithoutFeedback>
     </SafeAreaView>
@@ -733,5 +805,16 @@ const styles = StyleSheet.create({
   input: { backgroundColor: WHITE, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 12, height: 44, fontSize: 14, color: NAVY, marginBottom: 16 },
   textArea: { backgroundColor: WHITE, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: NAVY, minHeight: 80, textAlignVertical: 'top', marginBottom: 16 },
   uploadBox: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderStyle: 'dashed', borderRadius: 10, height: 60, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
-  uploadText: { fontSize: 13, color: '#64748B', marginLeft: 8, fontWeight: '500' }
+  uploadText: { fontSize: 13, color: '#64748B', marginLeft: 8, fontWeight: '500' },
+  
+  modalOverlayBottom: { flex: 1, backgroundColor: 'rgba(3, 15, 38, 0.55)', justifyContent: 'flex-end' },
+  bottomSheet: { backgroundColor: WHITE, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' },
+  sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  sheetTitle: { fontSize: 16, fontWeight: '800', color: NAVY },
+  sheetBody: { padding: 20 },
+  chipsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  filterChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', marginRight: 4, marginBottom: 4 },
+  filterChipActive: { backgroundColor: NAVY, borderColor: NAVY },
+  filterChipText: { fontSize: 13, color: '#64748B', fontWeight: '500' },
+  filterChipTextActive: { color: WHITE }
 });

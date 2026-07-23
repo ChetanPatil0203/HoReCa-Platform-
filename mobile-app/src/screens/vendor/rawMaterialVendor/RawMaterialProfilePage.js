@@ -1,11 +1,11 @@
 import React, { useState, useContext } from 'react';
-import { 
-  View, Text, StyleSheet, ScrollView, 
-  TouchableOpacity, SafeAreaView, Dimensions, 
-  Modal, TextInput, KeyboardAvoidingView, Platform, TouchableWithoutFeedback 
+import {
+  View, Text, StyleSheet, ScrollView,
+  TouchableOpacity, SafeAreaView, Dimensions,
+  Modal, TextInput, KeyboardAvoidingView, Platform, TouchableWithoutFeedback
 } from 'react-native';
-import { 
-  BadgeCheck, CircleCheck, Phone, Mail, MapPin, Pencil, 
+import {
+  BadgeCheck, CircleCheck, Phone, Mail, MapPin, Pencil,
   Building2, Boxes, Settings2, Files, FileText, ChevronRight, XCircle, Search,
   X, Clock3, ShieldAlert, Eye, Upload, RefreshCw, LogOut
 } from 'lucide-react-native';
@@ -43,7 +43,7 @@ export default function RawMaterialProfilePage() {
   ]);
 
   const AVAILABLE_CATEGORIES = [
-    'Vegetables', 'Fruits', 'Dairy Products', 'Grocery', 'Grains and Rice', 
+    'Vegetables', 'Fruits', 'Dairy Products', 'Grocery', 'Grains and Rice',
     'Flour', 'Pulses', 'Oils', 'Bakery Products', 'Meat', 'Seafood'
   ];
 
@@ -85,7 +85,7 @@ export default function RawMaterialProfilePage() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.maxWidthContainer}>
-          
+
           {/* Page Intro */}
           <View style={styles.pageIntro}>
             <Text style={styles.pageTitle}>Profile</Text>
@@ -110,7 +110,7 @@ export default function RawMaterialProfilePage() {
                 <Text style={styles.supplierRole}>Raw Material Supplier</Text>
               </View>
             </View>
-            
+
             <View style={styles.contactDetailsWrapper}>
               <View style={styles.contactRow}>
                 <Phone size={14} color={MUTED} style={styles.contactIcon} />
@@ -127,16 +127,16 @@ export default function RawMaterialProfilePage() {
             </View>
 
             <TouchableOpacity style={styles.editBtn} onPress={() => setEditProfileModal(true)}>
-              <Pencil size={14} color={NAVY} style={{marginRight: 6}} />
+              <Pencil size={14} color={NAVY} style={{ marginRight: 6 }} />
               <Text style={styles.editBtnText}>Edit Profile</Text>
             </TouchableOpacity>
           </View>
 
           <View style={isMobile ? {} : styles.row}>
             {/* 2. Business Information */}
-            <View style={[styles.section, isMobile ? {} : {flex: 1, marginRight: 12}]}>
+            <View style={[styles.section, isMobile ? {} : { flex: 1, marginRight: 12 }]}>
               <View style={styles.sectionHeader}>
-                <Building2 size={20} color={NAVY} style={{marginRight: 8}} />
+                <Building2 size={20} color={NAVY} style={{ marginRight: 8 }} />
                 <Text style={styles.sectionTitle}>Business Information</Text>
               </View>
               <View style={styles.card}>
@@ -170,10 +170,10 @@ export default function RawMaterialProfilePage() {
             </View>
 
             {/* 3. Product Categories Supplied */}
-            <View style={[styles.section, isMobile ? {} : {flex: 1, marginLeft: 12}]}>
+            <View style={[styles.section, isMobile ? {} : { flex: 1, marginLeft: 12 }]}>
               <View style={styles.sectionHeaderFlex}>
-                <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                  <Boxes size={20} color={NAVY} style={{marginRight: 8}} />
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Boxes size={20} color={NAVY} style={{ marginRight: 8 }} />
                   <View>
                     <Text style={styles.sectionTitle}>Product Categories Supplied</Text>
                   </View>
@@ -198,19 +198,19 @@ export default function RawMaterialProfilePage() {
           {/* 4. Licences & Documents */}
           <View style={styles.section}>
             <View style={styles.sectionHeaderFlex}>
-              <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                <Files size={20} color={NAVY} style={{marginRight: 8}} />
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Files size={20} color={NAVY} style={{ marginRight: 8 }} />
                 <View>
                   <Text style={styles.sectionTitle}>Licences & Documents</Text>
                 </View>
               </View>
             </View>
             <Text style={styles.sectionSub}>View and manage supplier verification documents</Text>
-            
+
             <View style={[styles.card, { padding: 0, marginTop: 12, overflow: 'hidden' }]}>
               {DOCUMENTS.map((doc, index) => (
-                <TouchableOpacity 
-                  key={doc.id} 
+                <TouchableOpacity
+                  key={doc.id}
                   style={[styles.docRow, index === DOCUMENTS.length - 1 && { borderBottomWidth: 0 }]}
                   onPress={() => setDocModal({ visible: true, doc })}
                 >
@@ -225,7 +225,7 @@ export default function RawMaterialProfilePage() {
                     <View style={[styles.docBadge, { backgroundColor: doc.statusBg }]}>
                       <Text style={[styles.docBadgeText, { color: doc.statusColor }]}>{doc.status}</Text>
                     </View>
-                    <ChevronRight size={18} color={MUTED} style={{marginLeft: 8}} />
+                    <ChevronRight size={18} color={MUTED} style={{ marginLeft: 8 }} />
                   </View>
                 </TouchableOpacity>
               ))}
@@ -233,12 +233,12 @@ export default function RawMaterialProfilePage() {
           </View>
           <TouchableOpacity style={styles.logoutBtn} onPress={() => {
             if (window.confirm && Platform.OS === 'web') {
-               if (window.confirm("Are you sure you want to logout?")) logout();
+              if (window.confirm("Are you sure you want to logout?")) logout();
             } else {
-               logout();
+              logout();
             }
           }}>
-            <LogOut size={20} color="#EF4444" style={{marginRight: 10}} />
+            <LogOut size={20} color="#EF4444" style={{ marginRight: 10 }} />
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
           <View style={styles.bottomSpacer} />
@@ -247,49 +247,49 @@ export default function RawMaterialProfilePage() {
 
       {/* Edit Profile Modal */}
       <Modal visible={editProfileModal} animationType="fade" transparent={true} onRequestClose={() => setEditProfileModal(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{flex: 1}}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
           <TouchableWithoutFeedback onPress={() => setEditProfileModal(false)}>
             <View style={styles.modalOverlayCenter}>
-              <TouchableWithoutFeedback onPress={() => {}}>
-                <View style={[styles.centerModalContent, isMobile ? {width: '90%'} : {maxWidth: 520, width: '100%'}, {maxHeight: '82%'}]}>
+              <TouchableWithoutFeedback onPress={() => { }}>
+                <View style={[styles.centerModalContent, isMobile ? { width: '90%' } : { maxWidth: 520, width: '100%' }, { maxHeight: '82%' }]}>
                   <View style={styles.modalHeader}>
                     <Text style={styles.modalTitle}>Edit Supplier Profile</Text>
                     <TouchableOpacity onPress={() => setEditProfileModal(false)}>
                       <XCircle size={24} color={MUTED} />
                     </TouchableOpacity>
                   </View>
-                  
+
                   <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
                     <Text style={styles.inputLabel}>Business Name</Text>
-                    <TextInput style={styles.input} value={profileForm.businessName} onChangeText={t => setProfileForm({...profileForm, businessName: t})} />
-                    
+                    <TextInput style={styles.input} value={profileForm.businessName} onChangeText={t => setProfileForm({ ...profileForm, businessName: t })} />
+
                     <Text style={styles.inputLabel}>Contact Person Name</Text>
-                    <TextInput style={styles.input} value={profileForm.contactPerson} onChangeText={t => setProfileForm({...profileForm, contactPerson: t})} />
-                    
+                    <TextInput style={styles.input} value={profileForm.contactPerson} onChangeText={t => setProfileForm({ ...profileForm, contactPerson: t })} />
+
                     <Text style={styles.inputLabel}>Mobile Number</Text>
-                    <TextInput style={styles.input} value={profileForm.mobileNumber} onChangeText={t => setProfileForm({...profileForm, mobileNumber: t})} keyboardType="phone-pad" />
-                    
+                    <TextInput style={styles.input} value={profileForm.mobileNumber} onChangeText={t => setProfileForm({ ...profileForm, mobileNumber: t })} keyboardType="phone-pad" />
+
                     <Text style={styles.inputLabel}>Email Address</Text>
-                    <TextInput style={styles.input} value={profileForm.email} onChangeText={t => setProfileForm({...profileForm, email: t})} keyboardType="email-address" />
-                    
+                    <TextInput style={styles.input} value={profileForm.email} onChangeText={t => setProfileForm({ ...profileForm, email: t })} keyboardType="email-address" />
+
                     <Text style={styles.inputLabel}>Business Address</Text>
-                    <TextInput style={styles.input} value={profileForm.address} onChangeText={t => setProfileForm({...profileForm, address: t})} />
-                    
-                    <View style={{flexDirection: 'row', gap: 12}}>
-                      <View style={{flex: 1}}>
+                    <TextInput style={styles.input} value={profileForm.address} onChangeText={t => setProfileForm({ ...profileForm, address: t })} />
+
+                    <View style={{ flexDirection: 'row', gap: 12 }}>
+                      <View style={{ flex: 1 }}>
                         <Text style={styles.inputLabel}>City</Text>
-                        <TextInput style={styles.input} value={profileForm.city} onChangeText={t => setProfileForm({...profileForm, city: t})} />
+                        <TextInput style={styles.input} value={profileForm.city} onChangeText={t => setProfileForm({ ...profileForm, city: t })} />
                       </View>
-                      <View style={{flex: 1}}>
+                      <View style={{ flex: 1 }}>
                         <Text style={styles.inputLabel}>State</Text>
-                        <TextInput style={styles.input} value={profileForm.state} onChangeText={t => setProfileForm({...profileForm, state: t})} />
+                        <TextInput style={styles.input} value={profileForm.state} onChangeText={t => setProfileForm({ ...profileForm, state: t })} />
                       </View>
                     </View>
 
                     <Text style={styles.inputLabel}>Pincode</Text>
-                    <TextInput style={styles.input} value={profileForm.pincode} onChangeText={t => setProfileForm({...profileForm, pincode: t})} keyboardType="number-pad" />
+                    <TextInput style={styles.input} value={profileForm.pincode} onChangeText={t => setProfileForm({ ...profileForm, pincode: t })} keyboardType="number-pad" />
                   </ScrollView>
-                  
+
                   <View style={styles.modalFooterActions}>
                     <TouchableOpacity style={styles.btnModalOutline} onPress={() => setEditProfileModal(false)}>
                       <Text style={styles.btnModalOutlineText}>Cancel</Text>
@@ -309,30 +309,30 @@ export default function RawMaterialProfilePage() {
       <Modal visible={manageCatModal} animationType="fade" transparent={true} onRequestClose={() => setManageCatModal(false)}>
         <TouchableWithoutFeedback onPress={() => setManageCatModal(false)}>
           <View style={styles.modalOverlayCenter}>
-            <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={[styles.centerModalContent, isMobile ? {width: '90%'} : {maxWidth: 520, width: '100%'}, {maxHeight: '82%'}]}>
+            <TouchableWithoutFeedback onPress={() => { }}>
+              <View style={[styles.centerModalContent, isMobile ? { width: '90%' } : { maxWidth: 520, width: '100%' }, { maxHeight: '82%' }]}>
                 <View style={styles.modalHeader}>
                   <Text style={styles.modalTitle}>Manage Product Categories</Text>
                   <TouchableOpacity onPress={() => setManageCatModal(false)}>
                     <XCircle size={24} color={MUTED} />
                   </TouchableOpacity>
                 </View>
-                
+
                 <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
                   <View style={styles.modalSubHeader}>
                     <Text style={styles.categoryCount}>{selectedCats.length} categories selected</Text>
-                    <View style={{flexDirection: 'row', gap: 12}}>
+                    <View style={{ flexDirection: 'row', gap: 12 }}>
                       <TouchableOpacity onPress={() => setSelectedCats(AVAILABLE_CATEGORIES)}><Text style={styles.catActionText}>Select All</Text></TouchableOpacity>
                       <TouchableOpacity onPress={() => setSelectedCats([])}><Text style={styles.catActionText}>Clear All</Text></TouchableOpacity>
                     </View>
                   </View>
-                  
+
                   <View style={styles.categoryList}>
                     {AVAILABLE_CATEGORIES.map(cat => {
                       const isSelected = selectedCats.includes(cat);
                       return (
-                        <TouchableOpacity 
-                          key={cat} 
+                        <TouchableOpacity
+                          key={cat}
                           style={[styles.catOption, isSelected && styles.catOptionSelected]}
                           onPress={() => toggleCategory(cat)}
                           activeOpacity={0.7}
@@ -346,7 +346,7 @@ export default function RawMaterialProfilePage() {
                     })}
                   </View>
                 </ScrollView>
-                
+
                 <View style={styles.modalFooterActions}>
                   <TouchableOpacity style={styles.btnModalOutline} onPress={() => setManageCatModal(false)}>
                     <Text style={styles.btnModalOutlineText}>Cancel</Text>
@@ -365,8 +365,8 @@ export default function RawMaterialProfilePage() {
       <Modal visible={docModal.visible} animationType="fade" transparent={true} onRequestClose={() => setDocModal({ visible: false, doc: null })}>
         <TouchableWithoutFeedback onPress={() => setDocModal({ visible: false, doc: null })}>
           <View style={styles.modalOverlayCenter}>
-            <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={[styles.centerModalContent, isMobile ? {width: '90%'} : {maxWidth: 480, width: '100%'}]}>
+            <TouchableWithoutFeedback onPress={() => { }}>
+              <View style={[styles.centerModalContent, isMobile ? { width: '90%' } : { maxWidth: 480, width: '100%' }]}>
                 {docModal.doc && (
                   <>
                     <View style={styles.modalHeader}>
@@ -375,7 +375,7 @@ export default function RawMaterialProfilePage() {
                         <X size={20} color={MUTED} />
                       </TouchableOpacity>
                     </View>
-                    
+
                     <View style={styles.modalBody}>
                       <View style={styles.docDetailBox}>
                         <View style={styles.docDetailIconBox}>
@@ -387,17 +387,17 @@ export default function RawMaterialProfilePage() {
                           <Text style={[styles.docBadgeText, { color: docModal.doc.statusColor }]}>{docModal.doc.status}</Text>
                         </View>
                       </View>
-                      
+
                       {docModal.doc.status === 'Pending Verification' && (
                         <View style={styles.pendingInfoBox}>
-                          <Clock3 size={16} color="#F59E0B" style={{marginRight: 8, marginTop: 2}} />
-                          <View style={{flex: 1}}>
+                          <Clock3 size={16} color="#F59E0B" style={{ marginRight: 8, marginTop: 2 }} />
+                          <View style={{ flex: 1 }}>
                             <Text style={styles.pendingInfoTitle}>Verification Pending</Text>
                             <Text style={styles.pendingInfoText}>Your document has been uploaded and is waiting for Super Admin approval.</Text>
                           </View>
                         </View>
                       )}
-                      
+
                       <View style={styles.docDetailList}>
                         <View style={styles.docDetailRow}>
                           <Text style={styles.docDetailLabel}>Requirement</Text>
@@ -416,7 +416,7 @@ export default function RawMaterialProfilePage() {
                           <Text style={styles.docDetailValue}>PDF</Text>
                         </View>
                       </View>
-                      
+
                       {docModal.doc.status === 'Rejected' && (
                         <View style={styles.rejectionBox}>
                           <Text style={styles.rejectionLabel}>Rejection Reason:</Text>
@@ -424,15 +424,15 @@ export default function RawMaterialProfilePage() {
                         </View>
                       )}
                     </View>
-                    
+
                     <View style={styles.modalFooterActionsVertical}>
                       <TouchableOpacity style={styles.btnModalPrimary}>
-                        {docModal.doc.status === 'Missing' || docModal.doc.status === 'Rejected' ? <Upload size={16} color={WHITE} style={{marginRight: 6}} /> : <Eye size={16} color={WHITE} style={{marginRight: 6}} />}
+                        {docModal.doc.status === 'Missing' || docModal.doc.status === 'Rejected' ? <Upload size={16} color={WHITE} style={{ marginRight: 6 }} /> : <Eye size={16} color={WHITE} style={{ marginRight: 6 }} />}
                         <Text style={styles.btnModalPrimaryText}>{docModal.doc.status === 'Missing' ? 'Upload Document' : (docModal.doc.status === 'Rejected' ? 'Upload New Document' : 'Preview Document')}</Text>
                       </TouchableOpacity>
                       {docModal.doc.status !== 'Missing' && docModal.doc.status !== 'Rejected' && (
                         <TouchableOpacity style={styles.btnModalOutlineCenter}>
-                          <RefreshCw size={16} color={NAVY} style={{marginRight: 6}} />
+                          <RefreshCw size={16} color={NAVY} style={{ marginRight: 6 }} />
                           <Text style={styles.btnModalOutlineText}>Replace Document</Text>
                         </TouchableOpacity>
                       )}
@@ -452,15 +452,15 @@ export default function RawMaterialProfilePage() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: BG },
   container: { flex: 1 },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 115 }, 
+  scrollContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 115 },
   maxWidthContainer: { width: '100%', maxWidth: 1200, alignSelf: 'center' },
-  
+
   row: { flexDirection: 'row' },
-  
+
   pageIntro: { marginBottom: 16 },
   pageTitle: { fontSize: 24, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
   pageSubtitle: { fontSize: 14, color: MUTED },
-  
+
   // Premium Profile Card
   profileCard: { backgroundColor: WHITE, borderRadius: 20, padding: 20, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1, borderWidth: 1, borderColor: '#E6EBF2' },
   profileTopRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
@@ -472,33 +472,33 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 12, fontWeight: '600', color: '#10B981', marginLeft: 4 },
   dotSeparator: { marginHorizontal: 6, color: '#10B981', fontWeight: 'bold' },
   supplierRole: { fontSize: 13, color: MUTED, fontWeight: '500' },
-  
+
   contactDetailsWrapper: { backgroundColor: '#F8FAFC', borderRadius: 12, padding: 16, marginBottom: 16 },
   contactRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   contactIcon: { marginRight: 10 },
   contactText: { fontSize: 13, color: NAVY, fontWeight: '500' },
-  
+
   editBtn: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: '#E8EDF4' },
   editBtnText: { fontSize: 13, fontWeight: '600', color: NAVY },
-  
+
   section: { marginBottom: 24 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   sectionHeaderFlex: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', color: NAVY },
   sectionSub: { fontSize: 13, color: MUTED, marginBottom: 4 },
   smallActionBtn: { padding: 8, borderRadius: 8, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E8EDF4' },
-  
+
   card: { backgroundColor: WHITE, borderRadius: 16, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1, borderWidth: 1, borderColor: '#E6EBF2' },
-  
+
   infoGrid: { flexDirection: 'row', flexWrap: 'wrap' },
   infoCol: { width: '50%', marginBottom: 16, paddingRight: 8 },
   infoLabel: { fontSize: 11, color: MUTED, fontWeight: 'bold', marginBottom: 4, letterSpacing: 0.5 },
   infoValue: { fontSize: 13, color: NAVY, fontWeight: '600' },
-  
+
   chipContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   chip: { backgroundColor: '#EFF6FF', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#BFDBFE' },
   chipText: { fontSize: 13, color: '#1E40AF', fontWeight: '500' },
-  
+
   docRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   docIconBox: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   docInfo: { flex: 1, paddingRight: 8 },
@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
   docStatusRow: { flexDirection: 'row', alignItems: 'center' },
   docBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   docBadgeText: { fontSize: 11, fontWeight: 'bold' },
-  
+
   // Modal Standard Styles
   modalOverlayCenter: { flex: 1, backgroundColor: 'rgba(3, 15, 38, 0.55)', justifyContent: 'center', alignItems: 'center', padding: 16 },
   centerModalContent: { backgroundColor: WHITE, borderRadius: 20, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
@@ -527,7 +527,7 @@ const styles = StyleSheet.create({
   modalSubHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   categoryCount: { fontSize: 13, color: MUTED, fontWeight: '500' },
   catActionText: { fontSize: 13, color: '#3B82F6', fontWeight: '600' },
-  
+
   categoryList: { gap: 10, paddingBottom: 20 },
   catOption: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', padding: 14, borderRadius: 12 },
   catOptionSelected: { backgroundColor: '#EFF6FF', borderColor: '#3B82F6' },
@@ -536,25 +536,25 @@ const styles = StyleSheet.create({
   catOptionText: { fontSize: 14, color: NAVY, fontWeight: '500' },
   catOptionTextSelected: { color: '#1E40AF', fontWeight: 'bold' },
   closeBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' },
-  
+
   docDetailBox: { alignItems: 'center', paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9', marginBottom: 12 },
   docDetailIconBox: { width: 50, height: 50, borderRadius: 12, backgroundColor: '#EFF6FF', justifyContent: 'center', alignItems: 'center', marginBottom: 10, borderWidth: 1, borderColor: '#DBEAFE' },
   docDetailTitle: { fontSize: 16, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
   docDetailRef: { fontSize: 13, color: MUTED },
-  
+
   pendingInfoBox: { flexDirection: 'row', backgroundColor: '#FFFBEB', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#FEF3C7', marginBottom: 16 },
   pendingInfoTitle: { fontSize: 13, fontWeight: 'bold', color: '#B45309', marginBottom: 2 },
   pendingInfoText: { fontSize: 12, color: '#92400E', lineHeight: 18 },
-  
+
   docDetailList: { gap: 4 },
   docDetailRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   docDetailLabel: { fontSize: 13, color: MUTED, fontWeight: '500' },
   docDetailValue: { fontSize: 13, color: NAVY, fontWeight: '600' },
-  
+
   rejectionBox: { backgroundColor: '#FEF2F2', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#FECACA', marginTop: 16 },
   rejectionLabel: { fontSize: 13, fontWeight: 'bold', color: '#DC2626', marginBottom: 4 },
   rejectionText: { fontSize: 13, color: '#991B1B' },
-  
+
   logoutBtn: { flexDirection: 'row', backgroundColor: WHITE, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#FEE2E2', justifyContent: 'center', alignItems: 'center', marginTop: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1 },
   logoutText: { fontSize: 16, fontWeight: 'bold', color: '#EF4444' },
 

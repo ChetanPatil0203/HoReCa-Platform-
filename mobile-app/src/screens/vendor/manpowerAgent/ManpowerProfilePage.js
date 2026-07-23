@@ -1,11 +1,11 @@
 import React, { useContext, useState } from 'react';
-import { 
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, 
-  useWindowDimensions, Alert, Platform, Modal, TextInput, 
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  useWindowDimensions, Alert, Platform, Modal, TextInput,
   KeyboardAvoidingView, Pressable, SafeAreaView, ActivityIndicator
 } from 'react-native';
-import { 
-  Phone, Mail, MapPin, 
+import {
+  Phone, Mail, MapPin,
   FileText, ChevronRight, BadgeCheck, Pencil, LogOut,
   X, Save, UserRound
 } from 'lucide-react-native';
@@ -58,7 +58,7 @@ export default function ManpowerProfilePage() {
     if (!profileForm.city.trim()) newErrors.city = 'Enter the city.';
     if (!profileForm.state.trim()) newErrors.state = 'Enter the state.';
     if (!profileForm.pincode.trim() || !/^\d{6}$/.test(profileForm.pincode)) newErrors.pincode = 'Enter a valid 6-digit pincode.';
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -111,7 +111,7 @@ export default function ManpowerProfilePage() {
   ];
 
   const getStatusColor = (status) => {
-    switch(status) {
+    switch (status) {
       case 'Verified': return '#10B981';
       case 'Pending': return '#F59E0B';
       case 'Rejected': return '#EF4444';
@@ -131,7 +131,7 @@ export default function ManpowerProfilePage() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.centerWrapper}>
-          
+
           {/* Main Agency Profile Card */}
           <View style={[styles.card, styles.heroCard]}>
             <View style={styles.heroTop}>
@@ -141,7 +141,7 @@ export default function ManpowerProfilePage() {
                 </View>
                 <View style={styles.profileInfo}>
                   <Text style={styles.agencyName}>{profile.agencyName}</Text>
-                  
+
                   <View style={styles.badgesRow}>
                     <View style={styles.verifiedBadge}>
                       <BadgeCheck size={14} color="#10B981" />
@@ -162,11 +162,11 @@ export default function ManpowerProfilePage() {
                 </TouchableOpacity>
               )}
             </View>
-            
+
             <View style={styles.contactDivider} />
 
             <View style={styles.contactInfo}>
-              <View style={styles.contactRow}><Phone size={16} color="#64748B" /><Text style={styles.contactText}>+91 {profile.mobile.substring(0,5)} {profile.mobile.substring(5,10)}</Text></View>
+              <View style={styles.contactRow}><Phone size={16} color="#64748B" /><Text style={styles.contactText}>+91 {profile.mobile.substring(0, 5)} {profile.mobile.substring(5, 10)}</Text></View>
               <View style={styles.contactRow}><Mail size={16} color="#64748B" /><Text style={styles.contactText}>{profile.email}</Text></View>
               <View style={styles.contactRow}><MapPin size={16} color="#64748B" /><Text style={styles.contactText}>{profile.city}, {profile.state}</Text></View>
             </View>
@@ -255,21 +255,21 @@ export default function ManpowerProfilePage() {
               </View>
               <View>
                 {documents.map((doc, idx) => (
-                  <View key={idx} style={[styles.docItem, idx === documents.length - 1 && {borderBottomWidth: 0}]}>
+                  <View key={idx} style={[styles.docItem, idx === documents.length - 1 && { borderBottomWidth: 0 }]}>
                     <View style={styles.docLeft}>
                       <View style={styles.docIconWrap}>
                         <FileText size={20} color={NAVY} />
                       </View>
-                      <View style={{marginLeft: 14}}>
+                      <View style={{ marginLeft: 14 }}>
                         <Text style={styles.docName}>{doc.name}</Text>
                         <Text style={styles.docRef}>{doc.ref}</Text>
                       </View>
                     </View>
                     <View style={styles.docRight}>
                       <View style={[styles.statusBadge, { backgroundColor: getStatusColor(doc.status) + '15' }]}>
-                         <Text style={[styles.statusBadgeText, {color: getStatusColor(doc.status)}]}>{doc.status}</Text>
+                        <Text style={[styles.statusBadgeText, { color: getStatusColor(doc.status) }]}>{doc.status}</Text>
                       </View>
-                      <ChevronRight size={18} color="#94A3B8" style={{marginLeft: 12}} />
+                      <ChevronRight size={18} color="#94A3B8" style={{ marginLeft: 12 }} />
                     </View>
                   </View>
                 ))}
@@ -278,7 +278,7 @@ export default function ManpowerProfilePage() {
           </View>
 
           {/* Logout */}
-          <View style={[styles.section, {marginBottom: 0}]}>
+          <View style={[styles.section, { marginBottom: 0 }]}>
             <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
               <LogOut size={18} color="#EF4444" />
               <Text style={styles.logoutText}>Logout</Text>
@@ -289,16 +289,16 @@ export default function ManpowerProfilePage() {
       </ScrollView>
 
       {/* Edit Profile Modal */}
-      <Modal 
-        visible={isEditProfileVisible} 
-        transparent 
-        animationType="fade" 
+      <Modal
+        visible={isEditProfileVisible}
+        transparent
+        animationType="fade"
         onRequestClose={() => setIsEditProfileVisible(false)}
       >
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setIsEditProfileVisible(false)}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{width: '100%', alignItems: 'center'}}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ width: '100%', alignItems: 'center' }}>
             <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
-              
+
               <View style={styles.modalHeader}>
                 <View>
                   <Text style={styles.modalTitle}>Edit Agency Profile</Text>
@@ -309,14 +309,14 @@ export default function ManpowerProfilePage() {
                 </TouchableOpacity>
               </View>
 
-              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{padding: 20}} keyboardShouldPersistTaps="handled">
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 20 }} keyboardShouldPersistTaps="handled">
                 <View style={styles.formGroup}>
                   <Text style={styles.inputLabel}>Agency Name</Text>
                   <View style={[styles.inputWrapper, errors.agencyName && styles.inputError]}>
-                    <TextInput 
-                      style={styles.input} 
+                    <TextInput
+                      style={styles.input}
                       value={profileForm.agencyName}
-                      onChangeText={(val) => setProfileForm({...profileForm, agencyName: val})}
+                      onChangeText={(val) => setProfileForm({ ...profileForm, agencyName: val })}
                       placeholder="e.g. Elite Manpower Agency"
                     />
                   </View>
@@ -326,11 +326,11 @@ export default function ManpowerProfilePage() {
                 <View style={styles.formGroup}>
                   <Text style={styles.inputLabel}>Contact Person</Text>
                   <View style={[styles.inputWrapper, errors.contactPerson && styles.inputError]}>
-                    <UserRound size={18} color="#94A3B8" style={{marginLeft: 12}} />
-                    <TextInput 
-                      style={styles.inputWithIcon} 
+                    <UserRound size={18} color="#94A3B8" style={{ marginLeft: 12 }} />
+                    <TextInput
+                      style={styles.inputWithIcon}
                       value={profileForm.contactPerson}
-                      onChangeText={(val) => setProfileForm({...profileForm, contactPerson: val})}
+                      onChangeText={(val) => setProfileForm({ ...profileForm, contactPerson: val })}
                       placeholder="Enter contact person name"
                     />
                   </View>
@@ -340,13 +340,13 @@ export default function ManpowerProfilePage() {
                 <View style={styles.formGroup}>
                   <Text style={styles.inputLabel}>Mobile Number</Text>
                   <View style={[styles.inputWrapper, errors.mobile && styles.inputError]}>
-                    <Phone size={18} color="#94A3B8" style={{marginLeft: 12}} />
-                    <TextInput 
-                      style={styles.inputWithIcon} 
+                    <Phone size={18} color="#94A3B8" style={{ marginLeft: 12 }} />
+                    <TextInput
+                      style={styles.inputWithIcon}
                       value={profileForm.mobile}
                       keyboardType="numeric"
                       maxLength={10}
-                      onChangeText={(val) => setProfileForm({...profileForm, mobile: val})}
+                      onChangeText={(val) => setProfileForm({ ...profileForm, mobile: val })}
                       placeholder="10-digit mobile number"
                     />
                   </View>
@@ -356,13 +356,13 @@ export default function ManpowerProfilePage() {
                 <View style={styles.formGroup}>
                   <Text style={styles.inputLabel}>Email Address</Text>
                   <View style={[styles.inputWrapper, errors.email && styles.inputError]}>
-                    <Mail size={18} color="#94A3B8" style={{marginLeft: 12}} />
-                    <TextInput 
-                      style={styles.inputWithIcon} 
+                    <Mail size={18} color="#94A3B8" style={{ marginLeft: 12 }} />
+                    <TextInput
+                      style={styles.inputWithIcon}
                       value={profileForm.email}
                       keyboardType="email-address"
                       autoCapitalize="none"
-                      onChangeText={(val) => setProfileForm({...profileForm, email: val})}
+                      onChangeText={(val) => setProfileForm({ ...profileForm, email: val })}
                       placeholder="e.g. info@agency.com"
                     />
                   </View>
@@ -372,37 +372,37 @@ export default function ManpowerProfilePage() {
                 <View style={styles.formGroup}>
                   <Text style={styles.inputLabel}>Business Address (Optional)</Text>
                   <View style={styles.inputWrapper}>
-                    <MapPin size={18} color="#94A3B8" style={{marginLeft: 12}} />
-                    <TextInput 
-                      style={styles.inputWithIcon} 
+                    <MapPin size={18} color="#94A3B8" style={{ marginLeft: 12 }} />
+                    <TextInput
+                      style={styles.inputWithIcon}
                       value={profileForm.address}
-                      onChangeText={(val) => setProfileForm({...profileForm, address: val})}
+                      onChangeText={(val) => setProfileForm({ ...profileForm, address: val })}
                       placeholder="Flat, building, street..."
                     />
                   </View>
                 </View>
 
-                <View style={{flexDirection: 'row', gap: 12}}>
-                  <View style={[styles.formGroup, {flex: 1}]}>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <View style={[styles.formGroup, { flex: 1 }]}>
                     <Text style={styles.inputLabel}>City</Text>
                     <View style={[styles.inputWrapper, errors.city && styles.inputError]}>
-                      <TextInput 
-                        style={styles.input} 
+                      <TextInput
+                        style={styles.input}
                         value={profileForm.city}
-                        onChangeText={(val) => setProfileForm({...profileForm, city: val})}
+                        onChangeText={(val) => setProfileForm({ ...profileForm, city: val })}
                         placeholder="e.g. Jalgaon"
                       />
                     </View>
                     {errors.city && <Text style={styles.errorText}>{errors.city}</Text>}
                   </View>
 
-                  <View style={[styles.formGroup, {flex: 1}]}>
+                  <View style={[styles.formGroup, { flex: 1 }]}>
                     <Text style={styles.inputLabel}>State</Text>
                     <View style={[styles.inputWrapper, errors.state && styles.inputError]}>
-                      <TextInput 
-                        style={styles.input} 
+                      <TextInput
+                        style={styles.input}
                         value={profileForm.state}
-                        onChangeText={(val) => setProfileForm({...profileForm, state: val})}
+                        onChangeText={(val) => setProfileForm({ ...profileForm, state: val })}
                         placeholder="e.g. Maharashtra"
                       />
                     </View>
@@ -413,18 +413,18 @@ export default function ManpowerProfilePage() {
                 <View style={styles.formGroup}>
                   <Text style={styles.inputLabel}>Pincode</Text>
                   <View style={[styles.inputWrapper, errors.pincode && styles.inputError]}>
-                    <TextInput 
-                      style={styles.input} 
+                    <TextInput
+                      style={styles.input}
                       value={profileForm.pincode}
                       keyboardType="numeric"
                       maxLength={6}
-                      onChangeText={(val) => setProfileForm({...profileForm, pincode: val})}
+                      onChangeText={(val) => setProfileForm({ ...profileForm, pincode: val })}
                       placeholder="6-digit PIN"
                     />
                   </View>
                   {errors.pincode && <Text style={styles.errorText}>{errors.pincode}</Text>}
                 </View>
-                
+
               </ScrollView>
 
               <View style={styles.modalFooter}>
@@ -462,12 +462,12 @@ export default function ManpowerProfilePage() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
   centerWrapper: { maxWidth: 1200, alignSelf: 'center', width: '100%' },
-  
+
   pageHeader: { padding: 20, paddingBottom: 10, backgroundColor: BG },
   pageTitle: { fontSize: 24, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
   pageSubtitle: { fontSize: 14, color: '#64748B' },
 
-  scrollContent: { padding: 16, paddingTop: 10, paddingBottom: 100 }, 
+  scrollContent: { padding: 16, paddingTop: 10, paddingBottom: 100 },
 
   card: { backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#E8EDF4', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 3, elevation: 1 },
 
@@ -478,15 +478,15 @@ const styles = StyleSheet.create({
   avatarText: { fontSize: 26, fontWeight: 'bold', color: '#3B82F6' },
   profileInfo: { marginLeft: 16, flex: 1 },
   agencyName: { fontSize: 20, fontWeight: '900', color: NAVY, marginBottom: 6 },
-  
+
   badgesRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   verifiedBadge: { flexDirection: 'row', alignItems: 'center' },
   verifiedText: { fontSize: 13, color: '#10B981', fontWeight: 'bold', marginLeft: 6 },
   badgeDivider: { color: '#CBD5E1', marginHorizontal: 8, fontSize: 16 },
   activeText: { fontSize: 13, color: '#475569', fontWeight: '600' },
-  
+
   agencyType: { fontSize: 14, color: '#64748B' },
-  
+
   editBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
   editBtnText: { color: NAVY, fontSize: 13, fontWeight: 'bold', marginLeft: 8 },
   editBtnMobile: { marginTop: 16, justifyContent: 'center', paddingVertical: 12 },
@@ -496,7 +496,7 @@ const styles = StyleSheet.create({
   contactInfo: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
   contactRow: { flexDirection: 'row', alignItems: 'center', minWidth: 200, marginRight: 16 },
   contactText: { fontSize: 14, color: '#475569', marginLeft: 10, fontWeight: '500' },
-  
+
   section: { marginTop: 24 },
   flexHalf: { flex: 1, marginTop: 0 },
   desktopRow: { flexDirection: 'row', gap: 24, marginTop: 24 },
@@ -536,7 +536,7 @@ const styles = StyleSheet.create({
   modalTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
   modalSubtitle: { fontSize: 13, color: '#64748B' },
   closeBtn: { padding: 4, borderRadius: 20, backgroundColor: '#F1F5F9' },
-  
+
   formGroup: { marginBottom: 16 },
   inputLabel: { fontSize: 13, fontWeight: '600', color: '#1E293B', marginBottom: 6 },
   inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, height: 48 },

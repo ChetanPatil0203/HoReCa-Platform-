@@ -51,22 +51,22 @@ export default function MarketingSupportScreen() {
   const renderContact = () => (
     <ScrollView style={styles.tabContent} contentContainerStyle={{padding: 16}}>
        <Text style={styles.sectionTitle}>Get in Touch</Text>
-       <View style={styles.contactCard}>
-          <Phone size={24} color="#8B5CF6" />
+        <View style={styles.contactCard}>
+          <Phone size={24} color="#071B3A" />
           <View style={styles.contactInfo}>
-            <Text style={styles.contactLabel}>Toll-Free Helpline</Text>
-            <Text style={styles.contactVal}>1800-123-4567</Text>
-            <Text style={styles.contactSub}>Mon - Sat, 9 AM to 6 PM</Text>
+            <Text style={styles.contactLabel}>Call Support</Text>
+            <Text style={styles.contactVal}>+91 98765 43210</Text>
+            <Text style={styles.contactSub}>Mon-Sat, 9 AM - 6 PM</Text>
           </View>
-       </View>
-       <View style={styles.contactCard}>
-          <Mail size={24} color="#8B5CF6" />
+        </View>
+        <View style={styles.contactCard}>
+          <Mail size={24} color="#071B3A" />
           <View style={styles.contactInfo}>
-            <Text style={styles.contactLabel}>Email Support</Text>
-            <Text style={styles.contactVal}>agencysupport@hrchub.com</Text>
-            <Text style={styles.contactSub}>Usually responds within 2 hours</Text>
+            <Text style={styles.contactLabel}>Email Us</Text>
+            <Text style={styles.contactVal}>support@hrechub.com</Text>
+            <Text style={styles.contactSub}>Response within 24 hours</Text>
           </View>
-       </View>
+        </View>
     </ScrollView>
   );
 
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
   tabWrapper: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', paddingVertical: 8 },
   tabScroll: { paddingHorizontal: 16, gap: 8 },
   tabChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 16, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' },
-  tabChipActive: { backgroundColor: '#8B5CF6', borderColor: '#8B5CF6' },
+  tabChipActive: { backgroundColor: '#071B3A', borderColor: '#071B3A' },
   tabText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
   tabTextActive: { color: '#fff' },
   tabContent: { flex: 1 },
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   badge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, gap: 4, marginLeft: 12 },
   badgeText: { fontSize: 10, fontWeight: 'bold' },
   
-  fab: { position: 'absolute', bottom: 24, right: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: '#8B5CF6', alignItems: 'center', justifyContent: 'center', elevation: 4, shadowColor: '#000', shadowOffset: {width: 0, height: 2}, shadowOpacity: 0.2, shadowRadius: 4 },
+  fab: { position: 'absolute', bottom: 24, right: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: '#071B3A', alignItems: 'center', justifyContent: 'center', elevation: 4, shadowColor: '#000', shadowOffset: {width: 0, height: 2}, shadowOpacity: 0.2, shadowRadius: 4 },
   
   // Modals
   modalContainer: { flex: 1, backgroundColor: '#F8FAFC' },
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: '#0F172A', marginBottom: 16, backgroundColor: '#fff' },
   textArea: { borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: '#0F172A', marginBottom: 16, backgroundColor: '#fff', textAlignVertical: 'top', minHeight: 120 },
   modalFooter: { padding: 16, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#E2E8F0' },
-  btnPrimaryFull: { flexDirection: 'row', backgroundColor: '#8B5CF6', paddingVertical: 14, borderRadius: 8, alignItems: 'center', justifyContent: 'center', gap: 8 },
+  btnPrimaryFull: { flexDirection: 'row', backgroundColor: '#071B3A', paddingVertical: 14, borderRadius: 8, alignItems: 'center', justifyContent: 'center', gap: 8 },
   btnPrimaryFullText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
   dropdownBtn: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 12, marginBottom: 16, backgroundColor: '#fff' },
   dropdownText: { fontSize: 14, color: '#0F172A' },

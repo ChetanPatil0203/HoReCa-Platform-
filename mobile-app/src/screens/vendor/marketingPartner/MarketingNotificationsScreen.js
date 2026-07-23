@@ -26,8 +26,8 @@ export default function MarketingNotificationsScreen({ setActivePage }) {
 
   const getIconForType = (type) => {
     switch (type) {
-      case 'New Broadcast Requirement': return <Megaphone size={20} color="#8B5CF6" />;
-      case 'New Direct Request': return <Send size={20} color="#8B5CF6" />;
+      case 'New Broadcast Requirement': return <Megaphone size={20} color="#071B3A" />;
+      case 'New Direct Request': return <Send size={20} color="#071B3A" />;
       case 'Proposal Viewed': return <Eye size={20} color="#3B82F6" />;
       case 'Proposal Accepted': return <ThumbsUp size={20} color="#10B981" />;
       case 'Proposal Rejected': return <XCircle size={20} color="#EF4444" />;
@@ -84,7 +84,7 @@ export default function MarketingNotificationsScreen({ setActivePage }) {
       <View style={styles.actionCol}>
         {!item.isRead && (
           <TouchableOpacity style={styles.actionBtn} onPress={() => markAsRead(item.id)}>
-            <Check size={18} color="#8B5CF6" />
+            <Check size={18} color="#071B3A" />
           </TouchableOpacity>
         )}
         <TouchableOpacity style={styles.actionBtn} onPress={() => deleteNotif(item.id)}>
@@ -106,7 +106,7 @@ export default function MarketingNotificationsScreen({ setActivePage }) {
           )}
         </View>
         <TouchableOpacity style={styles.markAllBtn} onPress={markAllRead}>
-          <Check size={16} color="#8B5CF6" />
+          <Check size={16} color="#071B3A" />
           <Text style={styles.markAllText}>Mark all read</Text>
         </TouchableOpacity>
       </View>
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F3FF', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, gap: 4,
   },
   markAllText: {
-    color: '#8B5CF6', fontWeight: 'bold', fontSize: 12,
+    color: '#071B3A', fontWeight: 'bold', fontSize: 12,
   },
   filterWrapper: {
     backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', paddingVertical: 8,
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 8, borderRadius: 16, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0',
   },
   filterChipActive: {
-    backgroundColor: '#8B5CF6', borderColor: '#8B5CF6',
+    backgroundColor: '#071B3A', borderColor: '#071B3A',
   },
   filterText: {
     fontSize: 13, fontWeight: '600', color: '#64748B',

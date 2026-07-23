@@ -5,7 +5,7 @@ import { AuthContext } from '../../../context/AuthContext';
 import { mockDb } from '../../../services/mockDb';
 
 const KPI_DATA = [
-  { label: "Active Campaigns", value: "3", delta: "+1 this month", icon: Megaphone, color: "#8B5CF6" },
+  { label: "Active Campaigns", value: "3", delta: "+1 this month", icon: Megaphone, color: "#071B3A" },
   { label: "Monthly Revenue", value: "₹1.2L", delta: "+34% vs last month", icon: TrendingUp, color: "#10B981" },
   { label: "Avg. Rating", value: "4.5 ★", delta: "From 38 reviews", icon: Star, color: "#F59E0B" },
   { label: "Client Retention", value: "86%", delta: "+4% this month", icon: Zap, color: "#2563EB" },
@@ -26,7 +26,7 @@ const STATUS_STYLES = {
   New: { bg: "#DBEAFE", color: "#2563EB" },
   Pending: { bg: "#FEF3C7", color: "#D97706" },
   Accepted: { bg: "#D1FAE5", color: "#059669" },
-  "Proposal Sent": { bg: "#F5F3FF", color: "#7C3AED" },
+  "Proposal Sent": { bg: "#E0F2FE", color: "#0369A1" },
 };
 
 export default function MarketingDashboardScreen() {
@@ -45,17 +45,17 @@ export default function MarketingDashboardScreen() {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
 
       {/* Welcome Banner */}
-      <View style={[styles.welcomeBanner, { backgroundColor: "#F5F3FF", borderColor: "#DDD6FE" }]}>
-        <View style={[styles.bannerIconBox, { backgroundColor: "#F5F3FF", borderColor: "#DDD6FE", shadowColor: "#8B5CF6" }]}>
-          <Megaphone size={24} color="#8B5CF6" />
+      <View style={[styles.welcomeBanner, { backgroundColor: "#E0F2FE", borderColor: "#B9E6FE" }]}>
+        <View style={[styles.bannerIconBox, { backgroundColor: "#E0F2FE", borderColor: "#B9E6FE", shadowColor: "#071B3A" }]}>
+          <Megaphone size={24} color="#071B3A" />
         </View>
         <View style={styles.bannerContent}>
           <Text style={styles.bannerTitle}>Welcome back, Partner</Text>
           <Text style={styles.bannerSub}>Marketing Agency · BrandCraft Agency</Text>
         </View>
-        <View style={[styles.activePill, { backgroundColor: "#F5F3FF", borderColor: "#DDD6FE" }]}>
-          <View style={[styles.activeDot, { backgroundColor: "#8B5CF6" }]} />
-          <Text style={[styles.activePillText, { color: "#8B5CF6" }]}>Active</Text>
+        <View style={[styles.activePill, { backgroundColor: "#E0F2FE", borderColor: "#B9E6FE" }]}>
+          <View style={[styles.activeDot, { backgroundColor: "#071B3A" }]} />
+          <Text style={[styles.activePillText, { color: "#071B3A" }]}>Active</Text>
         </View>
       </View>
 
@@ -86,7 +86,7 @@ export default function MarketingDashboardScreen() {
               <Text style={styles.cardTitle}>Revenue Trend</Text>
               <Text style={styles.cardSub}>Monthly (₹ Lakhs)</Text>
             </View>
-            <TouchableOpacity onPress={() => Alert.alert('Coming Soon', 'This feature is under development.')}><Text style={[styles.viewAllText, { color: "#8B5CF6" }]}>View All →</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => Alert.alert('Coming Soon', 'This feature is under development.')}><Text style={[styles.viewAllText, { color: "#071B3A" }]}>View All →</Text></TouchableOpacity>
           </View>
 
           <View style={styles.chartBars}>
@@ -95,7 +95,7 @@ export default function MarketingDashboardScreen() {
               const isLast = i === REVENUE_DATA.length - 1;
               return (
                 <View key={d.month} style={styles.barCol}>
-                  <View style={[styles.barFill, { height: `${pct}%`, backgroundColor: isLast ? "#8B5CF6" : "#8B5CF628" }]} />
+                  <View style={[styles.barFill, { height: `${pct}%`, backgroundColor: isLast ? "#071B3A" : "#071B3A28" }]} />
                 </View>
               )
             })}
@@ -107,7 +107,7 @@ export default function MarketingDashboardScreen() {
           <View style={styles.revFooter}>
             <View>
               <Text style={styles.revFooterLabel}>This Month</Text>
-              <Text style={[styles.revFooterVal, { color: "#8B5CF6" }]}>₹1.2L</Text>
+              <Text style={[styles.revFooterVal, { color: "#071B3A" }]}>₹1.2L</Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
               <Text style={styles.revFooterLabel}>Growth</Text>
@@ -120,20 +120,20 @@ export default function MarketingDashboardScreen() {
         <View style={styles.ordersCard}>
           <View style={[styles.cardHeaderRow, { borderBottomWidth: 1, borderBottomColor: '#F1F5F9', paddingBottom: 16 }]}>
             <Text style={styles.cardTitle}>Recent Orders</Text>
-            <TouchableOpacity><Text style={[styles.viewAllText, { color: "#8B5CF6" }]}>View Requests →</Text></TouchableOpacity>
+            <TouchableOpacity><Text style={[styles.viewAllText, { color: "#071B3A" }]}>View Requests →</Text></TouchableOpacity>
           </View>
           <View style={styles.ordersList}>
             {displayOrders.slice(0, 4).map(o => {
               const s = STATUS_STYLES[o.status] || STATUS_STYLES["Pending"];
               return (
                 <TouchableOpacity key={o.id} style={styles.orderItem}>
-                  <View style={[styles.orderItemLine, { backgroundColor: "#8B5CF6" }]} />
+                  <View style={[styles.orderItemLine, { backgroundColor: "#071B3A" }]} />
                   <View style={styles.orderItemInfo}>
                     <Text style={styles.orderItemTitle}>{o.title}</Text>
                     <Text style={styles.orderItemSub}>{o.client || 'The Meridian Hotels'} · {o.date}</Text>
                   </View>
                   <View style={styles.orderItemRight}>
-                    <Text style={[styles.orderItemVal, { color: "#8B5CF6" }]}>{o.amount || o.value}</Text>
+                    <Text style={[styles.orderItemVal, { color: "#071B3A" }]}>{o.amount || o.value}</Text>
                     <View style={[styles.statusBadge, { backgroundColor: s.bg }]}>
                       <Text style={[styles.statusText, { color: s.color }]}>{o.status}</Text>
                     </View>

@@ -23,7 +23,7 @@ import MarketingSupportScreen from './MarketingSupportScreen';
 import MarketingFeedWallScreen from './MarketingFeedWallScreen';
 
 const NAVY = '#071B3A';
-const PURPLE = '#8B5CF6';
+const PURPLE = '#071B3A';
 
 export default function MarketingDashboard() {
   const { width } = useWindowDimensions();
@@ -244,6 +244,6 @@ const styles = StyleSheet.create({
   
   floatingMenu: { position: 'absolute', bottom: 100, left: 16, right: 16, flexDirection: 'row', justifyContent: 'center', gap: 12, zIndex: 100 },
   floatingMenuItem: { backgroundColor: '#FFF', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 8 },
-  floatingMenuIconBox: { backgroundColor: '#F5F3FF', width: 28, height: 28, borderRadius: 6, justifyContent: 'center', alignItems: 'center', marginRight: 8 },
+  floatingMenuIconBox: { backgroundColor: '#E0F2FE', width: 28, height: 28, borderRadius: 6, justifyContent: 'center', alignItems: 'center', marginRight: 8 },
   floatingMenuText: { fontSize: 13, fontWeight: 'bold', color: NAVY },
 });

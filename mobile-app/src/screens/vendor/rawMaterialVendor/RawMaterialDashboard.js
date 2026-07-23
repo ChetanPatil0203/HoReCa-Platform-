@@ -11,6 +11,7 @@ import RawMaterialDeliveriesPage from './RawMaterialDeliveriesPage';
 import RawMaterialRevenuePage from './RawMaterialRevenuePage';
 import RawMaterialInventoryPage from './RawMaterialInventoryPage';
 import RawMaterialProfilePage from './RawMaterialProfilePage';
+import RawMaterialHistoryPage from './RawMaterialHistoryPage';
 
 // Supporting Pages
 import RawMaterialNotificationsPage from './RawMaterialNotificationsPage';
@@ -18,7 +19,7 @@ import RawMaterialSettingsPage from './RawMaterialSettingsPage';
 import RawMaterialSupportPage from './RawMaterialSupportPage';
 
 const PRIMARY = '#0B1736';
-const ACCENT = '#6C4CF6';
+const ACCENT = '#0B1736';
 const BG = '#F8FAFC';
 const WHITE = '#FFFFFF';
 
@@ -72,6 +73,8 @@ export default function RawMaterialDashboard() {
         return <RawMaterialSupportPage />;
       case "profile":
         return <RawMaterialProfilePage />;
+      case "history":
+        return <RawMaterialHistoryPage />;
       default: return <View style={styles.placeholder}><Text style={styles.placeholderText}>{activePage} Under Construction</Text></View>;
     }
   };

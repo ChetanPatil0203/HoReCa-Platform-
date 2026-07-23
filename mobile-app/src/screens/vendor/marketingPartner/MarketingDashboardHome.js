@@ -6,7 +6,7 @@ import {
 } from 'lucide-react-native';
 
 const NAVY = '#071B3A';
-const PURPLE = '#8B5CF6';
+const PURPLE = '#071B3A';
 const BLUE = '#3B82F6';
 const GREEN = '#10B981';
 const ORANGE = '#F59E0B';

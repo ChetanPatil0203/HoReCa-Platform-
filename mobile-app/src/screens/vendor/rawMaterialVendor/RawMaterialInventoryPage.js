@@ -49,6 +49,10 @@ export default function RawMaterialInventoryPage() {
   const [activeFilter, setActiveFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState(MOCK_INVENTORY);
+  const [searchActive, setSearchActive] = useState(false);
+  const [filterVisible, setFilterVisible] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [tempCategoryFilter, setTempCategoryFilter] = useState('All');
   
   // Modals & Menus
   const [activeMenuId, setActiveMenuId] = useState(null);
@@ -66,6 +70,7 @@ export default function RawMaterialInventoryPage() {
   // Derived state
   const filteredProducts = products.filter(p => {
     if (activeFilter !== 'All' && p.status !== activeFilter) return false;
+    if (categoryFilter !== 'All' && p.category !== categoryFilter) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       if (!p.name.toLowerCase().includes(q) && !p.sku.toLowerCase().includes(q) && !p.category.toLowerCase().includes(q)) return false;
@@ -278,8 +283,8 @@ export default function RawMaterialInventoryPage() {
               <Text style={styles.pageSubtitle}>Manage products, stock levels and pricing</Text>
             </View>
             <View style={styles.pageHeaderActions}>
-              <TouchableOpacity style={styles.iconBtn}><Search size={22} color={NAVY} /></TouchableOpacity>
-              <TouchableOpacity style={styles.iconBtn}><SlidersHorizontal size={22} color={NAVY} /></TouchableOpacity>
+              <TouchableOpacity style={styles.iconBtn} onPress={() => setSearchActive(!searchActive)}><Search size={22} color={NAVY} /></TouchableOpacity>
+              <TouchableOpacity style={styles.iconBtn} onPress={() => setFilterVisible(true)}><SlidersHorizontal size={22} color={NAVY} /></TouchableOpacity>
               {!isMobile && (
                 <TouchableOpacity style={styles.btnAddProductDesktop} onPress={() => setAddProductModalVisible(true)}>
                   <PackagePlus size={18} color={WHITE} style={{marginRight: 6}} />
@@ -340,15 +345,20 @@ export default function RawMaterialInventoryPage() {
 
           {/* Search and Filters */}
           <View style={styles.searchFilterContainer}>
-            <View style={styles.searchBox}>
-              <Search size={18} color={MUTED} style={{marginRight: 8}} />
-              <TextInput 
-                style={styles.searchInput} 
-                placeholder="Search products by name, SKU or category..." 
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-            </View>
+            {searchActive && (
+              <View style={styles.searchBox}>
+                <Search size={18} color={MUTED} style={{marginRight: 8}} />
+                <TextInput 
+                  style={styles.searchInput} 
+                  placeholder="Search products by name, SKU or category..." 
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+                {searchQuery !== '' && (
+                  <TouchableOpacity onPress={() => setSearchQuery('')}><XCircle size={16} color={MUTED} /></TouchableOpacity>
+                )}
+              </View>
+            )}
             <View style={styles.tabsContainer}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsScroll}>
                 {STATUS_CHIPS.map(chip => (
@@ -606,6 +616,37 @@ export default function RawMaterialInventoryPage() {
         </TouchableWithoutFeedback>
       </Modal>
 
+      {/* Filter Bottom Sheet */}
+      <Modal visible={filterVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlayBottom}>
+          <View style={[styles.bottomSheet, {height: 'auto', paddingBottom: 40}]}>
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>Filters</Text>
+              <TouchableOpacity onPress={() => setFilterVisible(false)}><XCircle size={24} color={MUTED} /></TouchableOpacity>
+            </View>
+            <View style={styles.sheetBody}>
+              <Text style={styles.inputLabel}>Category</Text>
+              <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20}}>
+                {['All', ...CATEGORIES].map(cat => (
+                  <TouchableOpacity 
+                    key={cat} 
+                    style={[styles.filterChip, tempCategoryFilter === cat && styles.filterChipActive]} 
+                    onPress={() => setTempCategoryFilter(cat)}
+                  >
+                    <Text style={[styles.filterChipText, tempCategoryFilter === cat && styles.filterChipTextActive]}>{cat}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={styles.modalFooterActions}>
+                <TouchableOpacity style={styles.btnModalOutline} onPress={() => { setTempCategoryFilter('All'); setCategoryFilter('All'); setFilterVisible(false); }}><Text style={styles.btnModalOutlineText}>Clear Filters</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.btnModalPrimary} onPress={() => { setCategoryFilter(tempCategoryFilter); setFilterVisible(false); }}><Text style={styles.btnModalPrimaryText}>Apply Filters</Text></TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -727,4 +768,12 @@ const styles = StyleSheet.create({
   
   lowStockWarning: { flexDirection: 'row', backgroundColor: '#FFFBEB', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#FEF3C7', marginBottom: 16, alignItems: 'center' },
   lowStockWarningText: { fontSize: 13, fontWeight: 'bold', color: '#B45309' },
+  modalOverlayBottom: { flex: 1, backgroundColor: 'rgba(3, 15, 38, 0.55)', justifyContent: 'flex-end' },
+  bottomSheet: { backgroundColor: WHITE, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' },
+  sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  sheetTitle: { fontSize: 16, fontWeight: '800', color: NAVY },
+  sheetBody: { padding: 20 },
+  filterChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', marginRight: 8, marginBottom: 8 },
+  filterChipActive: { backgroundColor: NAVY, borderColor: NAVY },
+  filterChipTextActive: { color: WHITE },
 });

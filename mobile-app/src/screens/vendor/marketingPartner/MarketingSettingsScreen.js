@@ -34,10 +34,10 @@ export default function MarketingSettingsScreen() {
     return (
       <TouchableOpacity style={[styles.sectionHeader, isActive && styles.sectionHeaderActive]} onPress={() => toggleSection(secName)}>
          <View style={{flexDirection: 'row', alignItems: 'center', gap: 12}}>
-            <Icon size={20} color={isActive ? '#8B5CF6' : '#64748B'} />
-            <Text style={[styles.sectionTitle, isActive && {color: '#8B5CF6'}]}>{title}</Text>
+            <Icon size={20} color={isActive ? '#071B3A' : '#64748B'} />
+            <Text style={[styles.sectionTitle, isActive && {color: '#071B3A'}]}>{title}</Text>
          </View>
-         {isActive ? <ChevronUp size={20} color="#8B5CF6" /> : <ChevronDown size={20} color="#94A3B8" />}
+         {isActive ? <ChevronUp size={20} color="#071B3A" /> : <ChevronDown size={20} color="#94A3B8" />}
       </TouchableOpacity>
     );
   };
@@ -108,7 +108,7 @@ export default function MarketingSettingsScreen() {
                  <View key={idx} style={styles.docRow}>
                     <Text style={styles.docName}>{doc}</Text>
                     <TouchableOpacity style={styles.btnOutlineSmall}>
-                       <UploadCloud size={14} color="#8B5CF6"/>
+                       <UploadCloud size={14} color="#071B3A"/>
                        <Text style={styles.btnOutlineSmallText}>Upload</Text>
                     </TouchableOpacity>
                  </View>
@@ -193,17 +193,17 @@ const styles = StyleSheet.create({
   segmentBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 6 },
   segmentBtnActive: { backgroundColor: '#fff', elevation: 1, shadowColor: '#000', shadowOffset: {width: 0, height: 1}, shadowOpacity: 0.1, shadowRadius: 1 },
   segmentText: { fontSize: 13, color: '#64748B', fontWeight: '500' },
-  segmentTextActive: { color: '#8B5CF6', fontWeight: 'bold' },
+  segmentTextActive: { color: '#071B3A', fontWeight: 'bold' },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, marginBottom: 8 },
   switchLabel: { fontSize: 14, color: '#334155', fontWeight: '500' },
   switchSub: { fontSize: 11, color: '#64748B', marginTop: 2, maxWidth: '80%' },
   docRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   docName: { fontSize: 14, color: '#334155', fontWeight: '500', flex: 1 },
-  btnOutlineSmall: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: '#8B5CF6', backgroundColor: '#F5F3FF', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6 },
-  btnOutlineSmallText: { fontSize: 12, color: '#8B5CF6', fontWeight: 'bold' },
-  btnPrimary: { backgroundColor: '#8B5CF6', paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
+  btnOutlineSmall: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: '#071B3A', backgroundColor: '#E0F2FE', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6 },
+  btnOutlineSmallText: { fontSize: 12, color: '#071B3A', fontWeight: 'bold' },
+  btnPrimary: { backgroundColor: '#071B3A', paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
   btnPrimaryText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
   footer: { padding: 16, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#E2E8F0' },
-  btnPrimaryFull: { flexDirection: 'row', backgroundColor: '#8B5CF6', paddingVertical: 14, borderRadius: 8, alignItems: 'center', justifyContent: 'center', gap: 8 },
+  btnPrimaryFull: { flexDirection: 'row', backgroundColor: '#071B3A', paddingVertical: 14, borderRadius: 8, alignItems: 'center', justifyContent: 'center', gap: 8 },
   btnPrimaryFullText: { color: '#fff', fontWeight: 'bold', fontSize: 15 }
 });

@@ -139,7 +139,7 @@ export default function MarketingRequestsScreen({ setActivePage, handleSendPropo
     switch(status) {
       case 'New': return { bg: '#E0F2FE', text: '#0369A1' }; // Soft blue
       case 'Viewed': return { bg: '#F1F5F9', text: '#475569' }; // Soft gray-blue
-      case 'Proposal Sent': return { bg: '#F3E8FF', text: '#7E22CE' }; // Soft purple
+      case 'Proposal Sent': return { bg: '#E0F2FE', text: '#0369A1' }; // Soft blue
       case 'Accepted': return { bg: '#DCFCE7', text: '#15803D' }; // Soft green
       case 'Declined': return { bg: '#FEE2E2', text: '#B91C1C' }; // Soft red
       case 'Closed': return { bg: '#F3F4F6', text: '#4B5563' }; // Soft gray
@@ -568,7 +568,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3E8FF', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6,
   },
   badgeDirectText: {
-    color: '#7E22CE', fontSize: 10, fontWeight: '700',
+    color: '#071B3A', fontSize: 10, fontWeight: '700',
   },
   statusBadge: {
     paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6,
@@ -613,7 +613,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 8,
   },
   btnPrimary: {
-    backgroundColor: '#7E22CE', paddingHorizontal: 16, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', flexDirection: 'row',
+    backgroundColor: '#071B3A', paddingHorizontal: 16, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', flexDirection: 'row',
   },
   btnPrimaryText: {
     color: '#fff', fontWeight: '600', fontSize: 14,
@@ -684,7 +684,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', padding: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9', gap: 12,
   },
   btnPrimaryModal: {
-    flex: 1, backgroundColor: '#7E22CE', height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center',
+    flex: 1, backgroundColor: '#071B3A', height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center',
   },
   btnOutlineModal: {
     flex: 1, backgroundColor: '#fff', borderWidth: 1, borderColor: '#CBD5E1', height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center',
@@ -737,10 +737,10 @@ const styles = StyleSheet.create({
     width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: '#CBD5E1', justifyContent: 'center', alignItems: 'center', marginRight: 12,
   },
   radioOuterSelected: {
-    borderColor: '#7E22CE',
+    borderColor: '#071B3A',
   },
   radioInner: {
-    width: 10, height: 10, borderRadius: 5, backgroundColor: '#7E22CE',
+    width: 10, height: 10, borderRadius: 5, backgroundColor: '#071B3A',
   },
   radioText: {
     fontSize: 14, color: '#1E293B',

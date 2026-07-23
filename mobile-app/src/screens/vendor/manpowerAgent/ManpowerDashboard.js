@@ -16,7 +16,7 @@ import ManpowerHistoryPage from './ManpowerHistoryPage';
 import ManpowerProfilePage from './ManpowerProfilePage';
 
 const PRIMARY = '#081A3A';
-const ACCENT = '#6C4CF6';
+const ACCENT = '#081A3A';
 const BG = '#F3F4F6';
 const WHITE = '#FFFFFF';
 
@@ -49,14 +49,20 @@ export default function ManpowerDashboard() {
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      "Logout",
-      "Are you sure you want to logout?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Logout", style: "destructive", onPress: () => logout() }
-      ]
-    );
+    if (Platform.OS === 'web') {
+      if (window.confirm("Are you sure you want to logout?")) {
+        logout();
+      }
+    } else {
+      Alert.alert(
+        "Logout",
+        "Are you sure you want to logout?",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Logout", style: "destructive", onPress: () => logout() }
+        ]
+      );
+    }
   };
 
   const renderActivePage = () => {
@@ -182,7 +188,7 @@ export default function ManpowerDashboard() {
             </View>
 
             <View style={styles.navRight}>
-              <TouchableOpacity style={styles.iconBtn}>
+              <TouchableOpacity style={styles.iconBtn} onPress={() => navigateTo('notifications')}>
                 <Bell size={20} color={colors.sub} />
                 <View style={styles.notificationDot} />
               </TouchableOpacity>

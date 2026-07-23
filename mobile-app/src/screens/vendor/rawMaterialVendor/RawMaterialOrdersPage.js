@@ -11,7 +11,7 @@ import {
 } from 'lucide-react-native';
 
 const NAVY = '#0A192F';
-const GOLD = '#F6B800';
+const GOLD = '#0A192F';
 const BG = '#F8FAFC';
 const WHITE = '#FFFFFF';
 const MUTED = '#64748B';
@@ -240,8 +240,8 @@ export default function RawMaterialOrdersPage() {
               style={[styles.primaryActionBtn, item.status === 'New' && {backgroundColor: GOLD}]}
               onPress={() => handlePrimaryAction(item)}
             >
-              {item.status === 'New' && <CheckCircle size={16} color={NAVY} style={{marginRight: 6}} />}
-              <Text style={[styles.primaryActionText, item.status === 'New' && {color: NAVY}]}>{primaryText}</Text>
+              {item.status === 'New' && <CheckCircle size={16} color={WHITE} style={{marginRight: 6}} />}
+              <Text style={[styles.primaryActionText, item.status === 'New' && {color: WHITE}]}>{primaryText}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -367,7 +367,7 @@ export default function RawMaterialOrdersPage() {
             )}
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.btnOutline} onPress={closeAllModals}><Text style={styles.btnOutlineText}>Cancel</Text></TouchableOpacity>
-              <TouchableOpacity style={[styles.btnPrimary, {backgroundColor: GOLD}]} onPress={() => updateOrderStatus('Accepted')}><Text style={[styles.btnPrimaryText, {color: NAVY}]}>Accept Order</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.btnPrimary} onPress={() => updateOrderStatus('Accepted')}><Text style={styles.btnPrimaryText}>Accept Order</Text></TouchableOpacity>
             </View>
           </View>
         </View>
@@ -562,9 +562,9 @@ const styles = StyleSheet.create({
   tab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: WHITE, borderWidth: 1, borderColor: '#E2E8F0' },
   tabActive: { backgroundColor: GOLD, borderColor: GOLD, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
   tabText: { fontSize: 14, fontWeight: '600', color: MUTED },
-  tabTextActive: { color: NAVY, fontWeight: '700' },
+  tabTextActive: { color: WHITE, fontWeight: '700' },
   tabCount: { fontSize: 12, fontWeight: '600', color: MUTED },
-  tabCountActive: { color: NAVY },
+  tabCountActive: { color: WHITE },
 
   // List
   listContent: { paddingHorizontal: 16, paddingBottom: 24, flexGrow: 1, gap: 12 },

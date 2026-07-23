@@ -57,7 +57,7 @@ export default function MarketingProposalsScreen({ setActivePage }) {
       case 'Proposal Sent': 
       case 'Under Review':
       case 'Sent':
-        return { bg: '#F3E8FF', text: '#7E22CE' }; // Soft purple
+        return { bg: '#E0F2FE', text: '#0369A1' }; // Soft blue
       case 'Accepted': return { bg: '#DCFCE7', text: '#15803D' }; // Soft green
       case 'Declined': 
       case 'Rejected':
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 8,
   },
   btnPrimary: {
-    backgroundColor: '#7E22CE', paddingHorizontal: 16, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', flexDirection: 'row',
+    backgroundColor: '#071B3A', paddingHorizontal: 16, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', flexDirection: 'row',
   },
   btnPrimaryText: {
     color: '#fff', fontWeight: '600', fontSize: 14,

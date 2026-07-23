@@ -17,9 +17,10 @@ import ProviderSupportPage from './ProviderSupportPage';
 import ProviderSettingsPage from './ProviderSettingsPage';
 import ProviderProfilePage from './ProviderProfilePage';
 import ProviderFeedWallPage from './ProviderFeedWallPage';
+import ProviderHistoryPage from './ProviderHistoryPage';
 
 const PRIMARY = '#081A3A';
-const ACCENT = '#6C4CF6';
+const ACCENT = '#081A3A';
 const BG = '#F3F4F6';
 const WHITE = '#FFFFFF';
 
@@ -72,7 +73,7 @@ export default function ProviderDashboard() {
       case "requests": return <ProviderRequestsPage />;
       case "services": return <ProviderServicesPage />;
       case "jobs": return <ProviderJobsPage />;
-      case "history": return <View style={styles.placeholder}><Text style={styles.placeholderText}>History Under Construction</Text></View>;
+      case "history": return <ProviderHistoryPage />;
       case "notifications": return <ProviderNotificationsPage />;
       case "support": return <ProviderSupportPage />;
       case "settings": return <ProviderSettingsPage />;

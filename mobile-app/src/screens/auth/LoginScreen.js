@@ -20,12 +20,12 @@ export default function LoginScreen({ navigation }) {
 
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
-  
+
   const [demoModalVisible, setDemoModalVisible] = useState(false);
-  
+
   const { login } = useContext(AuthContext);
 
   const validate = () => {
@@ -55,7 +55,7 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = () => {
     if (!validate()) return;
-    
+
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
@@ -79,7 +79,7 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <AuthScreenWrapper>
-      
+
       {/* Brand Identity */}
       <View style={styles.brandContainer}>
         <View style={styles.brandIconBox}>
@@ -94,14 +94,14 @@ export default function LoginScreen({ navigation }) {
 
       <AuthCard>
         <AuthTabs activeTab="login" onTabChange={(tab) => tab === 'register' && navigation.navigate('RegisterStepOne')} />
-        
+
         {/* Login Introduction */}
         <Text style={styles.heading}>Welcome back</Text>
         <Text style={styles.subtitle}>Enter your credentials to access your HRC HUB business account.</Text>
 
-        <FormField 
-          label="EMAIL ADDRESS *" 
-          icon={Mail} 
+        <FormField
+          label="EMAIL ADDRESS *"
+          icon={Mail}
           placeholder="business@email.com"
           keyboardType="email-address"
           autoCapitalize="none"
@@ -112,8 +112,8 @@ export default function LoginScreen({ navigation }) {
           error={emailError}
         />
 
-        <PasswordField 
-          label="PASSWORD *" 
+        <PasswordField
+          label="PASSWORD *"
           placeholder="Enter your password"
           returnKeyType="done"
           value={password}
@@ -134,11 +134,11 @@ export default function LoginScreen({ navigation }) {
           </View>
         )}
 
-        <PrimaryButton 
-          title={isLoading ? "SIGNING IN..." : "SIGN IN"} 
-          icon={isLoading ? null : ArrowRight} 
-          onPress={handleLogin} 
-          loading={isLoading} 
+        <PrimaryButton
+          title={isLoading ? "SIGNING IN..." : "SIGN IN"}
+          icon={isLoading ? null : ArrowRight}
+          onPress={handleLogin}
+          loading={isLoading}
           disabled={!isFormValid()}
         />
 
@@ -149,8 +149,8 @@ export default function LoginScreen({ navigation }) {
         </View>
 
         {/* Demo Access Button */}
-        <TouchableOpacity 
-          style={styles.demoBtn} 
+        <TouchableOpacity
+          style={styles.demoBtn}
           onPress={() => setDemoModalVisible(true)}
           activeOpacity={0.7}
           accessibilityRole="button"
@@ -203,22 +203,22 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  brandContainer: { 
-    alignItems: 'center', 
-    marginBottom: 24, 
-    marginTop: 16, 
+  brandContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+    marginTop: 16,
     backgroundColor: AUTH_COLORS.primary,
     paddingVertical: 18,
     paddingHorizontal: 32,
     borderRadius: 20
   },
-  brandIconBox: { 
-    backgroundColor: 'rgba(255,255,255,0.1)', 
-    width: 44, 
-    height: 44, 
-    borderRadius: 12, 
-    alignItems: 'center', 
-    justifyContent: 'center', 
+  brandIconBox: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 10
   },
   brandName: { fontSize: 20, fontWeight: '900', letterSpacing: 0.5, marginBottom: 2 },
@@ -226,17 +226,17 @@ const styles = StyleSheet.create({
 
   heading: { fontSize: 26, fontWeight: 'bold', color: AUTH_COLORS.primary, marginBottom: 8, marginTop: 24 },
   subtitle: { fontSize: 14, color: AUTH_COLORS.muted, marginBottom: 24, lineHeight: 20 },
-  
+
   forgotLink: { alignSelf: 'flex-end', paddingVertical: 4, paddingHorizontal: 4, marginBottom: 20, marginTop: 2 },
   forgotText: { fontSize: 13, fontWeight: '600', color: AUTH_COLORS.primary },
-  
+
   errorBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF7ED', padding: 12, borderRadius: 12, marginBottom: 16, borderWidth: 1, borderColor: '#FFEDD5' },
   errorBannerText: { fontSize: 13, color: '#C2410C', fontWeight: '500', flex: 1 },
 
   dividerRow: { flexDirection: 'row', alignItems: 'center', marginTop: 24, marginBottom: 20 },
   dividerLine: { flex: 1, height: 1, backgroundColor: AUTH_COLORS.border },
   dividerText: { marginHorizontal: 16, fontSize: 13, color: AUTH_COLORS.muted, fontWeight: 'bold' },
-  
+
   demoBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%', height: 50, backgroundColor: AUTH_COLORS.input, borderWidth: 1, borderColor: AUTH_COLORS.border, borderRadius: 14 },
   demoBtnText: { fontSize: 14, fontWeight: 'bold', color: AUTH_COLORS.text },
   demoHelper: { fontSize: 12, color: AUTH_COLORS.muted, textAlign: 'center', marginTop: 8, marginBottom: 24 },
