@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions } from 'react-native';
-import { ArrowLeft, CheckCircle, Upload, Image as ImageIcon, MapPin, Calendar, Clock, DollarSign, Briefcase } from 'lucide-react-native';
+import { ArrowLeft, CheckCircle, MapPin, Calendar, Clock, DollarSign, Briefcase } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 
 const NAVY = '#0E2042';
@@ -164,13 +164,7 @@ export default function DirectRequirementPage({ provider, onBack, onHome }) {
               </View>
             </View>
 
-            <View style={styles.uploadSection}>
-              <View style={styles.uploadBox}>
-                <ImageIcon size={24} color="#64748B" style={styles.uploadIcon} />
-                <Text style={styles.uploadTitle}>Upload Images</Text>
-                <Text style={styles.uploadSubtitle}>Optional</Text>
-              </View>
-            </View>
+
 
             <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
               <Text style={styles.submitBtnText}>Submit Direct Requirement</Text>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions } from 'react-native';
-import { ArrowLeft, CheckCircle, Upload, Image as ImageIcon, FileText, MapPin, Calendar, Clock, DollarSign, Briefcase } from 'lucide-react-native';
+import { ArrowLeft, CheckCircle, MapPin, Calendar, Clock, DollarSign, Briefcase } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 
 const NAVY = '#0E2042';
@@ -225,19 +225,7 @@ export default function BroadcastRequirementPage({ onBack, onViewRequests }) {
               </View>
             </View>
 
-            {/* Uploads */}
-            <View style={styles.uploadSection}>
-              <View style={styles.uploadBox}>
-                <ImageIcon size={24} color="#64748B" style={styles.uploadIcon} />
-                <Text style={styles.uploadTitle}>Upload Images</Text>
-                <Text style={styles.uploadSubtitle}>PNG, JPG up to 5MB</Text>
-              </View>
-              <View style={styles.uploadBox}>
-                <FileText size={24} color="#64748B" style={styles.uploadIcon} />
-                <Text style={styles.uploadTitle}>Upload Documents</Text>
-                <Text style={styles.uploadSubtitle}>PDF, DOCX up to 10MB</Text>
-              </View>
-            </View>
+
 
             <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
               <Text style={styles.submitBtnText}>Submit Requirement</Text>
