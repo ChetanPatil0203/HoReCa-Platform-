@@ -6,26 +6,7 @@ import { colors } from '../../../theme/colors';
 const NAVY = '#0E2042';
 const GOLD = '#D4AF37';
 
-const MOCK_RESPONSES = [
-  { 
-    id: 'RESP-01', agencyName: 'Creative Minds', rating: 4.9, verified: true, 
-    budget: '₹45,000/mo', reach: '500K - 1M Impressions', timeline: '3 Months', 
-    strategy: 'Focus on Meta Ads with influencer tie-ups for initial push.', 
-    roi: '3.5x - 4x'
-  },
-  { 
-    id: 'RESP-02', agencyName: 'BrandBoosters', rating: 5.0, verified: true, 
-    budget: '₹60,000/mo', reach: '1M+ Impressions', timeline: 'Ongoing', 
-    strategy: 'Aggressive Google Search Ads + Instagram Reels organic push.', 
-    roi: '5x'
-  },
-  { 
-    id: 'RESP-03', agencyName: 'Digital Dynamics', rating: 4.7, verified: true, 
-    budget: '₹30,000/mo', reach: '200K Impressions', timeline: '1 Month', 
-    strategy: 'Local SEO and hyper-local Facebook ads.', 
-    roi: '2x'
-  }
-];
+const MOCK_RESPONSES = [];
 
 export default function AgencyResponsesPage({ request, onBack, onCompare, onAccept }) {
   const { width } = useWindowDimensions();

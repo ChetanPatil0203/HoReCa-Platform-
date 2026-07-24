@@ -5,10 +5,10 @@ import { colors } from '../../theme/colors';
 
 // MOCK DATA
 const METRICS = [
-  { label: "Total Spend (MTD)", value: "₹2.4L", trend: "+12%", up: true, color: "#3B7FE0" },
-  { label: "Active Suppliers", value: "14", trend: "+2", up: true, color: "#0FA668" },
-  { label: "Avg Delivery Time", value: "2.4 hrs", trend: "-15m", up: true, color: "#9B5CF6" },
-  { label: "Rejected Orders", value: "2", trend: "-1", up: true, color: "#D4940A" },
+  { label: "Total Spend (MTD)", value: "₹0", trend: "0%", up: true, color: "#3B7FE0" },
+  { label: "Active Suppliers", value: "0", trend: "0", up: true, color: "#0FA668" },
+  { label: "Avg Delivery Time", value: "0 hrs", trend: "0m", up: true, color: "#9B5CF6" },
+  { label: "Rejected Orders", value: "0", trend: "0", up: true, color: "#D4940A" },
 ];
 
 export default function AnalyticsPage() {
@@ -54,10 +54,10 @@ export default function AnalyticsPage() {
           
           <View style={styles.barChartArea}>
             {[
-              { label: "Raw Material", val: 80, color: "#D4940A", amt: "₹1.2L" },
-              { label: "Manpower", val: 60, color: "#3B7FE0", amt: "₹45K" },
-              { label: "Services", val: 40, color: "#0FA668", amt: "₹30K" },
-              { label: "Marketing", val: 50, color: "#9B5CF6", amt: "₹45K" }
+              { label: "Raw Material", val: 0, color: "#D4940A", amt: "₹0" },
+              { label: "Manpower", val: 0, color: "#3B7FE0", amt: "₹0" },
+              { label: "Services", val: 0, color: "#0FA668", amt: "₹0" },
+              { label: "Marketing", val: 0, color: "#9B5CF6", amt: "₹0" }
             ].map(b => (
               <View key={b.label} style={styles.barRow}>
                 <View style={styles.barLabelCol}>

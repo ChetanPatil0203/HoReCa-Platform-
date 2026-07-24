@@ -48,18 +48,12 @@ const PAGE_TITLES = {
 export default function OwnerDashboard() {
   const { width } = useWindowDimensions();
   const isLargeScreen = width >= 768;
-  const { logout } = useContext(AuthContext);
+  const { user: ctxUser, logout } = useContext(AuthContext);
+  const user = ctxUser || { name: "", businessName: "", businessType: "" };
 
   const [activePage, setActivePage] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-
-  // Hardcoded mock user for now (will come from AuthContext later)
-  const user = {
-    name: "Arjun Mehta",
-    businessName: "The Meridian Hotel",
-    businessType: "hotel"
-  };
 
   const renderActivePage = () => {
     switch (activePage) {

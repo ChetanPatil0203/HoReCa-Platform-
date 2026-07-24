@@ -23,33 +23,7 @@ const WHITE = '#FFFFFF';
 const MUTED = '#94A3B8';
 const LIGHT_BG = '#F8FAFC';
 
-// Mock Data
-const MOCK_TEAM = [
-  { 
-    id: 'EMP-01', initials: 'AK', name: 'Aarav Kumar', role: 'Campaign Manager', 
-    skills: ['Strategy', 'Client Handling', 'Planning'], 
-    availability: 'Assigned', 
-    campaigns: [{ name: 'Azure Palace Summer Launch', role: 'Campaign Lead' }]
-  },
-  { 
-    id: 'EMP-02', initials: 'SM', name: 'Sneha Mishra', role: 'Social Media Manager', 
-    skills: ['Instagram', 'Reels', 'Facebook'], 
-    availability: 'Available', 
-    campaigns: [] 
-  },
-  { 
-    id: 'EMP-03', initials: 'RJ', name: 'Rohan Joshi', role: 'Graphic Designer', 
-    skills: ['Photoshop', 'Illustrator', 'Figma', 'After Effects'], 
-    availability: 'Available', 
-    campaigns: [] 
-  },
-  { 
-    id: 'EMP-04', initials: 'PK', name: 'Priya Kapoor', role: 'Content Writer', 
-    skills: ['Copywriting', 'Blogs'], 
-    availability: 'Unavailable', 
-    campaigns: [] 
-  },
-];
+const MOCK_TEAM = [];
 
 const ROLES = [
   "Campaign Manager", "Social Media Manager", "Graphic Designer", 

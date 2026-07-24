@@ -24,10 +24,10 @@ const AVAILABLE_SERVICES = [
 
 
 const MOCK_DOCUMENTS = [
-  { id: 'DOC-1', name: 'GST Certificate', ref: '27ABCDE1234F1Z5', status: 'Verified', filename: 'gst_cert.pdf', required: true },
-  { id: 'DOC-2', name: 'PAN Card', ref: 'ABCDE1234F', status: 'Verified', filename: 'pan_card.pdf', required: true },
-  { id: 'DOC-3', name: 'Business Registration Proof', ref: 'BRN-27-00012345', status: 'Pending Verification', filename: 'registration.pdf', required: true },
-  { id: 'DOC-4', name: 'Agency Portfolio', ref: '', status: 'Uploaded', filename: 'brandcraft-portfolio.pdf', required: false },
+  { id: 'DOC-1', name: 'GST Certificate', ref: 'Not Uploaded', status: 'Missing', filename: '', required: true },
+  { id: 'DOC-2', name: 'PAN Card', ref: 'Not Uploaded', status: 'Missing', filename: '', required: true },
+  { id: 'DOC-3', name: 'Business Registration Proof', ref: 'Not Uploaded', status: 'Missing', filename: '', required: true },
+  { id: 'DOC-4', name: 'Agency Portfolio', ref: '', status: 'Missing', filename: '', required: false },
   { id: 'DOC-5', name: 'Company Profile', ref: '', status: 'Missing', filename: '', required: false }
 ];
 
@@ -38,19 +38,17 @@ export default function MarketingProfileScreen({ setActivePage }) {
 
   // State
   const [profileData, setProfileData] = useState({
-    name: 'BrandCraft Agency',
-    contactPerson: 'Rahul Sharma',
-    mobile: '+91 98765 43210',
-    email: 'hello@brandcraftagency.com',
-    address: '123 Creative Hub',
-    city: 'Jalgaon',
-    state: 'Maharashtra',
-    pincode: '425001'
+    name: '',
+    contactPerson: '',
+    mobile: '',
+    email: '',
+    address: '',
+    city: '',
+    state: '',
+    pincode: ''
   });
   
-  const [selectedServices, setSelectedServices] = useState([
-    "Social Media Marketing", "Graphic Design", "Content Creation", "Photography"
-  ]);
+  const [selectedServices, setSelectedServices] = useState([]);
 
   const [documents, setDocuments] = useState(MOCK_DOCUMENTS);
 

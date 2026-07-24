@@ -5,14 +5,7 @@ import { colors } from '../../../theme/colors';
 
 const GOLD = '#D97706';
 
-// MOCK DATA
-const ALL_REQUESTS = [
-  { id: 'REQ-1001', category: 'Cleaning', title: 'Deep Kitchen Cleaning', date: 'Tomorrow, 10:00 AM', budget: '₹5,000 - ₹8,000', status: 'Active', responseCount: 4 },
-  { id: 'REQ-1002', category: 'Maintenance', title: 'HVAC Routine Check', date: '15 Jul, 02:30 PM', budget: '₹2,500 - ₹4,000', status: 'Responses', responseCount: 2 },
-  { id: 'REQ-1003', category: 'Plumbing', title: 'Fix Leaking Pipe', date: 'Today, 04:00 PM', budget: '₹1,000 - ₹2,000', status: 'Scheduled', responseCount: 1 },
-  { id: 'REQ-1004', category: 'Electrical', title: 'Rewiring Main DB', date: '10 Jun, 09:00 AM', budget: '₹15,000 - ₹20,000', status: 'Completed', responseCount: 5 },
-  { id: 'REQ-1005', category: 'Pest Control', title: 'Restaurant Pest Control', date: '01 Jun, 11:00 AM', budget: '₹3,000', status: 'Cancelled', responseCount: 0 },
-];
+const ALL_REQUESTS = [];
 
 const TABS = ['All', 'Active', 'Responses', 'Scheduled', 'Completed', 'Cancelled'];
 

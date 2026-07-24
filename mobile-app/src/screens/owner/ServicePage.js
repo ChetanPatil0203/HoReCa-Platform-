@@ -25,22 +25,15 @@ const LIGHT_BG = '#F8FAFC';
 // MOCK DATA
 // =====================================
 const SUMMARY_STATS = {
-  activeRequests: 12,
-  providerResponses: 28,
-  scheduledServices: 5,
-  completedServices: 142
+  activeRequests: 0,
+  providerResponses: 0,
+  scheduledServices: 0,
+  completedServices: 0
 };
 
-const RECENT_REQUESTS = [
-  { id: 'REQ-001', title: 'Deep Kitchen Cleaning', category: 'Cleaning', status: 'Pending', responses: 3, date: 'Today, 10:30 AM' },
-  { id: 'REQ-002', title: 'HVAC Maintenance', category: 'Maintenance', status: 'Active', responses: 5, date: 'Yesterday, 02:15 PM' },
-  { id: 'REQ-003', title: 'Plumbing Repair', category: 'Plumbing', status: 'Completed', responses: 2, date: '11 Jun, 09:00 AM' }
-];
+const RECENT_REQUESTS = [];
 
-const TOP_RATED_PROVIDERS = [
-  { id: 'PRV-003', name: 'Elite Fixers', category: 'General Repair', rating: 5.0, jobs: 89, verified: true },
-  { id: 'PRV-004', name: 'CoolBreeze HVAC', category: 'Maintenance', rating: 4.7, jobs: 34, verified: true }
-];
+const TOP_RATED_PROVIDERS = [];
 
 
 // =====================================

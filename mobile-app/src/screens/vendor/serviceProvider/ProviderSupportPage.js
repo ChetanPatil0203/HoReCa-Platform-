@@ -12,11 +12,7 @@ import {
 const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
 
-const MOCK_TICKETS = [
-  { id: 'TKT-2026-901', subject: 'Payout delayed for last week', date: '15 Oct 2026', status: 'Open' },
-  { id: 'TKT-2026-885', subject: 'App crashing on document upload', date: '10 Oct 2026', status: 'Resolved' },
-  { id: 'TKT-2026-812', subject: 'How to update agency bank details?', date: '01 Oct 2026', status: 'Resolved' },
-];
+const MOCK_TICKETS = [];
 
 const MOCK_FAQS = [
   { q: "How do I add a new team member?", a: "Go to the Team tab, click the floating '+' button, and fill in the details." },

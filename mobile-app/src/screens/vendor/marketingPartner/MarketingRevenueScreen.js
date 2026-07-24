@@ -25,28 +25,7 @@ const WHITE = '#FFFFFF';
 const MUTED = '#94A3B8';
 const LIGHT_BG = '#F8FAFC';
 
-const MOCK_INVOICES = [
-  { 
-    id: 'INV-26001', client: 'Azure Palace Hotel', type: 'Campaign Fee', 
-    amount: '₹50,000', date: '01 Jul 2026', due: '15 Jul 2026', status: 'Sent' 
-  },
-  { 
-    id: 'INV-26002', client: 'Cafe Zephyr Group', type: 'Photography Fee', 
-    amount: '₹12,000', date: '15 Jun 2026', due: '30 Jun 2026', status: 'Paid', paidOn: '30 Jun 2026' 
-  },
-  { 
-    id: 'INV-26003', client: 'Spice Route Restaurant', type: 'Printing Fee', 
-    amount: '₹8,500', date: '01 Jun 2026', due: '15 Jun 2026', status: 'Overdue' 
-  },
-  { 
-    id: 'INV-26004', client: 'The Urban Spa', type: 'Monthly Retainer', 
-    amount: '₹20,000', date: '10 Jul 2026', due: '25 Jul 2026', status: 'Partially Paid' 
-  },
-  { 
-    id: 'INV-26005', client: 'Neon Lights Studio', type: 'Event Coverage', 
-    amount: '₹35,000', date: '20 Jul 2026', due: '05 Aug 2026', status: 'Draft' 
-  },
-];
+const MOCK_INVOICES = [];
 
 export default function MarketingRevenueScreen() {
   const [activePeriod, setActivePeriod] = useState('Month');

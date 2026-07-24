@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, LayoutAnimation, UIManager, Platform, useWindowDimensions } from 'react-native';
-import { Building2, Phone, ArrowRight, Briefcase, FileText, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react-native';
+import { Building2, Phone, ArrowRight, Briefcase, FileText, ChevronDown, ChevronUp, AlertCircle, MapPin, ShieldCheck } from 'lucide-react-native';
 
 import AuthScreenWrapper from '../../components/auth/AuthScreenWrapper';
 import AuthCard from '../../components/auth/AuthCard';
@@ -38,6 +38,9 @@ export default function RegisterStepOneScreen({ navigation, route }) {
   const [specialized, setSpecialized] = useState(existingState.specialized || '');
   const [subCategory, setSubCategory] = useState(existingState.subCategory || '');
   const [mobile, setMobile] = useState(existingState.mobile || '');
+  const [address, setAddress] = useState(existingState.address || '');
+  const [gstin, setGstin] = useState(existingState.gstin || '');
+  const [fssaiNo, setFssaiNo] = useState(existingState.fssaiNo || '');
   const [documents, setDocuments] = useState(existingState.documents || {});
 
   const [requiredDocs, setRequiredDocs] = useState([]);
@@ -68,6 +71,8 @@ export default function RegisterStepOneScreen({ navigation, route }) {
     if (val !== 'Vendor / Supplier') {
       setSpecialized('');
       setSubCategory('');
+    } else {
+      setFssaiNo('');
     }
   };
 
@@ -105,7 +110,12 @@ export default function RegisterStepOneScreen({ navigation, route }) {
 
   const isFormComplete = () => {
     if (!bizName.trim() || !bizCategory || mobile.replace(/[^0-9]/g, '').length !== 10) return false;
-    if (bizCategory === 'Vendor / Supplier' && (!specialized || !subCategory)) return false;
+    if (!address.trim()) return false;
+    if (bizCategory === 'Vendor / Supplier') {
+      if (!specialized || !subCategory) return false;
+    } else {
+      if (!fssaiNo.trim()) return false;
+    }
     if (reqUploaded < totalReq) return false;
     return true;
   };
@@ -114,7 +124,18 @@ export default function RegisterStepOneScreen({ navigation, route }) {
 
   const handleNext = () => {
     if (!isFormComplete()) return;
-    const registrationData = { ...existingState, bizName, bizCategory, specialized, subCategory, mobile, documents };
+    const registrationData = {
+      ...existingState,
+      bizName,
+      bizCategory,
+      specialized,
+      subCategory,
+      mobile,
+      address,
+      gstin,
+      fssaiNo,
+      documents
+    };
     navigation.navigate('RegisterStepTwo', { registrationData });
   };
 
@@ -194,6 +215,40 @@ export default function RegisterStepOneScreen({ navigation, route }) {
               </View>
             )}
           </View>
+        )}
+
+        <View style={styles.sectionHeader}>
+          <MapPin size={16} color={AUTH_COLORS.primary} style={{ marginRight: 8 }} />
+          <Text style={styles.sectionTitle}>Location & Compliance Details</Text>
+        </View>
+
+        <FormField 
+          label="REGISTERED BUSINESS ADDRESS *" 
+          icon={MapPin} 
+          placeholder="e.g. 123 MG Road, Bandra West"
+          value={address}
+          onChangeText={setAddress}
+        />
+
+        <FormField 
+          label="GSTIN NUMBER (OPTIONAL)" 
+          icon={FileText} 
+          placeholder="15-character GSTIN (e.g. 27AAAAA0000A1Z5)"
+          value={gstin}
+          onChangeText={setGstin}
+          autoCapitalize="characters"
+        />
+
+        {bizCategory && bizCategory !== 'Vendor / Supplier' && (
+          <FormField 
+            label="FSSAI LICENSE NUMBER *" 
+            icon={ShieldCheck} 
+            placeholder="14-digit FSSAI License No."
+            keyboardType="numeric"
+            maxLength={14}
+            value={fssaiNo}
+            onChangeText={setFssaiNo}
+          />
         )}
 
         <View style={styles.sectionHeader}>

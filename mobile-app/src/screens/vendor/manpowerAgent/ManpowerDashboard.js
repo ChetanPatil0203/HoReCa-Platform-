@@ -24,7 +24,7 @@ const WHITE = '#FFFFFF';
 export default function ManpowerDashboard() {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || (Platform.OS !== 'web');
-  const { logout } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
 
   const [activePage, setActivePage] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

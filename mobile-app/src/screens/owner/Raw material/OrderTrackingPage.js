@@ -3,35 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platfo
 import { Truck, Search, CheckCircle, Clock, MapPin, MessageSquare, Package, ArrowLeft } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 
-const ORDERS = [
-  { 
-    id: "ORD-287", 
-    title: "Premium Basmati Rice", 
-    vendor: "Metro Fresh Supplies", 
-    qty: "500 kg", 
-    eta: "Today, 6:00 PM",
-    status: "In-Transit",
-    category: "raw-material",
-    updates: [
-      { time: "30 min ago", message: "Out for delivery", location: "Mumbai Highway" },
-      { time: "2 hrs ago", message: "Dispatched from Hub", location: "Metro Warehouse" },
-      { time: "Yesterday", message: "Order confirmed", location: "" }
-    ]
-  },
-  { 
-    id: "ORD-286", 
-    title: "Weekend Kitchen Staff (2)", 
-    vendor: "Elite Staffing Co.", 
-    qty: "2 persons", 
-    eta: "Tomorrow, 8:00 AM",
-    status: "Confirmed",
-    category: "manpower",
-    updates: [
-      { time: "Just now", message: "Staff assigned", location: "Agency" },
-      { time: "1 hr ago", message: "Order placed", location: "" }
-    ]
-  }
-];
+const ORDERS = [];
 
 const CAT_COLORS = {
   "raw-material": "#D4940A",

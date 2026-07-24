@@ -46,23 +46,10 @@ const REVENUE_DATA = {
 };
 
 const RECENT_ORDERS = {
-  "raw-material": [
-    { id: "ORD-291", title: "Basmati Rice 600kg", client: "The Meridian Grand", value: "₹21,000", date: "16 Jun", status: "Accepted" },
-    { id: "ORD-287", title: "Atlantic Salmon 80kg", client: "Azure Palace Hotel", value: "₹78,400", date: "15 Jun", status: "Accepted" },
-    { id: "ORD-283", title: "Fresh Vegetables 200kg", client: "Café Zephyr Group", value: "₹8,200", date: "14 Jun", status: "Accepted" },
-  ],
-  manpower: [
-    { id: "ORD-M001", title: "Weekend Banquet Servers – 10p", client: "The Meridian Grand", value: "₹20,000", date: "16 Jun", status: "Accepted" },
-    { id: "ORD-M004", title: "Security Guards – Night Shift", client: "Azure Palace Hotel", value: "₹36,000", date: "15 Jun", status: "Pending" },
-  ],
-  service: [
-    { id: "ORD-S001", title: "HVAC Annual Maintenance AMC", client: "Sunset Resort", value: "₹85,000", date: "16 Jun", status: "New" },
-    { id: "ORD-S004", title: "Electrical Wiring Audit", client: "Café Zephyr Group", value: "₹12,000", date: "14 Jun", status: "Accepted" },
-  ],
-  marketing: [
-    { id: "ORD-K001", title: "July Social Media Campaign", client: "Azure Palace Hotel", value: "₹40,000", date: "16 Jun", status: "New" },
-    { id: "ORD-K002", title: "Complete Menu Photography", client: "Spice Route Restaurant", value: "₹18,000", date: "15 Jun", status: "Pending" },
-  ],
+  "raw-material": [],
+  manpower: [],
+  service: [],
+  marketing: [],
 };
 
 const STATUS_STYLES = {

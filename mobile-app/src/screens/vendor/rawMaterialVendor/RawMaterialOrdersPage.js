@@ -18,36 +18,7 @@ const MUTED = '#64748B';
 
 const STATUS_CHIPS = ['New', 'Accepted', 'Processing', 'Packed', 'Dispatched', 'Delivered', 'Cancelled'];
 
-const MOCK_ORDERS = [
-  {
-    id: "ORD-941",
-    client: "The Meridian Grand",
-    businessType: "Hotel",
-    location: "Jalgaon",
-    product: "Premium Basmati Rice",
-    qty: "500 kg",
-    amount: "₹45,000",
-    deliveryDate: "15 Jul 2026",
-    paymentStatus: "Paid",
-    status: "New",
-    note: "Deliver to the rear loading dock.",
-    address: "123 Meridian Blvd, Downtown"
-  },
-  {
-    id: "ORD-938",
-    client: "Azure Palace Hotel",
-    businessType: "Hotel",
-    location: "Pune",
-    product: "Atlantic Salmon",
-    qty: "50 kg",
-    amount: "₹60,000",
-    deliveryDate: "14 Jul 2026",
-    paymentStatus: "Pending",
-    status: "Processing",
-    note: "Keep packed in extra ice.",
-    address: "45 Azure Coast Rd"
-  }
-];
+const MOCK_ORDERS = [];
 
 export default function RawMaterialOrdersPage() {
   const { width } = useWindowDimensions();

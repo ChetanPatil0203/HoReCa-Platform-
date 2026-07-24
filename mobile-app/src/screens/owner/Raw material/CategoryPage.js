@@ -54,20 +54,10 @@ const CAT_META = {
 };
 
 const SEED_ORDERS = {
-  "raw-material": [
-    { id: "ORD-287", title: "Premium Basmati Rice", qty: "500 kg", vendor: "Metro Fresh Supplies", date: "14 Jun 2026", status: "Accepted", amount: "₹18,500" },
-    { id: "ORD-283", title: "Fresh Vegetables Pack", qty: "200 kg", vendor: "Metro Fresh Supplies", date: "11 Jun 2026", status: "Accepted", amount: "₹12,200" },
-    { id: "ORD-279", title: "Atlantic Salmon Fillet", qty: "50 kg", vendor: "Pacific Seafood Co.", date: "08 Jun 2026", status: "Pending", amount: "₹24,000" },
-  ],
-  manpower: [
-    { id: "ORD-286", title: "Weekend Kitchen Staff (2)", qty: "2 persons", vendor: "Elite Staffing Co.", date: "13 Jun 2026", status: "Pending", amount: "₹6,400" },
-  ],
-  service: [
-    { id: "ORD-285", title: "Deep Kitchen Cleaning", qty: "Full property", vendor: "ProClean Services", date: "13 Jun 2026", status: "Accepted", amount: "₹8,500" },
-  ],
-  marketing: [
-    { id: "ORD-284", title: "June Social Campaign", qty: "30 days", vendor: "BrandCraft Agency", date: "12 Jun 2026", status: "New", amount: "₹35,000" },
-  ],
+  "raw-material": [],
+  manpower: [],
+  service: [],
+  marketing: [],
 };
 
 const STATUS_STYLES = {

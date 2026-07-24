@@ -9,12 +9,7 @@ const GOLD = '#D4AF37';
 
 const FILTERS = ['All', 'Orders', 'Alerts', 'System'];
 
-const MOCK_NOTIFICATIONS = [
-  { id: '1', type: 'Order', title: 'New Order Received', message: 'The Meridian Grand placed an order for 500kg Basmati Rice.', time: '2m ago', isRead: false },
-  { id: '2', type: 'Alert', title: 'Low Stock Alert', message: 'Atlantic Salmon is running low (15kg remaining).', time: '1h ago', isRead: false },
-  { id: '3', type: 'System', title: 'Settlement Processed', message: '₹1,50,000 has been credited to your account.', time: 'Yesterday', isRead: true },
-  { id: '4', type: 'Order', title: 'Order Delivered', message: 'Order #ORD-935 was successfully delivered.', time: '2 days ago', isRead: true },
-];
+const MOCK_NOTIFICATIONS = [];
 
 export default function RawMaterialNotificationsPage() {
   const [activeFilter, setActiveFilter] = useState('All');

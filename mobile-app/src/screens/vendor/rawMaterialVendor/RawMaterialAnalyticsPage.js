@@ -14,25 +14,17 @@ const GOLD = '#D4AF37';
 const FILTERS = ['Date: This Month', 'Category: All', 'Client: All', 'City: All'];
 
 const METRICS = [
-  { label: 'Total Orders', value: '450', trend: '+12%', isPositive: true, icon: Package, color: '#3B82F6' },
-  { label: 'Avg Order Value', value: '₹18.5k', trend: '+5%', isPositive: true, icon: TrendingUp, color: '#10B981' },
-  { label: 'Repeat Client', value: '68%', trend: '+2%', isPositive: true, icon: Users, color: '#8B5CF6' },
-  { label: 'On-Time Del.', value: '92%', trend: '-1%', isPositive: false, icon: Truck, color: '#F59E0B' },
-  { label: 'Cancel Rate', value: '3.2%', trend: '-0.5%', isPositive: true, icon: TrendingDown, color: '#EF4444' }, // lower is better
-  { label: 'Order Growth', value: '15%', trend: '+3%', isPositive: true, icon: TrendingUp, color: '#14B8A6' },
+  { label: 'Total Orders', value: '0', trend: '0%', isPositive: true, icon: Package, color: '#3B82F6' },
+  { label: 'Avg Order Value', value: '₹0', trend: '0%', isPositive: true, icon: TrendingUp, color: '#10B981' },
+  { label: 'Repeat Client', value: '0%', trend: '0%', isPositive: true, icon: Users, color: '#8B5CF6' },
+  { label: 'On-Time Del.', value: '0%', trend: '0%', isPositive: false, icon: Truck, color: '#F59E0B' },
+  { label: 'Cancel Rate', value: '0%', trend: '0%', isPositive: true, icon: TrendingDown, color: '#EF4444' },
+  { label: 'Order Growth', value: '0%', trend: '0%', isPositive: true, icon: TrendingUp, color: '#14B8A6' },
 ];
 
-const PRODUCTS = [
-  { name: 'Premium Basmati Rice', value: '₹4.5L', rank: 1 },
-  { name: 'Extra Virgin Olive Oil', value: '₹3.2L', rank: 2 },
-  { name: 'Atlantic Salmon', value: '₹1.8L', rank: 3 },
-];
+const PRODUCTS = [];
 
-const CLIENTS = [
-  { name: 'The Meridian Grand', value: '₹5.2L', rank: 1 },
-  { name: 'Café Zephyr', value: '₹2.8L', rank: 2 },
-  { name: 'Azure Palace', value: '₹1.5L', rank: 3 },
-];
+const CLIENTS = [];
 
 export default function RawMaterialAnalyticsPage() {
   const { width } = useWindowDimensions();

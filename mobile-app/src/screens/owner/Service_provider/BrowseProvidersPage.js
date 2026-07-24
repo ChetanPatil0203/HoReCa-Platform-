@@ -7,13 +7,7 @@ const GOLD = '#F59E0B'; // Changed to match HRC HUB primary CTA Gold/Orange
 const BLUE = '#2563EB';
 const GREEN = '#10B981';
 
-const MOCK_PROVIDERS = [
-  { id: 'PRV-001', name: 'SafeGuard Solutions', rating: 4.9, experience: '8 Years', jobs: 450, verified: true, location: 'Downtown, Jalgaon', categories: ['Pest Control', 'Cleaning', 'Sanitization'], availability: 'Available Today' },
-  { id: 'PRV-002', name: 'ProClean Services', rating: 4.8, experience: '5 Years', jobs: 320, verified: true, location: 'North Side, Pune', categories: ['Deep Cleaning', 'Sanitization'], availability: 'Available Today' },
-  { id: 'PRV-003', name: 'Elite Fixers', rating: 5.0, experience: '12 Years', jobs: 890, verified: true, location: 'West End, Mumbai', categories: ['General Repair', 'Plumbing'], availability: 'Limited Slots' },
-  { id: 'PRV-004', name: 'CoolBreeze HVAC', rating: 4.7, experience: '6 Years', jobs: 210, verified: false, location: 'South Side, Mumbai', categories: ['HVAC', 'Maintenance'], availability: 'Available Today' },
-  { id: 'PRV-005', name: 'Spark Electricals', rating: 4.5, experience: '3 Years', jobs: 150, verified: true, location: 'Downtown, Pune', categories: ['Electrical', 'Lighting'], availability: 'Limited Slots' }
-];
+const MOCK_PROVIDERS = [];
 
 export default function BrowseProvidersPage({ onBack, onViewProfile, onSendRequest }) {
   const { width } = useWindowDimensions();

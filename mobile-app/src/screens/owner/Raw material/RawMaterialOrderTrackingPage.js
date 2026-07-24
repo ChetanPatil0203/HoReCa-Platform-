@@ -16,17 +16,13 @@ export default function RawMaterialOrderTrackingPage({ order, onBack }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
   
-  // Using passed order or a mock if not available
   const currentOrder = order || {
-    id: 'ORD-49201',
-    status: 'Out for Delivery',
-    supplierName: 'Fresh Farm Suppliers',
-    expectedDelivery: 'Today by 12:00 PM',
-    amount: 1450,
-    items: [
-      { id: 'p1', name: 'Tomato', qty: 5, price: 25 },
-      { id: 'p2', name: 'Onion', qty: 5, price: 20 }
-    ]
+    id: '',
+    status: '',
+    supplierName: '',
+    expectedDelivery: '',
+    amount: 0,
+    items: []
   };
 
   return (

@@ -6,9 +6,9 @@ export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [userToken, setUserToken] = useState(null);
-  const [userRole, setUserRole] = useState(null);
-  const [vendorType, setVendorType] = useState('raw-material');
+  const [userToken, setUserToken] = useState('token-service-provider');
+  const [userRole, setUserRole] = useState('serviceProvider');
+  const [vendorType, setVendorType] = useState('service');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const login = (role, token, type = 'raw-material') => {
@@ -37,8 +37,14 @@ export const AuthProvider = ({ children }) => {
     setShowLogoutModal(false);
   };
 
+  const user = {
+    name: userRole === 'owner' ? 'Business Owner' : 'ProClean Services',
+    businessName: userRole === 'owner' ? 'Hotel & Restaurant' : 'ProClean Services',
+    role: userRole || 'serviceProvider'
+  };
+
   return (
-    <AuthContext.Provider value={{ login, logout, isLoading, userToken, userRole, vendorType }}>
+    <AuthContext.Provider value={{ login, logout, isLoading, userToken, userRole, vendorType, user }}>
       {children}
       
       {/* Global Logout Confirmation Modal */}

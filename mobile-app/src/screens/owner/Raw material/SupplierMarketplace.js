@@ -12,12 +12,7 @@ const CATEGORIES = [
   { id: "spices", label: "Spices & Masalas", emoji: "🌶️" },
 ];
 
-const PRODUCTS = [
-  { id: "v1", categoryId: "vegetables", name: "Red Onions", unitSize: "Per Kg", supplier: "Farm to Fork", price: 38, moq: 20, delivery: "Same Day", image: "https://images.unsplash.com/photo-1508747703725-719777637510?w=300&h=200&fit=crop" },
-  { id: "v2", categoryId: "vegetables", name: "Tomatoes (Grade A)", unitSize: "Per Kg", supplier: "Farm to Fork", price: 42, moq: 20, delivery: "Same Day", image: "https://images.unsplash.com/photo-1546094096-0df4bcaaa337?w=300&h=200&fit=crop" },
-  { id: "g1", categoryId: "grains", name: "Premium Basmati Rice", unitSize: "25 Kg Bag", supplier: "Metro Fresh Grocery", price: 85, moq: 50, delivery: "Same Day", image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=300&h=200&fit=crop" },
-  { id: "d1", categoryId: "dairy", name: "Full-Cream Milk", unitSize: "Per Litre", supplier: "Pure Dairy Co.", price: 68, moq: 20, delivery: "Same Day", image: "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=300&h=200&fit=crop" },
-];
+const PRODUCTS = [];
 
 export default function SupplierMarketplace({ onBack, onNavigate }) {
   const { width } = useWindowDimensions();
@@ -281,7 +276,7 @@ export default function SupplierMarketplace({ onBack, onNavigate }) {
                        date: new Date().toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' }),
                        status: "New",
                        amount: "₹" + orderAmount.toLocaleString("en-IN"),
-                       client: "The Meridian Hotels"
+                       client: "Business Owner"
                      };
                      mockDb.addOrder(orderObj);
                      ordersToPlace.push(orderObj);

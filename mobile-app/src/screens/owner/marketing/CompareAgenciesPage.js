@@ -14,46 +14,8 @@ const COMPARE_DATA = {
     { key: 'timeline', label: 'Timeline' },
     { key: 'experience', label: 'Experience' },
     { key: 'portfolio', label: 'Portfolio Rating' },
-    { key: 'support', label: 'Support' }
   ],
-  agencies: [
-    {
-      id: 'AGY-1',
-      name: 'Creative Minds',
-      badges: ['Best Portfolio'],
-      rating: '4.9',
-      price: '₹45,000',
-      reach: '500K - 1M',
-      timeline: '3 Months',
-      experience: '5 Years',
-      portfolio: 'Excellent',
-      support: '24/7 Priority'
-    },
-    {
-      id: 'AGY-2',
-      name: 'BrandBoosters',
-      badges: ['Highest Reach'],
-      rating: '5.0',
-      price: '₹60,000',
-      reach: '1M+',
-      timeline: 'Ongoing',
-      experience: '7 Years',
-      portfolio: 'Very Good',
-      support: 'Business Hours'
-    },
-    {
-      id: 'AGY-3',
-      name: 'Digital Dynamics',
-      badges: ['Best Price', 'Fastest Delivery'],
-      rating: '4.7',
-      price: '₹30,000',
-      reach: '200K',
-      timeline: '1 Month',
-      experience: '4 Years',
-      portfolio: 'Good',
-      support: 'Email Only'
-    }
-  ]
+  agencies: []
 };
 
 export default function CompareAgenciesPage({ onBack, onAccept }) {

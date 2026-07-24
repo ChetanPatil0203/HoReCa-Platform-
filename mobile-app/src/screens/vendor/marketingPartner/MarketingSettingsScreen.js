@@ -15,6 +15,12 @@ export default function MarketingSettingsScreen() {
   const [activeSection, setActiveSection] = useState('Profile');
   
   // Profile State
+  const [agencyName, setAgencyName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [servicesOffered, setServicesOffered] = useState('');
+  const [coverageAreas, setCoverageAreas] = useState('');
+  const [workingHours, setWorkingHours] = useState('');
   const [mktType, setMktType] = useState('Both');
   const [remoteAvail, setRemoteAvail] = useState(true);
 
@@ -62,11 +68,11 @@ export default function MarketingSettingsScreen() {
                </View>
 
                <Text style={styles.label}>Agency Name</Text>
-               <TextInput style={styles.input} placeholder="e.g. Creative Sparks Media" value="Creative Sparks Media" />
+               <TextInput style={styles.input} placeholder="e.g. Creative Sparks Media" value={agencyName} onChangeText={setAgencyName} />
 
                <View style={styles.row}>
-                 <View style={styles.col}><Text style={styles.label}>Phone</Text><TextInput style={styles.input} placeholder="+91..." value="+91 9876543210" /></View>
-                 <View style={styles.col}><Text style={styles.label}>Email</Text><TextInput style={styles.input} placeholder="contact@agency.com" value="contact@creativesparks.com" /></View>
+                 <View style={styles.col}><Text style={styles.label}>Phone</Text><TextInput style={styles.input} placeholder="+91..." value={phone} onChangeText={setPhone} /></View>
+                 <View style={styles.col}><Text style={styles.label}>Email</Text><TextInput style={styles.input} placeholder="contact@agency.com" value={email} onChangeText={setEmail} /></View>
                </View>
 
                <Text style={styles.label}>Marketing Type (Online / Offline / Both)</Text>
@@ -79,10 +85,10 @@ export default function MarketingSettingsScreen() {
                </View>
 
                <Text style={styles.label}>Services Offered</Text>
-               <TextInput style={styles.textArea} placeholder="e.g. SEO, SMM, Branding..." value="SEO, SMM, Branding, Video Production, Meta Ads" multiline numberOfLines={2} />
+               <TextInput style={styles.textArea} placeholder="e.g. SEO, SMM, Branding..." value={servicesOffered} onChangeText={setServicesOffered} multiline numberOfLines={2} />
 
                <Text style={styles.label}>Coverage Areas</Text>
-               <TextInput style={styles.input} placeholder="e.g. Mumbai, Pune..." value="Mumbai, Pune, Delhi" />
+               <TextInput style={styles.input} placeholder="e.g. Mumbai, Pune..." value={coverageAreas} onChangeText={setCoverageAreas} />
 
                <View style={styles.switchRow}>
                  <View>
@@ -93,7 +99,7 @@ export default function MarketingSettingsScreen() {
                </View>
 
                <Text style={styles.label}>Working Hours</Text>
-               <TextInput style={styles.input} placeholder="e.g. Mon-Fri, 10 AM - 7 PM" value="Mon-Fri, 10 AM - 7 PM" />
+               <TextInput style={styles.input} placeholder="e.g. Mon-Fri, 10 AM - 7 PM" value={workingHours} onChangeText={setWorkingHours} />
                
              </View>
            )}

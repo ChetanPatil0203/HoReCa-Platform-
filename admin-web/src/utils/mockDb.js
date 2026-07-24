@@ -1012,109 +1012,32 @@ const DEFAULT_ADMINS = [
 
 export const mockDb = {
   init: () => {
-    let resetOrders = false;
-    try {
-      const existing = localStorage.getItem("hrchub_orders");
-      if (existing) {
-        const parsed = JSON.parse(existing);
-        if (parsed.length > 0 && (!parsed[0].vendor || !parsed[0].client || !parsed[0].category)) {
-          resetOrders = true;
-        }
-      }
-    } catch (e) {
-      resetOrders = true;
+    if (!localStorage.getItem("hrchub_orders")) {
+      localStorage.setItem("hrchub_orders", JSON.stringify([]));
     }
-
-    if (!localStorage.getItem("hrchub_orders") || resetOrders) {
-      localStorage.setItem("hrchub_orders", JSON.stringify(DEFAULT_ORDERS));
-    } else {
-      try {
-        const existing = localStorage.getItem("hrchub_orders");
-        if (existing) {
-          const parsed = JSON.parse(existing);
-          const filtered = parsed.filter((o) => o.id !== "ORD-952");
-          if (filtered.length !== parsed.length) {
-            localStorage.setItem("hrchub_orders", JSON.stringify(filtered));
-          }
-        }
-      } catch (e) { }
-    }
-    let resetTickets = false;
-    try {
-      const existing = localStorage.getItem("hrchub_tickets");
-      if (existing) {
-        const parsed = JSON.parse(existing);
-        if (parsed.length > 0 && !parsed[0].subject) {
-          resetTickets = true;
-        }
-      }
-    } catch (e) {
-      resetTickets = true;
-    }
-
-    if (!localStorage.getItem("hrchub_tickets") || resetTickets) {
-      localStorage.setItem("hrchub_tickets", JSON.stringify(DEFAULT_TICKETS));
+    if (!localStorage.getItem("hrchub_tickets")) {
+      localStorage.setItem("hrchub_tickets", JSON.stringify([]));
     }
     if (!localStorage.getItem("hrchub_kyc")) {
-      localStorage.setItem("hrchub_kyc", JSON.stringify(DEFAULT_KYC));
-    } else {
-      try {
-        const existingKyc = JSON.parse(localStorage.getItem("hrchub_kyc"));
-        let updated = false;
-        DEFAULT_KYC.forEach(item => {
-          if (!existingKyc.some(k => k.id === item.id)) {
-            existingKyc.push(item);
-            updated = true;
-          }
-        });
-        if (updated) {
-          localStorage.setItem("hrchub_kyc", JSON.stringify(existingKyc));
-        }
-      } catch (e) { }
+      localStorage.setItem("hrchub_kyc", JSON.stringify([]));
     }
     if (!localStorage.getItem("hrchub_feed")) {
-      localStorage.setItem("hrchub_feed", JSON.stringify(DEFAULT_FEED_ITEMS));
+      localStorage.setItem("hrchub_feed", JSON.stringify([]));
     }
-    let resetHoreca = false;
-    try {
-      const existing = localStorage.getItem("hrchub_horeca");
-      if (existing) {
-        const parsed = JSON.parse(existing);
-        if (parsed.length > 0 && !parsed[0].gstNumber) {
-          resetHoreca = true;
-        }
-      }
-    } catch (e) {
-      resetHoreca = true;
+    if (!localStorage.getItem("hrchub_horeca")) {
+      localStorage.setItem("hrchub_horeca", JSON.stringify([]));
     }
-
-    if (!localStorage.getItem("hrchub_horeca") || resetHoreca) {
-      localStorage.setItem("hrchub_horeca", JSON.stringify(DEFAULT_HORECA));
-    }
-    let resetVendors = false;
-    try {
-      const existing = localStorage.getItem("hrchub_vendors");
-      if (existing) {
-        const parsed = JSON.parse(existing);
-        if (parsed.length > 0 && !parsed[0].businessName) {
-          resetVendors = true;
-        }
-      }
-    } catch (e) {
-      resetVendors = true;
-    }
-
-    if (!localStorage.getItem("hrchub_vendors") || resetVendors) {
-      localStorage.setItem("hrchub_vendors", JSON.stringify(DEFAULT_VENDORS));
+    if (!localStorage.getItem("hrchub_vendors")) {
+      localStorage.setItem("hrchub_vendors", JSON.stringify([]));
     }
     if (!localStorage.getItem("hrchub_requirements")) {
-      localStorage.setItem("hrchub_requirements", JSON.stringify(DEFAULT_REQUIREMENTS));
+      localStorage.setItem("hrchub_requirements", JSON.stringify([]));
     }
     if (!localStorage.getItem("hrchub_categories")) {
-      localStorage.setItem("hrchub_categories", JSON.stringify(DEFAULT_CATEGORIES));
+      localStorage.setItem("hrchub_categories", JSON.stringify([]));
     }
     if (!localStorage.getItem("hrchub_admins")) {
-      localStorage.setItem("hrchub_admins", JSON.stringify(DEFAULT_ADMINS));
+      localStorage.setItem("hrchub_admins", JSON.stringify([]));
     }
   },
 

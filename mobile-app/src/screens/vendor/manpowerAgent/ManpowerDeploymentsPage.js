@@ -1,45 +1,24 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, SafeAreaView, FlatList, TextInput, Pressable, useWindowDimensions } from 'react-native';
-import { 
-  UserRoundCheck, CircleCheck, UserRoundX, Search, SlidersHorizontal, BriefcaseBusiness, 
-  Building2, MapPin, CalendarDays, ChevronRight, X, UserRoundSearch, History, FileText, 
+import {
+  UserRoundCheck, CircleCheck, UserRoundX, Search, SlidersHorizontal, BriefcaseBusiness,
+  Building2, MapPin, CalendarDays, ChevronRight, X, UserRoundSearch, History, FileText,
   ShieldCheck, MoreVertical, Pencil, Copy, Clock
 } from 'lucide-react-native';
 
 const NAVY = '#081A3A';
 
-const MOCK_DEPLOYMENTS = [
-  { 
-    id: "DEP-9001", candidate: "Vikram Singh", role: "Sous Chef", business: "JW Marriott", reqId: "REQ-901",
-    location: "Andheri West, Mumbai", joiningDate: "10 Jan 2026", type: "Full Time",
-    status: "Working", salary: "₹50,000 / Month", hours: "9 Hours", weeklyOff: "1 Day", contract: "12 Months"
-  },
-  { 
-    id: "DEP-9002", candidate: "Neha Gupta", role: "Store Manager", business: "Starbucks", reqId: "REQ-902",
-    location: "Bandra, Mumbai", joiningDate: "18 Jul 2026", type: "Rotational",
-    status: "Working", salary: "₹35,000 / Month", hours: "8 Hours", weeklyOff: "1 Day", contract: "11 Months"
-  },
-  { 
-    id: "DEP-9003", candidate: "Ravi Kumar", role: "Bartender", business: "Olive Bar", reqId: "DIR-8001",
-    location: "Khar, Mumbai", joiningDate: "01 Mar 2026", type: "Night Shift",
-    status: "Left Job", salary: "₹25,000 / Month", hours: "8 Hours", weeklyOff: "1 Day", contract: "6 Months"
-  },
-  { 
-    id: "DEP-9004", candidate: "Amit Patel", role: "Steward", business: "The Taj Mahal Palace", reqId: "REQ-905",
-    location: "Colaba, Mumbai", joiningDate: "12 Dec 2025", type: "Full Time",
-    status: "Completed", salary: "₹18,000 / Month", hours: "10 Hours", weeklyOff: "1 Day", contract: "3 Months"
-  }
-];
+const MOCK_DEPLOYMENTS = [];
 
 export default function ManpowerDeploymentsPage() {
   const { width } = useWindowDimensions();
   const summaryGridGap = 12;
   const summaryCardWidth = (width - 32 - summaryGridGap) / 2;
-  
+
   const [deployments, setDeployments] = useState(MOCK_DEPLOYMENTS);
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   // Modals State
   const [viewVisible, setViewVisible] = useState(false);
   const [selectedDep, setSelectedDep] = useState(null);
@@ -58,7 +37,7 @@ export default function ManpowerDeploymentsPage() {
   const showToast = (msg) => { setToastMsg(msg); setTimeout(() => setToastMsg(""), 3000); };
 
   const getStatusColor = (status) => {
-    switch(status) {
+    switch (status) {
       case 'Working': return '#10B981'; // Green
       case 'Completed': return '#3B82F6'; // Blue
       case 'Left Job': return '#EF4444'; // Red
@@ -66,8 +45,8 @@ export default function ManpowerDeploymentsPage() {
     }
   };
 
-  const getStatusIcon = (status, size=14, color) => {
-    switch(status) {
+  const getStatusIcon = (status, size = 14, color) => {
+    switch (status) {
       case 'Working': return <UserRoundCheck size={size} color={color || '#10B981'} />;
       case 'Completed': return <CircleCheck size={size} color={color || '#3B82F6'} />;
       case 'Left Job': return <UserRoundX size={size} color={color || '#EF4444'} />;
@@ -102,9 +81,9 @@ export default function ManpowerDeploymentsPage() {
   const filteredDeployments = deployments.filter(d => {
     const matchesTab = activeTab === 'All' || d.status === activeTab;
     const q = searchQuery.toLowerCase();
-    const matchesSearch = !q || 
-      d.candidate.toLowerCase().includes(q) || 
-      d.role.toLowerCase().includes(q) || 
+    const matchesSearch = !q ||
+      d.candidate.toLowerCase().includes(q) ||
+      d.role.toLowerCase().includes(q) ||
       d.business.toLowerCase().includes(q) ||
       d.location.toLowerCase().includes(q);
     return matchesTab && matchesSearch;
@@ -190,12 +169,12 @@ export default function ManpowerDeploymentsPage() {
         )}
         ListEmptyComponent={() => (
           <View style={styles.emptyBox}>
-            <UserRoundSearch size={32} color="#CBD5E1" style={{marginBottom: 12}} />
+            <UserRoundSearch size={32} color="#CBD5E1" style={{ marginBottom: 12 }} />
             <Text style={styles.emptyTitle}>No staff records found</Text>
             <Text style={styles.emptyDesc}>Staff records will appear here after candidates start working with HoReCa businesses.</Text>
           </View>
         )}
-        renderItem={({item}) => (
+        renderItem={({ item }) => (
           <Pressable style={({ pressed }) => [styles.recordCard, { opacity: pressed ? 0.95 : 1 }]} onPress={() => openView(item)}>
             <View style={styles.recordHeader}>
               <View style={styles.recordAvatar}><Text style={styles.recordAvatarText}>{item.candidate.charAt(0)}</Text></View>
@@ -214,7 +193,7 @@ export default function ManpowerDeploymentsPage() {
             </View>
 
             <View style={styles.recordFooter}>
-              <View style={styles.infoRow}><CalendarDays size={14} color="#64748B" /><Text style={[styles.infoText, {fontSize: 12}]}>Joined: {item.joiningDate}</Text></View>
+              <View style={styles.infoRow}><CalendarDays size={14} color="#64748B" /><Text style={[styles.infoText, { fontSize: 12 }]}>Joined: {item.joiningDate}</Text></View>
               <View style={styles.viewDetailsAction}>
                 <Text style={styles.viewDetailsText}>View Details</Text>
                 <ChevronRight size={14} color={NAVY} />
@@ -228,15 +207,15 @@ export default function ManpowerDeploymentsPage() {
       <Modal visible={viewVisible} animationType="fade" transparent={true} onRequestClose={() => setViewVisible(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => { setViewVisible(false); setMoreMenuVisible(false); }}>
           <Pressable style={[styles.popupCardMain, { alignSelf: 'center', width: '90%', maxWidth: 560, maxHeight: '84%', flexShrink: 1 }]}>
-            
+
             <View style={styles.popupHeaderMain}>
               <Text style={styles.popupTitleMain}>Staff Record Details</Text>
               <TouchableOpacity onPress={() => setViewVisible(false)} style={styles.modalCloseBtnMain}>
                 <X size={20} color="#1E293B" />
               </TouchableOpacity>
             </View>
-            
-            <ScrollView style={{padding: 20}} showsVerticalScrollIndicator={false}>
+
+            <ScrollView style={{ padding: 20 }} showsVerticalScrollIndicator={false}>
               {selectedDep && (
                 <>
                   {/* Staff Identity */}
@@ -379,13 +358,13 @@ export default function ManpowerDeploymentsPage() {
                     <ShieldCheck size={16} color="#10B981" />
                     <Text style={styles.verificationText}>Candidate Verification: Verified</Text>
                   </View>
-                  
+
                   <TouchableOpacity style={styles.viewProfileBtn} onPress={() => { setViewVisible(false); showToast("Candidate Profile viewed."); }}>
                     <Text style={styles.viewProfileText}>View Candidate Profile</Text>
                     <ChevronRight size={14} color={NAVY} />
                   </TouchableOpacity>
 
-                  <View style={{height: 100}} /> 
+                  <View style={{ height: 100 }} />
                 </>
               )}
             </ScrollView>
@@ -396,22 +375,22 @@ export default function ManpowerDeploymentsPage() {
                 {selectedDep.status === 'Working' && (
                   <View style={styles.actionRow}>
                     <TouchableOpacity style={styles.primaryBtnLarge} onPress={() => setCompleteModalVisible(true)}>
-                      <CircleCheck size={18} color="#fff" style={{marginRight: 8}} />
+                      <CircleCheck size={18} color="#fff" style={{ marginRight: 8 }} />
                       <Text style={styles.primaryBtnLargeText}>Mark as Completed</Text>
                     </TouchableOpacity>
-                    <View style={{position: 'relative'}}>
+                    <View style={{ position: 'relative' }}>
                       <TouchableOpacity style={styles.moreActionBtn} onPress={() => setMoreMenuVisible(!moreMenuVisible)}>
                         <MoreVertical size={20} color={NAVY} />
                       </TouchableOpacity>
                       {moreMenuVisible && (
                         <View style={styles.moreDropdown}>
                           <TouchableOpacity style={styles.moreDropdownItem} onPress={() => { setMoreMenuVisible(false); setUpdateModalVisible(true); }}>
-                            <Pencil size={16} color="#475569" style={{marginRight: 8}} />
+                            <Pencil size={16} color="#475569" style={{ marginRight: 8 }} />
                             <Text style={styles.moreDropdownText}>Update Assignment</Text>
                           </TouchableOpacity>
-                          <TouchableOpacity style={[styles.moreDropdownItem, {borderTopWidth: 1, borderTopColor: '#F1F5F9'}]} onPress={() => { setMoreMenuVisible(false); setLeftJobModalVisible(true); }}>
-                            <UserRoundX size={16} color="#EF4444" style={{marginRight: 8}} />
-                            <Text style={[styles.moreDropdownText, {color: '#EF4444'}]}>Report Left Job</Text>
+                          <TouchableOpacity style={[styles.moreDropdownItem, { borderTopWidth: 1, borderTopColor: '#F1F5F9' }]} onPress={() => { setMoreMenuVisible(false); setLeftJobModalVisible(true); }}>
+                            <UserRoundX size={16} color="#EF4444" style={{ marginRight: 8 }} />
+                            <Text style={[styles.moreDropdownText, { color: '#EF4444' }]}>Report Left Job</Text>
                           </TouchableOpacity>
                         </View>
                       )}
@@ -420,13 +399,13 @@ export default function ManpowerDeploymentsPage() {
                 )}
                 {selectedDep.status === 'Completed' && (
                   <TouchableOpacity style={styles.primaryBtnLarge} onPress={() => { showToast("Viewing completion summary..."); }}>
-                    <FileText size={18} color="#fff" style={{marginRight: 8}} />
+                    <FileText size={18} color="#fff" style={{ marginRight: 8 }} />
                     <Text style={styles.primaryBtnLargeText}>View Completion Summary</Text>
                   </TouchableOpacity>
                 )}
                 {selectedDep.status === 'Left Job' && (
                   <TouchableOpacity style={styles.primaryBtnLarge} onPress={() => { showToast("Viewing exit details..."); }}>
-                    <FileText size={18} color="#fff" style={{marginRight: 8}} />
+                    <FileText size={18} color="#fff" style={{ marginRight: 8 }} />
                     <Text style={styles.primaryBtnLargeText}>View Exit Details</Text>
                   </TouchableOpacity>
                 )}
@@ -443,20 +422,20 @@ export default function ManpowerDeploymentsPage() {
             <View style={styles.subModalHeader}>
               <Text style={styles.subModalTitle}>Complete this assignment?</Text>
             </View>
-            <View style={{padding: 20}}>
-               <Text style={styles.subModalDesc}>Mark {selectedDep?.candidate} as completed at {selectedDep?.business}.</Text>
-               <View style={styles.formGroup}>
-                 <Text style={styles.inputLabel}>Completion Date</Text>
-                 <TextInput style={styles.input} placeholder="e.g. 30 Sep 2026" value={completionDate} onChangeText={setCompletionDate} />
-               </View>
-               <View style={styles.formGroup}>
-                 <Text style={styles.inputLabel}>Completion Note (Optional)</Text>
-                 <TextInput style={styles.inputArea} placeholder="Any feedback..." multiline={true} numberOfLines={3} />
-               </View>
-               <View style={styles.subModalActions}>
-                 <TouchableOpacity style={styles.subSecondaryBtn} onPress={() => setCompleteModalVisible(false)}><Text style={styles.subSecondaryBtnText}>Cancel</Text></TouchableOpacity>
-                 <TouchableOpacity style={styles.subPrimaryBtn} onPress={markAsCompleted}><Text style={styles.subPrimaryBtnText}>Mark as Completed</Text></TouchableOpacity>
-               </View>
+            <View style={{ padding: 20 }}>
+              <Text style={styles.subModalDesc}>Mark {selectedDep?.candidate} as completed at {selectedDep?.business}.</Text>
+              <View style={styles.formGroup}>
+                <Text style={styles.inputLabel}>Completion Date</Text>
+                <TextInput style={styles.input} placeholder="e.g. 30 Sep 2026" value={completionDate} onChangeText={setCompletionDate} />
+              </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.inputLabel}>Completion Note (Optional)</Text>
+                <TextInput style={styles.inputArea} placeholder="Any feedback..." multiline={true} numberOfLines={3} />
+              </View>
+              <View style={styles.subModalActions}>
+                <TouchableOpacity style={styles.subSecondaryBtn} onPress={() => setCompleteModalVisible(false)}><Text style={styles.subSecondaryBtnText}>Cancel</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.subPrimaryBtn} onPress={markAsCompleted}><Text style={styles.subPrimaryBtnText}>Mark as Completed</Text></TouchableOpacity>
+              </View>
             </View>
           </Pressable>
         </TouchableOpacity>
@@ -469,35 +448,35 @@ export default function ManpowerDeploymentsPage() {
             <View style={styles.subModalHeader}>
               <Text style={styles.subModalTitle}>Report Staff Exit</Text>
             </View>
-            <ScrollView style={{padding: 20, maxHeight: 400}} showsVerticalScrollIndicator={false}>
-               <Text style={styles.subModalDesc}>{selectedDep?.candidate} • {selectedDep?.role} at {selectedDep?.business}</Text>
-               <View style={styles.formGroup}>
-                 <Text style={styles.inputLabel}>Last Working Date</Text>
-                 <TextInput style={styles.input} placeholder="e.g. 15 May 2026" />
-               </View>
-               <View style={styles.formGroup}>
-                 <Text style={styles.inputLabel}>Exit Reason</Text>
-                 <TextInput style={styles.input} placeholder="e.g. Resigned, Personal Emergency..." value={exitReason} onChangeText={setExitReason} />
-               </View>
-               <View style={styles.formGroup}>
-                 <Text style={styles.inputLabel}>Replacement Required?</Text>
-                 <View style={{flexDirection: 'row', gap: 12}}>
-                   <TouchableOpacity style={[styles.radioBtn, replacementReq === 'Yes' && styles.radioBtnActive]} onPress={() => setReplacementReq('Yes')}>
-                     <Text style={[styles.radioText, replacementReq === 'Yes' && styles.radioTextActive]}>Yes</Text>
-                   </TouchableOpacity>
-                   <TouchableOpacity style={[styles.radioBtn, replacementReq === 'No' && styles.radioBtnActive]} onPress={() => setReplacementReq('No')}>
-                     <Text style={[styles.radioText, replacementReq === 'No' && styles.radioTextActive]}>No</Text>
-                   </TouchableOpacity>
-                 </View>
-               </View>
-               <View style={styles.formGroup}>
-                 <Text style={styles.inputLabel}>Exit Note (Optional)</Text>
-                 <TextInput style={styles.inputArea} placeholder="Details about the exit..." multiline={true} numberOfLines={3} />
-               </View>
-               <View style={[styles.subModalActions, {marginTop: 10}]}>
-                 <TouchableOpacity style={styles.subSecondaryBtn} onPress={() => setLeftJobModalVisible(false)}><Text style={styles.subSecondaryBtnText}>Cancel</Text></TouchableOpacity>
-                 <TouchableOpacity style={[styles.subPrimaryBtn, {backgroundColor: '#EF4444'}]} onPress={reportLeftJob}><Text style={styles.subPrimaryBtnText}>Confirm Staff Exit</Text></TouchableOpacity>
-               </View>
+            <ScrollView style={{ padding: 20, maxHeight: 400 }} showsVerticalScrollIndicator={false}>
+              <Text style={styles.subModalDesc}>{selectedDep?.candidate} • {selectedDep?.role} at {selectedDep?.business}</Text>
+              <View style={styles.formGroup}>
+                <Text style={styles.inputLabel}>Last Working Date</Text>
+                <TextInput style={styles.input} placeholder="e.g. 15 May 2026" />
+              </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.inputLabel}>Exit Reason</Text>
+                <TextInput style={styles.input} placeholder="e.g. Resigned, Personal Emergency..." value={exitReason} onChangeText={setExitReason} />
+              </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.inputLabel}>Replacement Required?</Text>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <TouchableOpacity style={[styles.radioBtn, replacementReq === 'Yes' && styles.radioBtnActive]} onPress={() => setReplacementReq('Yes')}>
+                    <Text style={[styles.radioText, replacementReq === 'Yes' && styles.radioTextActive]}>Yes</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.radioBtn, replacementReq === 'No' && styles.radioBtnActive]} onPress={() => setReplacementReq('No')}>
+                    <Text style={[styles.radioText, replacementReq === 'No' && styles.radioTextActive]}>No</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.inputLabel}>Exit Note (Optional)</Text>
+                <TextInput style={styles.inputArea} placeholder="Details about the exit..." multiline={true} numberOfLines={3} />
+              </View>
+              <View style={[styles.subModalActions, { marginTop: 10 }]}>
+                <TouchableOpacity style={styles.subSecondaryBtn} onPress={() => setLeftJobModalVisible(false)}><Text style={styles.subSecondaryBtnText}>Cancel</Text></TouchableOpacity>
+                <TouchableOpacity style={[styles.subPrimaryBtn, { backgroundColor: '#EF4444' }]} onPress={reportLeftJob}><Text style={styles.subPrimaryBtnText}>Confirm Staff Exit</Text></TouchableOpacity>
+              </View>
             </ScrollView>
           </Pressable>
         </TouchableOpacity>
@@ -510,20 +489,20 @@ export default function ManpowerDeploymentsPage() {
             <View style={styles.subModalHeader}>
               <Text style={styles.subModalTitle}>Update Assignment</Text>
             </View>
-            <View style={{padding: 20}}>
-               <Text style={styles.subModalDesc}>Modify employment details for {selectedDep?.candidate}.</Text>
-               <View style={styles.formGroup}>
-                 <Text style={styles.inputLabel}>Agreed Salary</Text>
-                 <TextInput style={styles.input} defaultValue={selectedDep?.salary} />
-               </View>
-               <View style={styles.formGroup}>
-                 <Text style={styles.inputLabel}>Working Hours</Text>
-                 <TextInput style={styles.input} defaultValue={selectedDep?.hours} />
-               </View>
-               <View style={styles.subModalActions}>
-                 <TouchableOpacity style={styles.subSecondaryBtn} onPress={() => setUpdateModalVisible(false)}><Text style={styles.subSecondaryBtnText}>Cancel</Text></TouchableOpacity>
-                 <TouchableOpacity style={styles.subPrimaryBtn} onPress={saveAssignmentUpdate}><Text style={styles.subPrimaryBtnText}>Save Changes</Text></TouchableOpacity>
-               </View>
+            <View style={{ padding: 20 }}>
+              <Text style={styles.subModalDesc}>Modify employment details for {selectedDep?.candidate}.</Text>
+              <View style={styles.formGroup}>
+                <Text style={styles.inputLabel}>Agreed Salary</Text>
+                <TextInput style={styles.input} defaultValue={selectedDep?.salary} />
+              </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.inputLabel}>Working Hours</Text>
+                <TextInput style={styles.input} defaultValue={selectedDep?.hours} />
+              </View>
+              <View style={styles.subModalActions}>
+                <TouchableOpacity style={styles.subSecondaryBtn} onPress={() => setUpdateModalVisible(false)}><Text style={styles.subSecondaryBtnText}>Cancel</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.subPrimaryBtn} onPress={saveAssignmentUpdate}><Text style={styles.subPrimaryBtnText}>Save Changes</Text></TouchableOpacity>
+              </View>
             </View>
           </Pressable>
         </TouchableOpacity>
@@ -537,7 +516,7 @@ export default function ManpowerDeploymentsPage() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16,  padding: 16, paddingTop: 20, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16, padding: 16, paddingTop: 20, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   headerTitleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   headerTitle: { fontSize: 22, fontWeight: 'bold', color: NAVY, marginLeft: 8 },
   headerSub: { fontSize: 13, color: '#64748B', lineHeight: 20 },
@@ -562,7 +541,7 @@ const styles = StyleSheet.create({
   filterChipTextActive: { color: '#fff' },
 
   listContent: { paddingBottom: 110 },
-  
+
   recordCard: { marginHorizontal: 16, backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
   recordHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   recordAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' },
@@ -585,13 +564,13 @@ const styles = StyleSheet.create({
   emptyDesc: { fontSize: 13, color: '#64748B', textAlign: 'center', lineHeight: 20 },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 16 },
-  
+
   // Premium Staff Record Details Modal Styles
   popupCardMain: { backgroundColor: '#F8FAFC', borderRadius: 20, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 },
   popupHeaderMain: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, paddingHorizontal: 20, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
   popupTitleMain: { fontSize: 16, fontWeight: 'bold', color: NAVY },
   modalCloseBtnMain: { padding: 4 },
-  
+
   identitySection: { flexDirection: 'row', alignItems: 'center', marginBottom: 24, backgroundColor: '#fff', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0' },
   recordAvatarLg: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' },
   recordAvatarTextLg: { fontSize: 24, fontWeight: 'bold', color: '#3B82F6' },
@@ -605,7 +584,7 @@ const styles = StyleSheet.create({
   premiumCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0' },
   cardHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   cardHeaderTitle: { fontSize: 15, fontWeight: 'bold', color: NAVY, marginLeft: 8 },
-  
+
   gridContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
   gridCol: { flex: 1, minWidth: 140, gap: 16 },
   gridItem: { gap: 4 },

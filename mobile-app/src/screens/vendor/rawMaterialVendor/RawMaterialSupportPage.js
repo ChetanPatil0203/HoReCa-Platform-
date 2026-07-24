@@ -9,10 +9,7 @@ import {
 const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
 
-const TICKETS = [
-  { id: 'TKT-1045', subject: 'Payment not reflected', status: 'Open', date: '14 Jul 2026' },
-  { id: 'TKT-1042', subject: 'Change bank details', status: 'Resolved', date: '10 Jul 2026' },
-];
+const TICKETS = [];
 
 const FAQS = [
   { q: 'How do I update my delivery areas?', a: 'You can update your delivery areas from Settings > Warehouse & Delivery Areas.' },

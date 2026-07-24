@@ -10,6 +10,7 @@ import PasswordField from '../../components/auth/PasswordField';
 import PrimaryButton from '../../components/auth/PrimaryButton';
 import { AuthContext } from '../../context/AuthContext';
 import { AUTH_COLORS } from '../../components/auth/AuthTheme';
+import { loginApi } from '../../services/api.service';
 
 export default function LoginScreen({ navigation }) {
   const { width } = useWindowDimensions();
@@ -53,14 +54,24 @@ export default function LoginScreen({ navigation }) {
     return isValid;
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!validate()) return;
 
     setIsLoading(true);
-    setTimeout(() => {
+    setLoginError('');
+    try {
+      const response = await loginApi(email, password);
+      if (response.success && response.data) {
+        const { token, panelType } = response.data;
+        login(panelType || 'owner', token);
+      } else {
+        setLoginError(response.message || 'Login failed.');
+      }
+    } catch (err) {
+      setLoginError(err.response?.data?.message || err.message || 'Login failed.');
+    } finally {
       setIsLoading(false);
-      login('owner', 'demo-token');
-    }, 1500);
+    }
   };
 
   const handleDemoSelect = (panel) => {

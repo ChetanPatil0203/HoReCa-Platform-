@@ -15,23 +15,11 @@ const LIGHT_BG = '#F8FAFC';
 const GREEN = '#16A34A';
 const BORDER = '#E2E8F0';
 
-const MOCK_SERVICES = [
-  { id: 1, name: 'Deep Kitchen Cleaning', desc: 'Thorough cleaning of commercial kitchen spaces including exhaust hoods.', available: 'Available This Week', priceType: 'Starting from', price: '₹5,000' },
-  { id: 2, name: 'Pest Control', desc: 'Comprehensive pest management for food service areas.', available: 'Available Today', priceType: 'Inspection Required', price: '₹500 / visit' },
-  { id: 3, name: 'AC Maintenance', desc: 'Routine and preventive maintenance for commercial HVAC.', available: 'Available Tomorrow', priceType: 'Fixed Price', price: '₹1,500 / unit' }
-];
+const MOCK_SERVICES = [];
 
-const MOCK_CERTS = [
-  { id: 1, name: 'ISO 9001 Certified', authority: 'ISO', status: 'Verified', validity: '2028' },
-  { id: 2, name: 'Health & Safety Compliant', authority: 'FSSAI', status: 'Verified', validity: '2027' },
-  { id: 3, name: 'Verified Business Registration', authority: 'Gov', status: 'Verified', validity: 'Lifetime' }
-];
+const MOCK_CERTS = [];
 
-const MOCK_REVIEWS = [
-  { id: 1, user: 'The Meridian Hotel', type: 'Hotel', rating: 5, comment: 'Excellent and prompt service. The kitchen was left spotless.', date: '2 Days Ago' },
-  { id: 2, user: 'Spice Route', type: 'Restaurant', rating: 4, comment: 'Good work, very professional team.', date: '1 Week Ago' },
-  { id: 3, user: 'Cafe Mocha', type: 'Cafe', rating: 5, comment: 'Very reliable for monthly maintenance.', date: '3 Weeks Ago' }
-];
+const MOCK_REVIEWS = [];
 
 export default function ProviderProfilePage({ provider, onBack }) {
   const { width } = useWindowDimensions();
@@ -47,13 +35,13 @@ export default function ProviderProfilePage({ provider, onBack }) {
   const [selectedCert, setSelectedCert] = useState(null);
 
   const currentProvider = provider || {
-    name: 'SafeGuard Solutions',
-    rating: 4.9,
-    experience: '8 Years',
-    jobs: 450,
-    verified: true,
-    location: 'Downtown, Jalgaon',
-    availability: 'Available for Requests'
+    name: '',
+    rating: 0,
+    experience: '',
+    jobs: 0,
+    verified: false,
+    location: '',
+    availability: ''
   };
 
   const handleSendRequest = () => {

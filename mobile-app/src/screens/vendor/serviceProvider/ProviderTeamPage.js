@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { 
-  View, Text, StyleSheet, FlatList, TouchableOpacity, 
-  SafeAreaView, useWindowDimensions, Modal, TextInput, 
+import {
+  View, Text, StyleSheet, FlatList, TouchableOpacity,
+  SafeAreaView, useWindowDimensions, Modal, TextInput,
   ScrollView, KeyboardAvoidingView, Platform, Switch
 } from 'react-native';
-import { 
-  Users, CheckCircle, Clock, XCircle, Briefcase, 
+import {
+  Users, CheckCircle, Clock, XCircle, Briefcase,
   Search, Filter, Plus, Edit, User, MapPin, AlertCircle,
   Phone, Mail, Camera, Eye, Upload
 } from 'lucide-react-native';
@@ -14,64 +14,15 @@ const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
 
 const SUMMARY_DATA = [
-  { label: "Total Employees", value: "12", icon: Users, color: "#3B82F6", bg: "#DBEAFE" },
-  { label: "Available", value: "8", icon: CheckCircle, color: "#10B981", bg: "#D1FAE5" },
-  { label: "Busy", value: "2", icon: Clock, color: "#F59E0B", bg: "#FEF3C7" },
-  { label: "On Leave", value: "1", icon: AlertCircle, color: "#94A3B8", bg: "#F1F5F9" },
-  { label: "Inactive", value: "1", icon: XCircle, color: "#EF4444", bg: "#FEE2E2" },
-  { label: "Jobs Assigned Today", value: "4", icon: Briefcase, color: "#8B5CF6", bg: "#F3E8FF" },
+  { label: "Total Employees", value: "0", icon: Users, color: "#3B82F6", bg: "#DBEAFE" },
+  { label: "Available", value: "0", icon: CheckCircle, color: "#10B981", bg: "#D1FAE5" },
+  { label: "Busy", value: "0", icon: Clock, color: "#F59E0B", bg: "#FEF3C7" },
+  { label: "On Leave", value: "0", icon: AlertCircle, color: "#94A3B8", bg: "#F1F5F9" },
+  { label: "Inactive", value: "0", icon: XCircle, color: "#EF4444", bg: "#FEE2E2" },
+  { label: "Jobs Assigned Today", value: "0", icon: Briefcase, color: "#8B5CF6", bg: "#F3E8FF" },
 ];
 
-const MOCK_TEAM = [
-  {
-    id: "EMP-001",
-    name: "Rahul Sharma",
-    role: "Senior Electrician",
-    skills: "Wiring, Panels, HVAC",
-    experience: "8 Years",
-    status: "Available",
-    currentJob: null,
-    phone: "+91 9876543210",
-    email: "rahul.s@hrchub.com",
-    address: "Andheri East, Mumbai",
-  },
-  {
-    id: "EMP-002",
-    name: "Amit Kumar",
-    role: "AC Technician",
-    skills: "Split AC, VRV, Chillers",
-    experience: "5 Years",
-    status: "Busy",
-    currentJob: "JOB-449 (Exhaust Fan Install)",
-    phone: "+91 9876543211",
-    email: "amit.k@hrchub.com",
-    address: "Bandra West, Mumbai",
-  },
-  {
-    id: "EMP-003",
-    name: "Sanjay Patel",
-    role: "Plumber",
-    skills: "Piping, Drain Cleaning",
-    experience: "4 Years",
-    status: "On Leave",
-    currentJob: null,
-    phone: "+91 9876543212",
-    email: "sanjay.p@hrchub.com",
-    address: "Dadar, Mumbai",
-  },
-  {
-    id: "EMP-004",
-    name: "Vikram Singh",
-    role: "Appliance Technician",
-    skills: "Ovens, Refrigerators",
-    experience: "2 Years",
-    status: "Inactive",
-    currentJob: null,
-    phone: "+91 9876543213",
-    email: "vikram.s@hrchub.com",
-    address: "Malad, Mumbai",
-  }
-];
+const MOCK_TEAM = [];
 
 export default function ProviderTeamPage() {
   const { width } = useWindowDimensions();
@@ -80,7 +31,7 @@ export default function ProviderTeamPage() {
   const [team, setTeam] = useState(MOCK_TEAM);
   const [formModalVisible, setFormModalVisible] = useState(false);
   const [editingEmp, setEditingEmp] = useState(null);
-  
+
   const [assignModalVisible, setAssignModalVisible] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState(null);
 
@@ -91,7 +42,7 @@ export default function ProviderTeamPage() {
   });
 
   const getStatusColor = (status) => {
-    switch(status) {
+    switch (status) {
       case 'Available': return { bg: '#D1FAE5', text: '#10B981' };
       case 'Busy': return { bg: '#FEF3C7', text: '#F59E0B' };
       case 'On Leave': return { bg: '#F1F5F9', text: '#64748B' };
@@ -159,7 +110,7 @@ export default function ProviderTeamPage() {
   const renderEmployeeCard = ({ item }) => {
     const statusStyle = getStatusColor(item.status);
     const canAssign = item.status === 'Available';
-    
+
     return (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
@@ -204,10 +155,10 @@ export default function ProviderTeamPage() {
               <XCircle size={16} color="#EF4444" />
             </TouchableOpacity>
           </View>
-          
+
           <View style={[styles.actionBtnsRight, isSmallScreen && { width: '100%' }]}>
-            <TouchableOpacity 
-              style={[styles.btnPrimary, !canAssign && styles.btnDisabled]} 
+            <TouchableOpacity
+              style={[styles.btnPrimary, !canAssign && styles.btnDisabled]}
               onPress={() => handleAction(item, 'Assign Job')}
               disabled={!canAssign}
             >
@@ -223,7 +174,7 @@ export default function ProviderTeamPage() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        
+
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Team Management</Text>
@@ -254,13 +205,13 @@ export default function ProviderTeamPage() {
             <View style={styles.listHeader}>
               <Text style={styles.listTitle}>All Employees</Text>
             </View>
-            
+
             {team.map(item => (
               <React.Fragment key={item.id}>
                 {renderEmployeeCard({ item })}
               </React.Fragment>
             ))}
-            
+
             <View style={{ height: 100 }} />
           </View>
         </ScrollView>
@@ -283,10 +234,10 @@ export default function ProviderTeamPage() {
               <View style={styles.sheetBody}>
                 <Text style={styles.inputLabel}>Select Scheduled Job</Text>
                 <View style={styles.mockSelect}>
-                  <Text style={{color: '#64748B'}}>JOB-452 (AC Deep Cleaning)</Text>
+                  <Text style={{ color: '#64748B' }}>JOB-452 (AC Deep Cleaning)</Text>
                 </View>
-                <TouchableOpacity 
-                  style={styles.btnPrimaryLarge} 
+                <TouchableOpacity
+                  style={styles.btnPrimaryLarge}
                   onPress={() => {
                     setTeam(prev => prev.map(e => e.id === selectedEmp?.id ? { ...e, status: 'Busy', currentJob: 'JOB-452 (AC Deep Cleaning)' } : e));
                     setAssignModalVisible(false);
@@ -301,8 +252,8 @@ export default function ProviderTeamPage() {
 
         {/* Add/Edit Form Modal */}
         <Modal visible={formModalVisible} animationType="slide" transparent={true}>
-          <KeyboardAvoidingView 
-            style={styles.modalOverlay} 
+          <KeyboardAvoidingView
+            style={styles.modalOverlay}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
           >
             <View style={styles.bottomSheet}>
@@ -314,7 +265,7 @@ export default function ProviderTeamPage() {
               </View>
 
               <ScrollView style={styles.sheetBody} showsVerticalScrollIndicator={false}>
-                
+
                 <View style={styles.photoUploadCenter}>
                   <TouchableOpacity style={styles.avatarUpload}>
                     <Camera size={24} color="#94A3B8" />
@@ -325,20 +276,20 @@ export default function ProviderTeamPage() {
                 <View style={styles.formRow}>
                   <View style={styles.formCol}>
                     <Text style={styles.inputLabel}>Full Name</Text>
-                    <TextInput 
-                      style={styles.input} 
-                      placeholder="e.g. Rahul Sharma" 
+                    <TextInput
+                      style={styles.input}
+                      placeholder="e.g. Rahul Sharma"
                       value={form.name}
-                      onChangeText={(t) => setForm({...form, name: t})}
+                      onChangeText={(t) => setForm({ ...form, name: t })}
                     />
                   </View>
                   <View style={styles.formCol}>
                     <Text style={styles.inputLabel}>Role</Text>
-                    <TextInput 
-                      style={styles.input} 
-                      placeholder="e.g. Electrician" 
+                    <TextInput
+                      style={styles.input}
+                      placeholder="e.g. Electrician"
                       value={form.role}
-                      onChangeText={(t) => setForm({...form, role: t})}
+                      onChangeText={(t) => setForm({ ...form, role: t })}
                     />
                   </View>
                 </View>
@@ -346,71 +297,71 @@ export default function ProviderTeamPage() {
                 <View style={styles.formRow}>
                   <View style={styles.formCol}>
                     <Text style={styles.inputLabel}>Phone</Text>
-                    <TextInput 
-                      style={styles.input} 
-                      placeholder="+91" 
+                    <TextInput
+                      style={styles.input}
+                      placeholder="+91"
                       keyboardType="phone-pad"
                       value={form.phone}
-                      onChangeText={(t) => setForm({...form, phone: t})}
+                      onChangeText={(t) => setForm({ ...form, phone: t })}
                     />
                   </View>
                   <View style={styles.formCol}>
                     <Text style={styles.inputLabel}>Email</Text>
-                    <TextInput 
-                      style={styles.input} 
-                      placeholder="email@example.com" 
+                    <TextInput
+                      style={styles.input}
+                      placeholder="email@example.com"
                       keyboardType="email-address"
                       value={form.email}
-                      onChangeText={(t) => setForm({...form, email: t})}
+                      onChangeText={(t) => setForm({ ...form, email: t })}
                     />
                   </View>
                 </View>
 
                 <Text style={styles.inputLabel}>Skills (Comma separated)</Text>
-                <TextInput 
-                  style={styles.input} 
-                  placeholder="e.g. Wiring, HVAC, Panels" 
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g. Wiring, HVAC, Panels"
                   value={form.skills}
-                  onChangeText={(t) => setForm({...form, skills: t})}
+                  onChangeText={(t) => setForm({ ...form, skills: t })}
                 />
 
                 <View style={styles.formRow}>
                   <View style={styles.formCol}>
                     <Text style={styles.inputLabel}>Experience</Text>
-                    <TextInput 
-                      style={styles.input} 
-                      placeholder="e.g. 5 Years" 
+                    <TextInput
+                      style={styles.input}
+                      placeholder="e.g. 5 Years"
                       value={form.experience}
-                      onChangeText={(t) => setForm({...form, experience: t})}
+                      onChangeText={(t) => setForm({ ...form, experience: t })}
                     />
                   </View>
                   <View style={styles.formCol}>
                     <Text style={styles.inputLabel}>Joining Date</Text>
-                    <TextInput 
-                      style={styles.input} 
-                      placeholder="DD/MM/YYYY" 
+                    <TextInput
+                      style={styles.input}
+                      placeholder="DD/MM/YYYY"
                       value={form.joiningDate}
-                      onChangeText={(t) => setForm({...form, joiningDate: t})}
+                      onChangeText={(t) => setForm({ ...form, joiningDate: t })}
                     />
                   </View>
                 </View>
 
                 <Text style={styles.inputLabel}>Home Address</Text>
-                <TextInput 
-                  style={styles.textArea} 
-                  placeholder="Full address..." 
+                <TextInput
+                  style={styles.textArea}
+                  placeholder="Full address..."
                   multiline
                   numberOfLines={2}
                   value={form.address}
-                  onChangeText={(t) => setForm({...form, address: t})}
+                  onChangeText={(t) => setForm({ ...form, address: t })}
                 />
 
                 <Text style={styles.inputLabel}>Emergency Contact</Text>
-                <TextInput 
-                  style={styles.input} 
-                  placeholder="Name - Phone" 
+                <TextInput
+                  style={styles.input}
+                  placeholder="Name - Phone"
                   value={form.emergencyContact}
-                  onChangeText={(t) => setForm({...form, emergencyContact: t})}
+                  onChangeText={(t) => setForm({ ...form, emergencyContact: t })}
                 />
 
                 <Text style={styles.inputLabel}>ID Proof / Verification Document</Text>
@@ -422,7 +373,7 @@ export default function ProviderTeamPage() {
                 <TouchableOpacity style={styles.btnPrimaryLargeGold} onPress={handleSaveEmployee}>
                   <Text style={styles.btnPrimaryLargeText}>Save Employee</Text>
                 </TouchableOpacity>
-                <View style={{height: 40}}/>
+                <View style={{ height: 40 }} />
               </ScrollView>
             </View>
           </KeyboardAvoidingView>
@@ -441,7 +392,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16, 
+  header: {
+    minHeight: 90, paddingTop: 40, paddingBottom: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

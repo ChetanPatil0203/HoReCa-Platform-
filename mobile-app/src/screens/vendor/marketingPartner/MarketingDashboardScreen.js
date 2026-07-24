@@ -5,22 +5,19 @@ import { AuthContext } from '../../../context/AuthContext';
 import { mockDb } from '../../../services/mockDb';
 
 const KPI_DATA = [
-  { label: "Active Campaigns", value: "3", delta: "+1 this month", icon: Megaphone, color: "#071B3A" },
-  { label: "Monthly Revenue", value: "₹1.2L", delta: "+34% vs last month", icon: TrendingUp, color: "#10B981" },
-  { label: "Avg. Rating", value: "4.5 ★", delta: "From 38 reviews", icon: Star, color: "#F59E0B" },
-  { label: "Client Retention", value: "86%", delta: "+4% this month", icon: Zap, color: "#2563EB" },
+  { label: "Active Campaigns", value: "0", delta: "0 this month", icon: Megaphone, color: "#071B3A" },
+  { label: "Monthly Revenue", value: "₹0", delta: "0% vs last month", icon: TrendingUp, color: "#10B981" },
+  { label: "Avg. Rating", value: "0 ★", delta: "From 0 reviews", icon: Star, color: "#F59E0B" },
+  { label: "Client Retention", value: "0%", delta: "0% this month", icon: Zap, color: "#2563EB" },
 ];
 
 const REVENUE_DATA = [
-  { month: "Jan", revenue: 0.4 }, { month: "Feb", revenue: 0.5 },
-  { month: "Mar", revenue: 0.7 }, { month: "Apr", revenue: 0.8 },
-  { month: "May", revenue: 0.9 }, { month: "Jun", revenue: 1.2 }
+  { month: "Jan", revenue: 0 }, { month: "Feb", revenue: 0 },
+  { month: "Mar", revenue: 0 }, { month: "Apr", revenue: 0 },
+  { month: "May", revenue: 0 }, { month: "Jun", revenue: 0 }
 ];
 
-const RECENT_ORDERS = [
-  { id: "ORD-K001", title: "July Social Media Campaign", client: "Azure Palace Hotel", value: "₹40,000", date: "16 Jun", status: "New" },
-  { id: "ORD-K002", title: "Complete Menu Photography", client: "Spice Route Restaurant", value: "₹18,000", date: "15 Jun", status: "Pending" },
-];
+const RECENT_ORDERS = [];
 
 const STATUS_STYLES = {
   New: { bg: "#DBEAFE", color: "#2563EB" },

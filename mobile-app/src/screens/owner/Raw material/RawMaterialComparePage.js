@@ -5,53 +5,7 @@ import { colors } from '../../../theme/colors';
 
 const GOLD = '#D97706';
 
-const MOCK_VENDORS = [
-  {
-    id: 'v1',
-    name: 'Metro Fresh Supplies',
-    price: 38,
-    rating: 4.8,
-    reviews: 124,
-    deliveryTime: 'Tomorrow, by 10 AM',
-    moq: '20',
-    stock: '250',
-    gst: '5%',
-    deliveryCharge: 'Free',
-    returnPolicy: 'Not Returnable',
-    location: 'Mumbai, MH',
-    badges: ['⭐ Best Rated']
-  },
-  {
-    id: 'v2',
-    name: 'Quality Foods',
-    price: 35,
-    rating: 4.3,
-    reviews: 89,
-    deliveryTime: '2 Days',
-    moq: '50',
-    stock: '500',
-    gst: '5%',
-    deliveryCharge: '₹100',
-    returnPolicy: '7 Days Return',
-    location: 'Pune, MH',
-    badges: ['💸 Best Price']
-  },
-  {
-    id: 'v3',
-    name: 'Shree Traders',
-    price: 40,
-    rating: 4.6,
-    reviews: 210,
-    deliveryTime: 'Today, by 6 PM',
-    moq: '10',
-    stock: '120',
-    gst: '5%',
-    deliveryCharge: '₹50',
-    returnPolicy: 'Replacement Only',
-    location: 'Navi Mumbai, MH',
-    badges: ['⚡ Fastest Delivery']
-  }
-];
+const MOCK_VENDORS = [];
 
 export default function RawMaterialComparePage({ product, qty = 1, onBack, onAddToCart, onQuote }) {
   const { width } = useWindowDimensions();

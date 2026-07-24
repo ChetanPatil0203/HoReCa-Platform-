@@ -13,76 +13,17 @@ const NAVY = '#071B3A';
 const GOLD = '#F6B800';
 
 const OVERVIEW_DATA = [
-  { label: "Open Opportunities", value: "5", icon: Radio, color: "#3B82F6", bg: "#EFF6FF", navigateTo: "feed" },
-  { label: "Pending Quotes", value: "3", icon: Clock, color: "#F59E0B", bg: "#FFFBEB", navigateTo: "quotes" },
-  { label: "Scheduled Today", value: "2", icon: Calendar, color: "#10B981", bg: "#ECFDF5", navigateTo: "jobs" },
-  { label: "Active Jobs", value: "4", icon: Wrench, color: "#6C4CF6", bg: "#F3F0FF", navigateTo: "jobs" },
+  { label: "Open Opportunities", value: "0", icon: Radio, color: "#3B82F6", bg: "#EFF6FF", navigateTo: "feed" },
+  { label: "Pending Quotes", value: "0", icon: Clock, color: "#F59E0B", bg: "#FFFBEB", navigateTo: "quotes" },
+  { label: "Scheduled Today", value: "0", icon: Calendar, color: "#10B981", bg: "#ECFDF5", navigateTo: "jobs" },
+  { label: "Active Jobs", value: "0", icon: Wrench, color: "#6C4CF6", bg: "#F3F0FF", navigateTo: "jobs" },
 ];
 
-const COMMON_FEED = [
-  {
-    id: "REQ-209",
-    service: "AC Deep Cleaning",
-    business: "Grand Hotel & Spa",
-    location: "Bandra West",
-    budget: "₹15,000 – ₹20,000",
-    date: "24 Oct 2026",
-    priority: "High",
-    responses: 5,
-  },
-  {
-    id: "REQ-208",
-    service: "Commercial Oven Repair",
-    business: "Cafe Aroma",
-    location: "Andheri East",
-    budget: "₹8,000 – ₹12,000",
-    date: "25 Oct 2026",
-    priority: "Normal",
-    responses: 2,
-  }
-];
+const COMMON_FEED = [];
 
-const TODAYS_SCHEDULE = [
-  {
-    service: "AC Maintenance",
-    business: "The Meridian Hotel",
-    time: "10:30 AM",
-    status: "Scheduled",
-  },
-  {
-    service: "Pest Control",
-    business: "Cafe Aroma",
-    time: "02:00 PM",
-    status: "Upcoming",
-  }
-];
+const TODAYS_SCHEDULE = [];
 
-const RECENT_ACTIVITY = [
-  {
-    title: "Quote Submitted",
-    description: "Quote sent to Grand Hotel & Spa",
-    time: "10 minutes ago",
-    icon: FileText,
-    color: "#F59E0B",
-    bg: "#FFFBEB"
-  },
-  {
-    title: "Request Accepted",
-    description: "AC maintenance request confirmed",
-    time: "1 hour ago",
-    icon: CheckCircle,
-    color: "#10B981",
-    bg: "#ECFDF5"
-  },
-  {
-    title: "Service Completed",
-    description: "Deep kitchen cleaning completed",
-    time: "Yesterday",
-    icon: Briefcase,
-    color: "#6C4CF6",
-    bg: "#F3F0FF"
-  }
-];
+const RECENT_ACTIVITY = [];
 
 export default function ProviderDashboardHome({ onNavigate }) {
   const { width } = useWindowDimensions();

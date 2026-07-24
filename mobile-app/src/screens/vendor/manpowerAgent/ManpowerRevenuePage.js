@@ -6,11 +6,7 @@ import CreateInvoiceModal from '../../../components/vendor/manpowerAgent/CreateI
 const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
 
-const MOCK_INVOICES = [
-  { id: "INV-1001", client: "JW Marriott", candidate: "Vikram Singh", type: "Placement Fee", date: "12 Jul 2026", due: "22 Jul 2026", amount: 50000, status: "Sent" },
-  { id: "INV-1002", client: "Starbucks", candidate: "Neha Gupta", type: "Placement Fee", date: "01 Jul 2026", due: "10 Jul 2026", amount: 45000, status: "Paid" },
-  { id: "INV-1003", client: "Olive Bar", candidate: "Ravi Kumar", type: "Replacement Charge", date: "15 Jun 2026", due: "25 Jun 2026", amount: 15000, status: "Overdue" },
-];
+const MOCK_INVOICES = [];
 
 export default function ManpowerRevenuePage() {
   const [invoices, setInvoices] = useState(MOCK_INVOICES);

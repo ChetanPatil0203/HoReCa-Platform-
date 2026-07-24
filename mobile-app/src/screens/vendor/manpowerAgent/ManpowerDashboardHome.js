@@ -17,34 +17,15 @@ const PURPLE = '#8B5CF6';
 const WHITE = '#FFFFFF';
 
 const OVERVIEW_STATS = [
-  { id: 'opportunities', label: 'Open Opportunities', value: '14', icon: RadioTower, color: BLUE, action: 'FeedWall' },
-  { id: 'direct', label: 'Direct Requests', value: '3', icon: Inbox, color: ORANGE, action: 'DirectRequests' },
-  { id: 'available', label: 'Candidates Available', value: '18', icon: Users, color: GREEN, action: 'Candidates' },
-  { id: 'staff', label: 'Active Staff', value: '42', icon: UserCheck, color: PURPLE, action: 'StaffRecords' },
+  { id: 'opportunities', label: 'Open Opportunities', value: '0', icon: RadioTower, color: BLUE, action: 'FeedWall' },
+  { id: 'direct', label: 'Direct Requests', value: '0', icon: Inbox, color: ORANGE, action: 'DirectRequests' },
+  { id: 'available', label: 'Candidates Available', value: '0', icon: Users, color: GREEN, action: 'Candidates' },
+  { id: 'staff', label: 'Active Staff', value: '0', icon: UserCheck, color: PURPLE, action: 'StaffRecords' },
 ];
 
-const FEED_REQUIREMENTS = [
-  {
-    id: "REQ-209", businessName: "The Grand Taj", type: "Hotel", verified: true, location: "Bandra West",
-    role: "Head Chef", count: 1, experience: "8-10 Years", salary: "₹60K–₹80K",
-    typeStr: "Full Time", joining: "25 Jul 2026", status: "NEW", 
-    desc: "Seeking an experienced Head Chef to lead our multi-cuisine kitchen. Must have experience with fine dining and large banquets.",
-    shift: "Split Shift (Morning + Evening)", skills: "Menu Planning, Team Leadership, Inventory Management"
-  },
-  {
-    id: "REQ-214", businessName: "Sky Lounge", type: "Bar", verified: true, location: "Colaba",
-    role: "Bartender", count: 2, experience: "3-5 Years", salary: "₹30K–₹40K",
-    typeStr: "Full Time", joining: "Immediate", status: "HIGH PRIORITY",
-    desc: "Looking for energetic bartenders with strong mixology skills and excellent customer service.",
-    shift: "Evening / Night", skills: "Mixology, Customer Service, Inventory"
-  }
-];
+const FEED_REQUIREMENTS = [];
 
-const MOCK_CANDIDATES = [
-  { id: 'C1', name: 'Rahul Patil', role: 'Head Chef', experience: '9 Years', salary: '₹65K', location: 'Bandra', verified: true },
-  { id: 'C2', name: 'Sanjay Sharma', role: 'Sous Chef', experience: '6 Years', salary: '₹45K', location: 'Andheri', verified: true },
-  { id: 'C3', name: 'Priya Singh', role: 'Head Chef', experience: '12 Years', salary: '₹80K', location: 'Navi Mumbai', verified: true },
-];
+const MOCK_CANDIDATES = [];
 
 export default function ManpowerDashboardHome({ onNavigate }) {
   const { width } = useWindowDimensions();

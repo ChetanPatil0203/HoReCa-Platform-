@@ -21,26 +21,7 @@ const CATEGORIES = [
   'Flour', 'Pulses', 'Oils', 'Bakery Products', 'Meat', 'Seafood'
 ];
 
-const MOCK_INVENTORY = [
-  {
-    id: "PRD-001", sku: "RM-RICE-BSMT-01", name: "Premium Basmati Rice", category: "Grains and Rice",
-    currentStock: 1200, reservedStock: 200, availableStock: 1000, unit: "kg",
-    wholesalePrice: 85, moq: "50", expiry: "12 Dec 2027", status: "In Stock",
-    history: [], created: "01 Jan 2026", updated: "10 Jul 2026"
-  },
-  {
-    id: "PRD-002", sku: "RM-SLMN-ATL-01", name: "Atlantic Salmon (Whole)", category: "Seafood",
-    currentStock: 45, reservedStock: 30, availableStock: 15, unit: "kg",
-    wholesalePrice: 1200, moq: "10", expiry: "20 Jul 2026", status: "Low Stock",
-    history: [], created: "15 Feb 2026", updated: "14 Jul 2026"
-  },
-  {
-    id: "PRD-003", sku: "RM-OIL-EVOO-02", name: "Olive Oil (Extra Virgin)", category: "Oils",
-    currentStock: 0, reservedStock: 0, availableStock: 0, unit: "L",
-    wholesalePrice: 850, moq: "5", expiry: "05 May 2028", status: "Out of Stock",
-    history: [], created: "10 Mar 2026", updated: "18 Jul 2026"
-  }
-];
+const MOCK_INVENTORY = [];
 
 export default function RawMaterialInventoryPage() {
   const { width } = useWindowDimensions();

@@ -27,7 +27,7 @@ const WHITE = '#FFFFFF';
 export default function RawMaterialDashboard() {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || (Platform.OS !== 'web');
-  const { logout } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
 
   const [activePage, setActivePage] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -98,8 +98,8 @@ export default function RawMaterialDashboard() {
   ];
 
   const profileData = {
-    initials: "MF",
-    name: "Metro Fresh",
+    initials: user?.name ? user.name.slice(0, 2).toUpperCase() : "RM",
+    name: user?.name || "Raw Material Vendor",
     role: "Raw Material Supplier",
     badge: "VENDOR"
   };

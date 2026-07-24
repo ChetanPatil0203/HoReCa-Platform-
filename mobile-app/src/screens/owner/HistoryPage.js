@@ -33,38 +33,7 @@ const BG_COLORS = {
   'marketing': '#F5F3FF',
 };
 
-const HISTORY_DATA = [
-  { 
-    id: "ORD-287", category: "raw-material", title: "Premium Basmati Rice", 
-    vendor: "Metro Fresh Supplies", qty: "500 kg", date: "15 Jul 2026", amount: "₹45,000", 
-    status: "In Progress", timeline: ["Order Placed", "Accepted", "Processing"]
-  },
-  { 
-    id: "REQ-286", category: "manpower", title: "Weekend Kitchen Staff", 
-    vendor: "Elite Staffing Agency", qty: "2 Staff", date: "20 Jul 2026", amount: null, 
-    status: "Candidates Submitted", timeline: ["Open", "Candidates Submitted"]
-  },
-  { 
-    id: "SRV-285", category: "service", title: "Deep Kitchen Cleaning", 
-    vendor: "ProClean Services", qty: null, date: "22 Jul 2026", amount: "₹8,500", 
-    status: "Accepted", timeline: ["Request Sent", "Quote Received", "Accepted"]
-  },
-  { 
-    id: "MKT-284", category: "marketing", title: "June Social Campaign", 
-    vendor: "BrandCraft Agency", qty: "1 Month", date: "01 Jun 2026", amount: "₹35,000", 
-    status: "Active", timeline: ["Request Sent", "Proposal Accepted", "Campaign Active"]
-  },
-  { 
-    id: "ORD-283", category: "raw-material", title: "Fresh Vegetables Pack", 
-    vendor: "Metro Fresh Supplies", qty: "200 kg", date: "10 Jun 2026", amount: "₹12,200", 
-    status: "Delivered", timeline: ["Order Placed", "Accepted", "Processing", "Dispatched", "Delivered"]
-  },
-  { 
-    id: "SRV-279", category: "service", title: "AC Maintenance", 
-    vendor: "CoolBreeze Tech", qty: null, date: "08 Jun 2026", amount: "₹4,000", 
-    status: "Completed", timeline: ["Request Sent", "Quote Accepted", "Scheduled", "In Progress", "Completed"]
-  },
-];
+const HISTORY_DATA = [];
 
 const CAT_LABELS = {
   'raw-material': 'RAW MATERIAL',

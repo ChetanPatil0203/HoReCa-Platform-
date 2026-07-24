@@ -6,11 +6,7 @@ import TicketDetailsModal from '../../../components/vendor/manpowerAgent/TicketD
 
 const NAVY = '#081A3A';
 
-const MOCK_TICKETS = [
-  { id: "TKT-1045", category: "Billing", subject: "Incorrect GST calculation on Invoice 1002", priority: "High", date: "12 Jul 2026", status: "Open" },
-  { id: "TKT-1022", category: "Technical", subject: "App crashing when uploading candidate photo", priority: "Medium", date: "05 Jul 2026", status: "Resolved" },
-  { id: "TKT-0998", category: "Account", subject: "Update bank account details", priority: "Low", date: "20 Jun 2026", status: "Closed" }
-];
+const MOCK_TICKETS = [];
 
 const FAQS = [
   { id: 1, q: "How do I create an invoice for staff records?", a: "Go to the Revenue page, click 'Create' and fill out the details. You can link the invoice directly to an active staff record from the dropdown." },

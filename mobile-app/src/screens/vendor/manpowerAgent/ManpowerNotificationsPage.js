@@ -4,34 +4,7 @@ import { Bell, Briefcase, User, Calendar, CheckCircle, DollarSign, AlertTriangle
 
 const NAVY = '#081A3A';
 
-const MOCK_NOTIFICATIONS = [
-  {
-    id: "NOT-001", type: "Requirements", title: "New Job Requirement",
-    message: "Olive Bar has sent a job requirement for a Bartender.",
-    date: "Just now", read: false, icon: Briefcase, color: "#3B82F6"
-  },
-  {
-    id: "NOT-002", type: "Candidates", title: "Candidate Shortlisted",
-    message: "JW Marriott has shortlisted Vikram Singh for Sous Chef.",
-    date: "1 hour ago", read: false, icon: User, color: "#10B981"
-  },
-
-  {
-    id: "NOT-004", type: "Staff Records", title: "Joining Reminder",
-    message: "Rahul Sharma is scheduled to join The Grand Taj tomorrow.",
-    date: "1 day ago", read: true, icon: CheckCircle, color: "#F59E0B"
-  },
-  {
-    id: "NOT-005", type: "Payments", title: "Payment Received",
-    message: "Starbucks has paid Invoice INV-1002.",
-    date: "2 days ago", read: true, icon: DollarSign, color: "#10B981"
-  },
-  {
-    id: "NOT-006", type: "System", title: "Agency Profile Approved",
-    message: "Your HRC HUB Manpower Agency profile is now verified.",
-    date: "1 week ago", read: true, icon: AlertTriangle, color: "#64748B"
-  }
-];
+const MOCK_NOTIFICATIONS = [];
 
 const FILTERS = ['All', 'Requirements', 'Candidates', 'Staff Records', 'Payments', 'System'];
 

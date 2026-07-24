@@ -147,7 +147,10 @@ export default function RegisterScreen({ navigation }) {
   };
 
   const finishRegistration = () => {
-    login(formData.businessCategory === 'Vendor / Supplier' ? 'vendor' : 'owner', 'mock-jwt-token');
+    alert('Registration Successful! Please log in with your credentials to continue.');
+    if (navigation && navigation.navigate) {
+      navigation.navigate('Login');
+    }
   };
 
   const renderStepper = () => {
@@ -321,6 +324,9 @@ export default function RegisterScreen({ navigation }) {
               {InputField({ label: "Business / Agency Name", keyName: "businessName", placeholder: "The Meridian Group" })}
               {InputField({ label: "Contact Person Name", keyName: "contactPerson", placeholder: "Rahul Sharma" })}
               {InputField({ label: "GST Number", keyName: "gst", placeholder: "22AAAAA0000A1Z5" })}
+              {formData.businessCategory !== 'Vendor / Supplier' && (
+                InputField({ label: "FSSAI License Number *", keyName: "fssai", placeholder: "14-digit FSSAI License No.", keyboard: "numeric" })
+              )}
               {InputField({ label: "Business Address", keyName: "address", placeholder: "123 Business Avenue" })}
 
               <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -475,7 +481,7 @@ export default function RegisterScreen({ navigation }) {
               )}
 
               <TouchableOpacity style={styles.btnPrimary} onPress={finishRegistration}>
-                <Text style={styles.btnPrimaryText}>Go to Dashboard</Text>
+                <Text style={styles.btnPrimaryText}>Proceed to Login</Text>
               </TouchableOpacity>
             </View>
           )}

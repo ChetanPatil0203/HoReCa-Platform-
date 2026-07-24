@@ -14,36 +14,8 @@ const NAVY = '#081A3A';
 const BG = '#F8FAFC';
 const BRAND_GREEN = '#10B981';
 
-// Dummy Data exactly tailored for Service Provider
-const INITIAL_FEED = [
-  { 
-    id: "ORD-S001", title: "HVAC Annual Maintenance", 
-    businessName: "Sunset Resort", businessType: "Hotel", location: "Versova, Mumbai",
-    category: "HVAC Maintenance", budget: "₹85,000 / Year", date: "25 Jun 2026",
-    priority: "New", postedAt: "1 hour ago", 
-    description: "Annual maintenance for commercial HVAC systems across 4 floors. Includes quarterly filter replacement and emergency call-out within 4 hours. Must use certified technicians.",
-    qty: "22 units / 12 months", time: "Flexible", certification: "HVAC Level 3",
-    urgency: "Normal", attachments: 1, status: "New"
-  },
-  { 
-    id: "ORD-S002", title: "Commercial Kitchen Deep Cleaning", 
-    businessName: "The Meridian Grand", businessType: "Hotel", location: "Bandra, Mumbai",
-    category: "Deep Cleaning", budget: "₹22,000", date: "20 Jun 2026",
-    priority: "High Priority", postedAt: "4 hours ago", 
-    description: "Overnight deep clean required for 3 kitchen sections. Must use FSSAI-approved food-safe chemicals only. Work window: 12AM–5AM.",
-    qty: "3 kitchen sections", time: "12:00 AM - 05:00 AM", certification: "FSSAI Cleaning Certified",
-    urgency: "Urgent", attachments: 0, status: "New"
-  },
-  { 
-    id: "ORD-S003", title: "Electrical Wiring Audit & Repair", 
-    businessName: "Café Zephyr Group", businessType: "Café", location: "Lower Parel, Mumbai",
-    category: "Electrical", budget: "Open to Quotes", date: "24 Jun 2026",
-    priority: "Closing Soon", postedAt: "2 days ago", 
-    description: "Complete electrical audit of kitchen and dining area. Identify and repair faults. Must be a licensed electrical contractor. Compliance certificate required on completion.",
-    qty: "Full property", time: "09:00 AM", certification: "Licensed Electrician",
-    urgency: "Normal", attachments: 2, status: "New"
-  }
-];
+// INITIAL FEED
+const INITIAL_FEED = [];
 
 const CATEGORIES = ["All", "Cleaning", "Repair", "Maintenance", "Plumbing", "Electrical", "Pest Control", "Fire & Safety"];
 

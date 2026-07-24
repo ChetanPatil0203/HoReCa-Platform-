@@ -9,6 +9,7 @@ import RegistrationStepIndicator from '../../components/auth/RegistrationStepInd
 import PrimaryButton from '../../components/auth/PrimaryButton';
 import { AuthContext } from '../../context/AuthContext';
 import { AUTH_COLORS } from '../../components/auth/AuthTheme';
+import { registerApi } from '../../services/api.service';
 
 export default function RegisterStepThreeScreen({ navigation, route }) {
   const { login } = useContext(AuthContext);
@@ -58,27 +59,22 @@ export default function RegisterStepThreeScreen({ navigation, route }) {
 
   const isOtpComplete = otp.every(val => val !== '');
 
-  const handleCompleteRegistration = () => {
+  const handleCompleteRegistration = async () => {
     if (!isOtpComplete) return;
     
     setIsSubmitting(true);
-    
-    // Simulate backend registration process
-    setTimeout(() => {
+    try {
+      await registerApi(registrationData);
+      alert('Registration Successful! Please log in with your credentials to continue.');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    } catch (err) {
+      alert(err.response?.data?.message || err.message || 'Registration failed.');
+    } finally {
       setIsSubmitting(false);
-      
-      let panelType = 'owner'; // default fallback
-      if (registrationData.bizCategory === 'Vendor / Supplier') {
-        const spec = registrationData.specialized;
-        if (spec === 'Raw Material') panelType = 'vendor';
-        else if (spec === 'Manpower') panelType = 'manpower';
-        else if (spec === 'Service Provider') panelType = 'serviceProvider';
-        else if (spec === 'Marketing Agency') panelType = 'marketing';
-      }
-      
-      // Auto login after successful registration
-      login(panelType, 'demo-token');
-    }, 2000);
+    }
   };
 
   const obfuscateMobile = (mobile) => {

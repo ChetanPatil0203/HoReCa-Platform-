@@ -28,19 +28,17 @@ export default function RawMaterialProfilePage() {
   const [docModal, setDocModal] = useState({ visible: false, doc: null });
 
   const [profileForm, setProfileForm] = useState({
-    businessName: 'Metro Fresh',
-    contactPerson: 'Rahul Sharma',
-    mobileNumber: '+91 98765 43210',
-    email: 'info@metrofresh.com',
-    address: 'Plot 42, MIDC Phase 2',
-    city: 'Jalgaon',
-    state: 'Maharashtra',
-    pincode: '425001'
+    businessName: '',
+    contactPerson: '',
+    mobileNumber: '',
+    email: '',
+    address: '',
+    city: '',
+    state: '',
+    pincode: ''
   });
 
-  const [selectedCats, setSelectedCats] = useState([
-    'Vegetables', 'Fruits', 'Dairy Products', 'Grocery', 'Grains and Rice', 'Oils'
-  ]);
+  const [selectedCats, setSelectedCats] = useState([]);
 
   const AVAILABLE_CATEGORIES = [
     'Vegetables', 'Fruits', 'Dairy Products', 'Grocery', 'Grains and Rice',
@@ -48,12 +46,13 @@ export default function RawMaterialProfilePage() {
   ];
 
   const DOCUMENTS = [
-    { id: 1, name: 'PAN Card', ref: 'ABCDE1234F', status: 'Verified', statusColor: '#10B981', statusBg: '#F0FDF4', required: true },
-    { id: 2, name: 'GST Certificate', ref: '27ABCDE1234F1Z5', status: 'Verified', statusColor: '#10B981', statusBg: '#F0FDF4', required: true },
-    { id: 3, name: 'Business Registration', ref: 'BRN-27-00012345', status: 'Pending Verification', statusColor: '#F97316', statusBg: '#FFF7ED', required: true },
-    { id: 4, name: 'Business Address Proof', ref: 'Uploaded Document', status: 'Uploaded', statusColor: '#3B82F6', statusBg: '#EFF6FF', required: true },
-    { id: 5, name: 'FSSAI Licence', ref: 'FSSAI-11520000012345', status: 'Verified', statusColor: '#10B981', statusBg: '#F0FDF4', required: true },
-    { id: 6, name: 'Bank Proof / Cancelled Cheque', ref: 'Missing', status: 'Missing', statusColor: '#64748B', statusBg: '#F1F5F9', required: true },
+    { id: 1, name: 'PAN Card', ref: 'Not Uploaded', status: 'Missing', statusColor: '#EF4444', statusBg: '#FEF2F2', required: true },
+    { id: 2, name: 'GST Certificate', ref: 'Not Uploaded', status: 'Missing', statusColor: '#EF4444', statusBg: '#FEF2F2', required: true },
+    { id: 3, name: 'Business Registration', ref: 'Not Uploaded', status: 'Missing', statusColor: '#EF4444', statusBg: '#FEF2F2', required: true },
+    { id: 4, name: 'Business Address Proof', ref: 'Not Uploaded', status: 'Missing', statusColor: '#EF4444', statusBg: '#FEF2F2', required: true },
+    { id: 5, name: 'FSSAI Licence', ref: 'Not Uploaded', status: 'Missing', statusColor: '#EF4444', statusBg: '#FEF2F2', required: true },
+    { id: 6, name: 'APMC License / Mandi License', ref: 'Not Uploaded', status: 'Missing', statusColor: '#EF4444', statusBg: '#FEF2F2', required: false },
+    { id: 7, name: 'Bank Account Details / Cancelled Cheque', ref: 'Not Uploaded', status: 'Missing', statusColor: '#EF4444', statusBg: '#FEF2F2', required: true }
   ];
 
   const handleSaveProfile = () => {

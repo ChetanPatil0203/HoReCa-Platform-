@@ -22,38 +22,8 @@ const GREEN = '#10B981';
 const RED = '#EF4444';
 const GOLD = '#D97706';
 
-// Mock Data
-const RESPONSES = [
-  {
-    id: 'res-1',
-    agencyName: 'Elite Staffing Co.',
-    initials: 'E',
-    verified: true,
-    rating: '4.8',
-    status: 'New',
-    candidatesOffered: 2,
-    serviceFee: '8.33% of Annual CTC',
-    replacementPeriod: '90 Days',
-    joiningTime: 'Immediate',
-  },
-  {
-    id: 'res-2',
-    agencyName: 'Hospitality Experts',
-    initials: 'H',
-    verified: true,
-    rating: '4.5',
-    status: 'Reviewed',
-    candidatesOffered: 3,
-    serviceFee: 'One Month Salary',
-    replacementPeriod: '60 Days',
-    joiningTime: 'Within 3 Days',
-  }
-];
-
-const CANDIDATES = [
-  { id: 'c-1', name: 'Rahul Sharma', initials: 'R', role: 'Head Chef', exp: '9 Years', loc: 'Mumbai', salary: '₹65,000', avail: 'Available Immediately', verified: true },
-  { id: 'c-2', name: 'Amit Desai', initials: 'A', role: 'Head Chef', exp: '11 Years', loc: 'Mumbai', salary: '₹70,000', avail: '15 Days', verified: true }
-];
+const RESPONSES = [];
+const CANDIDATES = [];
 
 const getStatusStyle = (status) => {
   switch (status) {

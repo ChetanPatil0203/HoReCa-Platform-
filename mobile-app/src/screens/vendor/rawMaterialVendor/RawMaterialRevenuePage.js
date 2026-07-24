@@ -14,25 +14,17 @@ const GOLD = '#D4AF37';
 const FILTERS = ['Week', 'Month', 'Quarter', 'Year', 'Custom'];
 
 const SUMMARY_DATA = [
-  { label: 'Total Earnings', value: '₹14.5L', icon: IndianRupee, color: '#10B981', trend: '+12%' },
-  { label: 'Net Earnings', value: '₹12.1L', icon: TrendingUp, color: '#3B82F6', trend: '+8%' },
-  { label: 'Pending Settlement', value: '₹1.8L', icon: Clock, color: '#F59E0B' },
-  { label: 'Avg Order Value', value: '₹18,500', icon: IndianRupee, color: '#8B5CF6' },
-  { label: 'Outstanding', value: '₹45,000', icon: AlertCircle, color: '#EF4444' },
-  { label: 'Refunds', value: '₹12,000', icon: ArrowDownRight, color: '#64748B' },
+  { label: 'Total Earnings', value: '₹0', icon: IndianRupee, color: '#10B981', trend: '0%' },
+  { label: 'Net Earnings', value: '₹0', icon: TrendingUp, color: '#3B82F6', trend: '0%' },
+  { label: 'Pending Settlement', value: '₹0', icon: Clock, color: '#F59E0B' },
+  { label: 'Avg Order Value', value: '₹0', icon: IndianRupee, color: '#8B5CF6' },
+  { label: 'Outstanding', value: '₹0', icon: AlertCircle, color: '#EF4444' },
+  { label: 'Refunds', value: '₹0', icon: ArrowDownRight, color: '#64748B' },
 ];
 
-const SETTLEMENTS = [
-  { id: 'SET-9012', date: '14 Jul 2026', amount: '₹1,50,000', status: 'Completed' },
-  { id: 'SET-9011', date: '10 Jul 2026', amount: '₹2,25,000', status: 'Completed' },
-  { id: 'SET-9013', date: 'Pending', amount: '₹1,80,000', status: 'Pending' },
-];
+const SETTLEMENTS = [];
 
-const PRODUCTS = [
-  { name: 'Premium Basmati Rice', revenue: '₹4.5L', percent: '35%' },
-  { name: 'Extra Virgin Olive Oil', revenue: '₹3.2L', percent: '25%' },
-  { name: 'Atlantic Salmon', revenue: '₹1.8L', percent: '15%' },
-];
+const PRODUCTS = [];
 
 export default function RawMaterialRevenuePage() {
   const { width } = useWindowDimensions();

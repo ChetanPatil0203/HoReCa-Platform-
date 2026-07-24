@@ -7,44 +7,7 @@ import {
   ChevronRight, MoreVertical, FileText
 } from 'lucide-react-native';
 
-const MY_PROPOSALS = [
-  { 
-    id: "PRP-201", 
-    requirement: "REQ-101", 
-    client: "Azure Palace Hotel", 
-    campaign: "Summer Season Social Media Launch", 
-    source: "Broadcast", 
-    proposedAmount: "₹50,000", 
-    submittedDate: "12 Jul 2026", 
-    duration: "1 Month",
-    validUntil: "30 Jul 2026",
-    status: "Sent" 
-  },
-  { 
-    id: "PRP-202", 
-    requirement: "DIR-001", 
-    client: "The Meridian Hotels", 
-    campaign: "Wedding Season Social Ads", 
-    source: "Direct", 
-    proposedAmount: "₹1,40,000", 
-    submittedDate: "14 Jul 2026", 
-    duration: "2 Months",
-    validUntil: "01 Aug 2026",
-    status: "Draft" 
-  },
-  { 
-    id: "PRP-199", 
-    requirement: "REQ-095", 
-    client: "Spice Route Restaurant", 
-    campaign: "New Menu Launch PR", 
-    source: "Broadcast", 
-    proposedAmount: "₹25,000", 
-    submittedDate: "01 Jul 2026", 
-    duration: "15 Days",
-    validUntil: "15 Jul 2026",
-    status: "Accepted" 
-  }
-];
+const MY_PROPOSALS = [];
 
 const PROPOSAL_FILTERS = ["All", "Draft", "Sent", "Under Review", "Accepted", "Rejected", "Closed"];
 

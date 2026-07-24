@@ -5,11 +5,7 @@ import { History, Search, ChevronRight, X, XCircle } from 'lucide-react-native';
 const NAVY = '#081A3A';
 const BG = '#F8FAFC';
 
-const MOCK_HISTORY = [
-  { id: 'H1', type: 'Requirement', name: 'Wait Staff', business: 'Cafe Mocha', date: '15 Jul 2026', status: 'Completed', details: 'Requirement for Wait Staff completed at Cafe Mocha. 5 candidates deployed successfully.', notes: 'All candidates verified for onboarding compliance.' },
-  { id: 'H2', type: 'Candidate', name: 'Amit Kumar', business: 'Olive Bar', date: '12 Jul 2026', status: 'Candidate Selected', details: 'Candidate Amit Kumar selected by Olive Bar for the Kitchen Help role.', notes: 'Interview cleared on first round. Joining date: 25th July 2026.' },
-  { id: 'H3', type: 'Staff Record', name: 'Rajesh Patel', business: 'The Leela', date: '10 Jul 2026', status: 'Left', details: 'Staff member Rajesh Patel terminated placement at The Leela.', notes: 'Resigned due to personal emergency. Notice period completed.' },
-];
+const MOCK_HISTORY = [];
 
 export default function ManpowerHistoryPage() {
   const [activeFilter, setActiveFilter] = useState('All');

@@ -14,10 +14,7 @@ const FAQS = [
   { q: "What happens if a client rejects a creative?", a: "The status changes to 'Changes Requested'. You can view their feedback and upload a new version directly." }
 ];
 
-const TICKETS = [
-  { id: 'TKT-1042', subject: 'Invoice not generating for CMP-003', date: '12 Jul 2026', status: 'Open' },
-  { id: 'TKT-0988', subject: 'How to update GST details?', date: '01 Jun 2026', status: 'Resolved' },
-];
+const TICKETS = [];
 
 export default function MarketingSupportScreen() {
   const [activeTab, setActiveTab] = useState("My Tickets");

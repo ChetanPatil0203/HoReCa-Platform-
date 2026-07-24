@@ -8,14 +8,7 @@ import {
 
 const FILTERS = ["All", "Requirements", "Proposals", "Campaigns", "Approvals", "Payments", "System"];
 
-const INITIAL_NOTIFICATIONS = [
-  { id: 'NOT-1', type: 'New Broadcast Requirement', category: 'Requirements', title: 'New Broadcast: Hotel Azure', message: 'Azure Palace Hotel is looking for a comprehensive branding package.', time: '10 mins ago', isRead: false },
-  { id: 'NOT-2', type: 'Payment Received', category: 'Payments', title: 'Payment Received', message: '₹50,000 received from Café Zephyr for Invoice #INV-26001.', time: '2 hours ago', isRead: false },
-  { id: 'NOT-3', type: 'Creative Changes Requested', category: 'Approvals', title: 'Revision Requested', message: 'Client requested changes on "Summer Poster v1.0".', time: '5 hours ago', isRead: false },
-  { id: 'NOT-4', type: 'Proposal Accepted', category: 'Proposals', title: 'Proposal Accepted!', message: 'Spice Route accepted your proposal for the Menu Launch PR.', time: 'Yesterday', isRead: true },
-  { id: 'NOT-5', type: 'Campaign Completed', category: 'Campaigns', title: 'Campaign Completed', message: 'Weekend Brunch Influencer Push has successfully ended.', time: '2 days ago', isRead: true },
-  { id: 'NOT-6', type: 'New Review', category: 'System', title: 'New 5-Star Review', message: 'Spice Route left a new review on your agency profile.', time: '3 days ago', isRead: true },
-];
+const INITIAL_NOTIFICATIONS = [];
 
 export default function MarketingNotificationsScreen({ setActivePage }) {
   const [activeFilter, setActiveFilter] = useState("All");

@@ -17,107 +17,13 @@ const BG = '#F8FAFC';
 const WHITE = '#FFFFFF';
 const MUTED = '#64748B';
 
-const MOCK_HISTORY = [
-  {
-    id: "ORD-2026-1024",
-    type: "Order",
-    client: "Hotel Blue Sapphire",
-    product: "Basmati Rice",
-    quantity: "100 kg",
-    amount: "₹8,500",
-    date: "23 Jul 2026, 10:30 AM",
-    rawDate: "2026-07-23T10:30:00",
-    status: "Delivered",
-    icon: ClipboardList,
-    color: '#10B981',
-    details: "Basmati Rice order has been successfully delivered to Hotel Blue Sapphire.",
-    notes: "Delivery confirmed by staff member at receiving dock. Temp constraints maintained."
-  },
-  {
-    id: "INV-2026-309",
-    type: "Inventory",
-    product: "Sunflower Oil",
-    client: "-",
-    change: "Added 50 L",
-    quantity: "50 L",
-    amount: "-",
-    date: "23 Jul 2026, 09:15 AM",
-    rawDate: "2026-07-23T09:15:00",
-    status: "Updated",
-    icon: Boxes,
-    color: '#8B5CF6',
-    details: "Inventory level updated. 50 L of Sunflower Oil added to stock.",
-    notes: "Batch #SF-OIL-2026B. Expiry check verified."
-  },
-  {
-    id: "PAY-2026-441",
-    type: "Payment",
-    client: "Cafe Coffee Day",
-    product: "-",
-    quantity: "-",
-    amount: "₹12,750",
-    date: "22 Jul 2026, 04:30 PM",
-    rawDate: "2026-07-22T16:30:00",
-    status: "Paid",
-    icon: IndianRupee,
-    color: '#F59E0B',
-    details: "Payment of ₹12,750 received from Cafe Coffee Day.",
-    notes: "Cleared via online bank transfer. Reference ref-bank-998822."
-  },
-  {
-    id: "DEL-2026-208",
-    type: "Delivery",
-    client: "Royal Orchid Hotel",
-    product: "Premium Dairy Kit",
-    quantity: "15 units",
-    amount: "-",
-    driver: "Ramesh Kumar",
-    vehicle: "MH12 XY 4567",
-    date: "22 Jul 2026, 02:00 PM",
-    rawDate: "2026-07-22T14:00:00",
-    status: "Completed",
-    icon: Truck,
-    color: '#3B82F6',
-    details: "Delivery DEL-2026-208 completed by driver Ramesh Kumar to Royal Orchid Hotel.",
-    notes: "Signed invoice uploaded. Vehicle: MH12 XY 4567."
-  },
-  {
-    id: "INV-2026-288",
-    type: "Inventory",
-    product: "Fresh Paneer",
-    client: "-",
-    quantity: "-",
-    amount: "-",
-    date: "21 Jul 2026, 11:20 AM",
-    rawDate: "2026-07-21T11:20:00",
-    status: "Archived",
-    icon: Boxes,
-    color: '#EF4444',
-    details: "Fresh Paneer product has been archived due to seasonal catalog update.",
-    notes: "Archived by store admin. Product code: RM-DAI-PN-09."
-  },
-  {
-    id: "ORD-2026-1017",
-    type: "Order",
-    client: "The Grand Palace",
-    product: "Red Onion",
-    quantity: "200 kg",
-    amount: "₹4,200",
-    date: "20 Jul 2026, 03:10 PM",
-    rawDate: "2026-07-20T15:10:00",
-    status: "Cancelled",
-    icon: ClipboardList,
-    color: '#64748B',
-    details: "Order ORD-2026-1017 from The Grand Palace for Red Onion has been cancelled.",
-    notes: "Cancelled by buyer due to logistical scheduling conflict."
-  }
-];
+const MOCK_HISTORY = [];
 
 const SUMMARY_CARDS = [
-  { label: 'Completed Orders', value: '124', icon: CheckCircle, color: '#10B981' },
-  { label: 'Delivered Orders', value: '120', icon: Truck, color: '#3B82F6' },
-  { label: 'Inventory Updates', value: '42', icon: Boxes, color: '#8B5CF6' },
-  { label: 'Total Revenue', value: '₹1,85,500', icon: IndianRupee, color: '#F59E0B' }
+  { label: 'Completed Orders', value: '0', icon: CheckCircle, color: '#10B981' },
+  { label: 'Delivered Orders', value: '0', icon: Truck, color: '#3B82F6' },
+  { label: 'Inventory Updates', value: '0', icon: Boxes, color: '#8B5CF6' },
+  { label: 'Total Revenue', value: '₹0', icon: IndianRupee, color: '#F59E0B' }
 ];
 
 const TABS = ['All', 'Orders', 'Deliveries', 'Inventory', 'Payments'];

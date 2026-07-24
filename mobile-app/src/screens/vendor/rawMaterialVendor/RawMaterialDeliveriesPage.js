@@ -17,26 +17,7 @@ const MUTED = '#64748B';
 
 const STATUS_CHIPS = ['Scheduled', 'Packed', 'Assigned', 'Out for Delivery', 'Delivered', 'Delayed', 'Cancelled'];
 
-const MOCK_DELIVERIES = [
-  {
-    id: "DEL-8091", orderId: "ORD-941", client: "The Meridian Grand", product: "Premium Basmati Rice", orderedQty: 500, unit: "kg",
-    additionalItems: 2, date: "Today", time: "02:00 PM",
-    address: "Downtown, Jalgaon", fullAddress: "123 Meridian Blvd, Downtown, Jalgaon",
-    status: "Packed", driver: null, driverPhone: null, vehicleType: null, vehicleNumber: null
-  },
-  {
-    id: "DEL-8092", orderId: "ORD-938", client: "Azure Palace Hotel", product: "Atlantic Salmon", orderedQty: 50, unit: "kg",
-    additionalItems: 0, date: "Today", time: "04:30 PM",
-    address: "Azure Coast Rd, Pune", fullAddress: "45 Azure Coast Rd, Pune",
-    status: "Out for Delivery", driver: "Suresh P", driverPhone: "9876543210", vehicleType: "Reefer Van", vehicleNumber: "MH14 AB 1234"
-  },
-  {
-    id: "DEL-8089", orderId: "ORD-935", client: "Café Zephyr", product: "Olive Oil (Extra Virgin)", orderedQty: 20, unit: "L",
-    additionalItems: 0, date: "Yesterday", time: "01:00 PM",
-    address: "Zephyr Street, Mumbai", fullAddress: "78 Zephyr Street, Mumbai",
-    status: "Delivered", driver: "Amit Singh", driverPhone: "8765432109", vehicleType: "Bike", vehicleNumber: "MH12 CD 9876"
-  }
-];
+const MOCK_DELIVERIES = [];
 
 export default function RawMaterialDeliveriesPage() {
   const { width } = useWindowDimensions();

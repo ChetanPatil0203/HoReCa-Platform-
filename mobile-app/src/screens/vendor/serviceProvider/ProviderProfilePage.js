@@ -17,21 +17,17 @@ const LIGHT_BG = '#F8FAFC';
 const WHITE = '#FFFFFF';
 
 const MOCK_PROFILE = {
-  businessName: 'ProClean Services',
-  contactName: 'Rahul Patil',
-  mobile: '+91 98765 43210',
-  email: 'info@procleanservices.com',
-  address: '123 Main Street',
-  city: 'Jalgaon',
-  state: 'Maharashtra',
-  pincode: '425001'
+  businessName: '',
+  contactName: '',
+  mobile: '',
+  email: '',
+  address: '',
+  city: '',
+  state: '',
+  pincode: ''
 };
 
-const MOCK_SERVICES = [
-  'Cleaning Services', 
-  'AC Repair & Maintenance',
-  'Pest Control'
-];
+const MOCK_SERVICES = [];
 
 const ALL_SERVICES = [
   'AC Repair & Maintenance', 'Electrical Services', 'Plumbing Services', 
@@ -40,12 +36,7 @@ const ALL_SERVICES = [
   'Interior Maintenance'
 ];
 
-const MOCK_DOCUMENTS = [
-  { id: 1, name: 'GST Certificate', ref: '27ABCDE1234F1Z5', status: 'Verified' },
-  { id: 2, name: 'PAN Card', ref: 'ABCDE1234F', status: 'Verified' },
-  { id: 3, name: 'Business Registration', ref: 'BRN-27-00012345', status: 'Pending' },
-  { id: 4, name: 'Service-Specific Licence', ref: 'Pest Control Licence', status: 'Verified' },
-];
+const MOCK_DOCUMENTS = [];
 
 export default function ProviderProfilePage() {
   const { width } = useWindowDimensions();

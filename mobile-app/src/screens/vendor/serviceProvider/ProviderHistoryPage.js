@@ -16,79 +16,13 @@ const BG = '#F8FAFC';
 const WHITE = '#FFFFFF';
 const MUTED = '#64748B';
 
-const MOCK_HISTORY = [
-  {
-    id: "JOB-2026-8802",
-    type: "Job",
-    client: "Hotel Blue Sapphire",
-    service: "AC Deep Cleaning",
-    price: "₹12,500",
-    date: "23 Jul 2026, 11:30 AM",
-    rawDate: "2026-07-23T11:30:00",
-    status: "Completed",
-    icon: Wrench,
-    color: '#3B82F6',
-    notes: "Service completed successfully. All AC filters cleaned, refrigerant checked, and coils pressure washed. Customer signed verification."
-  },
-  {
-    id: "PAY-2026-9401",
-    type: "Payment",
-    client: "Cafe Mocha",
-    service: "Kitchen Exhaust Repair",
-    price: "₹8,000",
-    date: "22 Jul 2026, 03:45 PM",
-    rawDate: "2026-07-22T15:45:00",
-    status: "Paid",
-    icon: IndianRupee,
-    color: '#10B981',
-    notes: "Payment received via bank transfer (Ref: TXN-CC-882201). Invoice closed."
-  },
-  {
-    id: "JOB-2026-8798",
-    type: "Job",
-    client: "The Grand Palace",
-    service: "Fire Safety Audit",
-    price: "₹15,000",
-    date: "21 Jul 2026, 02:30 PM",
-    rawDate: "2026-07-21T14:30:00",
-    status: "Completed",
-    icon: Wrench,
-    color: '#3B82F6',
-    notes: "Fire extinguishers, smoke detectors, and emergency exits inspected. Fire safety certificate issued."
-  },
-  {
-    id: "JOB-2026-8790",
-    type: "Job",
-    client: "Royal Orchid Hotel",
-    service: "Emergency Plumbing",
-    price: "₹4,500",
-    date: "20 Jul 2026, 10:15 AM",
-    rawDate: "2026-07-20T10:15:00",
-    status: "Cancelled",
-    icon: Wrench,
-    color: '#64748B',
-    notes: "Cancelled by the client as issue was resolved internally before technician reached."
-  },
-  {
-    id: "PAY-2026-9382",
-    type: "Payment",
-    client: "Olive Bar & Kitchen",
-    service: "Drain Cleaning Service",
-    price: "₹3,500",
-    date: "19 Jul 2026, 05:00 PM",
-    rawDate: "2026-07-19T17:00:00",
-    status: "Paid",
-    icon: IndianRupee,
-    color: '#10B981',
-    notes: "Payment received in cash. Receipt issued #REC-0082."
-  }
-];
+const MOCK_HISTORY = [];
 
 const SUMMARY_CARDS = [
-  { label: 'Completed Jobs', value: '142', icon: CheckCircle, color: '#3B82F6' },
-  { label: 'Total Revenue', value: '₹3,15,500', icon: IndianRupee, color: '#10B981' },
-  { label: 'Active Bookings', value: '18', icon: ClipboardList, color: '#F59E0B' },
-  { label: 'Average Rating', value: '4.9 ★', icon: User, color: '#8B5CF6' }
+  { label: 'Completed Jobs', value: '0', icon: CheckCircle, color: '#3B82F6' },
+  { label: 'Total Revenue', value: '₹0', icon: IndianRupee, color: '#10B981' },
+  { label: 'Active Bookings', value: '0', icon: ClipboardList, color: '#F59E0B' },
+  { label: 'Average Rating', value: '0.0 ★', icon: User, color: '#8B5CF6' }
 ];
 
 const TABS = ['All', 'Jobs', 'Payments'];

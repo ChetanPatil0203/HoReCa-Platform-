@@ -6,32 +6,22 @@ const NAVY = '#071B3A';
 const MUTED = '#64748B';
 
 const QUICK_ACTIONS = [
-  { id: 'raw-material', title: 'Raw Material', status: '3 Active Orders', action: 'Browse Products →', icon: Package, color: '#F97316' },
-  { id: 'manpower', title: 'Manpower', status: '2 Open Requirements', action: 'Hire Staff →', icon: Users, color: '#3B82F6' },
-  { id: 'service', title: 'Service Providers', status: '1 Service Scheduled', action: 'Find Providers →', icon: Wrench, color: '#10B981' },
-  { id: 'marketing', title: 'Marketing', status: '2 Active Campaigns', action: 'Explore Agencies →', icon: Megaphone, color: '#8B5CF6' },
+  { id: 'raw-material', title: 'Raw Material', status: '0 Active Orders', action: 'Browse Products →', icon: Package, color: '#F97316' },
+  { id: 'manpower', title: 'Manpower', status: '0 Open Requirements', action: 'Hire Staff →', icon: Users, color: '#3B82F6' },
+  { id: 'service', title: 'Service Providers', status: '0 Services Scheduled', action: 'Find Providers →', icon: Wrench, color: '#10B981' },
+  { id: 'marketing', title: 'Marketing', status: '0 Active Campaigns', action: 'Explore Agencies →', icon: Megaphone, color: '#8B5CF6' },
 ];
 
 const OVERVIEW_STATS = [
-  { id: 'active', label: 'Orders in Progress', value: '12', icon: ShoppingCart, color: '#3B82F6' },
-  { id: 'pending', label: 'Responses Pending', value: '4', icon: MessageSquare, color: '#F97316' },
-  { id: 'scheduled', label: 'Scheduled Today', value: '3', icon: CalendarDays, color: '#10B981' },
-  { id: 'urgent', label: 'Attention Needed', value: '1', icon: TriangleAlert, color: '#EF4444' },
+  { id: 'active', label: 'Orders in Progress', value: '0', icon: ShoppingCart, color: '#3B82F6' },
+  { id: 'pending', label: 'Responses Pending', value: '0', icon: MessageSquare, color: '#F97316' },
+  { id: 'scheduled', label: 'Scheduled Today', value: '0', icon: CalendarDays, color: '#10B981' },
+  { id: 'urgent', label: 'Attention Needed', value: '0', icon: TriangleAlert, color: '#EF4444' },
 ];
 
-const RECENT_ACTIVITY = [
-  { id: 1, title: 'Raw Material Order Confirmed', sub: 'Metro Fresh Supplies', time: '10m ago', icon: Package, color: '#F97316' },
-  { id: 2, title: 'New Candidates Submitted', sub: 'Head Chef Requirement', time: '35m ago', icon: Users, color: '#3B82F6' },
-  { id: 3, title: 'Service Request Accepted', sub: 'ProClean Services', time: '1h ago', icon: Wrench, color: '#10B981' },
-  { id: 4, title: 'Marketing Proposal Received', sub: 'BrandCraft Agency', time: '2h ago', icon: Megaphone, color: '#8B5CF6' },
-];
+const RECENT_ACTIVITY = [];
 
-const TOP_PARTNERS = [
-  { id: 1, name: 'Metro Fresh Supplies', category: 'Raw Material Supplier', rating: '4.8', initials: 'MF' },
-  { id: 2, name: 'Elite Staffing Co.', category: 'Manpower Agency', rating: '4.7', initials: 'ES' },
-  { id: 3, name: 'ProClean Services', category: 'Service Provider', rating: '4.9', initials: 'PS' },
-  { id: 4, name: 'BrandCraft Agency', category: 'Marketing Partner', rating: '4.6', initials: 'BA' },
-];
+const TOP_PARTNERS = [];
 
 export default function DashboardHome({ user, onNavigate }) {
   const { width } = useWindowDimensions();
@@ -47,8 +37,8 @@ export default function DashboardHome({ user, onNavigate }) {
       {/* 2. Welcome Hero Card */}
       <View style={styles.heroCard}>
         <View style={styles.heroContent}>
-          <Text style={styles.heroGreeting}>Good Morning, {user?.name?.split(" ")[0] || 'Arjun'} 👋</Text>
-          <Text style={styles.heroBusiness}>{user?.businessName || 'The Meridian Hotel'}</Text>
+          <Text style={styles.heroGreeting}>Good Morning{user?.name ? `, ${user.name.split(" ")[0]}` : ''} 👋</Text>
+          <Text style={styles.heroBusiness}>{user?.businessName || 'Business Owner'}</Text>
           <Text style={styles.heroDesc}>Manage all your HoReCa business operations from one place.</Text>
         </View>
       </View>

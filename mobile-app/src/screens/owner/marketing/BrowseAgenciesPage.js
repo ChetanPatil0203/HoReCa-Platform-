@@ -6,13 +6,7 @@ import { colors } from '../../../theme/colors';
 const NAVY = '#0E2042';
 const GOLD = '#D4AF37';
 
-const MOCK_AGENCIES = [
-  { id: 'AGY-001', name: 'Creative Minds', type: 'Online', rating: 4.9, projects: 120, experience: '5 Years', verified: true },
-  { id: 'AGY-002', name: 'Outfront Media', type: 'Offline', rating: 4.8, projects: 85, experience: '10 Years', verified: true },
-  { id: 'AGY-003', name: 'BrandBoosters', type: 'Online', rating: 5.0, projects: 210, experience: '7 Years', verified: true },
-  { id: 'AGY-004', name: 'PrintPerfect', type: 'Offline', rating: 4.5, projects: 45, experience: '3 Years', verified: false },
-  { id: 'AGY-005', name: 'Digital Dynamics', type: 'Online', rating: 4.7, projects: 150, experience: '4 Years', verified: true },
-];
+const MOCK_AGENCIES = [];
 
 export default function BrowseAgenciesPage({ onBack, onViewProfile }) {
   const { width } = useWindowDimensions();

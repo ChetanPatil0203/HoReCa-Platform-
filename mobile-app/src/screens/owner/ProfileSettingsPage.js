@@ -28,40 +28,40 @@ export default function ProfileSettingsPage({ user }) {
   const [businessType, setBusinessType] = useState('Hotel'); 
   
   const [ownerInfo, setOwnerInfo] = useState({
-    name: 'Arjun Mehta',
-    businessName: 'The Meridian Hotel',
-    mobile: '+91 98765 43210',
-    email: 'arjun@meridian.com',
-    location: 'Mumbai, Maharashtra',
-    address: '123 Business Avenue',
-    city: 'Mumbai',
-    state: 'Maharashtra',
-    pincode: '400001'
+    name: user?.name || '',
+    businessName: user?.businessName || '',
+    mobile: user?.mobile || '',
+    email: user?.email || '',
+    location: '',
+    address: '',
+    city: '',
+    state: '',
+    pincode: ''
   });
 
   const businessInfo = {
     category: businessType === 'Hotel' ? 'Hospitality Business' : businessType === 'Restaurant' ? 'Food Service Business' : 'Cafe & Beverage Business',
-    gst: '27AAPCA1234A1ZX',
-    pan: 'AAPCA1234A',
-    brn: 'BRN-27-00012345',
-    accountStatus: 'Active',
-    verificationStatus: 'Verified'
+    gst: '',
+    pan: '',
+    brn: '',
+    accountStatus: 'Pending',
+    verificationStatus: 'Pending Verification'
   };
 
   const getDocuments = () => {
     let docs = [
-      { id: '1', name: 'FSSAI Licence', ref: 'FSSAI-11520000012345', req: 'Required', status: 'Verified' },
-      { id: '2', name: 'Business Registration Proof', ref: 'BRN-27-00012345', req: 'Required', status: 'Pending Verification' },
-      { id: '3', name: 'Shop and Establishment Licence', ref: 'SEL-2026-987', req: 'Required', status: 'Verified' },
-      { id: '4', name: 'Business Address Proof', ref: 'E-BILL-MUM-445', req: 'Required', status: 'Uploaded' },
-      { id: '5', name: 'GST Certificate', ref: '27AAPCA1234A1ZX', req: 'Required if applicable', status: 'Verified' },
-      { id: '6', name: 'PAN Card', ref: 'AAPCA1234A', req: 'Required if applicable', status: 'Verified' },
+      { id: '1', name: 'FSSAI Licence', ref: 'Not Uploaded', req: 'Required', status: 'Missing' },
+      { id: '2', name: 'Business Registration Proof', ref: 'Not Uploaded', req: 'Required', status: 'Missing' },
+      { id: '3', name: 'Shop and Establishment Licence', ref: 'Not Uploaded', req: 'Required', status: 'Missing' },
+      { id: '4', name: 'Business Address Proof', ref: 'Not Uploaded', req: 'Required', status: 'Missing' },
+      { id: '5', name: 'GST Certificate', ref: 'Not Uploaded', req: 'Required if applicable', status: 'Missing' },
+      { id: '6', name: 'PAN Card', ref: 'Not Uploaded', req: 'Required if applicable', status: 'Missing' },
     ];
 
     if (businessType === 'Hotel') {
-      docs.push({ id: '7', name: 'Fire Safety Certificate / Fire NOC', ref: 'Missing', req: 'Required if applicable', status: 'Missing' });
+      docs.push({ id: '7', name: 'Fire Safety Certificate / Fire NOC', ref: 'Not Uploaded', req: 'Required if applicable', status: 'Missing' });
     } else {
-      docs.push({ id: '7', name: 'Local Food / Health Trade Licence', ref: 'Missing', req: 'Required if applicable', status: 'Missing' });
+      docs.push({ id: '7', name: 'Local Food / Health Trade Licence', ref: 'Not Uploaded', req: 'Required if applicable', status: 'Missing' });
     }
     return docs;
   };

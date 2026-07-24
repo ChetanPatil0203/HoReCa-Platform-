@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, useWindowDimensions, SafeAreaView } from 'react-native';
 import { 
   Megaphone, Inbox, Rocket, FileClock, ChevronRight, Sparkles, ShieldCheck, 
-  Video, Image as ImageIcon, FileText, Phone, MonitorPlay, Presentation, Building2, Clock, Globe
+  Video, Image as ImageIcon, FileText, Phone, MonitorPlay, Presentation
 } from 'lucide-react-native';
 
 const NAVY = '#071B3A';
@@ -14,70 +14,11 @@ const RED = '#EF4444';
 const WHITE = '#FFFFFF';
 const MUTED = '#64748B';
 
-const MOCK_NEEDS_ATTENTION = [
-  {
-    id: "NA-01", title: "Video Ad Draft v2",
-    context: "Spice Route Restaurant", status: "Client approval pending",
-    action: "Review", icon: Video, color: ORANGE
-  },
-  {
-    id: "NA-02", title: "Instagram Carousel Draft",
-    context: "Azure Palace Hotel", status: "Changes requested by client",
-    action: "View Feedback", icon: ImageIcon, color: RED
-  },
-  {
-    id: "NA-03", title: "Proposal Deadline",
-    context: "Summer Social Media Launch", status: "Due Today",
-    action: "Open", icon: FileText, color: RED
-  }
-];
+const MOCK_NEEDS_ATTENTION = [];
 
-const FEED_WALL_DATA = [
-  { 
-    id: "REQ-101", title: "Summer Social Media Launch", 
-    businessName: "The Meridian Hotel", location: "Andheri, Mumbai",
-    category: "Social Media Marketing", budget: "₹45,000–₹60,000", date: "25 Jun 2026",
-    priority: "High Priority", postedAt: "2 hours ago", 
-    description: "Looking for an agency to run our 3-month summer campaign across Instagram and Facebook. We want to target high-net-worth individuals for our luxury suites.",
-    duration: "3 Months", status: "New"
-  },
-  { 
-    id: "REQ-102", title: "New Menu Photography & Videography", 
-    businessName: "Spice Route Restaurant", location: "Bandra, Mumbai",
-    category: "Content Creation", budget: "₹25,000", date: "22 Jun 2026",
-    priority: "New", postedAt: "5 hours ago", 
-    description: "Need professional photos and 15-second reels for our upcoming menu launch. Food styling experience is required.",
-    duration: "1 Week", status: "Proposal Sent"
-  },
-  { 
-    id: "REQ-103", title: "Local SEO Optimization", 
-    businessName: "Café Zephyr", location: "Lower Parel, Mumbai",
-    category: "SEO", budget: "₹15,000 / Month", date: "20 Jun 2026",
-    priority: "Closing Soon", postedAt: "1 day ago", 
-    description: "Improve local search rankings on Google Maps and Zomato. We need more foot traffic from local office goers.",
-    duration: "Ongoing", status: "Closed"
-  }
-];
+const MOCK_OPPORTUNITIES = [];
 
-const MOCK_SCHEDULE = [
-  { id: "SCH-01", time: "10:30 AM", title: "Client Call", business: "Azure Palace Hotel", icon: Phone },
-  { id: "SCH-02", time: "02:00 PM", title: "Creative Review", business: "Spice Route Restaurant", icon: MonitorPlay },
-  { id: "SCH-03", time: "04:30 PM", title: "Campaign Presentation", business: "The Meridian Hotel", icon: Presentation }
-];
-
-const CATEGORIES = ["All", "Social Media Marketing", "Content Creation", "SEO", "Performance Marketing", "Influencer Marketing"];
-
-// Helpers
-const formatCategory = (cat) => {
-  if (cat === "Social Media Marketing") return "Social Media";
-  if (cat === "Photography & Videography" || cat === "Content Creation") return "Photo & Video";
-  if (cat === "Performance Marketing") return "Performance Ads";
-  return cat;
-};
-
-const formatBudget = (budgetStr) => {
-  return budgetStr.replace(/,000/g, 'K').replace(/ /g, '');
-};
+const MOCK_SCHEDULE = [];
 
 export default function MarketingDashboardHome({ setActivePage, handleSendProposal }) {
   const { width } = useWindowDimensions();
@@ -86,56 +27,6 @@ export default function MarketingDashboardHome({ setActivePage, handleSendPropos
   const isDesktop = width >= 1024;
 
   const contentPad = width < 340 ? 12 : (isMobile ? 16 : 24);
-
-  const [activeCategory, setActiveCategory] = useState('All');
-
-  const getPrimaryBadge = (item) => {
-    if (item.status === 'Proposal Sent') return 'Proposal Sent';
-    if (item.status === 'Closed') return 'Closed';
-    if (item.priority === 'High Priority') return 'High Priority';
-    if (item.priority === 'Closing Soon') return 'Closing Soon';
-    if (item.priority === 'New') return 'New';
-    return null;
-  };
-
-  const renderBadge = (badgeText) => {
-    if (!badgeText) return null;
-    let bgColor = '#F1F5F9';
-    let textColor = '#64748B';
-    
-    if (badgeText === 'Proposal Sent') { bgColor = '#F3E8FF'; textColor = '#7E22CE'; }
-    else if (badgeText === 'High Priority') { bgColor = '#FEF2F2'; textColor = '#EF4444'; }
-    else if (badgeText === 'Closing Soon') { bgColor = '#FFF7ED'; textColor = '#F97316'; }
-    else if (badgeText === 'New') { bgColor = '#EFF6FF'; textColor = '#2563EB'; }
-
-    return (
-      <View style={styles.priorityBadge}>
-        <View style={[styles.priorityBadgeColor, { backgroundColor: bgColor }]}>
-          <Text style={[styles.priorityText, { color: textColor }]}>{badgeText}</Text>
-        </View>
-      </View>
-    );
-  };
-
-  const getActionDetails = (status) => {
-    let label = 'Send Proposal';
-    let isViewAction = false;
-    
-    if (status === 'Proposal Sent') {
-      label = 'View Proposal';
-      isViewAction = true;
-    } else if (status === 'Closed') {
-      label = 'View Details';
-      isViewAction = true;
-    }
-    
-    return { label, isViewAction };
-  };
-
-  const filteredFeed = FEED_WALL_DATA.filter(item => {
-    if (activeCategory !== 'All' && item.category !== activeCategory) return false;
-    return true;
-  });
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -242,7 +133,7 @@ export default function MarketingDashboardHome({ setActivePage, handleSendPropos
 
           <View style={!isMobile && styles.desktopColRight}>
             
-            {/* 5. Today's Schedule */}
+            {/* 5. Today's Schedule (Reordered logically if side-by-side, but numbers match spec sections) */}
             <View style={styles.sectionHeaderRow}>
               <View>
                 <Text style={styles.sectionTitle}>Today’s Schedule</Text>
@@ -273,93 +164,36 @@ export default function MarketingDashboardHome({ setActivePage, handleSendPropos
           </View>
         </View>
 
-        {/* 4. Feed Wall Integrated Widget */}
+        {/* 4. Open Opportunities */}
         <View style={styles.sectionHeaderRow}>
           <View>
-            <Text style={styles.sectionTitle}>Feed Wall Broadcasts</Text>
-            <Text style={styles.sectionSubtitle}>Discover marketing opportunities broadcasted by HoReCa owners.</Text>
+            <Text style={styles.sectionTitle}>Open Opportunities</Text>
+            <Text style={styles.sectionSubtitle}>Marketing requirements matching your services</Text>
           </View>
-          <TouchableOpacity onPress={() => setActivePage('feed')}><Text style={styles.actionLink}>Full Screen &gt;</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => setActivePage('feed')}><Text style={styles.actionLink}>View Feed Wall &gt;</Text></TouchableOpacity>
         </View>
 
-        {/* Horizontal Category Filters */}
-        <View style={styles.filtersWrapper}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterList}>
-            {CATEGORIES.map((item) => (
-              <TouchableOpacity
-                key={item}
-                style={[styles.filterChip, activeCategory === item && styles.filterChipActive]}
-                onPress={() => setActiveCategory(item)}
-              >
-                <Text style={[styles.filterChipText, activeCategory === item && styles.filterChipTextActive]}>
-                  {item}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Feed Cards Grid */}
-        <View style={styles.feedGrid}>
-          {filteredFeed.length === 0 ? (
-            <View style={styles.emptyFeedState}>
-              <Text style={styles.emptyFeedTitle}>No broadcasts matching filter</Text>
-              <Text style={styles.emptyFeedSub}>Try changing the category or check back later.</Text>
-            </View>
-          ) : (
-            filteredFeed.map((item) => {
-              const badgeText = getPrimaryBadge(item);
-              const { label: actionLabel, isViewAction } = getActionDetails(item.status);
-
-              return (
-                <View key={item.id} style={[styles.feedCard, !isMobile && { width: '48%' }]}>
-                  <View style={styles.feedCardTop}>
-                    <Text style={styles.feedReqId}>{item.id}</Text>
-                    {renderBadge(badgeText)}
-                  </View>
-
-                  <Text style={styles.feedTitle} numberOfLines={1}>{item.title}</Text>
-                  
-                  <View style={styles.feedClientRow}>
-                    <Building2 size={13} color={MUTED} />
-                    <Text style={styles.feedClientText} numberOfLines={1}>
-                      {item.businessName} · {item.location}
-                    </Text>
-                  </View>
-
-                  <Text style={styles.feedDesc} numberOfLines={2}>{item.description}</Text>
-
-                  <View style={styles.feedMetaRow}>
-                    <Text style={styles.feedMetaTextVal}>{formatBudget(item.budget)}</Text>
-                    <Text style={styles.feedMetaDot}>·</Text>
-                    <Text style={styles.feedMetaTextVal}>{item.duration}</Text>
-                    <Text style={styles.feedMetaDot}>·</Text>
-                    <Text style={styles.feedMetaTextVal}>{formatCategory(item.category)}</Text>
-                  </View>
-
-                  <View style={styles.feedCardFooter}>
-                    <View style={styles.postedTimeRow}>
-                      <Clock size={12} color={MUTED} style={{ marginRight: 4 }} />
-                      <Text style={styles.feedPostedText}>Posted {item.postedAt}</Text>
-                    </View>
-                    <TouchableOpacity 
-                      style={[styles.feedActionBtn, isViewAction && styles.feedActionBtnOutline]}
-                      onPress={() => {
-                        if (isViewAction) {
-                          setActivePage('proposals');
-                        } else {
-                          handleSendProposal(item);
-                        }
-                      }}
-                    >
-                      <Text style={[styles.feedActionBtnText, isViewAction && { color: PURPLE }]}>{actionLabel}</Text>
-                      <ChevronRight size={13} color={isViewAction ? PURPLE : WHITE} style={{ marginLeft: 2 }} />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              );
-            })
-          )}
+        <View style={styles.oppsGrid}>
+          {MOCK_OPPORTUNITIES.map(req => (
+            <TouchableOpacity key={req.id} style={[styles.oppCard, !isMobile && { width: '48%' }]} onPress={() => handleSendProposal(req)}>
+              <View style={styles.oppTopRow}>
+                <Text style={styles.oppId}>{req.id}</Text>
+                {req.priority === 'HIGH PRIORITY' && (
+                  <View style={styles.badgeRed}><Text style={styles.badgeRedText}>{req.priority}</Text></View>
+                )}
+              </View>
+              <Text style={styles.oppTitle}>{req.title}</Text>
+              <Text style={styles.oppBusiness}>{req.business}</Text>
+              
+              <Text style={styles.oppCategory}>{req.category}</Text>
+              <Text style={styles.oppDetails}>{req.budget} · {req.duration}</Text>
+              
+              <View style={styles.oppFooter}>
+                <Text style={styles.textActionText}>View Opportunity</Text>
+                <ChevronRight size={16} color={NAVY} />
+              </View>
+            </TouchableOpacity>
+          ))}
         </View>
 
       </ScrollView>
@@ -383,6 +217,12 @@ const styles = StyleSheet.create({
   heroSubtitle: { fontSize: 13, color: '#D4AF37', fontWeight: '600' },
   heroIconBox: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
   heroDesc: { fontSize: 13, color: '#94A3B8', marginTop: 12, marginBottom: 16, maxWidth: '90%', lineHeight: 20 },
+  heroBadges: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
+  badgeGlass: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, gap: 6 },
+  badgeGlassText: { fontSize: 11, fontWeight: 'bold', color: WHITE },
+  badgeSolid: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0FDF4', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, gap: 6 },
+  dotGreen: { width: 6, height: 6, borderRadius: 3, backgroundColor: GREEN },
+  badgeSolidText: { fontSize: 11, fontWeight: 'bold', color: GREEN },
 
   // Overview
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
@@ -420,36 +260,16 @@ const styles = StyleSheet.create({
   scheduleTitle: { fontSize: 14, fontWeight: '600', color: NAVY, marginBottom: 2 },
   scheduleBusiness: { fontSize: 12, color: MUTED },
 
-  // Embedded Feed Wall styles
-  filtersWrapper: { marginBottom: 16, backgroundColor: '#FFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', overflow: 'hidden' },
-  filterList: { paddingHorizontal: 12, paddingVertical: 10, gap: 8 },
-  filterChip: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' },
-  filterChipActive: { backgroundColor: PURPLE, borderColor: PURPLE },
-  filterChipText: { fontSize: 12, color: '#475569', fontWeight: '500' },
-  filterChipTextActive: { color: '#FFF', fontWeight: 'bold' },
-
-  feedGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  feedCard: { width: '100%', backgroundColor: WHITE, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 2, elevation: 1 },
-  feedCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  feedReqId: { fontSize: 11, fontWeight: 'bold', color: '#64748B' },
-  priorityBadge: { flexDirection: 'row' },
-  priorityBadgeColor: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
-  priorityText: { fontSize: 9, fontWeight: 'bold', letterSpacing: 0.5, textTransform: 'uppercase' },
-  feedTitle: { fontSize: 16, fontWeight: 'bold', color: NAVY, marginBottom: 6 },
-  feedClientRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  feedClientText: { fontSize: 13, color: '#64748B', marginLeft: 6, flex: 1 },
-  feedDesc: { fontSize: 13, color: MUTED, lineHeight: 18, marginBottom: 12 },
-  feedMetaRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' },
-  feedMetaTextVal: { fontSize: 12, fontWeight: '600', color: NAVY },
-  feedMetaDot: { color: '#CBD5E1', marginHorizontal: 6, fontSize: 12 },
-  feedCardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F8FAFC' },
-  postedTimeRow: { flexDirection: 'row', alignItems: 'center' },
-  feedPostedText: { fontSize: 11, color: '#94A3B8' },
-  feedActionBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: PURPLE, paddingHorizontal: 12, height: 32, borderRadius: 8, justifyContent: 'center' },
-  feedActionBtnOutline: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0' },
-  feedActionBtnText: { fontSize: 12, fontWeight: '600', color: '#FFF' },
-
-  emptyFeedState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 40, width: '100%' },
-  emptyFeedTitle: { fontSize: 15, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
-  emptyFeedSub: { fontSize: 13, color: '#64748B', textAlign: 'center' },
+  // Open Opportunities
+  oppsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  oppCard: { width: '100%', backgroundColor: WHITE, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 2, elevation: 1 },
+  oppTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  oppId: { fontSize: 12, fontWeight: '600', color: MUTED },
+  badgeRed: { backgroundColor: '#FEF2F2', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  badgeRedText: { fontSize: 10, fontWeight: 'bold', color: '#DC2626' },
+  oppTitle: { fontSize: 16, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
+  oppBusiness: { fontSize: 14, color: MUTED, marginBottom: 12 },
+  oppCategory: { fontSize: 13, fontWeight: '600', color: NAVY, marginBottom: 4 },
+  oppDetails: { fontSize: 13, color: MUTED, marginBottom: 16 },
+  oppFooter: { flexDirection: 'row', alignItems: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
 });

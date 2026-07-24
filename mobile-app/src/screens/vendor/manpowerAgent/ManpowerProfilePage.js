@@ -25,14 +25,14 @@ export default function ManpowerProfilePage() {
   const [toastMsg, setToastMsg] = useState("");
 
   const [profile, setProfile] = useState({
-    agencyName: 'Elite Manpower Agency',
-    contactPerson: 'Rahul Sharma',
-    mobile: '9876543210',
-    email: 'info@elitemanpower.com',
-    address: '123 Business Hub',
-    city: 'Jalgaon',
-    state: 'Maharashtra',
-    pincode: '425001'
+    agencyName: '',
+    contactPerson: '',
+    mobile: '',
+    email: '',
+    address: '',
+    city: '',
+    state: '',
+    pincode: ''
   });
 
   const [profileForm, setProfileForm] = useState({ ...profile });

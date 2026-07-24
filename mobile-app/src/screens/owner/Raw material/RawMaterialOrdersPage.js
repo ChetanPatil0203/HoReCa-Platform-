@@ -5,39 +5,7 @@ import { colors } from '../../../theme/colors';
 
 const GOLD = '#D97706';
 
-const MOCK_ORDERS = [
-  {
-    id: 'ORD-77382',
-    date: '12 Jul 2026',
-    vendor: 'Metro Fresh Supplies',
-    amount: 1450,
-    status: 'Out for Delivery',
-    items: [
-      { id: 'p1', name: 'Red Onion (Grade A)', qty: 20, price: 38 },
-      { id: 'p2', name: 'Tomato (Local)', qty: 15, price: 45 }
-    ]
-  },
-  {
-    id: 'ORD-77351',
-    date: '10 Jul 2026',
-    vendor: 'Shree Traders',
-    amount: 3200,
-    status: 'Delivered',
-    items: [
-      { id: 'p3', name: 'Sunflower Oil 15L', qty: 2, price: 1600 }
-    ]
-  },
-  {
-    id: 'ORD-77290',
-    date: '05 Jul 2026',
-    vendor: 'Quality Foods',
-    amount: 850,
-    status: 'Delivered',
-    items: [
-      { id: 'p4', name: 'Cabbage', qty: 50, price: 17 }
-    ]
-  }
-];
+const MOCK_ORDERS = [];
 
 const STATUS_COLORS = {
   'Pending': { bg: '#FEF3C7', text: '#D97706' },

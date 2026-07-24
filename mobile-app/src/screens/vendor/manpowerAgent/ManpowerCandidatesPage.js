@@ -11,36 +11,7 @@ import {
 const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
 
-const INITIAL_CANDIDATES = [
-  {
-    id: "C-1001", name: "Rahul Sharma", role: "Head Chef", experience: "9 Years",
-    salary: "₹65K Expected", location: "Mumbai", availability: "Immediate", availMsg: "Available Immediately",
-    verification: "Verified", status: "Available", mobile: "+91 9876543210",
-    email: "rahul.chef@email.com", gender: "Male", dob: "12 May 1990",
-    skills: ["Continental", "Italian", "Inventory"], prevEmployer: "Taj Lands End"
-  },
-  {
-    id: "C-1002", name: "Priya Desai", role: "Barista", experience: "2 Years",
-    salary: "₹20K Expected", location: "Mumbai", availability: "15 Days", availMsg: "Available from 25 Jul",
-    verification: "Pending", status: "Available", mobile: "+91 9876543211",
-    email: "priya.coffee@email.com", gender: "Female", dob: "05 Jun 1998",
-    skills: ["Latte Art", "Customer Service"], prevEmployer: "Starbucks"
-  },
-  {
-    id: "C-1003", name: "Amit Kumar", role: "Restaurant Manager", experience: "12 Years",
-    salary: "₹80K Expected", location: "Navi Mumbai", availability: "Immediate", availMsg: "Currently Working",
-    verification: "Verified", status: "Working", mobile: "+91 9876543212",
-    email: "amit.k@email.com", gender: "Male", dob: "22 Aug 1985",
-    skills: ["Operations", "Staff Training"], prevEmployer: "Oberoi"
-  },
-  {
-    id: "C-1004", name: "Sunil Verma", role: "Sous Chef", experience: "6 Years",
-    salary: "₹45K Expected", location: "Pune", availability: "Unavailable", availMsg: "Temporarily Unavailable",
-    verification: "Rejected", status: "Unavailable", mobile: "+91 9876543213",
-    email: "sunil.v@email.com", gender: "Male", dob: "18 Nov 1992",
-    skills: ["Indian", "Tandoor"], prevEmployer: "Local Cafe"
-  },
-];
+const INITIAL_CANDIDATES = [];
 
 export default function ManpowerCandidatesPage({ route, initialAction }) {
   // Simulate passing a context via route params
@@ -159,7 +130,7 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
           <Text style={styles.overviewLabel}>Total Candidates</Text>
         </TouchableOpacity>
         <View style={styles.overviewDivider} />
-        
+
         <TouchableOpacity style={styles.overviewSeg} onPress={() => setActiveFilter('Available')}>
           <View style={[styles.overviewIconBox, { backgroundColor: '#ECFDF5' }]}>
             <UserRoundCheck size={18} color="#10B981" />
@@ -183,19 +154,19 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
         <View style={styles.searchBarWrapper}>
           <View style={styles.searchBar}>
             <Search size={18} color="#64748B" style={styles.searchIcon} />
-            <TextInput 
-              placeholder="Search by candidate, role, or location..." 
-              style={styles.searchInput} 
+            <TextInput
+              placeholder="Search by candidate, role, or location..."
+              style={styles.searchInput}
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholderTextColor="#94A3B8" 
+              placeholderTextColor="#94A3B8"
             />
             <TouchableOpacity onPress={() => setAdvancedFilterVisible(true)} style={styles.filterIconBtn}>
               <SlidersHorizontal size={18} color={NAVY} />
             </TouchableOpacity>
           </View>
         </View>
-        
+
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterPills}>
           {['All', 'Available', 'Submitted', 'Working', 'Unavailable'].map(f => (
             <TouchableOpacity key={f} style={[styles.pill, activeFilter === f && styles.pillActive]} onPress={() => setActiveFilter(f)}>
@@ -386,24 +357,24 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
                   <TextInput style={styles.input} value={newCand.experience} onChangeText={t => setNewCand({ ...newCand, experience: t })} placeholder="e.g. 5" keyboardType="numeric" />
                   <Text style={styles.inputLabel}>Expected Salary</Text>
                   <TextInput style={styles.input} value={newCand.salary} onChangeText={t => setNewCand({ ...newCand, salary: t })} placeholder="e.g. 45000" keyboardType="numeric" />
-                  
+
                   <Text style={styles.formSectionTitle}>Documents Upload</Text>
                   <View style={styles.docGrid}>
                     <TouchableOpacity style={styles.docUploadBoxSmall}>
-                      <Upload size={18} color={NAVY} style={{marginBottom: 4}} />
+                      <Upload size={18} color={NAVY} style={{ marginBottom: 4 }} />
                       <Text style={styles.docUploadText}>Aadhaar</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.docUploadBoxSmall}>
-                      <Upload size={18} color={NAVY} style={{marginBottom: 4}} />
+                      <Upload size={18} color={NAVY} style={{ marginBottom: 4 }} />
                       <Text style={styles.docUploadText}>PAN Card</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.docUploadBoxSmall}>
-                      <User size={18} color={NAVY} style={{marginBottom: 4}} />
+                      <User size={18} color={NAVY} style={{ marginBottom: 4 }} />
                       <Text style={styles.docUploadText}>Photo</Text>
                     </TouchableOpacity>
                   </View>
 
-                  <View style={{height: 20}} />
+                  <View style={{ height: 20 }} />
                 </TouchableOpacity>
               </ScrollView>
               <View style={styles.sheetFooter}>
@@ -429,38 +400,38 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
             {selectedCand && (
               <ScrollView style={styles.modalContent}>
                 <View style={styles.profHeaderRow}>
-                <View style={styles.profAvatarLarge}><Text style={styles.profAvatarTextLarge}>{selectedCand.name.charAt(0)}</Text></View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.profName}>{selectedCand.name}</Text>
-                  <Text style={styles.profRole}>{selectedCand.role}</Text>
-                  <Text style={styles.profId}>{selectedCand.id}</Text>
+                  <View style={styles.profAvatarLarge}><Text style={styles.profAvatarTextLarge}>{selectedCand.name.charAt(0)}</Text></View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.profName}>{selectedCand.name}</Text>
+                    <Text style={styles.profRole}>{selectedCand.role}</Text>
+                    <Text style={styles.profId}>{selectedCand.id}</Text>
+                  </View>
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(selectedCand.status) + '1A', alignSelf: 'flex-start' }]}>
+                    <Text style={[styles.statusBadgeText, { color: getStatusColor(selectedCand.status) }]}>{selectedCand.status}</Text>
+                  </View>
                 </View>
-                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(selectedCand.status) + '1A', alignSelf: 'flex-start' }]}>
-                  <Text style={[styles.statusBadgeText, { color: getStatusColor(selectedCand.status) }]}>{selectedCand.status}</Text>
+
+                <View style={styles.profSection}>
+                  <Text style={styles.formSectionTitle}>Contact Info</Text>
+                  <Text style={styles.profDetailText}>Mobile: {selectedCand.mobile}</Text>
+                  <Text style={styles.profDetailText}>Email: {selectedCand.email}</Text>
+                  <Text style={styles.profDetailText}>Location: {selectedCand.location}</Text>
                 </View>
-              </View>
 
-              <View style={styles.profSection}>
-                <Text style={styles.formSectionTitle}>Contact Info</Text>
-                <Text style={styles.profDetailText}>Mobile: {selectedCand.mobile}</Text>
-                <Text style={styles.profDetailText}>Email: {selectedCand.email}</Text>
-                <Text style={styles.profDetailText}>Location: {selectedCand.location}</Text>
-              </View>
-
-              <View style={styles.profSection}>
-                <Text style={styles.formSectionTitle}>Professional Info</Text>
-                <Text style={styles.profDetailText}>Experience: {selectedCand.experience}</Text>
-                <Text style={styles.profDetailText}>Expected Salary: {selectedCand.salary}</Text>
-                <Text style={styles.profDetailText}>Previous Employer: {selectedCand.prevEmployer}</Text>
-                <Text style={styles.profDetailText}>Availability: {selectedCand.availability}</Text>
-              </View>
-
-              <View style={styles.profSection}>
-                <Text style={styles.formSectionTitle}>Skills</Text>
-                <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-                  {selectedCand.skills.map(s => <View key={s} style={styles.skillBadge}><Text style={styles.skillText}>{s}</Text></View>)}
+                <View style={styles.profSection}>
+                  <Text style={styles.formSectionTitle}>Professional Info</Text>
+                  <Text style={styles.profDetailText}>Experience: {selectedCand.experience}</Text>
+                  <Text style={styles.profDetailText}>Expected Salary: {selectedCand.salary}</Text>
+                  <Text style={styles.profDetailText}>Previous Employer: {selectedCand.prevEmployer}</Text>
+                  <Text style={styles.profDetailText}>Availability: {selectedCand.availability}</Text>
                 </View>
-              </View>
+
+                <View style={styles.profSection}>
+                  <Text style={styles.formSectionTitle}>Skills</Text>
+                  <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+                    {selectedCand.skills.map(s => <View key={s} style={styles.skillBadge}><Text style={styles.skillText}>{s}</Text></View>)}
+                  </View>
+                </View>
               </ScrollView>
             )}
           </View>

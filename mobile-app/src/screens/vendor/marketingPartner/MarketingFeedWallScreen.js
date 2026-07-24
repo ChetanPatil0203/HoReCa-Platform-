@@ -11,32 +11,7 @@ const NAVY = '#071B3A';
 const BG = '#F8FAFC';
 const PURPLE = '#071B3A';
 
-const INITIAL_FEED = [
-  { 
-    id: "REQ-101", title: "Summer Social Media Launch", 
-    businessName: "The Meridian Hotel", location: "Andheri, Mumbai",
-    category: "Social Media Marketing", budget: "₹45,000–₹60,000", date: "25 Jun 2026",
-    priority: "High Priority", postedAt: "2 hours ago", 
-    description: "Looking for an agency to run our 3-month summer campaign across Instagram and Facebook. We want to target high-net-worth individuals for our luxury suites.",
-    duration: "3 Months", status: "New"
-  },
-  { 
-    id: "REQ-102", title: "New Menu Photography & Videography", 
-    businessName: "Spice Route Restaurant", location: "Bandra, Mumbai",
-    category: "Content Creation", budget: "₹25,000", date: "22 Jun 2026",
-    priority: "New", postedAt: "5 hours ago", 
-    description: "Need professional photos and 15-second reels for our upcoming menu launch. Food styling experience is required.",
-    duration: "1 Week", status: "Proposal Sent"
-  },
-  { 
-    id: "REQ-103", title: "Local SEO Optimization", 
-    businessName: "Café Zephyr", location: "Lower Parel, Mumbai",
-    category: "SEO", budget: "₹15,000 / Month", date: "20 Jun 2026",
-    priority: "Closing Soon", postedAt: "1 day ago", 
-    description: "Improve local search rankings on Google Maps and Zomato. We need more foot traffic from local office goers.",
-    duration: "Ongoing", status: "Closed"
-  }
-];
+const INITIAL_FEED = [];
 
 const CATEGORIES = ["All", "Social Media Marketing", "Content Creation", "SEO", "Performance Marketing", "Influencer Marketing"];
 

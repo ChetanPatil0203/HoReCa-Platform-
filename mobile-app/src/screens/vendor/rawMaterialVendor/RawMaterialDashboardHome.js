@@ -16,27 +16,17 @@ const WHITE = '#FFFFFF';
 const MUTED = '#64748B';
 
 const OVERVIEW_CARDS = [
-  { id: 'new', label: 'New Orders', value: '12', icon: ShoppingBag, bg: '#EFF6FF', iconColor: '#3B82F6', target: 'requests', filter: 'New' },
-  { id: 'pending', label: 'Pending Orders', value: '8', icon: Clock3, bg: '#FFF7ED', iconColor: '#F97316', target: 'requests', filter: 'Pending' },
-  { id: 'low', label: 'Low Stock Items', value: '3', icon: TriangleAlert, bg: '#FEF2F2', iconColor: '#EF4444', target: 'inventory', filter: 'Low Stock' },
-  { id: 'deliveries', label: 'Deliveries Today', value: '5', icon: Truck, bg: '#F0FDF4', iconColor: '#22C55E', target: 'deliveries', filter: 'Today' },
+  { id: 'new', label: 'New Orders', value: '0', icon: ShoppingBag, bg: '#EFF6FF', iconColor: '#3B82F6', target: 'requests', filter: 'New' },
+  { id: 'pending', label: 'Pending Orders', value: '0', icon: Clock3, bg: '#FFF7ED', iconColor: '#F97316', target: 'requests', filter: 'Pending' },
+  { id: 'low', label: 'Low Stock Items', value: '0', icon: TriangleAlert, bg: '#FEF2F2', iconColor: '#EF4444', target: 'inventory', filter: 'Low Stock' },
+  { id: 'deliveries', label: 'Deliveries Today', value: '0', icon: Truck, bg: '#F0FDF4', iconColor: '#22C55E', target: 'deliveries', filter: 'Today' },
 ];
 
-const RECENT_ORDERS = [
-  { id: 'ORD-942', hotel: 'The Grand Meridian', product: 'Premium Basmati Rice', qty: '500 kg', amount: '₹45,000', status: 'NEW', statusColor: '#3B82F6', statusBg: '#EFF6FF', date: 'Today · 10:30 AM' },
-  { id: 'ORD-941', hotel: 'Azure Palace', product: 'Atlantic Salmon', qty: '50 kg', amount: '₹60,000', status: 'PROCESSING', statusColor: '#F97316', statusBg: '#FFF7ED', date: 'Yesterday · 02:00 PM' }
-];
+const RECENT_ORDERS = [];
 
-const TODAY_DELIVERIES = [
-  { id: 'DEL-1', hotel: 'The Grand Meridian', product: 'Premium Basmati Rice', qty: '500 kg', time: '10:30 AM', status: 'Out for Delivery', statusColor: '#8B5CF6' },
-  { id: 'DEL-2', hotel: 'Azure Palace', product: 'Atlantic Salmon', qty: '50 kg', time: '02:00 PM', status: 'Scheduled', statusColor: '#3B82F6' }
-];
+const TODAY_DELIVERIES = [];
 
-const RECENT_ACTIVITY = [
-  { id: 'ACT-1', title: 'New Order Received', desc: 'Order ORD-942 from The Grand Meridian', time: '10 minutes ago', icon: ShoppingBag, color: '#3B82F6' },
-  { id: 'ACT-2', title: 'Stock Updated', desc: 'Premium Basmati Rice stock increased', time: '45 minutes ago', icon: RefreshCcw, color: '#F97316' },
-  { id: 'ACT-3', title: 'Delivery Completed', desc: 'Order ORD-938 delivered to Cafe Zephyr', time: '2 hours ago', icon: CheckCircle2, color: '#22C55E' }
-];
+const RECENT_ACTIVITY = [];
 
 export default function RawMaterialDashboardHome({ onNavigate }) {
   const { width } = Dimensions.get('window');

@@ -14,56 +14,7 @@ const GOLD = '#F6B800';
 const LIGHT_BG = '#F8FAFC';
 const WHITE = '#FFFFFF';
 
-const MOCK_SERVICES = [
-  {
-    id: "SRV-01",
-    name: "AC Deep Cleaning",
-    category: "Cleaning Services",
-    description: "Professional deep cleaning for commercial AC systems and hospitality properties.",
-    pricingType: "Starting From",
-    price: "₹2,500",
-    duration: "4–6 Hours",
-    availability: "Available Today",
-    status: "Active",
-    included: "Filter cleaning\nCoil washing\nGas check",
-    excluded: "Gas refill\nParts replacement",
-    certificate: "Technical Certification",
-    created: "10 Oct 2026",
-    updated: "18 Oct 2026"
-  },
-  {
-    id: "SRV-02",
-    name: "Plumbing Repair",
-    category: "Plumbing Services",
-    description: "Emergency and scheduled plumbing repairs for restaurants and cafes.",
-    pricingType: "Per Hour",
-    price: "₹500 / hour",
-    duration: "1-2 Hours",
-    availability: "Temporarily Unavailable",
-    status: "Inactive",
-    included: "Leak fixing\nPipe unclogging",
-    excluded: "Major structural pipe changes",
-    certificate: null,
-    created: "12 Oct 2026",
-    updated: "15 Oct 2026"
-  },
-  {
-    id: "SRV-03",
-    name: "Fire Safety Audit",
-    category: "Fire Safety Services",
-    description: "Complete fire safety inspection and equipment audit.",
-    pricingType: "Inspection Required",
-    price: "Price after inspection",
-    duration: "1 Day",
-    availability: "By Appointment",
-    status: "Active",
-    included: "Extinguisher check\nAlarm testing",
-    excluded: "Equipment installation",
-    certificate: "Fire Safety Certification",
-    created: "05 Oct 2026",
-    updated: "14 Oct 2026"
-  }
-];
+const MOCK_SERVICES = [];
 
 export default function ProviderServicesPage() {
   const { width } = useWindowDimensions();

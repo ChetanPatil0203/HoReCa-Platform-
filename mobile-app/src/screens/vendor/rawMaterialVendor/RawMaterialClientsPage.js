@@ -13,28 +13,15 @@ const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
 
 const SUMMARY_DATA = [
-  { label: 'Total Clients', value: '45', icon: Users, color: '#3B82F6' },
-  { label: 'Active', value: '38', icon: User, color: '#10B981' },
-  { label: 'Repeat', value: '32', icon: RefreshCw, color: '#8B5CF6' },
-  { label: 'Outstanding', value: '₹1.2L', icon: AlertCircle, color: '#EF4444' },
+  { label: 'Total Clients', value: '0', icon: Users, color: '#3B82F6' },
+  { label: 'Active', value: '0', icon: User, color: '#10B981' },
+  { label: 'Repeat', value: '0', icon: RefreshCw, color: '#8B5CF6' },
+  { label: 'Outstanding', value: '₹0', icon: AlertCircle, color: '#EF4444' },
 ];
 
 const CHIPS = ['All', 'Hotel', 'Restaurant', 'Cafe'];
 
-const MOCK_CLIENTS = [
-  {
-    id: "CLI-001", name: "The Meridian Grand", initials: "MG", type: "Hotel", location: "Downtown, Metro City",
-    rating: "4.9", orders: 124, ltv: "₹24.5L", outstanding: "₹45,000", tag: "VIP"
-  },
-  {
-    id: "CLI-002", name: "Café Zephyr", initials: "CZ", type: "Cafe", location: "Westside Hub",
-    rating: "4.7", orders: 56, ltv: "₹8.2L", outstanding: "₹0", tag: "Regular"
-  },
-  {
-    id: "CLI-003", name: "Azure Palace", initials: "AP", type: "Hotel", location: "Azure Coast",
-    rating: "4.5", orders: 12, ltv: "₹3.4L", outstanding: "₹60,000", tag: "New"
-  }
-];
+const MOCK_CLIENTS = [];
 
 const TRANSACTIONS = [
   {

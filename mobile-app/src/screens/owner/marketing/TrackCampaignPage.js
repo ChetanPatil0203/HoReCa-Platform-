@@ -5,23 +5,16 @@ import { colors } from '../../../theme/colors';
 
 const NAVY = '#0E2042';
 
-const MOCK_TIMELINE = [
-  { id: 1, title: 'Requirement Sent', time: '14 Jul, 09:00 AM', completed: true },
-  { id: 2, title: 'Proposal Accepted', time: '14 Jul, 02:30 PM', completed: true },
-  { id: 3, title: 'Creative Approval', time: '16 Jul, 10:15 AM', completed: true },
-  { id: 4, title: 'Campaign Started', time: '18 Jul, 09:00 AM', completed: true },
-  { id: 5, title: 'Campaign Running', time: '18 Jul - 18 Aug', completed: true },
-  { id: 6, title: 'Completed', time: '18 Aug, 05:00 PM', completed: true }
-];
+const MOCK_TIMELINE = [];
 
 const MOCK_REPORT = {
-  reach: '1.2M',
-  impressions: '3.5M',
-  clicks: '84.5K',
-  leads: '4,200',
-  conversions: '850',
-  roi: '4.2x',
-  budgetUsed: '₹50,000'
+  reach: '0',
+  impressions: '0',
+  clicks: '0',
+  leads: '0',
+  conversions: '0',
+  roi: '0x',
+  budgetUsed: '₹0'
 };
 
 export default function TrackCampaignPage({ campaign, onBack, onReview, onBookAgain }) {

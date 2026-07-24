@@ -12,10 +12,10 @@ export default function ServiceSchedulingPage({ provider, onBack, onHome, onTrac
 
   const [formData, setFormData] = useState({
     technician: 'Any Available',
-    date: '15 Jul 2026',
-    time: '10:00 AM - 12:00 PM',
-    address: 'The Meridian Hotel, Downtown Branch',
-    notes: 'Please enter through the service elevator.'
+    date: '',
+    time: '',
+    address: '',
+    notes: ''
   });
 
   if (isConfirmed) {

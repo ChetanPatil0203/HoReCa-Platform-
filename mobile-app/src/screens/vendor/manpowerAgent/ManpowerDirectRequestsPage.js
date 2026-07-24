@@ -4,7 +4,7 @@ import {
   Modal, SafeAreaView, FlatList, TextInput, Pressable, useWindowDimensions
 } from 'react-native';
 import {
-  Briefcase, Users, Calendar, MapPin, 
+  Briefcase, Users, Calendar, MapPin,
   Search, X, CheckCircle, Send, DollarSign, Building, ChevronRight,
   Building2, UsersRound, IndianRupee,
   FilePlus2, CircleCheck, Clock3
@@ -12,48 +12,9 @@ import {
 
 const NAVY = '#081A3A';
 
-const INITIAL_REQUESTS = [
-  {
-    id: "DIR-8001", businessName: "The Grand Taj", type: "Hotel", verified: true,
-    role: "Head Chef", count: 1, experience: "8-10 Years", salary: "₹60k - ₹80k",
-    shift: "Morning", location: "Bandra West, Mumbai",
-    joining: "Immediate", food: "Provided", accommodation: "Provided",
-    urgency: "High", sentTime: "2 hours ago", status: "New",
-    skills: ["Continental", "Team Management", "Inventory"],
-    desc: "Looking for an experienced Head Chef to lead our new continental fine-dining restaurant. We specifically want your agency to source this as you have provided excellent head chefs in the past.",
-    deadline: "20 Jul 2026",
-    notes: "Please only send candidates with 5-star hotel experience."
-  },
-  {
-    id: "DIR-8002", businessName: "Cafe Mocha", type: "Cafe", verified: true,
-    role: "Barista", count: 2, experience: "1-3 Years", salary: "₹18k - ₹25k",
-    shift: "Rotational", location: "Andheri, Mumbai",
-    joining: "Within 7 Days", food: "Provided", accommodation: "Not Provided",
-    urgency: "Normal", sentTime: "1 day ago", status: "Accepted",
-    skills: ["Latte Art", "Customer Service", "Espresso"],
-    desc: "Seeking enthusiastic baristas with good communication skills.",
-    deadline: "25 Jul 2026",
-    notes: "Need quick joiners."
-  },
-  {
-    id: "DIR-8003", businessName: "Olive Bar", type: "Restaurant", verified: false,
-    role: "Bartender", count: 1, experience: "3-5 Years", salary: "₹25k - ₹35k",
-    shift: "Night", location: "Khar, Mumbai",
-    joining: "Immediate", food: "Provided", accommodation: "Not Provided",
-    urgency: "High", sentTime: "2 days ago", status: "Candidates Sent",
-    skills: ["Mixology", "Inventory"],
-    desc: "Requires expert mixologist.",
-    deadline: "18 Jul 2026",
-    notes: ""
-  }
-];
+const INITIAL_REQUESTS = [];
 
-const MOCK_CANDIDATES = [
-  { id: "C-01", name: "Rahul Sharma", role: "Head Chef", experience: "9 Years", salary: "₹65k", location: "Mumbai", docStatus: "Verified" },
-  { id: "C-02", name: "Amit Kumar", role: "Head Chef", experience: "12 Years", salary: "₹80k", location: "Navi Mumbai", docStatus: "Verified" },
-  { id: "C-03", name: "Priya Desai", role: "Barista", experience: "2 Years", salary: "₹20k", location: "Mumbai", docStatus: "Pending" },
-  { id: "C-04", name: "Vikram Singh", role: "Bartender", experience: "4 Years", salary: "₹30k", location: "Pune", docStatus: "Verified" },
-];
+const MOCK_CANDIDATES = [];
 
 const DECLINE_REASONS = [
   "Suitable candidates unavailable",
@@ -98,7 +59,7 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
   };
 
   const getStatusColor = (status) => {
-    switch(status) {
+    switch (status) {
       case 'New': return '#3B82F6';
       case 'Accepted': return '#F59E0B';
       case 'Candidates Sent': return '#8B5CF6';
@@ -148,9 +109,9 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
   const filteredRequests = requests.filter(r => {
     const matchesTab = activeFilter === "All" || r.status === activeFilter;
     const q = searchQuery.toLowerCase();
-    const matchesSearch = !q || 
-      r.id.toLowerCase().includes(q) || 
-      r.role.toLowerCase().includes(q) || 
+    const matchesSearch = !q ||
+      r.id.toLowerCase().includes(q) ||
+      r.role.toLowerCase().includes(q) ||
       r.businessName.toLowerCase().includes(q);
     return matchesTab && matchesSearch;
   });
@@ -175,7 +136,7 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
 
             {/* Summary */}
             <View style={styles.summaryGrid}>
-              <Pressable 
+              <Pressable
                 style={({ pressed }) => [styles.overviewCard, { width: summaryCardWidth, opacity: pressed ? 0.9 : 1 }]}
                 onPress={() => setActiveFilter("New")}
               >
@@ -188,7 +149,7 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
                 <Text style={styles.overviewValue}>1</Text>
               </Pressable>
 
-              <Pressable 
+              <Pressable
                 style={({ pressed }) => [styles.overviewCard, { width: summaryCardWidth, opacity: pressed ? 0.9 : 1 }]}
                 onPress={() => setActiveFilter("Accepted")}
               >
@@ -201,7 +162,7 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
                 <Text style={styles.overviewValue}>1</Text>
               </Pressable>
 
-              <Pressable 
+              <Pressable
                 style={({ pressed }) => [styles.overviewCard, { width: summaryCardWidth, opacity: pressed ? 0.9 : 1 }]}
                 onPress={() => setActiveFilter("Candidates Sent")}
               >
@@ -214,7 +175,7 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
                 <Text style={styles.overviewValue}>1</Text>
               </Pressable>
 
-              <Pressable 
+              <Pressable
                 style={({ pressed }) => [styles.overviewCard, { width: summaryCardWidth, opacity: pressed ? 0.9 : 1 }]}
                 onPress={() => setActiveFilter("Pending")}
               >
@@ -232,9 +193,9 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
             <View style={styles.searchSection}>
               <View style={styles.searchBox}>
                 <Search size={18} color="#94A3B8" />
-                <TextInput 
-                  style={styles.searchInput} 
-                  placeholder="Search by ID, Business, Role..." 
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search by ID, Business, Role..."
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                 />
@@ -259,7 +220,7 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
             <Text style={styles.emptyDesc}>Requirements will appear here when businesses post them or send them to you.</Text>
           </View>
         )}
-        renderItem={({item}) => (
+        renderItem={({ item }) => (
           <View style={styles.recordCard}>
             <View style={styles.recordHeader}>
               <View style={styles.recordHeaderLeft}>
@@ -289,7 +250,7 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
                 <Text style={styles.viewDetailsText}>View Details</Text>
                 <ChevronRight size={16} color={NAVY} />
               </TouchableOpacity>
-              
+
               {item.status === 'New' && (
                 <TouchableOpacity style={styles.primaryBtnSmall} onPress={() => handleAccept(item.id)}>
                   <Text style={styles.primaryBtnSmallText}>Accept</Text>
@@ -323,32 +284,32 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
               <Text style={styles.popupTitle}>Requirement Details</Text>
               <TouchableOpacity onPress={() => setDetailsVisible(false)} style={styles.modalCloseBtn}><X size={20} color="#1E293B" /></TouchableOpacity>
             </View>
-            
-            <ScrollView style={{padding: 16, maxHeight: 500}} showsVerticalScrollIndicator={false}>
+
+            <ScrollView style={{ padding: 16, maxHeight: 500 }} showsVerticalScrollIndicator={false}>
               {selectedReq && (
                 <>
-                  <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 20}}>
-                     <View style={[styles.recordAvatar, {width: 48, height: 48, borderRadius: 24}]}><Text style={[styles.recordAvatarText, {fontSize: 20}]}>{selectedReq.role.charAt(0)}</Text></View>
-                     <View style={{marginLeft: 12}}>
-                       <Text style={[styles.recordName, {fontSize: 18}]}>{selectedReq.role}</Text>
-                       <Text style={styles.recordSub}>{selectedReq.businessName}</Text>
-                     </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+                    <View style={[styles.recordAvatar, { width: 48, height: 48, borderRadius: 24 }]}><Text style={[styles.recordAvatarText, { fontSize: 20 }]}>{selectedReq.role.charAt(0)}</Text></View>
+                    <View style={{ marginLeft: 12 }}>
+                      <Text style={[styles.recordName, { fontSize: 18 }]}>{selectedReq.role}</Text>
+                      <Text style={styles.recordSub}>{selectedReq.businessName}</Text>
+                    </View>
                   </View>
 
                   <View style={styles.detailGrid}>
-                     <View style={styles.detailItem}><Users size={16} color="#64748B" /><View style={styles.detailTextWrapper}><Text style={styles.detailLabel}>Staff Required</Text><Text style={styles.detailValue}>{selectedReq.count}</Text></View></View>
-                     <View style={styles.detailItem}><DollarSign size={16} color="#64748B" /><View style={styles.detailTextWrapper}><Text style={styles.detailLabel}>Salary</Text><Text style={styles.detailValue}>{selectedReq.salary}</Text></View></View>
-                     <View style={styles.detailItem}><Briefcase size={16} color="#64748B" /><View style={styles.detailTextWrapper}><Text style={styles.detailLabel}>Experience</Text><Text style={styles.detailValue}>{selectedReq.experience}</Text></View></View>
-                     <View style={styles.detailItem}><MapPin size={16} color="#64748B" /><View style={styles.detailTextWrapper}><Text style={styles.detailLabel}>Location</Text><Text style={styles.detailValue}>{selectedReq.location}</Text></View></View>
-                     <View style={styles.detailItem}><Calendar size={16} color="#64748B" /><View style={styles.detailTextWrapper}><Text style={styles.detailLabel}>Joining</Text><Text style={styles.detailValue}>{selectedReq.joining}</Text></View></View>
+                    <View style={styles.detailItem}><Users size={16} color="#64748B" /><View style={styles.detailTextWrapper}><Text style={styles.detailLabel}>Staff Required</Text><Text style={styles.detailValue}>{selectedReq.count}</Text></View></View>
+                    <View style={styles.detailItem}><DollarSign size={16} color="#64748B" /><View style={styles.detailTextWrapper}><Text style={styles.detailLabel}>Salary</Text><Text style={styles.detailValue}>{selectedReq.salary}</Text></View></View>
+                    <View style={styles.detailItem}><Briefcase size={16} color="#64748B" /><View style={styles.detailTextWrapper}><Text style={styles.detailLabel}>Experience</Text><Text style={styles.detailValue}>{selectedReq.experience}</Text></View></View>
+                    <View style={styles.detailItem}><MapPin size={16} color="#64748B" /><View style={styles.detailTextWrapper}><Text style={styles.detailLabel}>Location</Text><Text style={styles.detailValue}>{selectedReq.location}</Text></View></View>
+                    <View style={styles.detailItem}><Calendar size={16} color="#64748B" /><View style={styles.detailTextWrapper}><Text style={styles.detailLabel}>Joining</Text><Text style={styles.detailValue}>{selectedReq.joining}</Text></View></View>
                   </View>
 
-                  <View style={{marginBottom: 20}}>
+                  <View style={{ marginBottom: 20 }}>
                     <Text style={styles.sectionHeading}>Description</Text>
                     <Text style={styles.descText}>{selectedReq.desc}</Text>
                   </View>
-                  
-                  <View style={{marginBottom: 20}}>
+
+                  <View style={{ marginBottom: 20 }}>
                     <Text style={styles.sectionHeading}>Skills Required</Text>
                     <View style={styles.skillsWrap}>
                       {selectedReq.skills.map((s, idx) => (
@@ -363,12 +324,12 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
                       <Text style={[styles.statusBadgeText, { color: getStatusColor(selectedReq.status) }]}>{selectedReq.status}</Text>
                     </View>
                   </View>
-                  
+
                   <View style={styles.modalActions}>
                     {selectedReq.status === 'New' && (
                       <>
-                        <TouchableOpacity style={[styles.secondaryBtn, {borderColor: '#FECACA', borderWidth: 1}]} onPress={() => handleDeclineSelect(selectedReq)}>
-                          <Text style={[styles.secondaryBtnText, {color: '#DC2626'}]}>Decline</Text>
+                        <TouchableOpacity style={[styles.secondaryBtn, { borderColor: '#FECACA', borderWidth: 1 }]} onPress={() => handleDeclineSelect(selectedReq)}>
+                          <Text style={[styles.secondaryBtnText, { color: '#DC2626' }]}>Decline</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.primaryBtn} onPress={() => handleAccept(selectedReq.id)}>
                           <Text style={styles.primaryBtnText}>Accept Request</Text>
@@ -376,7 +337,7 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
                       </>
                     )}
                     {selectedReq.status === 'Accepted' && (
-                      <TouchableOpacity style={[styles.primaryBtn, {width: '100%'}]} onPress={() => handleSendCandidatesOpen(selectedReq)}>
+                      <TouchableOpacity style={[styles.primaryBtn, { width: '100%' }]} onPress={() => handleSendCandidatesOpen(selectedReq)}>
                         <Text style={styles.primaryBtnText}>Send Candidates</Text>
                       </TouchableOpacity>
                     )}
@@ -396,9 +357,9 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
               <Text style={styles.popupTitle}>Decline Request</Text>
               <TouchableOpacity onPress={() => setDeclineVisible(false)} style={styles.modalCloseBtn}><X size={20} color="#1E293B" /></TouchableOpacity>
             </View>
-            <ScrollView style={{padding: 16}} showsVerticalScrollIndicator={false}>
+            <ScrollView style={{ padding: 16 }} showsVerticalScrollIndicator={false}>
               <Text style={styles.sheetSub}>Please select a reason for declining this request.</Text>
-              <View style={{marginTop: 16, marginBottom: 24}}>
+              <View style={{ marginTop: 16, marginBottom: 24 }}>
                 {DECLINE_REASONS.map((reason, idx) => (
                   <TouchableOpacity key={idx} style={styles.reasonBtn} onPress={() => submitDecline(reason)}>
                     <Text style={styles.reasonText}>{reason}</Text>
@@ -414,41 +375,41 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
       <Modal visible={sendCandVisible} animationType="fade" transparent={true} onRequestClose={() => setSendCandVisible(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setSendCandVisible(false)}>
           <Pressable style={[styles.popupCard, { flexShrink: 1, maxHeight: '85%', width: '100%', maxWidth: 500, alignSelf: 'center' }]}>
-            <View style={[styles.popupHeader, {backgroundColor: '#fff'}]}>
-            <TouchableOpacity onPress={() => setSendCandVisible(false)} style={styles.modalCloseBtn}>
-              <X size={24} color="#1E293B" />
-            </TouchableOpacity>
-            <Text style={styles.popupTitle}>Select Candidates</Text>
-            <View style={{width: 40}} />
-          </View>
-          
-          <View style={styles.candMatchTextContainer}>
-             <Text style={styles.candMatchText}>Select candidates to send for {selectedReq?.role} @ {selectedReq?.businessName}</Text>
-          </View>
-
-          <FlatList
-            data={MOCK_CANDIDATES}
-            keyExtractor={c => c.id}
-            contentContainerStyle={{padding: 16}}
-            renderItem={({item}) => (
-              <TouchableOpacity style={[styles.candCard, selectedCands.includes(item.id) && styles.candCardSelected]} onPress={() => toggleCandidate(item.id)}>
-                <View style={[styles.checkbox, selectedCands.includes(item.id) && styles.checkboxSelected]}>
-                  {selectedCands.includes(item.id) && <CheckCircle size={14} color="#fff" />}
-                </View>
-                <View style={styles.candInfo}>
-                  <Text style={styles.candName}>{item.name}</Text>
-                  <Text style={styles.candDesc}>{item.role} • {item.experience} • {item.salary}</Text>
-                </View>
+            <View style={[styles.popupHeader, { backgroundColor: '#fff' }]}>
+              <TouchableOpacity onPress={() => setSendCandVisible(false)} style={styles.modalCloseBtn}>
+                <X size={24} color="#1E293B" />
               </TouchableOpacity>
-            )}
-          />
+              <Text style={styles.popupTitle}>Select Candidates</Text>
+              <View style={{ width: 40 }} />
+            </View>
 
-          <View style={styles.sendFormWrapper}>
-            <TouchableOpacity style={[styles.primaryBtnLarge, selectedCands.length === 0 && {opacity: 0.5}]} onPress={submitCandidates} disabled={selectedCands.length === 0}>
-              <Send size={18} color="#fff" style={{marginRight: 8}}/>
-              <Text style={styles.primaryBtnLargeText}>Send {selectedCands.length} Candidates</Text>
-            </TouchableOpacity>
-          </View>
+            <View style={styles.candMatchTextContainer}>
+              <Text style={styles.candMatchText}>Select candidates to send for {selectedReq?.role} @ {selectedReq?.businessName}</Text>
+            </View>
+
+            <FlatList
+              data={MOCK_CANDIDATES}
+              keyExtractor={c => c.id}
+              contentContainerStyle={{ padding: 16 }}
+              renderItem={({ item }) => (
+                <TouchableOpacity style={[styles.candCard, selectedCands.includes(item.id) && styles.candCardSelected]} onPress={() => toggleCandidate(item.id)}>
+                  <View style={[styles.checkbox, selectedCands.includes(item.id) && styles.checkboxSelected]}>
+                    {selectedCands.includes(item.id) && <CheckCircle size={14} color="#fff" />}
+                  </View>
+                  <View style={styles.candInfo}>
+                    <Text style={styles.candName}>{item.name}</Text>
+                    <Text style={styles.candDesc}>{item.role} • {item.experience} • {item.salary}</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+            />
+
+            <View style={styles.sendFormWrapper}>
+              <TouchableOpacity style={[styles.primaryBtnLarge, selectedCands.length === 0 && { opacity: 0.5 }]} onPress={submitCandidates} disabled={selectedCands.length === 0}>
+                <Send size={18} color="#fff" style={{ marginRight: 8 }} />
+                <Text style={styles.primaryBtnLargeText}>Send {selectedCands.length} Candidates</Text>
+              </TouchableOpacity>
+            </View>
           </Pressable>
         </TouchableOpacity>
       </Modal>
@@ -461,7 +422,7 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16,  padding: 16, paddingTop: 20, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16, padding: 16, paddingTop: 20, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   headerTitleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   headerTitle: { fontSize: 22, fontWeight: 'bold', color: NAVY, marginLeft: 8 },
   headerSub: { fontSize: 13, color: '#64748B', lineHeight: 20 },
@@ -527,7 +488,7 @@ const styles = StyleSheet.create({
   filterChipTextActive: { color: '#fff' },
 
   listContent: { paddingBottom: 120 },
-  
+
   recordCard: { marginHorizontal: 16, backgroundColor: '#fff', borderRadius: 16, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
   recordHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   recordHeaderLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 },
@@ -569,7 +530,7 @@ const styles = StyleSheet.create({
 
   sectionHeading: { fontSize: 14, fontWeight: 'bold', color: '#1E293B', marginBottom: 8 },
   descText: { fontSize: 13, color: '#475569', lineHeight: 20 },
-  
+
   skillsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   skillPill: { backgroundColor: '#F1F5F9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
   skillText: { fontSize: 12, color: '#475569', fontWeight: '500' },

@@ -33,27 +33,13 @@ const GRAY_TEXT = '#64748B';
 // MOCK DATA
 // =====================================
 
-const MY_REQUIREMENTS = [
-  { id: 'REQ-091', title: 'Instagram, Facebook & Content Creation', type: 'online', service: 'Social Media Marketing', mode: 'Common Requirement', status: 'Open', proposals: 12, date: '2 days ago' },
-  { id: 'REQ-092', title: 'New Menu Photoshoot', type: 'offline', service: 'Photography', mode: 'Direct Request', status: 'Agency Selected', proposals: 1, date: '5 days ago' },
-  { id: 'REQ-093', title: 'Website Redesign', type: 'online', service: 'Website Development', mode: 'Common Requirement', status: 'In Progress', proposals: 5, date: '1 week ago' },
-  { id: 'REQ-094', title: 'Highway Hoarding Ads', type: 'offline', service: 'Branding', mode: 'Direct Request', status: 'Completed', proposals: 1, date: '2 weeks ago' },
-  { id: 'REQ-095', title: 'Influencer Marketing Campaign', type: 'online', service: 'Influencer Marketing', mode: 'Common Requirement', status: 'Draft', proposals: 0, date: 'Just now' },
-];
+const MY_REQUIREMENTS = [];
 
-const RECENT_PROPOSALS = [
-  { id: 'PRP-01', agencyName: 'BrandCraft Agency', initials: 'BC', verified: true, service: 'Social Media Marketing', reqName: 'Instagram, Facebook & Content Creation', amount: '₹45,000', duration: '2 Months', status: 'New', time: 'Received 2 hours ago', type: 'online' },
-  { id: 'PRP-02', agencyName: 'Pixel Digital', initials: 'PD', verified: true, service: 'Google Ads', reqName: 'Google Ad Campaigns', amount: '₹30,000', duration: '1 Month', status: 'Under Review', time: 'Received 1 day ago', type: 'online' },
-  { id: 'PRP-03', agencyName: 'Outfront Media', initials: 'OM', verified: true, service: 'Hoardings', reqName: 'Highway Hoarding Ads', amount: '₹1,20,000', duration: '3 Months', status: 'Shortlisted', time: 'Received 3 days ago', type: 'offline' },
-  { id: 'PRP-04', agencyName: 'EventX', initials: 'EX', verified: true, service: 'Event Promotion', reqName: 'Diwali Mela Setup', amount: '₹80,000', duration: '1 Week', status: 'Accepted', time: 'Received 1 week ago', type: 'offline' },
-];
+const RECENT_PROPOSALS = [];
 
 const ONLINE_SERVICES = ['Social Media Marketing', 'Website Development', 'Influencer Marketing', 'Digital Advertising', 'Content Creation', 'Graphic Design'];
 
-const ONLINE_AGENCIES_MOCK = [
-  { id: 'AGY-O1', name: 'BrandCraft Agency', initials: 'BC', verified: true, location: 'Mumbai, Maharashtra', type: 'online' },
-  { id: 'AGY-O2', name: 'Pixel Digital', initials: 'PD', verified: true, location: 'Delhi, NCR', type: 'online' },
-];
+const ONLINE_AGENCIES_MOCK = [];
 
 
 // =====================================

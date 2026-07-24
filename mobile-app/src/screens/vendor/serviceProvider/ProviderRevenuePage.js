@@ -12,48 +12,17 @@ const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
 
 const SUMMARY_DATA = [
-  { label: "Total Revenue", value: "₹2,45,000", icon: TrendingUp, color: "#10B981", bg: "#D1FAE5" },
-  { label: "Completed Jobs", value: "₹1,90,000", icon: CheckCircle, color: "#3B82F6", bg: "#DBEAFE" },
-  { label: "Pending Payments", value: "₹45,000", icon: Clock, color: "#F59E0B", bg: "#FEF3C7" },
-  { label: "Outstanding Invs", value: "8", icon: FileText, color: "#8B5CF6", bg: "#F3E8FF" },
-  { label: "Visit Charges", value: "₹15,000", icon: CreditCard, color: "#6366F1", bg: "#E0E7FF" },
-  { label: "Refunds", value: "₹5,000", icon: AlertCircle, color: "#EF4444", bg: "#FEE2E2" },
+  { label: "Total Revenue", value: "₹0", icon: TrendingUp, color: "#10B981", bg: "#D1FAE5" },
+  { label: "Completed Jobs", value: "₹0", icon: CheckCircle, color: "#3B82F6", bg: "#DBEAFE" },
+  { label: "Pending Payments", value: "₹0", icon: Clock, color: "#F59E0B", bg: "#FEF3C7" },
+  { label: "Outstanding Invs", value: "0", icon: FileText, color: "#8B5CF6", bg: "#F3E8FF" },
+  { label: "Visit Charges", value: "₹0", icon: CreditCard, color: "#6366F1", bg: "#E0E7FF" },
+  { label: "Refunds", value: "₹0", icon: AlertCircle, color: "#EF4444", bg: "#FEE2E2" },
 ];
 
-const MOCK_INVOICES = [
-  {
-    id: "INV-2026-101",
-    jobId: "JOB-448",
-    client: "Sunset Resort",
-    service: "HVAC Annual Maintenance",
-    amount: "₹45,000",
-    dueDate: "20 Oct 2026",
-    status: "Pending"
-  },
-  {
-    id: "INV-2026-100",
-    jobId: "JOB-445",
-    client: "The Meridian Grand",
-    service: "Kitchen Equipment Repair",
-    amount: "₹18,500",
-    dueDate: "15 Oct 2026",
-    status: "Overdue"
-  },
-  {
-    id: "INV-2026-099",
-    jobId: "JOB-440",
-    client: "Cafe Zephyr",
-    service: "Plumbing Refit",
-    amount: "₹32,000",
-    dueDate: "10 Oct 2026",
-    status: "Paid"
-  }
-];
+const MOCK_INVOICES = [];
 
-const MOCK_SETTLEMENTS = [
-  { id: "SET-891", date: "12 Oct 2026", amount: "₹85,000", ref: "UTR-SBIN000123" },
-  { id: "SET-890", date: "05 Oct 2026", amount: "₹42,000", ref: "UTR-HDFC000456" }
-];
+const MOCK_SETTLEMENTS = [];
 
 export default function ProviderRevenuePage() {
   const { width } = useWindowDimensions();

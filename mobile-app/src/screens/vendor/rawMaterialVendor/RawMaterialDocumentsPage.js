@@ -6,12 +6,7 @@ import { FileText, CheckCircle, AlertCircle, Clock, Eye, RefreshCw } from 'lucid
 
 const NAVY = '#081A3A';
 
-const MOCK_DOCS = [
-  { id: '1', title: 'FSSAI License', status: 'Verified', expiry: '12 Dec 2028' },
-  { id: '2', title: 'GST Registration Certificate', status: 'Verified', expiry: 'No Expiry' },
-  { id: '3', title: 'Bank Account Details (Cancelled Cheque)', status: 'Pending', expiry: '-' },
-  { id: '4', title: 'Trade License', status: 'Expired', expiry: '01 Jan 2026' },
-];
+const MOCK_DOCS = [];
 
 export default function RawMaterialDocumentsPage() {
   

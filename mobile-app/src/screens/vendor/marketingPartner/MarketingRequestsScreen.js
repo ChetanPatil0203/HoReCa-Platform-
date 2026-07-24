@@ -11,46 +11,7 @@ import {
 
 const { height } = Dimensions.get('window');
 
-const DIRECT_REQUESTS = [
-  { 
-    id: "DIR-001", 
-    client: "The Meridian Hotels", 
-    campaign: "Wedding Season Social Ads", 
-    type: "Online", 
-    category: "Performance Marketing", 
-    budget: "₹1,50,000", 
-    startDate: "01 Sep 2026", 
-    duration: "2 Months", 
-    location: "Mumbai, Maharashtra", 
-    requestedTime: "3 hours ago", 
-    status: "New",
-    objective: "Drive luxury wedding package inquiries.",
-    targetAudience: "HNIs, Engaged Couples (25-35)",
-    platforms: "Instagram, Facebook, Google Ads",
-    deliverables: "4 Ad Sets, Weekly Analytics, Landing Page Optimization",
-    ownerNote: "We are looking for an agency that has previous luxury hospitality experience.",
-    attachments: 2
-  },
-  { 
-    id: "DIR-002", 
-    client: "Café Zephyr Group", 
-    campaign: "Weekend Brunch Influencer Push", 
-    type: "Online & Offline", 
-    category: "Influencer Marketing", 
-    budget: "₹30,000", 
-    startDate: "20 Aug 2026", 
-    duration: "1 Month", 
-    location: "Mumbai, Maharashtra", 
-    requestedTime: "1 day ago", 
-    status: "Viewed",
-    objective: "Increase weekend footfall via local food bloggers.",
-    targetAudience: "Foodies, Gen-Z, Millennials (18-30)",
-    platforms: "Instagram Reels, Zomato Reviews",
-    deliverables: "10 Influencer Collaborations, Event Coverage",
-    ownerNote: "Influencers must have >50k local followers.",
-    attachments: 0
-  }
-];
+const DIRECT_REQUESTS = [];
 
 const DECLINE_REASONS = [
   "Budget not suitable",

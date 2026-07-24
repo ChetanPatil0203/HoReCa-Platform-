@@ -74,36 +74,16 @@ export default function AuthScreen({ navigation }) {
     const isHoReCa = ["hotel", "restaurant", "cafe"].includes(businessType);
     if (isHoReCa) {
       return [
-        { id: "fssai", label: "FSSAI License", value: fssaiNum, onChange: setFssaiNum, placeholder: "14-digit FSSAI License No." },
-        { id: "gst", label: "GSTIN", value: gst, onChange: setGst, placeholder: "15-digit GSTIN" },
-        { id: "shop_act_pan", label: "Shop Act / Business PAN", value: panOrShopActNum, onChange: setPanOrShopActNum, placeholder: "PAN or Shop Act No." }
+        { id: "address", label: "Registered Business Address", value: address, onChange: setAddress, placeholder: "e.g. 123 MG Road, Bandra West" },
+        { id: "fssai", label: "FSSAI License Number *", value: fssaiNum, onChange: setFssaiNum, placeholder: "14-digit FSSAI License No." },
+        { id: "gst", label: "GSTIN Number (Optional)", value: gst, onChange: setGst, placeholder: "15-digit GSTIN" },
       ];
     }
     if (isVendor) {
-      if (vendorSpecialty === "raw-material") {
-        return [
-          { id: "gst", label: "GSTIN", value: gst, onChange: setGst, placeholder: "15-digit GSTIN" },
-          { id: "fssai", label: "FSSAI License", value: fssaiNum, onChange: setFssaiNum, placeholder: "FSSAI License No." }
-        ];
-      }
-      if (vendorSpecialty === "manpower") {
-        return [
-          { id: "gst", label: "GSTIN", value: gst, onChange: setGst, placeholder: "15-digit GSTIN" },
-          { id: "labor", label: "Labor License / Shop Act", value: laborLicenseNum, onChange: setLaborLicenseNum, placeholder: "Labor License No." }
-        ];
-      }
-      if (vendorSpecialty === "service") {
-        return [
-          { id: "gst", label: "GSTIN / Business PAN", value: gst, onChange: setGst, placeholder: "GSTIN or Business PAN" },
-          { id: "shop_act_trade", label: "Shop Act / Trade License", value: shopActOrTradeNum, onChange: setShopActOrTradeNum, placeholder: "Shop Act No." }
-        ];
-      }
-      if (vendorSpecialty === "marketing") {
-        return [
-          { id: "gst", label: "Business PAN / GSTIN", value: gst, onChange: setGst, placeholder: "Business PAN or GSTIN" },
-          { id: "inc_msme", label: "Agency Inc. / MSME Certificate", value: incOrMsmeNum, onChange: setIncOrMsmeNum, placeholder: "MSME No." }
-        ];
-      }
+      return [
+        { id: "address", label: "Office / Warehouse Address", value: address, onChange: setAddress, placeholder: "e.g. Industrial Estate, Sector 5" },
+        { id: "gst", label: "GSTIN Number (Optional)", value: gst, onChange: setGst, placeholder: "15-digit GSTIN" },
+      ];
     }
     return [];
   };
@@ -247,7 +227,7 @@ export default function AuthScreen({ navigation }) {
             <View style={styles.otpGrid}>
               {[1, 2, 3, 4, 5, 6].map(i => <View key={i} style={styles.otpBox} />)}
             </View>
-            <PrimaryButton title="VERIFY & REGISTER" onPress={handleLogin} style={{ width: '100%', marginTop: 24 }} />
+            <PrimaryButton title="VERIFY & REGISTER" onPress={handleRegisterComplete} style={{ width: '100%', marginTop: 24 }} />
           </View>
         )}
       </View>

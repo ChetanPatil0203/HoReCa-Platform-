@@ -5,12 +5,7 @@ import { colors } from '../../../theme/colors';
 
 const GOLD = '#D97706';
 
-const MOCK_REQUESTS = [
-  { id: 'CMP-001', title: 'Summer Festival Promo', type: 'Social Media', date: '14 Jul, 10:30 AM', budget: '₹50,000/mo', status: 'Responses', responses: 5 },
-  { id: 'CMP-002', title: 'New Menu Launch', type: 'Outdoor Branding', date: '12 Jul, 02:15 PM', budget: '₹1,20,000', status: 'Running', responses: 3 },
-  { id: 'CMP-003', title: 'Website SEO', type: 'Digital Marketing', date: '10 Jul, 09:00 AM', budget: '₹25,000/mo', status: 'Completed', responses: 4 },
-  { id: 'CMP-004', title: 'Radio Jingles', type: 'Offline Marketing', date: '08 Jul, 11:45 AM', budget: '₹40,000', status: 'Cancelled', responses: 0 },
-];
+const MOCK_REQUESTS = [];
 
 const TABS = ['All', 'Responses', 'Running', 'Completed', 'Cancelled'];
 

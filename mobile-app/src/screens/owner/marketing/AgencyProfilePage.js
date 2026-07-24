@@ -11,16 +11,16 @@ export default function AgencyProfilePage({ agency, onBack, onSendRequirement })
   const isMobile = width < 768 || Platform.OS !== 'web';
 
   const defaultAgency = agency || {
-    name: 'Creative Minds',
-    type: 'Online Marketing',
-    rating: 4.9,
-    projects: 120,
-    experience: '5 Years',
-    verified: true,
-    about: 'We are a full-service digital marketing agency specializing in helping hospitality and food brands scale their online presence through targeted social media campaigns and data-driven performance marketing.',
-    services: ['Social Media Management', 'Meta Ads', 'Google Ads', 'SEO & Content', 'Brand Strategy'],
-    industries: ['Restaurants', 'Hotels', 'Cafes', 'Cloud Kitchens'],
-    clients: ['Burger King', 'Taj Hotels', 'Local Bites'],
+    name: '',
+    type: '',
+    rating: 0,
+    projects: 0,
+    experience: '',
+    verified: false,
+    about: '',
+    services: [],
+    industries: [],
+    clients: [],
   };
 
   return (

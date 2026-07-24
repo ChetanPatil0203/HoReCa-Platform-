@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  View, Text, StyleSheet, FlatList, TouchableOpacity, 
-  SafeAreaView, useWindowDimensions, Modal, TextInput, 
-  ScrollView, KeyboardAvoidingView, Platform, Pressable, Alert 
+import {
+  View, Text, StyleSheet, FlatList, TouchableOpacity,
+  SafeAreaView, useWindowDimensions, Modal, TextInput,
+  ScrollView, KeyboardAvoidingView, Platform, Pressable, Alert
 } from 'react-native';
-import { 
-  Search, SlidersHorizontal, ChevronRight, MoreVertical, 
+import {
+  Search, SlidersHorizontal, ChevronRight, MoreVertical,
   UserRound, Users, XCircle, CheckCircle, MapPin,
   CircleCheck, BadgeCheck, Wrench, FileText
 } from 'lucide-react-native';
@@ -16,80 +16,9 @@ const GREEN = '#10B981';
 const BG = '#F8FAFC';
 const WHITE = '#FFFFFF';
 
-const INITIAL_JOBS = [
-  {
-    id: "SRV-452",
-    client: "Grand Hotel & Spa",
-    businessType: "Hotel",
-    service: "AC Deep Cleaning",
-    location: "Bandra West",
-    date: "18 Oct 2026",
-    time: "10:00 AM",
-    amount: "₹18,000",
-    assignedTeam: null,
-    status: "Scheduled",
-    currentStage: null,
-    progress: 0,
-    notes: "Requires deep cleaning of 25 split units.",
-    contact: "Mr. Sharma (Manager)"
-  },
-  {
-    id: "SRV-453",
-    client: "Cafe Zephyr",
-    businessType: "Cafe",
-    service: "Commercial Oven Repair",
-    location: "Andheri East",
-    date: "19 Oct 2026",
-    time: "02:00 PM",
-    amount: "₹8,500",
-    assignedTeam: "Rahul S. + 2 Members",
-    status: "Team Assigned",
-    currentStage: null,
-    progress: 0,
-    notes: "Fix heating coil.",
-    contact: "Sarah (Owner)"
-  },
-  {
-    id: "SRV-454",
-    client: "The Meridian Hotel",
-    businessType: "Hotel",
-    service: "Pest Control Service",
-    location: "Mumbai",
-    date: "20 Oct 2026",
-    time: "11:30 AM",
-    amount: "₹12,000",
-    assignedTeam: "Amit K.",
-    status: "In Progress",
-    currentStage: "Treatment in Progress",
-    progress: 60,
-    notes: "Full property treatment.",
-    contact: "Manager"
-  },
-  {
-    id: "SRV-455",
-    client: "Spice Route Restaurant",
-    businessType: "Restaurant",
-    service: "Kitchen Equipment Repair",
-    location: "Lower Parel",
-    date: "20 Oct 2026",
-    time: "09:00 AM",
-    amount: "₹12,000",
-    assignedTeam: "Vikram R.",
-    status: "Completed",
-    currentStage: "Completed",
-    progress: 100,
-    notes: "Replaced faulty burners.",
-    contact: "Chef"
-  }
-];
+const INITIAL_JOBS = [];
 
-const TABS = ['Scheduled', 'Team Assigned', 'In Progress', 'Awaiting Confirmation', 'Completed', 'Cancelled'];
-const MOCK_TEAM_MEMBERS = [
-  { id: 'tm1', name: 'Rahul Sharma', role: 'Senior AC Technician', skills: ['AC Deep Cleaning', 'Equipment Handling', 'Safety Compliance'], availability: 'Available', workload: '1 Active Assignment', active: true, canLead: true },
-  { id: 'tm2', name: 'Amit Kumar', role: 'AC Technician', skills: ['AC Deep Cleaning', 'Safety Compliance'], availability: 'Busy', conflictTime: '9:00 AM - 11:00 AM', workload: '2 Active Assignments', active: true, canLead: false },
-  { id: 'tm3', name: 'Vikram Rao', role: 'Support Technician', skills: ['Equipment Handling'], availability: 'Available', workload: '0 Active Assignments', active: true, canLead: false },
-  { id: 'tm4', name: 'Suresh Patil', role: 'Senior Electrician', skills: ['Electrical Repair', 'Safety Compliance'], availability: 'Available', workload: '1 Active Assignment', active: true, canLead: true }
-];
+const MOCK_TEAM_MEMBERS = [];
 
 const REQUIRED_SKILLS = ['AC Deep Cleaning', 'Equipment Handling', 'Safety Compliance'];
 const TOOLS_EQUIPMENT = ['AC Cleaning Kit', 'Pressure Washer', 'Vacuum Machine', 'Safety Gloves', 'Safety Mask', 'Ladder', 'Cleaning Chemicals', 'Other'];
@@ -102,7 +31,7 @@ export default function ProviderJobsPage() {
   const [jobs, setJobs] = useState(INITIAL_JOBS);
   const [search, setSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
-  
+
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [selectedJob, setSelectedJob] = useState(null);
 
@@ -115,9 +44,9 @@ export default function ProviderJobsPage() {
   const [filterModalVisible, setFilterModalVisible] = useState(false);
 
   // Form states
-  const [assignForm, setAssignForm] = useState({ 
-    lead: '', members: [], reportingDate: '', reportingTime: '', duration: '', 
-    instructions: '', notifyTeam: true 
+  const [assignForm, setAssignForm] = useState({
+    lead: '', members: [], reportingDate: '', reportingTime: '', duration: '',
+    instructions: '', notifyTeam: true
   });
   const [assignConflictError, setAssignConflictError] = useState('');
   const [isAssigning, setIsAssigning] = useState(false);
@@ -140,7 +69,7 @@ export default function ProviderJobsPage() {
   };
 
   const filteredJobs = getFilteredJobs();
-  
+
   const tabCounts = useMemo(() => {
     const counts = {};
     TABS.forEach(t => counts[t] = 0);
@@ -224,11 +153,11 @@ export default function ProviderJobsPage() {
         <Text style={styles.reqId}>{item.id}</Text>
         {renderBadge(item.status)}
       </View>
-      
+
       {/* Service & Client */}
       <Text style={styles.cardTitle} numberOfLines={2}>{item.service}</Text>
       <Text style={styles.clientInfo} numberOfLines={1}>
-        <Text style={{fontWeight: '600', color: NAVY}}>{item.client}</Text>
+        <Text style={{ fontWeight: '600', color: NAVY }}>{item.client}</Text>
       </Text>
       <Text style={styles.locationText} numberOfLines={1}>{item.location}</Text>
 
@@ -248,12 +177,12 @@ export default function ProviderJobsPage() {
       <View style={styles.teamStateBox}>
         {!item.assignedTeam ? (
           <View style={styles.teamUnassigned}>
-            <UserRound size={14} color="#EA580C" style={{marginRight: 6}} />
+            <UserRound size={14} color="#EA580C" style={{ marginRight: 6 }} />
             <Text style={styles.teamUnassignedText}>Team not assigned</Text>
           </View>
         ) : (
           <View style={styles.teamAssigned}>
-            <Users size={14} color="#059669" style={{marginRight: 6}} />
+            <Users size={14} color="#059669" style={{ marginRight: 6 }} />
             <Text style={styles.teamLabel}>Team </Text>
             <Text style={styles.teamAssignedText}>{item.assignedTeam}</Text>
           </View>
@@ -263,9 +192,9 @@ export default function ProviderJobsPage() {
       {/* Progress & Stage */}
       {(item.status === 'In Progress' || item.status === 'Awaiting Confirmation') && (
         <View style={styles.progressContainer}>
-          <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4}}>
-            <Text style={styles.stageLabel}>Current Stage: <Text style={{fontWeight: '600', color: NAVY}}>{item.currentStage}</Text></Text>
-            <Text style={styles.stageLabel}>Progress <Text style={{fontWeight: '700', color: NAVY}}>{item.progress}%</Text></Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+            <Text style={styles.stageLabel}>Current Stage: <Text style={{ fontWeight: '600', color: NAVY }}>{item.currentStage}</Text></Text>
+            <Text style={styles.stageLabel}>Progress <Text style={{ fontWeight: '700', color: NAVY }}>{item.progress}%</Text></Text>
           </View>
           <View style={styles.progressTrack}>
             <View style={[styles.progressFill, { width: `${item.progress}%` }]} />
@@ -279,14 +208,14 @@ export default function ProviderJobsPage() {
           <Text style={styles.detailsBtnText}>View Details</Text>
           <ChevronRight size={16} color={NAVY} />
         </TouchableOpacity>
-        
+
         <View style={styles.actionRight}>
           {item.status === 'Scheduled' && (
-            <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: NAVY }]} onPress={() => { 
-              setSelectedJob(item); 
+            <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: NAVY }]} onPress={() => {
+              setSelectedJob(item);
               setAssignForm({ lead: '', members: [], reportingDate: '', reportingTime: '', duration: '', instructions: '', notifyTeam: true });
               setAssignConflictError('');
-              setAssignModalVisible(true); 
+              setAssignModalVisible(true);
             }}>
               <Text style={styles.primaryBtnText}>Assign Team</Text>
             </TouchableOpacity>
@@ -326,7 +255,7 @@ export default function ProviderJobsPage() {
   return (
     <Pressable style={styles.container} onPress={() => setActiveMenuId(null)}>
       <View style={[styles.mainWrapper, isLargeScreen && styles.mainWrapperDesktop]}>
-        
+
         {/* Header */}
         <View style={styles.pageHeader}>
           <View style={{ flex: 1 }}>
@@ -345,8 +274,8 @@ export default function ProviderJobsPage() {
 
         {showSearch && (
           <View style={styles.searchRow}>
-            <TextInput 
-              style={styles.searchInput} 
+            <TextInput
+              style={styles.searchInput}
               placeholder="Search service work..."
               value={search}
               onChangeText={setSearch}
@@ -359,8 +288,8 @@ export default function ProviderJobsPage() {
         <View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabScroll}>
             {TABS.map(tab => (
-              <TouchableOpacity 
-                key={tab} 
+              <TouchableOpacity
+                key={tab}
                 style={[styles.tabItem, activeTab === tab && styles.tabItemActive]}
                 onPress={() => setActiveTab(tab)}
               >
@@ -399,10 +328,10 @@ export default function ProviderJobsPage() {
               <TouchableOpacity onPress={() => setDetailsModalVisible(false)}><XCircle size={20} color="#64748B" /></TouchableOpacity>
             </View>
             {selectedJob && (
-              <ScrollView style={{padding: 20}}>
+              <ScrollView style={{ padding: 20 }}>
                 <Text style={styles.detailTitle}>{selectedJob.service}</Text>
                 <Text style={styles.detailClient}>{selectedJob.client} · {selectedJob.businessType}</Text>
-                
+
                 <View style={styles.detailBox}>
                   <Text style={styles.boxLabel}>Schedule & Amount</Text>
                   <Text style={styles.boxValue}>{selectedJob.date} at {selectedJob.time}</Text>
@@ -425,7 +354,7 @@ export default function ProviderJobsPage() {
       {/* Assign Team Modal */}
       <Modal visible={assignModalVisible} transparent animationType="slide" onRequestClose={() => setAssignModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center'}}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center' }}>
             <View style={[styles.modalCard, { width: '92%', maxWidth: 520, maxHeight: '85%' }]}>
               <View style={styles.modalHeader}>
                 <View>
@@ -434,18 +363,18 @@ export default function ProviderJobsPage() {
                 </View>
                 <TouchableOpacity onPress={() => setAssignModalVisible(false)}><XCircle size={20} color="#64748B" /></TouchableOpacity>
               </View>
-              
-              <ScrollView style={{padding: 20}} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-                
+
+              <ScrollView style={{ padding: 20 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+
                 {/* 1. Work Summary */}
-                <View style={[styles.detailBox, {flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', padding: 12, marginBottom: 16, marginTop: 4}]}>
-                  <View style={{backgroundColor: '#E2E8F0', padding: 8, borderRadius: 8, marginRight: 12}}>
+                <View style={[styles.detailBox, { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', padding: 12, marginBottom: 16, marginTop: 4 }]}>
+                  <View style={{ backgroundColor: '#E2E8F0', padding: 8, borderRadius: 8, marginRight: 12 }}>
                     <Wrench size={18} color={NAVY} />
                   </View>
-                  <View style={{flex: 1}}>
-                    <Text style={{fontWeight: '700', fontSize: 14, color: NAVY}}>{selectedJob?.service}</Text>
-                    <Text style={{fontSize: 12, color: '#64748B', marginTop: 2}}>{selectedJob?.client} · {selectedJob?.date} at {selectedJob?.time}</Text>
-                    <Text style={{fontSize: 12, color: '#64748B'}}>{selectedJob?.location}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontWeight: '700', fontSize: 14, color: NAVY }}>{selectedJob?.service}</Text>
+                    <Text style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>{selectedJob?.client} · {selectedJob?.date} at {selectedJob?.time}</Text>
+                    <Text style={{ fontSize: 12, color: '#64748B' }}>{selectedJob?.location}</Text>
                   </View>
                 </View>
 
@@ -459,19 +388,19 @@ export default function ProviderJobsPage() {
                 {/* 2. Team Lead */}
                 <Text style={styles.label}>Team Lead *</Text>
                 <TouchableOpacity style={styles.selectBox} onPress={() => setLeadDropdownOpen(!leadDropdownOpen)}>
-                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                    <CheckCircle size={18} color={assignForm.lead ? NAVY : '#94A3B8'} style={{marginRight: 10}} />
-                    <Text style={[styles.selectBoxText, !assignForm.lead && {color: '#94A3B8'}]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <CheckCircle size={18} color={assignForm.lead ? NAVY : '#94A3B8'} style={{ marginRight: 10 }} />
+                    <Text style={[styles.selectBoxText, !assignForm.lead && { color: '#94A3B8' }]}>
                       {assignForm.lead ? MOCK_TEAM_MEMBERS.find(m => m.id === assignForm.lead)?.name : 'Select team lead'}
                     </Text>
                   </View>
-                  <ChevronRight size={16} color="#94A3B8" style={{transform: [{rotate: leadDropdownOpen ? '90deg' : '0deg'}]}} />
+                  <ChevronRight size={16} color="#94A3B8" style={{ transform: [{ rotate: leadDropdownOpen ? '90deg' : '0deg' }] }} />
                 </TouchableOpacity>
                 {leadDropdownOpen && (
                   <View style={styles.dropdownMenu}>
                     {MOCK_TEAM_MEMBERS.filter(m => m.canLead && m.active).map(m => (
-                      <TouchableOpacity key={m.id} style={styles.dropdownItem} onPress={() => { setAssignForm({...assignForm, lead: m.id, members: assignForm.members.filter(id => id !== m.id)}); setLeadDropdownOpen(false); }}>
-                        <Text style={styles.dropdownItemTitle}>{m.name} <Text style={{fontSize: 12, color: '#64748B', fontWeight: 'normal'}}>· {m.role}</Text></Text>
+                      <TouchableOpacity key={m.id} style={styles.dropdownItem} onPress={() => { setAssignForm({ ...assignForm, lead: m.id, members: assignForm.members.filter(id => id !== m.id) }); setLeadDropdownOpen(false); }}>
+                        <Text style={styles.dropdownItemTitle}>{m.name} <Text style={{ fontSize: 12, color: '#64748B', fontWeight: 'normal' }}>· {m.role}</Text></Text>
                         <Text style={styles.dropdownItemSub}>{m.skills[0]} · {m.availability} · {m.workload}</Text>
                       </TouchableOpacity>
                     ))}
@@ -479,28 +408,28 @@ export default function ProviderJobsPage() {
                 )}
 
                 {/* 3. Team Members */}
-                <Text style={[styles.label, {marginTop: 16}]}>Team Members</Text>
+                <Text style={[styles.label, { marginTop: 16 }]}>Team Members</Text>
                 <TouchableOpacity style={styles.selectBox} onPress={() => setMemberDropdownOpen(!memberDropdownOpen)}>
-                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                    <Users size={18} color={assignForm.members.length ? NAVY : '#94A3B8'} style={{marginRight: 10}} />
-                    <Text style={[styles.selectBoxText, !assignForm.members.length && {color: '#94A3B8'}]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Users size={18} color={assignForm.members.length ? NAVY : '#94A3B8'} style={{ marginRight: 10 }} />
+                    <Text style={[styles.selectBoxText, !assignForm.members.length && { color: '#94A3B8' }]}>
                       {assignForm.members.length ? `${assignForm.members.length} team member(s) selected` : 'Select supporting team members'}
                     </Text>
                   </View>
-                  <ChevronRight size={16} color="#94A3B8" style={{transform: [{rotate: memberDropdownOpen ? '90deg' : '0deg'}]}} />
+                  <ChevronRight size={16} color="#94A3B8" style={{ transform: [{ rotate: memberDropdownOpen ? '90deg' : '0deg' }] }} />
                 </TouchableOpacity>
                 {memberDropdownOpen && (
                   <View style={styles.dropdownMenu}>
                     {MOCK_TEAM_MEMBERS.filter(m => m.active && m.id !== assignForm.lead).map(m => {
                       const isSel = assignForm.members.includes(m.id);
                       return (
-                        <TouchableOpacity key={m.id} style={[styles.dropdownItem, isSel && {backgroundColor: '#F8FAFC'}]} onPress={() => {
+                        <TouchableOpacity key={m.id} style={[styles.dropdownItem, isSel && { backgroundColor: '#F8FAFC' }]} onPress={() => {
                           const next = isSel ? assignForm.members.filter(id => id !== m.id) : [...assignForm.members, m.id];
-                          setAssignForm({...assignForm, members: next});
+                          setAssignForm({ ...assignForm, members: next });
                         }}>
-                          <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                             <View>
-                              <Text style={styles.dropdownItemTitle}>{m.name} <Text style={{fontSize: 12, color: '#64748B', fontWeight: 'normal'}}>· {m.role}</Text></Text>
+                              <Text style={styles.dropdownItemTitle}>{m.name} <Text style={{ fontSize: 12, color: '#64748B', fontWeight: 'normal' }}>· {m.role}</Text></Text>
                               <Text style={styles.dropdownItemSub}>{m.skills[0]} · {m.availability} · {m.workload}</Text>
                             </View>
                             {isSel && <CheckCircle size={16} color={GREEN} />}
@@ -511,13 +440,13 @@ export default function ProviderJobsPage() {
                   </View>
                 )}
                 {assignForm.members.length > 0 && (
-                  <View style={[styles.chipsContainer, {marginTop: 8}]}>
+                  <View style={[styles.chipsContainer, { marginTop: 8 }]}>
                     {assignForm.members.map(id => {
                       const mem = MOCK_TEAM_MEMBERS.find(m => m.id === id);
                       return (
-                        <TouchableOpacity key={id} style={styles.removableChip} onPress={() => setAssignForm({...assignForm, members: assignForm.members.filter(mid => mid !== id)})}>
+                        <TouchableOpacity key={id} style={styles.removableChip} onPress={() => setAssignForm({ ...assignForm, members: assignForm.members.filter(mid => mid !== id) })}>
                           <Text style={styles.removableChipText}>{mem?.name}</Text>
-                          <XCircle size={14} color="#64748B" style={{marginLeft: 4}} />
+                          <XCircle size={14} color="#64748B" style={{ marginLeft: 4 }} />
                         </TouchableOpacity>
                       );
                     })}
@@ -525,19 +454,19 @@ export default function ProviderJobsPage() {
                 )}
 
                 {/* 4 & 5. Reporting Date & Time */}
-                <View style={[styles.formRow, {marginTop: 16}]}>
-                  <View style={[styles.formGroup, {flex: 1}]}>
+                <View style={[styles.formRow, { marginTop: 16 }]}>
+                  <View style={[styles.formGroup, { flex: 1 }]}>
                     <Text style={styles.label}>Reporting Date *</Text>
                     <View style={styles.inputWrapper}>
                       <CircleCheck size={18} color="#94A3B8" style={styles.inputIcon} />
-                      <TextInput style={[styles.input, {paddingLeft: 40}]} value={assignForm.reportingDate} onChangeText={t => setAssignForm({...assignForm, reportingDate: t})} placeholder={selectedJob?.date} />
+                      <TextInput style={[styles.input, { paddingLeft: 40 }]} value={assignForm.reportingDate} onChangeText={t => setAssignForm({ ...assignForm, reportingDate: t })} placeholder={selectedJob?.date} />
                     </View>
                   </View>
-                  <View style={[styles.formGroup, {flex: 1}]}>
+                  <View style={[styles.formGroup, { flex: 1 }]}>
                     <Text style={styles.label}>Reporting Time *</Text>
                     <View style={styles.inputWrapper}>
                       <CircleCheck size={18} color="#94A3B8" style={styles.inputIcon} />
-                      <TextInput style={[styles.input, {paddingLeft: 40}]} value={assignForm.reportingTime} onChangeText={t => setAssignForm({...assignForm, reportingTime: t})} placeholder="e.g. 09:30 AM" />
+                      <TextInput style={[styles.input, { paddingLeft: 40 }]} value={assignForm.reportingTime} onChangeText={t => setAssignForm({ ...assignForm, reportingTime: t })} placeholder="e.g. 09:30 AM" />
                     </View>
                   </View>
                 </View>
@@ -546,56 +475,56 @@ export default function ProviderJobsPage() {
                 <Text style={styles.label}>Expected Duration *</Text>
                 <View style={styles.inputWrapper}>
                   <CircleCheck size={18} color="#94A3B8" style={styles.inputIcon} />
-                  <TextInput style={[styles.input, {paddingLeft: 40}]} value={assignForm.duration} onChangeText={t => setAssignForm({...assignForm, duration: t})} placeholder="e.g. 1 Hour, Half Day, Custom" />
+                  <TextInput style={[styles.input, { paddingLeft: 40 }]} value={assignForm.duration} onChangeText={t => setAssignForm({ ...assignForm, duration: t })} placeholder="e.g. 1 Hour, Half Day, Custom" />
                 </View>
 
                 {/* 7. Assignment Instructions */}
-                <Text style={[styles.label, {marginTop: 16}]}>Assignment Instructions</Text>
+                <Text style={[styles.label, { marginTop: 16 }]}>Assignment Instructions</Text>
                 <View style={styles.inputWrapper}>
-                  <FileText size={18} color="#94A3B8" style={[styles.inputIcon, {top: 12}]} />
-                  <TextInput style={[styles.input, {height: 80, textAlignVertical: 'top', paddingLeft: 40, paddingTop: 12}]} multiline maxLength={400} value={assignForm.instructions} onChangeText={t => setAssignForm({...assignForm, instructions: t})} placeholder="Add responsibilities, access instructions or safety notes..." />
+                  <FileText size={18} color="#94A3B8" style={[styles.inputIcon, { top: 12 }]} />
+                  <TextInput style={[styles.input, { height: 80, textAlignVertical: 'top', paddingLeft: 40, paddingTop: 12 }]} multiline maxLength={400} value={assignForm.instructions} onChangeText={t => setAssignForm({ ...assignForm, instructions: t })} placeholder="Add responsibilities, access instructions or safety notes..." />
                 </View>
 
                 {/* 8. Required Skills Compact Check */}
-                <View style={{marginTop: 16}}>
+                <View style={{ marginTop: 16 }}>
                   {(() => {
                     const selectedMembers = MOCK_TEAM_MEMBERS.filter(m => m.id === assignForm.lead || (assignForm.members || []).includes(m.id));
                     const missingSkill = REQUIRED_SKILLS.find(skill => !selectedMembers.some(m => (m.skills || []).includes(skill)));
-                    
+
                     if (!assignForm.lead) return null; // Don't show until lead is selected
-                    
+
                     if (missingSkill) {
                       return (
-                        <View style={{flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF2F2', padding: 10, borderRadius: 8}}>
-                          <XCircle size={16} color="#EF4444" style={{marginRight: 8}} />
-                          <Text style={{fontSize: 13, color: '#991B1B', flex: 1}}>Required skill missing: <Text style={{fontWeight: '600'}}>{missingSkill}</Text></Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF2F2', padding: 10, borderRadius: 8 }}>
+                          <XCircle size={16} color="#EF4444" style={{ marginRight: 8 }} />
+                          <Text style={{ fontSize: 13, color: '#991B1B', flex: 1 }}>Required skill missing: <Text style={{ fontWeight: '600' }}>{missingSkill}</Text></Text>
                         </View>
                       );
                     }
                     return (
-                      <View style={{flexDirection: 'row', alignItems: 'center', backgroundColor: '#ECFDF5', padding: 10, borderRadius: 8}}>
-                        <CheckCircle size={16} color="#059669" style={{marginRight: 8}} />
-                        <Text style={{fontSize: 13, color: '#065F46'}}>Required skills covered</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#ECFDF5', padding: 10, borderRadius: 8 }}>
+                        <CheckCircle size={16} color="#059669" style={{ marginRight: 8 }} />
+                        <Text style={{ fontSize: 13, color: '#065F46' }}>Required skills covered</Text>
                       </View>
                     );
                   })()}
                 </View>
 
                 {/* 9. Notify Team */}
-                <View style={[styles.formRow, {marginTop: 16, marginBottom: 12, alignItems: 'center'}]}>
-                  <TouchableOpacity onPress={() => setAssignForm({...assignForm, notifyTeam: !assignForm.notifyTeam})}>
+                <View style={[styles.formRow, { marginTop: 16, marginBottom: 12, alignItems: 'center' }]}>
+                  <TouchableOpacity onPress={() => setAssignForm({ ...assignForm, notifyTeam: !assignForm.notifyTeam })}>
                     {assignForm.notifyTeam ? <CheckCircle size={20} color={GREEN} /> : <View style={styles.uncheckCircle} />}
                   </TouchableOpacity>
-                  <View style={{marginLeft: 10, flex: 1}}>
-                    <Text style={[styles.label, {marginBottom: 0}]}>Notify selected team</Text>
-                    <Text style={{fontSize: 12, color: '#64748B'}}>Send work and reporting details to assigned members.</Text>
+                  <View style={{ marginLeft: 10, flex: 1 }}>
+                    <Text style={[styles.label, { marginBottom: 0 }]}>Notify selected team</Text>
+                    <Text style={{ fontSize: 12, color: '#64748B' }}>Send work and reporting details to assigned members.</Text>
                   </View>
                 </View>
 
               </ScrollView>
               <View style={styles.modalFooter}>
                 <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setAssignModalVisible(false)} disabled={isAssigning}><Text style={styles.modalCancelText}>Cancel</Text></TouchableOpacity>
-                <TouchableOpacity style={[styles.modalSubmitBtn, isAssigning && {opacity: 0.7}]} onPress={handleAssignTeam} disabled={isAssigning}>
+                <TouchableOpacity style={[styles.modalSubmitBtn, isAssigning && { opacity: 0.7 }]} onPress={handleAssignTeam} disabled={isAssigning}>
                   <Text style={styles.modalSubmitText}>{isAssigning ? 'Assigning...' : 'Assign Team'}</Text>
                 </TouchableOpacity>
               </View>
@@ -607,21 +536,21 @@ export default function ProviderJobsPage() {
       {/* Start Work Confirmation */}
       <Modal visible={startModalVisible} transparent animationType="fade" onRequestClose={() => setStartModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalCard, {maxWidth: 400}]}>
+          <View style={[styles.modalCard, { maxWidth: 400 }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Start this service work?</Text>
               <TouchableOpacity onPress={() => setStartModalVisible(false)}><XCircle size={20} color="#64748B" /></TouchableOpacity>
             </View>
-            <View style={{padding: 20}}>
+            <View style={{ padding: 20 }}>
               <Text style={styles.boxLabel}>Service</Text><Text style={styles.boxValue}>{selectedJob?.service}</Text>
-              <View style={{height: 12}} />
+              <View style={{ height: 12 }} />
               <Text style={styles.boxLabel}>Client</Text><Text style={styles.boxValue}>{selectedJob?.client}</Text>
-              <View style={{height: 12}} />
+              <View style={{ height: 12 }} />
               <Text style={styles.boxLabel}>Scheduled Time</Text><Text style={styles.boxValue}>{selectedJob?.date} · {selectedJob?.time}</Text>
             </View>
             <View style={styles.modalFooter}>
               <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setStartModalVisible(false)}><Text style={styles.modalCancelText}>Cancel</Text></TouchableOpacity>
-              <TouchableOpacity style={[styles.modalSubmitBtn, {backgroundColor: NAVY}]} onPress={handleStartWork}><Text style={styles.modalSubmitText}>Start Work</Text></TouchableOpacity>
+              <TouchableOpacity style={[styles.modalSubmitBtn, { backgroundColor: NAVY }]} onPress={handleStartWork}><Text style={styles.modalSubmitText}>Start Work</Text></TouchableOpacity>
             </View>
           </View>
         </View>
@@ -630,25 +559,25 @@ export default function ProviderJobsPage() {
       {/* Update Progress Modal */}
       <Modal visible={progressModalVisible} transparent animationType="slide" onRequestClose={() => setProgressModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{width: '100%', alignItems: 'center'}}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ width: '100%', alignItems: 'center' }}>
             <View style={[styles.modalCard, { maxHeight: '90%' }]}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Update Work Progress</Text>
                 <TouchableOpacity onPress={() => setProgressModalVisible(false)}><XCircle size={20} color="#64748B" /></TouchableOpacity>
               </View>
-              <ScrollView style={{padding: 20}} keyboardShouldPersistTaps="handled">
+              <ScrollView style={{ padding: 20 }} keyboardShouldPersistTaps="handled">
                 <Text style={styles.label}>Progress Percentage (0-100) *</Text>
-                <TextInput style={styles.input} keyboardType="numeric" value={progressForm.percent} onChangeText={t => setProgressForm({...progressForm, percent: t})} placeholder="e.g. 75" />
-                
-                <Text style={[styles.label, {marginTop: 16}]}>Current Stage *</Text>
-                <TextInput style={styles.input} value={progressForm.stage} onChangeText={t => setProgressForm({...progressForm, stage: t})} placeholder="e.g. Testing Equipment" />
+                <TextInput style={styles.input} keyboardType="numeric" value={progressForm.percent} onChangeText={t => setProgressForm({ ...progressForm, percent: t })} placeholder="e.g. 75" />
 
-                <Text style={[styles.label, {marginTop: 16}]}>Work Update</Text>
-                <TextInput style={[styles.input, {height: 80, textAlignVertical: 'top'}]} multiline value={progressForm.update} onChangeText={t => setProgressForm({...progressForm, update: t})} placeholder="What was completed today?" />
+                <Text style={[styles.label, { marginTop: 16 }]}>Current Stage *</Text>
+                <TextInput style={styles.input} value={progressForm.stage} onChangeText={t => setProgressForm({ ...progressForm, stage: t })} placeholder="e.g. Testing Equipment" />
+
+                <Text style={[styles.label, { marginTop: 16 }]}>Work Update</Text>
+                <TextInput style={[styles.input, { height: 80, textAlignVertical: 'top' }]} multiline value={progressForm.update} onChangeText={t => setProgressForm({ ...progressForm, update: t })} placeholder="What was completed today?" />
               </ScrollView>
               <View style={styles.modalFooter}>
                 <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setProgressModalVisible(false)}><Text style={styles.modalCancelText}>Cancel</Text></TouchableOpacity>
-                <TouchableOpacity style={[styles.modalSubmitBtn, {backgroundColor: GREEN}]} onPress={handleUpdateProgress}><Text style={styles.modalSubmitText}>Save Update</Text></TouchableOpacity>
+                <TouchableOpacity style={[styles.modalSubmitBtn, { backgroundColor: GREEN }]} onPress={handleUpdateProgress}><Text style={styles.modalSubmitText}>Save Update</Text></TouchableOpacity>
               </View>
             </View>
           </KeyboardAvoidingView>
@@ -658,22 +587,22 @@ export default function ProviderJobsPage() {
       {/* Submit Completion Modal */}
       <Modal visible={completeModalVisible} transparent animationType="slide" onRequestClose={() => setCompleteModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{width: '100%', alignItems: 'center'}}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ width: '100%', alignItems: 'center' }}>
             <View style={[styles.modalCard, { maxHeight: '90%' }]}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Submit for Client Confirmation</Text>
                 <TouchableOpacity onPress={() => setCompleteModalVisible(false)}><XCircle size={20} color="#64748B" /></TouchableOpacity>
               </View>
-              <ScrollView style={{padding: 20}} keyboardShouldPersistTaps="handled">
+              <ScrollView style={{ padding: 20 }} keyboardShouldPersistTaps="handled">
                 <Text style={styles.label}>Final Amount (₹)</Text>
-                <TextInput style={styles.input} value={completeForm.amount} onChangeText={t => setCompleteForm({...completeForm, amount: t})} placeholder={selectedJob?.amount} />
-                
-                <Text style={[styles.label, {marginTop: 16}]}>Work Summary *</Text>
-                <TextInput style={[styles.input, {height: 80, textAlignVertical: 'top'}]} multiline value={completeForm.summary} onChangeText={t => setCompleteForm({...completeForm, summary: t})} placeholder="Summary of completed work..." />
+                <TextInput style={styles.input} value={completeForm.amount} onChangeText={t => setCompleteForm({ ...completeForm, amount: t })} placeholder={selectedJob?.amount} />
+
+                <Text style={[styles.label, { marginTop: 16 }]}>Work Summary *</Text>
+                <TextInput style={[styles.input, { height: 80, textAlignVertical: 'top' }]} multiline value={completeForm.summary} onChangeText={t => setCompleteForm({ ...completeForm, summary: t })} placeholder="Summary of completed work..." />
               </ScrollView>
               <View style={styles.modalFooter}>
                 <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setCompleteModalVisible(false)}><Text style={styles.modalCancelText}>Cancel</Text></TouchableOpacity>
-                <TouchableOpacity style={[styles.modalSubmitBtn, {backgroundColor: '#EA580C'}]} onPress={handleMarkCompleted}><Text style={styles.modalSubmitText}>Submit Completion</Text></TouchableOpacity>
+                <TouchableOpacity style={[styles.modalSubmitBtn, { backgroundColor: '#EA580C' }]} onPress={handleMarkCompleted}><Text style={styles.modalSubmitText}>Submit Completion</Text></TouchableOpacity>
               </View>
             </View>
           </KeyboardAvoidingView>
@@ -682,13 +611,13 @@ export default function ProviderJobsPage() {
 
       {/* Filter Bottom Sheet */}
       <Modal visible={filterModalVisible} transparent animationType="slide" onRequestClose={() => setFilterModalVisible(false)}>
-        <View style={[styles.modalOverlay, {justifyContent: 'flex-end', padding: 0}]}>
-          <View style={[styles.modalCard, {borderRadius: 0, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxWidth: '100%', maxHeight: '60%'}]}>
+        <View style={[styles.modalOverlay, { justifyContent: 'flex-end', padding: 0 }]}>
+          <View style={[styles.modalCard, { borderRadius: 0, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxWidth: '100%', maxHeight: '60%' }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Advanced Filters</Text>
               <TouchableOpacity onPress={() => setFilterModalVisible(false)}><XCircle size={20} color="#64748B" /></TouchableOpacity>
             </View>
-            <ScrollView style={{padding: 20}}>
+            <ScrollView style={{ padding: 20 }}>
               <Text style={styles.label}>Scheduled Date</Text>
               <View style={styles.chipsContainer}>
                 <View style={styles.filterChip}><Text style={styles.filterChipText}>Today</Text></View>
@@ -712,7 +641,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
   mainWrapper: { flex: 1, width: '100%', alignSelf: 'center' },
   mainWrapperDesktop: { maxWidth: 1100, paddingHorizontal: 24 },
-  
+
   pageHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 },
   pageTitle: { fontSize: 22, fontWeight: 'bold', color: NAVY },
   pageSubtitle: { fontSize: 13, color: '#64748B', marginTop: 4 },
@@ -739,7 +668,7 @@ const styles = StyleSheet.create({
   reqId: { fontSize: 14, fontWeight: 'bold', color: '#64748B' },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   statusBadgeText: { fontSize: 11, fontWeight: 'bold' },
-  
+
   cardTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
   clientInfo: { fontSize: 15, color: '#475569', marginBottom: 2 },
   locationText: { fontSize: 13, color: '#94A3B8', marginBottom: 16 },
@@ -764,7 +693,7 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 16 },
   detailsBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, minHeight: 44 },
   detailsBtnText: { fontSize: 14, fontWeight: 'bold', color: NAVY, marginRight: 4 },
-  
+
   actionRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   primaryBtn: { paddingHorizontal: 16, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   primaryBtnText: { fontSize: 14, fontWeight: 'bold', color: '#fff' },
@@ -822,7 +751,7 @@ const styles = StyleSheet.create({
   dropdownItem: { padding: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   dropdownItemTitle: { fontSize: 14, fontWeight: 'bold', color: NAVY, marginBottom: 2 },
   dropdownItemSub: { fontSize: 12, color: '#64748B' },
-  
+
   removableChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1F5F9', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16 },
   removableChipText: { fontSize: 12, fontWeight: '600', color: NAVY },
 
@@ -841,7 +770,7 @@ const styles = StyleSheet.create({
   toggleWrap: { width: 44, height: 24, borderRadius: 12, backgroundColor: '#E2E8F0', justifyContent: 'center', paddingHorizontal: 2 },
   toggleActive: { backgroundColor: GREEN },
   toggleKnob: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#fff', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 1 },
-  toggleKnobActive: { transform: [{translateX: 20}] },
+  toggleKnobActive: { transform: [{ translateX: 20 }] },
 
   readonlyBox: { backgroundColor: '#F1F5F9', padding: 12, borderRadius: 10 },
   readonlyBoxText: { fontSize: 13, color: '#475569', marginBottom: 4 },

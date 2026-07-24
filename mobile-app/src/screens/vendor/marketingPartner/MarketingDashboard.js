@@ -29,7 +29,7 @@ const PURPLE = '#071B3A';
 export default function MarketingDashboard() {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || (Platform.OS !== 'web');
-  const { logout } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
 
   const [activePage, setActivePage] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -85,8 +85,8 @@ export default function MarketingDashboard() {
   ];
 
   const profileData = {
-    initials: "BC",
-    name: "BrandCraft",
+    initials: user?.name ? user.name.slice(0, 2).toUpperCase() : "MA",
+    name: user?.name || "Marketing Partner",
     role: "Marketing Agency",
     badge: "AGENCY"
   };

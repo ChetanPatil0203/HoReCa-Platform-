@@ -16,56 +16,7 @@ const LIGHT_BG = '#F8FAFC';
 const GREEN = '#16A34A';
 const BORDER = '#E2E8F0';
 
-const MOCK_RESPONSES = [
-  { 
-    id: 'RSP-001', 
-    providerName: 'Elite Fixers', 
-    verified: true, 
-    rating: 4.9,
-    jobs: 450,
-    quotedPrice: '₹3,500', 
-    visitCharge: '₹200 · Waived on Hire', 
-    availability: 'Tomorrow · 10:30 AM', 
-    warranty: '30 Days', 
-    estimatedTime: '2–3 Hours',
-    status: 'Recommended',
-    included: 'Leak repair, pipe replacement (up to 2m)',
-    excluded: 'Concealed wiring, tile damage',
-    paymentTerms: '50% advance, 50% on completion'
-  },
-  { 
-    id: 'RSP-002', 
-    providerName: 'Rapid Repairs', 
-    verified: false, 
-    rating: 4.5,
-    jobs: 120,
-    quotedPrice: '₹3,000', 
-    visitCharge: '₹150', 
-    availability: 'Today · 4:00 PM', 
-    warranty: 'No Warranty', 
-    estimatedTime: '4 Hours',
-    status: 'New',
-    included: 'Leak repair, basic patching',
-    excluded: 'Major pipe replacement, civil work',
-    paymentTerms: '100% on completion'
-  },
-  { 
-    id: 'RSP-003', 
-    providerName: 'SafeGuard Solutions', 
-    verified: true, 
-    rating: 4.8,
-    jobs: 890,
-    quotedPrice: '₹3,800', 
-    visitCharge: 'No Visit Charge', 
-    availability: '24 Jul · Morning', 
-    warranty: '90 Days', 
-    estimatedTime: '2 Hours',
-    status: 'Reviewed',
-    included: 'Complete repair, pipe replacement, testing',
-    excluded: 'None',
-    paymentTerms: '100% advance'
-  }
-];
+const MOCK_RESPONSES = [];
 
 export default function ProviderResponsesPage({ request, onBack, onProviderProfile }) {
   const { width } = useWindowDimensions();
@@ -214,9 +165,9 @@ export default function ProviderResponsesPage({ request, onBack, onProviderProfi
               </TouchableOpacity>
             </View>
             <View style={styles.reqSummaryDetails}>
-              <Text style={styles.reqSummaryText}>Business Location: <Text style={{fontWeight:'600'}}>The Meridian Hotel, Jalgaon</Text></Text>
-              <Text style={styles.reqSummaryText}>Preferred Date: <Text style={{fontWeight:'600'}}>24 Jul 2026</Text></Text>
-              <Text style={styles.reqSummaryText}>Budget: <Text style={{fontWeight:'600'}}>₹2,500 – ₹4,000</Text></Text>
+              <Text style={styles.reqSummaryText}>Business Location: <Text style={{fontWeight:'600'}}>{request?.location || 'Not Specified'}</Text></Text>
+              <Text style={styles.reqSummaryText}>Preferred Date: <Text style={{fontWeight:'600'}}>{request?.date || 'Not Specified'}</Text></Text>
+              <Text style={styles.reqSummaryText}>Budget: <Text style={{fontWeight:'600'}}>{request?.budget || 'Not Specified'}</Text></Text>
             </View>
           </View>
 

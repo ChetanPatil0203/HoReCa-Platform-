@@ -132,7 +132,7 @@ export default function Horeca() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               className={`flex items-start gap-3 p-4 rounded-xl border shadow-xl bg-white backdrop-blur-md pointer-events-auto ${toast.type === "success" ? "border-emerald-500/20 text-emerald-800" :
-                  toast.type === "error" ? "border-rose-500/20 text-rose-800" : "border-blue-500/20 text-blue-800"
+                toast.type === "error" ? "border-rose-500/20 text-rose-800" : "border-blue-500/20 text-blue-800"
                 }`}
             >
               <div className="flex-1 text-xs font-semibold leading-relaxed mt-0.5">{toast.message}</div>
@@ -181,8 +181,8 @@ export default function Horeca() {
                 key={tab}
                 onClick={() => setHorecaTab(tab)}
                 className={`text-[11px] font-bold px-4 py-1.5 rounded-lg transition-all active:scale-[0.97] ${horecaTab === tab
-                    ? "bg-white text-blue-700 shadow-sm border border-slate-200/30"
-                    : "text-slate-400 hover:text-slate-600"
+                  ? "bg-white text-blue-700 shadow-sm border border-slate-200/30"
+                  : "text-slate-400 hover:text-slate-600"
                   }`}
               >
                 {tab === "All" ? "All Types" : tab + "s"}
@@ -253,8 +253,8 @@ export default function Horeca() {
                   </td>
                   <td className="p-4">
                     <span className={`text-[9px] font-bold px-2 py-1 rounded-md border ${b.type === "Hotel" ? "bg-blue-50 border-blue-100 text-blue-700" :
-                        b.type === "Restaurant" ? "bg-emerald-50 border-emerald-100 text-emerald-700" :
-                          "bg-indigo-50 border-indigo-100 text-indigo-700"
+                      b.type === "Restaurant" ? "bg-emerald-50 border-emerald-100 text-emerald-700" :
+                        "bg-indigo-50 border-indigo-100 text-indigo-700"
                       }`}>
                       {b.type}
                     </span>
@@ -272,8 +272,8 @@ export default function Horeca() {
                     <div className="flex flex-col gap-0.5">
                       <span className="text-[11px] font-semibold text-slate-600">{b.licenseExpiry}</span>
                       <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded w-max border ${b.licenseStatus === 'Valid' ? 'bg-emerald-50 border-emerald-200/40 text-emerald-700' :
-                          b.licenseStatus === 'Expiring Soon' ? 'bg-amber-50 border-amber-200/40 text-amber-700' :
-                            'bg-rose-50 border-rose-200/40 text-rose-700'
+                        b.licenseStatus === 'Expiring Soon' ? 'bg-amber-50 border-amber-200/40 text-amber-700' :
+                          'bg-rose-50 border-rose-200/40 text-rose-700'
                         }`}>
                         {b.licenseStatus}
                       </span>
@@ -289,15 +289,13 @@ export default function Horeca() {
                           e.stopPropagation();
                           handleVerificationToggle(b.id);
                         }}
-                        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                          b.verification === 'Approved' ? 'bg-blue-600' : 'bg-slate-300'
-                        }`}
+                        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${b.verification === 'Approved' ? 'bg-blue-600' : 'bg-slate-300'
+                          }`}
                         title={b.verification === 'Approved' ? 'KYC is Verified (click to toggle)' : 'KYC is Pending (click to toggle)'}
                       >
                         <span
-                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
-                            b.verification === 'Approved' ? 'translate-x-4' : 'translate-x-0'
-                          }`}
+                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${b.verification === 'Approved' ? 'translate-x-4' : 'translate-x-0'
+                            }`}
                         />
                       </button>
                       <span className={`text-[10px] font-black ${b.verification === 'Approved' ? 'text-blue-600' : 'text-slate-400'}`}>
@@ -312,15 +310,13 @@ export default function Horeca() {
                           e.stopPropagation();
                           handleSuspendToggle(b.id);
                         }}
-                        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                          b.accountStatus === 'Active' ? 'bg-emerald-500' : 'bg-rose-500'
-                        }`}
+                        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${b.accountStatus === 'Active' ? 'bg-emerald-500' : 'bg-rose-500'
+                          }`}
                         title={b.accountStatus === 'Active' ? 'Account is Active (click to toggle)' : 'Account is Suspended (click to toggle)'}
                       >
                         <span
-                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
-                            b.accountStatus === 'Active' ? 'translate-x-4' : 'translate-x-0'
-                          }`}
+                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${b.accountStatus === 'Active' ? 'translate-x-4' : 'translate-x-0'
+                            }`}
                         />
                       </button>
                       <span className={`text-[10px] font-black ${b.accountStatus === 'Active' ? 'text-emerald-600' : 'text-rose-600'}`}>
@@ -378,204 +374,204 @@ export default function Horeca() {
               transition={{ duration: 0.2 }}
               className="relative w-full max-w-xl md:max-w-2xl bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden z-10"
             >
-                {/* Header */}
-                <div className="bg-white px-5 py-4 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
-                  <div className="flex gap-3 items-center">
-                    <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-700">
-                      <Building size={20} />
+              {/* Header */}
+              <div className="bg-white px-5 py-4 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
+                <div className="flex gap-3 items-center">
+                  <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-700">
+                    <Building size={20} />
+                  </div>
+                  <div>
+                    <h2 className="font-black text-slate-800 text-sm">{activeProfile.businessName}</h2>
+                    <span className="text-[10px] text-slate-400 font-bold">{activeProfile.type} • {activeProfile.id}</span>
+                  </div>
+                </div>
+                <button onClick={() => setSelectedProfileId(null)} className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 transition-colors">
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="flex-1 overflow-y-auto p-5 space-y-5" style={{ scrollbarWidth: "thin" }}>
+
+                {/* Profile Completion */}
+                <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl shadow-xs">
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Profile Completion</span>
+                    <span className="text-[11px] font-extrabold text-blue-600">{activeProfile.profileCompletion}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-blue-600 rounded-full transition-all duration-500" style={{ width: `${activeProfile.profileCompletion}%` }} />
+                  </div>
+                </div>
+
+                {/* Business Logo & Info */}
+                <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs space-y-3">
+                  <div className="flex justify-center py-2">
+                    <div className="w-20 h-20 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 font-black text-xl">
+                      {activeProfile.businessName.substring(0, 2).toUpperCase()}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Business Name</span>
+                      <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.businessName}</span>
                     </div>
                     <div>
-                      <h2 className="font-black text-slate-800 text-sm">{activeProfile.businessName}</h2>
-                      <span className="text-[10px] text-slate-400 font-bold">{activeProfile.type} • {activeProfile.id}</span>
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Business Type</span>
+                      <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.type}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Owner Name</span>
+                      <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.owner}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Phone</span>
+                      <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.phone}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Email</span>
+                      <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.email}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Address</span>
+                      <span className="font-semibold text-slate-700 block mt-0.5">{activeProfile.address}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">GST Number</span>
+                      <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.gstNumber}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">FSSAI Number</span>
+                      <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.fssaiNumber}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Registration Date</span>
+                      <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.joinedDate}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Verification Status</span>
+                      <span className={`inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold border ${activeProfile.verification === 'Approved' ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-amber-50 border-amber-200 text-amber-700'
+                        }`}>
+                        {activeProfile.verification === 'Approved' ? '🔵 Verified' : '🟡 Pending'}
+                      </span>
                     </div>
                   </div>
-                  <button onClick={() => setSelectedProfileId(null)} className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 transition-colors">
-                    <X size={18} />
-                  </button>
                 </div>
 
-                {/* Body */}
-                <div className="flex-1 overflow-y-auto p-5 space-y-5" style={{ scrollbarWidth: "thin" }}>
-
-                  {/* Profile Completion */}
-                  <div className="bg-slate-50 border border-slate-100 p-4 rounded-xl shadow-xs">
-                    <div className="flex justify-between items-center mb-1.5">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Profile Completion</span>
-                      <span className="text-[11px] font-extrabold text-blue-600">{activeProfile.profileCompletion}%</span>
+                {/* Business Statistics */}
+                <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Business Statistics</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 bg-slate-50 border border-slate-100 rounded-lg">
+                      <span className="text-[9px] text-slate-400 font-bold uppercase block">Total Orders</span>
+                      <span className="text-lg font-black text-slate-800 mt-1 block">{activeProfile.orders}</span>
                     </div>
-                    <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-600 rounded-full transition-all duration-500" style={{ width: `${activeProfile.profileCompletion}%` }} />
+                    <div className="p-3 bg-slate-50 border border-slate-100 rounded-lg">
+                      <span className="text-[9px] text-slate-400 font-bold uppercase block">Completed Orders</span>
+                      <span className="text-lg font-black text-slate-800 mt-1 block">{activeProfile.completedOrders}</span>
                     </div>
-                  </div>
-
-                  {/* Business Logo & Info */}
-                  <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs space-y-3">
-                    <div className="flex justify-center py-2">
-                      <div className="w-20 h-20 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 font-black text-xl">
-                        {activeProfile.businessName.substring(0, 2).toUpperCase()}
-                      </div>
+                    <div className="p-3 bg-slate-50 border border-slate-100 rounded-lg">
+                      <span className="text-[9px] text-slate-400 font-bold uppercase block">Revenue</span>
+                      <span className="text-lg font-black text-blue-600 mt-1 block">{activeProfile.revenue}</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Business Name</span>
-                        <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.businessName}</span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Business Type</span>
-                        <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.type}</span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Owner Name</span>
-                        <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.owner}</span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Phone</span>
-                        <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.phone}</span>
-                      </div>
-                      <div className="col-span-2">
-                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Email</span>
-                        <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.email}</span>
-                      </div>
-                      <div className="col-span-2">
-                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Address</span>
-                        <span className="font-semibold text-slate-700 block mt-0.5">{activeProfile.address}</span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">GST Number</span>
-                        <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.gstNumber}</span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">FSSAI Number</span>
-                        <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.fssaiNumber}</span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Registration Date</span>
-                        <span className="font-bold text-slate-700 block mt-0.5">{activeProfile.joinedDate}</span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Verification Status</span>
-                        <span className={`inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold border ${activeProfile.verification === 'Approved' ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-amber-50 border-amber-200 text-amber-700'
-                          }`}>
-                          {activeProfile.verification === 'Approved' ? '🔵 Verified' : '🟡 Pending'}
-                        </span>
-                      </div>
+                    <div className="p-3 bg-slate-50 border border-slate-100 rounded-lg">
+                      <span className="text-[9px] text-slate-400 font-bold uppercase block">Rating</span>
+                      <span className="text-lg font-black text-amber-500 mt-1 block flex items-center gap-1">
+                        {activeProfile.rating} <Star size={16} className="fill-amber-400 text-amber-400" />
+                      </span>
                     </div>
                   </div>
-
-                  {/* Business Statistics */}
-                  <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs">
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Business Statistics</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-3 bg-slate-50 border border-slate-100 rounded-lg">
-                        <span className="text-[9px] text-slate-400 font-bold uppercase block">Total Orders</span>
-                        <span className="text-lg font-black text-slate-800 mt-1 block">{activeProfile.orders}</span>
-                      </div>
-                      <div className="p-3 bg-slate-50 border border-slate-100 rounded-lg">
-                        <span className="text-[9px] text-slate-400 font-bold uppercase block">Completed Orders</span>
-                        <span className="text-lg font-black text-slate-800 mt-1 block">{activeProfile.completedOrders}</span>
-                      </div>
-                      <div className="p-3 bg-slate-50 border border-slate-100 rounded-lg">
-                        <span className="text-[9px] text-slate-400 font-bold uppercase block">Revenue</span>
-                        <span className="text-lg font-black text-blue-600 mt-1 block">{activeProfile.revenue}</span>
-                      </div>
-                      <div className="p-3 bg-slate-50 border border-slate-100 rounded-lg">
-                        <span className="text-[9px] text-slate-400 font-bold uppercase block">Rating</span>
-                        <span className="text-lg font-black text-amber-500 mt-1 block flex items-center gap-1">
-                          {activeProfile.rating} <Star size={16} className="fill-amber-400 text-amber-400" />
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* License Information */}
-                  <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs space-y-3">
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">License Information</h4>
-                    <div className="space-y-2 text-xs">
-                      <div className="flex justify-between items-center p-2 border border-slate-50 rounded-lg bg-slate-50/50">
-                        <span className="font-semibold text-slate-600">GST Registration</span>
-                        <span className="font-bold text-slate-800">{activeProfile.gstNumber}</span>
-                      </div>
-                      <div className="flex justify-between items-center p-2 border border-slate-50 rounded-lg bg-slate-50/50">
-                        <span className="font-semibold text-slate-600">FSSAI Licence</span>
-                        <span className="font-bold text-slate-800">{activeProfile.fssaiNumber}</span>
-                      </div>
-                      <div className="flex justify-between items-center p-2 border border-slate-50 rounded-lg bg-slate-50/50">
-                        <span className="font-semibold text-slate-600">Trade License Expiry</span>
-                        <span className="font-bold text-slate-800">{activeProfile.licenseExpiry}</span>
-                      </div>
-                      <div className="flex justify-between items-center p-2 border border-slate-50 rounded-lg bg-slate-50/50">
-                        <span className="font-semibold text-slate-600">Expiry Status</span>
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded border ${activeProfile.licenseStatus === 'Valid' ? 'bg-emerald-50 border-emerald-200/40 text-emerald-700' :
-                            activeProfile.licenseStatus === 'Expiring Soon' ? 'bg-amber-50 border-amber-200/40 text-amber-700' :
-                              'bg-rose-50 border-rose-200/40 text-rose-700'
-                          }`}>{activeProfile.licenseStatus}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Documents List */}
-                  <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs">
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Documents</h4>
-                    <div className="grid grid-cols-4 gap-2 text-center">
-                      {['GST', 'FSSAI', 'PAN', 'Trade'].map((docName) => (
-                        <div key={docName} className="border border-slate-100 rounded-lg p-2 bg-slate-50 flex flex-col items-center justify-between gap-2">
-                          <FileText size={20} className="text-blue-500" />
-                          <span className="text-[9px] font-bold text-slate-600 block">{docName}</span>
-                          <button
-                            onClick={() => showToast(`Downloading ${docName} certificate...`, "success")}
-                            className="text-[9px] font-extrabold text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
-                          >
-                            <Download size={10} /> Download
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Recent Activity Timeline */}
-                  <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs">
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4">Recent Activity</h4>
-                    <div className="flex flex-col gap-3 relative pl-4">
-                      <div className="absolute left-1.5 top-1 bottom-1 w-px bg-slate-200"></div>
-                      {activeProfile.activityHistory.map((act, idx) => (
-                        <div key={idx} className="relative flex flex-col">
-                          <div className="absolute -left-[14.5px] top-1.5 w-2 h-2 rounded-full bg-blue-500 border-2 border-white"></div>
-                          <span className="text-xs font-semibold text-slate-700">{act.action}</span>
-                          <span className="text-[9px] text-slate-400 mt-0.5">{act.date}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
                 </div>
 
-                {/* Footer Quick Actions */}
-                <div className="bg-slate-50 border-t border-slate-100 p-4 flex gap-2 flex-shrink-0">
-                  {activeProfile.verification === 'Pending' && (
-                    <button
-                      onClick={() => handleApproveFromDrawer(activeProfile.id)}
-                      className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition-colors"
-                    >
-                      Approve
-                    </button>
-                  )}
+                {/* License Information */}
+                <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs space-y-3">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">License Information</h4>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between items-center p-2 border border-slate-50 rounded-lg bg-slate-50/50">
+                      <span className="font-semibold text-slate-600">GST Registration</span>
+                      <span className="font-bold text-slate-800">{activeProfile.gstNumber}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-2 border border-slate-50 rounded-lg bg-slate-50/50">
+                      <span className="font-semibold text-slate-600">FSSAI Licence</span>
+                      <span className="font-bold text-slate-800">{activeProfile.fssaiNumber}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-2 border border-slate-50 rounded-lg bg-slate-50/50">
+                      <span className="font-semibold text-slate-600">Trade License Expiry</span>
+                      <span className="font-bold text-slate-800">{activeProfile.licenseExpiry}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-2 border border-slate-50 rounded-lg bg-slate-50/50">
+                      <span className="font-semibold text-slate-600">Expiry Status</span>
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded border ${activeProfile.licenseStatus === 'Valid' ? 'bg-emerald-50 border-emerald-200/40 text-emerald-700' :
+                        activeProfile.licenseStatus === 'Expiring Soon' ? 'bg-amber-50 border-amber-200/40 text-amber-700' :
+                          'bg-rose-50 border-rose-200/40 text-rose-700'
+                        }`}>{activeProfile.licenseStatus}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Documents List */}
+                <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Documents</h4>
+                  <div className="grid grid-cols-4 gap-2 text-center">
+                    {['GST', 'FSSAI', 'PAN', 'Trade'].map((docName) => (
+                      <div key={docName} className="border border-slate-100 rounded-lg p-2 bg-slate-50 flex flex-col items-center justify-between gap-2">
+                        <FileText size={20} className="text-blue-500" />
+                        <span className="text-[9px] font-bold text-slate-600 block">{docName}</span>
+                        <button
+                          onClick={() => showToast(`Downloading ${docName} certificate...`, "success")}
+                          className="text-[9px] font-extrabold text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
+                        >
+                          <Download size={10} /> Download
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Recent Activity Timeline */}
+                <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4">Recent Activity</h4>
+                  <div className="flex flex-col gap-3 relative pl-4">
+                    <div className="absolute left-1.5 top-1 bottom-1 w-px bg-slate-200"></div>
+                    {activeProfile.activityHistory.map((act, idx) => (
+                      <div key={idx} className="relative flex flex-col">
+                        <div className="absolute -left-[14.5px] top-1.5 w-2 h-2 rounded-full bg-blue-500 border-2 border-white"></div>
+                        <span className="text-xs font-semibold text-slate-700">{act.action}</span>
+                        <span className="text-[9px] text-slate-400 mt-0.5">{act.date}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Footer Quick Actions */}
+              <div className="bg-slate-50 border-t border-slate-100 p-4 flex gap-2 flex-shrink-0">
+                {activeProfile.verification === 'Pending' && (
                   <button
-                    onClick={() => handleSuspendFromDrawer(activeProfile.id)}
-                    className={`flex-1 py-2 border text-xs font-bold rounded-xl transition-colors ${activeProfile.accountStatus === 'Active'
-                        ? 'border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600'
-                        : 'border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-600'
-                      }`}
+                    onClick={() => handleApproveFromDrawer(activeProfile.id)}
+                    className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition-colors"
                   >
-                    {activeProfile.accountStatus === 'Active' ? 'Suspend' : 'Activate'}
+                    Approve
                   </button>
-                  <button
-                    onClick={() => handleDeleteFromDrawer(activeProfile.id)}
-                    className="p-2 border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-colors"
-                    title="Delete Business"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
+                )}
+                <button
+                  onClick={() => handleSuspendFromDrawer(activeProfile.id)}
+                  className={`flex-1 py-2 border text-xs font-bold rounded-xl transition-colors ${activeProfile.accountStatus === 'Active'
+                    ? 'border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600'
+                    : 'border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-600'
+                    }`}
+                >
+                  {activeProfile.accountStatus === 'Active' ? 'Suspend' : 'Activate'}
+                </button>
+                <button
+                  onClick={() => handleDeleteFromDrawer(activeProfile.id)}
+                  className="p-2 border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-colors"
+                  title="Delete Business"
+                >
+                  <X size={16} />
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

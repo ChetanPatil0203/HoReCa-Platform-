@@ -14,59 +14,7 @@ const BG = '#F8FAFC';
 const WHITE = '#FFFFFF';
 const GREEN = '#10B981';
 
-const INITIAL_REQUESTS = [
-  {
-    id: "REQ-310",
-    client: "The Meridian Hotel",
-    businessType: "Hotel",
-    service: "AC Deep Cleaning",
-    location: "Bandra West, Mumbai",
-    date: "24 Jul 2026",
-    budget: "₹15,000 – ₹20,000",
-    time: "Flexible",
-    priority: "New", // New, Quote Sent, Accepted, Declined, Closed
-    priorityBadge: "High Priority", // optional secondary badge
-    status: "New",
-    requestedAt: "3 hours ago",
-    description: "Deep cleaning required for 15 split ACs and 5 window ACs in guest rooms. Need to be completed by this weekend.",
-    attachments: 2,
-    source: "Direct Request"
-  },
-  {
-    id: "REQ-311",
-    client: "Cafe Zephyr",
-    businessType: "Cafe",
-    service: "Plumbing Repair",
-    location: "Andheri East, Mumbai",
-    date: "25 Jul 2026",
-    budget: "Open to Quotes",
-    time: "Morning",
-    priority: "New",
-    priorityBadge: "New",
-    status: "New",
-    requestedAt: "yesterday",
-    description: "Fix leaking sink in main kitchen. Fast response required.",
-    attachments: 0,
-    source: "Direct Request"
-  },
-  {
-    id: "REQ-309",
-    client: "Grand Hotel & Spa",
-    businessType: "Hotel",
-    service: "Kitchen Exhaust Cleaning",
-    location: "South Mumbai",
-    date: "20 Jul 2026",
-    budget: "₹8,000",
-    time: "Night (12 AM - 4 AM)",
-    priority: "Quote Sent",
-    priorityBadge: "Quote Sent",
-    status: "Quote Sent",
-    requestedAt: "2 days ago",
-    description: "Exhaust cleaning for main commercial kitchen.",
-    attachments: 1,
-    source: "Direct Request"
-  }
-];
+const INITIAL_REQUESTS = [];
 
 const TABS = ['New', 'Quote Sent', 'Accepted', 'Declined', 'Closed'];
 

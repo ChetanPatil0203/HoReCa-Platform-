@@ -9,19 +9,15 @@ export default function RawMaterialOrderDetailsPage({ order, onBack, onReorder }
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
   
-  // Using passed order or a mock if not available
   const currentOrder = order || {
-    id: 'ORD-49201',
-    status: 'Delivered',
-    date: '12 Jul 2026, 10:30 AM',
-    supplierName: 'Fresh Farm Suppliers',
-    amount: 1450,
-    itemsTotal: 1400,
-    deliveryCharges: 50,
-    items: [
-      { id: 'p1', name: 'Tomato', qty: 5, price: 25 },
-      { id: 'p2', name: 'Onion', qty: 5, price: 20 }
-    ]
+    id: '',
+    status: '',
+    date: '',
+    supplierName: '',
+    amount: 0,
+    itemsTotal: 0,
+    deliveryCharges: 0,
+    items: []
   };
 
   return (

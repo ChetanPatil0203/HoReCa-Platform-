@@ -6,44 +6,7 @@ import { colors } from '../../../theme/colors';
 const NAVY = '#0E2042';
 const GOLD = '#D4AF37';
 
-const MOCK_COMPARISON = [
-  { 
-    id: 'PRV-001', 
-    name: 'Elite Fixers', 
-    verified: true, 
-    rating: 4.9, 
-    price: '₹3,500', 
-    visitCharge: '₹200 (Waived)', 
-    availability: 'Tomorrow, 10:30 AM', 
-    estimatedTime: '2-3 Hours',
-    warranty: '30 Days',
-    reviews: 450
-  },
-  { 
-    id: 'PRV-002', 
-    name: 'Rapid Repairs', 
-    verified: false, 
-    rating: 4.5, 
-    price: '₹3,000', 
-    visitCharge: '₹150', 
-    availability: 'Today, 04:00 PM', 
-    estimatedTime: '4 Hours',
-    warranty: 'None',
-    reviews: 120
-  },
-  { 
-    id: 'PRV-003', 
-    name: 'SafeGuard Solutions', 
-    verified: true, 
-    rating: 4.8, 
-    price: '₹3,800', 
-    visitCharge: 'Free', 
-    availability: '15 Jul, 09:00 AM', 
-    estimatedTime: '2 Hours',
-    warranty: '90 Days',
-    reviews: 890
-  }
-];
+const MOCK_COMPARISON = [];
 
 export default function CompareProvidersPage({ request, onBack, onSelectProvider }) {
   const { width } = useWindowDimensions();

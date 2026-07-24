@@ -5,29 +5,22 @@ import { Settings, User, MapPin, Briefcase, RefreshCcw, DollarSign, Clock, FileT
 const NAVY = '#081A3A';
 
 const MOCK_PROFILE = {
-  legalName: "Elite Manpower Services Pvt Ltd",
-  displayName: "Elite Manpower",
-  description: "Premium manpower supplier for the hospitality industry.",
-  experience: "5 Years",
-  totalCandidates: "500+",
-  roles: "Chefs, Bartenders, Stewards, Managers",
-  cities: "Mumbai, Pune, Goa",
-  replacementPolicy: "30 Days Free Replacement",
-  serviceCharge: "8.33% of Annual CTC",
-  contactPerson: "Rajesh Kumar",
-  phone: "+91 9876543210",
-  email: "contact@elitemanpower.in",
-  address: "Andheri West, Mumbai 400053"
+  legalName: "",
+  displayName: "",
+  description: "",
+  experience: "",
+  totalCandidates: "",
+  roles: "",
+  cities: "",
+  replacementPolicy: "",
+  serviceCharge: "",
+  contactPerson: "",
+  phone: "",
+  email: "",
+  address: ""
 };
 
-const MOCK_DOCS = [
-  { id: 1, name: "GST Certificate", status: "Verified", date: "10 Jan 2026" },
-  { id: 2, name: "PAN Card", status: "Verified", date: "10 Jan 2026" },
-  { id: 3, name: "Labour Licence", status: "Verified", date: "15 Jan 2026" },
-  { id: 4, name: "Shop Act Registration", status: "Pending", date: "14 Jul 2026" },
-  { id: 5, name: "Aadhaar (Authorized Person)", status: "Verified", date: "10 Jan 2026" },
-  { id: 6, name: "Cancelled Cheque", status: "Verified", date: "10 Jan 2026" },
-];
+const MOCK_DOCS = [];
 
 export default function ManpowerSettingsPage() {
   const [profileData, setProfileData] = useState(MOCK_PROFILE);

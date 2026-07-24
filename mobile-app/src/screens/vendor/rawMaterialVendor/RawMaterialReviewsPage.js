@@ -7,11 +7,7 @@ import { Star, MessageSquare } from 'lucide-react-native';
 const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
 
-const MOCK_REVIEWS = [
-  { id: '1', client: 'The Meridian Grand', date: '12 Jul 2026', rating: 5, comment: 'Excellent quality Basmati Rice. Delivered exactly on time.' },
-  { id: '2', client: 'Café Zephyr', date: '10 Jul 2026', rating: 4, comment: 'Good quality, but packaging was slightly damaged on one box.' },
-  { id: '3', client: 'Azure Palace', date: '05 Jul 2026', rating: 5, comment: 'Consistent quality as always. Very satisfied.' }
-];
+const MOCK_REVIEWS = [];
 
 export default function RawMaterialReviewsPage() {
   const renderStars = (rating) => {

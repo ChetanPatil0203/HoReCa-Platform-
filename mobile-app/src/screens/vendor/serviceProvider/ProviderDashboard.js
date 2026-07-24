@@ -28,7 +28,7 @@ const WHITE = '#FFFFFF';
 export default function ProviderDashboard() {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || (Platform.OS !== 'web');
-  const { logout } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
 
   const [activePage, setActivePage] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -101,10 +101,10 @@ export default function ProviderDashboard() {
   ];
 
   const profileData = {
-    initials: "PC",
-    name: "ProClean Services",
+    initials: user?.name ? user.name.slice(0, 2).toUpperCase() : "SP",
+    name: user?.name || "Service Provider",
     role: "Service Provider",
-    badge: "AGENCY"
+    badge: "VENDOR"
   };
 
   const togglePlusMenu = () => setIsPlusMenuOpen(!isPlusMenuOpen);
