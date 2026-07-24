@@ -55,7 +55,7 @@ export default function Login() {
         <div className="bg-[#0b162f]/60 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl flex flex-col items-center">
           {/* Logo Section */}
           <div className="flex flex-col items-center gap-2 mb-8">
-            <div className="w-20 h-20 rounded-2xl bg-[#081a3a] border border-[#d4af37]/30 flex items-center justify-center p-2 shadow-lg shadow-black/30">
+            <div className="w-20 h-20 flex items-center justify-center p-2">
               <img src={HrcHubLogo} alt="HRC HUB Logo" className="w-full h-full object-contain" />
             </div>
             <h1 className="text-2xl font-extrabold text-white tracking-wide mt-2" style={{ fontFamily: "'Playfair Display', serif" }}>
