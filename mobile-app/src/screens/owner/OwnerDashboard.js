@@ -154,6 +154,10 @@ export default function OwnerDashboard() {
                 >
                   <Menu size={22} color="#fff" />
                 </TouchableOpacity>
+                <Image 
+                  source={require('../../assets/HoReCa_Logo.png')} 
+                  style={{ width: 24, height: 24, resizeMode: 'contain', marginRight: 8 }} 
+                />
                 <View style={styles.headerLogoBox}>
                   <Text style={styles.headerLogoText}>HRC<Text style={{color:'#F6B800'}}>HUB</Text></Text>
                   <Text style={styles.headerLogoSub}>HoReCa Business Partner</Text>

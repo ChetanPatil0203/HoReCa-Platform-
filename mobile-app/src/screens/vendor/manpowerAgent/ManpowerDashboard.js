@@ -67,21 +67,21 @@ export default function ManpowerDashboard() {
 
   const renderActivePage = () => {
     switch (activePage) {
-      case "dashboard": 
+      case "dashboard":
         return <ManpowerDashboardHome onNavigate={navigateTo} />;
-      case "job-requirements": 
+      case "job-requirements":
         return <ManpowerDirectRequestsPage initialAction={initialAction} />;
-      case "candidates": 
+      case "candidates":
         return <ManpowerCandidatesPage initialAction={initialAction} />;
-      case "staff-records": 
+      case "staff-records":
         return <ManpowerDeploymentsPage />;
       case "history":
         return <ManpowerHistoryPage />;
       case "notifications":
         return <ManpowerNotificationsPage />;
-      case "support": 
+      case "support":
         return <ManpowerSupportPage />;
-      case "settings": 
+      case "settings":
         return <ManpowerSettingsPage />;
       case "profile":
         return <ManpowerProfilePage onNavigate={navigateTo} />;
@@ -140,9 +140,9 @@ export default function ManpowerDashboard() {
 
   return (
     <View style={styles.container}>
-      <RoleBasedMobileDrawer 
-        activePage={activePage === 'profile' ? 'dashboard' : activePage} 
-        onNavigate={setActivePage} 
+      <RoleBasedMobileDrawer
+        activePage={activePage === 'profile' ? 'dashboard' : activePage}
+        onNavigate={setActivePage}
         isMobile={isMobile}
         mobileMenuOpen={mobileMenuOpen}
         setMobileMenuOpen={setMobileMenuOpen}
@@ -152,7 +152,7 @@ export default function ManpowerDashboard() {
         profile={profileData}
         panelTitle="VENDOR OPERATIONS"
       />
-      
+
       <View style={styles.mainContent}>
         {/* Top Navbar */}
         {isMobile ? (
@@ -163,7 +163,7 @@ export default function ManpowerDashboard() {
 
             <View style={styles.mobileLogoContainer}>
               <View style={styles.mobileLogoIconBox}>
-                <Image source={require('../../../assets/HoReCa_Logo.png')} style={{width: 18, height: 18, resizeMode: 'contain'}} />
+                <Image source={require('../../../assets/HoReCa_Logo.png')} style={{ width: 18, height: 18, resizeMode: 'contain' }} />
               </View>
               <Text style={styles.mobileLogoText}>
                 HRC<Text style={{ color: '#D4AF37' }}>HUB</Text>
@@ -210,7 +210,7 @@ export default function ManpowerDashboard() {
                 <Animated.View style={[styles.radialOverlay, { opacity: bgOpacity }]} />
               </TouchableWithoutFeedback>
             )}
-            
+
             <Animated.View style={[styles.radialAction, { opacity: actionScale, transform: [{ translateX: action2TranslateX }, { translateY: action2TranslateY }, { scale: actionScale }] }]}>
               <TouchableOpacity style={styles.radialActionBtn} onPress={() => navigateTo('candidates')}>
                 <Users size={22} color={PRIMARY} />
@@ -232,10 +232,10 @@ export default function ManpowerDashboard() {
                 <ClipboardList size={24} color={activePage === 'job-requirements' ? ACCENT : '#94A3B8'} />
                 <Text style={[styles.bottomNavText, activePage === 'job-requirements' && styles.bottomNavTextActive]}>Requirements</Text>
               </TouchableOpacity>
-              
+
               {/* Center Plus Button Spacer */}
               <View style={styles.centerButtonSpacer} />
-              
+
               <TouchableOpacity style={styles.bottomNavItem} onPress={() => navigateTo('staff-records')}>
                 <UserCheck size={24} color={activePage === 'staff-records' ? ACCENT : '#94A3B8'} />
                 <Text style={[styles.bottomNavText, activePage === 'staff-records' && styles.bottomNavTextActive]}>Staff Records</Text>
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 6,
-    backgroundColor: '#fff',
+    backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
   radialActionBtn: { width: 54, height: 54, borderRadius: 27, backgroundColor: WHITE, alignItems: 'center', justifyContent: 'center', shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 5 },
   radialLabelBox: { backgroundColor: WHITE, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, marginTop: 8, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
   radialLabelTitle: { fontSize: 11, fontWeight: 'bold', color: PRIMARY, textAlign: 'center' },
-  
+
   bottomNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: WHITE, height: 65, paddingHorizontal: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 10, paddingBottom: Platform.OS === 'ios' ? 15 : 0 },
   bottomNavItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   bottomNavText: { fontSize: 10, color: '#94A3B8', marginTop: 4, fontWeight: '500' },

@@ -2,12 +2,12 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform, SafeAreaView, useWindowDimensions } from 'react-native';
 import { X, LogOut } from 'lucide-react-native';
 
-export default function RoleBasedMobileDrawer({ 
-  activePage, 
-  onNavigate, 
-  isMobile, 
-  mobileMenuOpen, 
-  setMobileMenuOpen, 
+export default function RoleBasedMobileDrawer({
+  activePage,
+  onNavigate,
+  isMobile,
+  mobileMenuOpen,
+  setMobileMenuOpen,
   onLogout,
   navItems = [],
   bottomNavItems = [],
@@ -29,11 +29,11 @@ export default function RoleBasedMobileDrawer({
   const NavBtn = ({ item }) => {
     const Icon = item.icon;
     const isActive = activePage === item.key;
-    
+
     return (
       <TouchableOpacity
         style={[
-          styles.navBtn, 
+          styles.navBtn,
           isActive && styles.navBtnActive,
           isShortScreen && { paddingVertical: 6, height: 44, marginBottom: 2 }
         ]}
@@ -45,7 +45,7 @@ export default function RoleBasedMobileDrawer({
         <Text style={[styles.navText, isActive && styles.navTextActive]} numberOfLines={1}>
           {item.label}
         </Text>
-        
+
         {item.exclusive && !isActive && (
           <View style={styles.rawBadge}>
             <Text style={styles.rawBadgeText}>RAW</Text>
@@ -68,7 +68,7 @@ export default function RoleBasedMobileDrawer({
         <View style={[styles.brandHeader, isShortScreen && { paddingBottom: 8, gap: 8 }]}>
           <Image source={require('../../assets/HoReCa_Logo.png')} style={[styles.logo, isShortScreen && { width: 28, height: 28 }]} resizeMode="cover" />
           <View style={styles.brandTextCol}>
-            <Text style={[styles.brandTitle, isShortScreen && { fontSize: 14 }]}><Text style={{color: '#D4AF37'}}>HRC</Text> HUB</Text>
+            <Text style={[styles.brandTitle, isShortScreen && { fontSize: 14 }]}><Text style={{ color: '#D4AF37' }}>HRC</Text> HUB</Text>
             <Text style={styles.brandSubtitle}>{panelTitle}</Text>
           </View>
           {isMobile && (

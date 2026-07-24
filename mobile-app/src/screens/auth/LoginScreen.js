@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Modal, ScrollView, SafeAreaView } from 'react-native';
-import { Mail, ArrowRight, AlertCircle, Building2, Zap, ChevronRight, X } from 'lucide-react-native';
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Modal, ScrollView, SafeAreaView, Image } from 'react-native';
+import { Mail, ArrowRight, AlertCircle, Zap, ChevronRight, X } from 'lucide-react-native';
 
 import AuthScreenWrapper from '../../components/auth/AuthScreenWrapper';
 import AuthCard from '../../components/auth/AuthCard';
@@ -83,7 +83,10 @@ export default function LoginScreen({ navigation }) {
       {/* Brand Identity */}
       <View style={styles.brandContainer}>
         <View style={styles.brandIconBox}>
-          <Building2 size={24} color={AUTH_COLORS.accent} />
+          <Image 
+            source={require('../../assets/HoReCa_Logo.png')} 
+            style={{ width: 32, height: 32, resizeMode: 'contain' }} 
+          />
         </View>
         <Text style={styles.brandName}>
           <Text style={{ color: AUTH_COLORS.card }}>HRC </Text>
@@ -213,7 +216,7 @@ const styles = StyleSheet.create({
     borderRadius: 20
   },
   brandIconBox: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'transparent',
     width: 44,
     height: 44,
     borderRadius: 12,

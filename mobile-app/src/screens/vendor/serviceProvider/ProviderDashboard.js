@@ -1,7 +1,7 @@
 import React, { useState, useContext, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Platform, useWindowDimensions, TouchableOpacity, Image, Animated, Easing, TouchableWithoutFeedback, Alert } from 'react-native';
-import { 
-  Menu, Bell, Search, User, Home, ClipboardList, Wrench, Briefcase, History, 
+import {
+  Menu, Bell, Search, User, Home, ClipboardList, Wrench, Briefcase, History,
   HelpCircle, Settings, Plus, PlusCircle, Calendar
 } from 'lucide-react-native';
 import RoleBasedMobileDrawer from '../../../components/navigation/RoleBasedMobileDrawer';
@@ -211,15 +211,15 @@ export default function ProviderDashboard() {
                 <Text style={[styles.bottomNavText, activePage === 'dashboard' && styles.bottomNavTextActive]}>Home</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.bottomNavItem} onPress={() => navigateTo('requests')}>
-                <View style={{position: 'relative'}}>
+                <View style={{ position: 'relative' }}>
                   <ClipboardList size={24} color={activePage === 'requests' ? ACCENT : '#94A3B8'} />
                   <View style={styles.requestsBadge}><Text style={styles.requestsBadgeText}>1</Text></View>
                 </View>
                 <Text style={[styles.bottomNavText, activePage === 'requests' && styles.bottomNavTextActive]}>Requests</Text>
               </TouchableOpacity>
-              
+
               <View style={styles.centerButtonSpacer} />
-              
+
               <TouchableOpacity style={styles.bottomNavItem} onPress={() => navigateTo('jobs')}>
                 <Briefcase size={24} color={activePage === 'jobs' ? ACCENT : '#94A3B8'} />
                 <Text style={[styles.bottomNavText, activePage === 'jobs' && styles.bottomNavTextActive]}>Work</Text>
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
   mobileBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, height: 70, backgroundColor: PRIMARY, paddingTop: Platform.OS === 'ios' ? 20 : 0 },
   mobileMenuBtn: { padding: 6, zIndex: 10 },
   mobileLogoContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  mobileLogoIconBox: { width: 24, height: 24, borderRadius: 6, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  mobileLogoIconBox: { width: 24, height: 24, borderRadius: 6, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
   mobileLogoText: { fontSize: 16, fontWeight: '900', color: '#fff' },
   mobileRight: { flexDirection: 'row', alignItems: 'center', gap: 12, zIndex: 10 },
   mobileIconBtn: { padding: 4, position: 'relative' },
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
   radialActionBtn: { width: 54, height: 54, borderRadius: 27, backgroundColor: WHITE, alignItems: 'center', justifyContent: 'center', shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 5 },
   radialLabelBox: { backgroundColor: WHITE, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, marginTop: 8, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
   radialLabelTitle: { fontSize: 11, fontWeight: 'bold', color: PRIMARY, textAlign: 'center' },
-  
+
   bottomNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: WHITE, height: 65, paddingHorizontal: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 10, paddingBottom: Platform.OS === 'ios' ? 15 : 0 },
   bottomNavItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   bottomNavText: { fontSize: 10, color: '#94A3B8', marginTop: 4, fontWeight: '500' },

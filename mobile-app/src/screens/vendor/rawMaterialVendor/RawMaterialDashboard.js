@@ -161,8 +161,13 @@ export default function RawMaterialDashboard() {
               <Menu size={24} color="#fff" />
             </TouchableOpacity>
 
-            <View style={styles.mobileHeaderCenter}>
-              <Text style={{ color: '#D4AF37', fontSize: 18, fontWeight: 'bold', letterSpacing: 1 }}>HRC HUB</Text>
+            <View style={styles.mobileLogoContainer}>
+              <View style={styles.mobileLogoIconBox}>
+                <Image source={require('../../../assets/HoReCa_Logo.png')} style={{ width: 18, height: 18, resizeMode: 'contain' }} />
+              </View>
+              <Text style={styles.mobileLogoText}>
+                HRC<Text style={{ color: '#D4AF37' }}>HUB</Text>
+              </Text>
             </View>
 
             <View style={styles.mobileRight}>
@@ -192,7 +197,7 @@ export default function RawMaterialDashboard() {
                 <Animated.View style={[styles.radialOverlay, { opacity: bgOpacity }]} />
               </TouchableWithoutFeedback>
             )}
-            
+
             <Animated.View style={[styles.radialAction, { opacity: actionScale, transform: [{ translateX: action1TranslateX }, { translateY: action1TranslateY }, { scale: actionScale }] }]}>
               <TouchableOpacity style={styles.radialActionBtn} onPress={() => navigateTo('inventory', null, null)}>
                 <Boxes size={22} color={PRIMARY} />
@@ -214,10 +219,10 @@ export default function RawMaterialDashboard() {
                 <ClipboardList size={24} color={activePage === 'requests' ? ACCENT : '#94A3B8'} />
                 <Text style={[styles.bottomNavText, activePage === 'requests' && styles.bottomNavTextActive]}>Orders</Text>
               </TouchableOpacity>
-              
+
               {/* Center Plus Button Spacer */}
               <View style={styles.centerButtonSpacer} />
-              
+
               <TouchableOpacity style={styles.bottomNavItem} onPress={() => navigateTo('deliveries')}>
                 <Truck size={24} color={activePage === 'deliveries' ? ACCENT : '#94A3B8'} />
                 <Text style={[styles.bottomNavText, activePage === 'deliveries' && styles.bottomNavTextActive]}>Deliveries</Text>
@@ -248,7 +253,7 @@ const styles = StyleSheet.create({
   pageArea: { flex: 1 },
   placeholder: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   placeholderText: { color: '#94A3B8', fontSize: 18, fontWeight: 'bold' },
-  
+
   mobileBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -259,7 +264,9 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 20 : 0,
   },
   mobileMenuBtn: { padding: 6, zIndex: 10 },
-  mobileHeaderCenter: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  mobileLogoContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  mobileLogoIconBox: { width: 24, height: 24, borderRadius: 6, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
+  mobileLogoText: { fontSize: 16, fontWeight: '900', color: '#fff' },
   greetingText: { color: '#B8C6E3', fontSize: 10, letterSpacing: 0.5 },
   vendorNameText: { color: WHITE, fontSize: 16, fontWeight: 'bold', marginVertical: 2 },
   vendorRoleText: { color: '#D4AF37', fontSize: 10, fontWeight: '600', textTransform: 'uppercase' },
@@ -276,7 +283,7 @@ const styles = StyleSheet.create({
   radialActionBtn: { width: 54, height: 54, borderRadius: 27, backgroundColor: WHITE, alignItems: 'center', justifyContent: 'center', shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 5 },
   radialLabelBox: { backgroundColor: WHITE, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, marginTop: 8, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
   radialLabelTitle: { fontSize: 11, fontWeight: 'bold', color: PRIMARY, textAlign: 'center' },
-  
+
   bottomNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: WHITE, height: 65, paddingHorizontal: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 10, paddingBottom: Platform.OS === 'ios' ? 15 : 0 },
   bottomNavItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   bottomNavText: { fontSize: 10, color: '#94A3B8', marginTop: 4, fontWeight: '500' },

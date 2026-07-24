@@ -24,7 +24,7 @@ export default function VendorDashboard() {
   const renderActivePage = () => {
     switch (activePage) {
       case "dashboard": return <VendorDashboardHome />;
-      case "requests": 
+      case "requests":
         return vendorType === 'raw-material' ? <VendorRequestsPage /> : <FeedWallPage />;
       case "deliveries": return <VendorDeliveriesPage />;
       case "clients": return <VendorClientsPage />;
@@ -36,15 +36,15 @@ export default function VendorDashboard() {
 
   return (
     <View style={styles.container}>
-      <VendorSidebar 
-        activePage={activePage} 
-        setActivePage={setActivePage} 
+      <VendorSidebar
+        activePage={activePage}
+        setActivePage={setActivePage}
         isMobile={isMobile}
         mobileMenuOpen={mobileMenuOpen}
         setMobileMenuOpen={setMobileMenuOpen}
         onLogout={logout}
       />
-      
+
       <View style={styles.mainContent}>
         {/* Top Navbar */}
         {isMobile ? (
@@ -55,7 +55,7 @@ export default function VendorDashboard() {
 
             <View style={styles.mobileLogoContainer}>
               <View style={styles.mobileLogoIconBox}>
-                <Image source={require('../../assets/HoReCa_Logo.png')} style={{width: 18, height: 18, resizeMode: 'contain'}} />
+                <Image source={require('../../assets/HoReCa_Logo.png')} style={{ width: 18, height: 18, resizeMode: 'contain' }} />
               </View>
               <Text style={styles.mobileLogoText}>
                 HRC<Text style={{ color: '#D4AF37' }}>HUB</Text>
