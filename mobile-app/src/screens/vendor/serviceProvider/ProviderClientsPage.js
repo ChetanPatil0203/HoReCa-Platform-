@@ -13,77 +13,77 @@ const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
 
 const SUMMARY_DATA = [
-  { label: 'Total Clients', value: '45', icon: Users, color: '#3B82F6' },
-  { label: 'Active', value: '38', icon: User, color: '#10B981' },
-  { label: 'Repeat', value: '32', icon: RefreshCw, color: '#8B5CF6' },
-  { label: 'Outstanding', value: '₹1.2L', icon: AlertCircle, color: '#EF4444' },
+  { label: 'Total Clients', value: '34', icon: Users, color: '#3B82F6' },
+  { label: 'Active Jobs', value: '8', icon: User, color: '#10B981' },
+  { label: 'Repeat Clients', value: '22', icon: RefreshCw, color: '#8B5CF6' },
+  { label: 'Outstanding Payments', value: '₹42K', icon: AlertCircle, color: '#EF4444' },
 ];
 
 const CHIPS = ['All', 'Hotel', 'Restaurant', 'Cafe'];
 
 const MOCK_CLIENTS = [
   {
-    id: "CLI-001", name: "The Meridian Grand", initials: "MG", type: "Hotel", location: "Downtown, Metro City",
-    rating: "4.9", orders: 124, ltv: "₹24.5L", outstanding: "₹45,000", tag: "VIP"
+    id: "CLI-SP-001", name: "The Meridian Grand", initials: "MG", type: "Hotel", location: "Downtown, Metro City",
+    rating: "4.8", activeServices: 3, ltv: "₹14.2L", outstanding: "₹15,000", tag: "VIP"
   },
   {
-    id: "CLI-002", name: "Café Zephyr", initials: "CZ", type: "Cafe", location: "Westside Hub",
-    rating: "4.7", orders: 56, ltv: "₹8.2L", outstanding: "₹0", tag: "Regular"
+    id: "CLI-SP-002", name: "Café Zephyr", initials: "CZ", type: "Cafe", location: "Westside Hub",
+    rating: "4.7", activeServices: 1, ltv: "₹3.8L", outstanding: "₹0", tag: "Regular"
   },
   {
-    id: "CLI-003", name: "Azure Palace", initials: "AP", type: "Hotel", location: "Azure Coast",
-    rating: "4.5", orders: 12, ltv: "₹3.4L", outstanding: "₹60,000", tag: "New"
+    id: "CLI-SP-003", name: "Azure Palace Hotel", initials: "AP", type: "Hotel", location: "Azure Coast",
+    rating: "4.5", activeServices: 2, ltv: "₹8.9L", outstanding: "₹27,000", tag: "Regular"
   }
 ];
 
 const TRANSACTIONS = [
   {
-    id: "PAY-2026-441",
+    id: "TXN-SP-601",
     client: "The Meridian Grand",
-    product: "Premium Basmati Rice",
-    quantity: "500 kg",
-    amount: "₹45,000",
-    date: "24 Jul 2026, 10:30 AM",
+    service: "Deep Kitchen Cleaning",
+    quantity: "Full property",
+    amount: "₹8,500",
+    date: "24 Jul 2026, 11:30 AM",
     status: "Paid",
-    method: "UPI",
-    reference: "ref-upi-778822"
+    method: "Bank Transfer",
+    reference: "ref-trf-991122"
   },
   {
-    id: "ORD-2026-1024",
-    client: "Azure Palace",
-    product: "Atlantic Salmon",
-    quantity: "50 kg",
-    amount: "₹24,000",
+    id: "TXN-SP-602",
+    client: "Azure Palace Hotel",
+    service: "AC Maintenance",
+    quantity: "15 Units",
+    amount: "₹6,000",
     date: "23 Jul 2026, 02:00 PM",
     status: "Pending",
     method: "Net Banking",
-    reference: "ref-bank-998822"
+    reference: "ref-bank-882233"
   },
   {
-    id: "PAY-2026-440",
+    id: "TXN-SP-603",
     client: "Café Zephyr",
-    product: "Sunflower Oil",
-    quantity: "50 L",
-    amount: "₹12,750",
-    date: "22 Jul 2026, 04:30 PM",
+    service: "Pest Control & Sanitization",
+    quantity: "1 property",
+    amount: "₹4,200",
+    date: "22 Jul 2026, 10:15 AM",
     status: "Paid",
-    method: "Bank Transfer",
-    reference: "ref-trf-112233"
+    method: "UPI",
+    reference: "ref-upi-445588"
   },
   {
-    id: "ORD-2026-1017",
-    client: "Royal Orchid Hotel",
-    product: "Premium Dairy Kit",
-    quantity: "15 units",
-    amount: "₹8,500",
-    date: "22 Jul 2026, 11:20 AM",
+    id: "TXN-SP-604",
+    client: "Spice Route Restaurant",
+    service: "Exhaust System Repair",
+    quantity: "Main kitchen",
+    amount: "₹12,400",
+    date: "21 Jul 2026, 04:30 PM",
     status: "Overdue",
     method: "Cash",
-    reference: "ref-cash-00123"
+    reference: "ref-cash-77331"
   }
 ];
 
-export default function RawMaterialClientsPage() {
+export default function ProviderClientsPage() {
   const { width } = useWindowDimensions();
   const [activeFilter, setActiveFilter] = useState('All');
   const [clients, setClients] = useState(MOCK_CLIENTS);
@@ -114,6 +114,15 @@ export default function RawMaterialClientsPage() {
   const openProfile = (client) => {
     setSelectedClient(client);
     setProfileModalVisible(true);
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Paid': return { bg: '#D1FAE5', text: '#059669', icon: CheckCircle2 };
+      case 'Pending': return { bg: '#EFF6FF', text: '#2563EB', icon: Clock3 };
+      case 'Overdue': return { bg: '#FEE2E2', text: '#EF4444', icon: AlertCircle };
+      default: return { bg: '#F1F5F9', text: '#475569', icon: HelpCircle };
+    }
   };
 
   const renderClientCard = ({ item }) => {
@@ -148,11 +157,11 @@ export default function RawMaterialClientsPage() {
           <View style={styles.floatingMenu}>
             <TouchableOpacity style={styles.menuItem}>
               <Gift size={16} color="#475569" style={styles.menuItemIcon} />
-              <Text style={styles.menuItemText}>Create Offer</Text>
+              <Text style={styles.menuItemText}>Special Service Offer</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.menuItem}>
               <FileText size={16} color="#475569" style={styles.menuItemIcon} />
-              <Text style={styles.menuItemText}>Download Statement</Text>
+              <Text style={styles.menuItemText}>Export statements</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -170,11 +179,11 @@ export default function RawMaterialClientsPage() {
           
           <View style={styles.statsGrid}>
             <View style={styles.statCol}>
-              <Text style={styles.statLabel}>Total Orders</Text>
-              <Text style={styles.statValue}>{item.orders}</Text>
+              <Text style={styles.statLabel}>Active Work</Text>
+              <Text style={styles.statValue}>{item.activeServices} services</Text>
             </View>
             <View style={styles.statCol}>
-              <Text style={styles.statLabel}>Lifetime Value</Text>
+              <Text style={styles.statLabel}>LTV</Text>
               <Text style={styles.statValuePrimary}>{item.ltv}</Text>
             </View>
             <View style={styles.statCol}>
@@ -207,15 +216,6 @@ export default function RawMaterialClientsPage() {
     );
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Paid': return { bg: '#D1FAE5', text: '#059669', icon: CheckCircle2 };
-      case 'Pending': return { bg: '#EFF6FF', text: '#2563EB', icon: Clock3 };
-      case 'Overdue': return { bg: '#FEE2E2', text: '#EF4444', icon: AlertCircle };
-      default: return { bg: '#F1F5F9', text: '#475569', icon: HelpCircle };
-    }
-  };
-
   const renderTransactionCard = ({ item }) => {
     const statusConfig = getStatusColor(item.status);
     const StatusIcon = statusConfig.icon;
@@ -236,7 +236,7 @@ export default function RawMaterialClientsPage() {
             </View>
             <View style={styles.titleContainer}>
               <Text style={styles.clientName} numberOfLines={1}>{item.client}</Text>
-              <Text style={styles.typeText}>{item.id} • {item.product}</Text>
+              <Text style={styles.typeText}>{item.id} • {item.service}</Text>
             </View>
           </View>
           <View style={[styles.statusBadge, { backgroundColor: statusConfig.bg }]}>
@@ -247,12 +247,12 @@ export default function RawMaterialClientsPage() {
 
         <View style={styles.statsGrid}>
           <View style={styles.statCol}>
-            <Text style={styles.statLabel}>Amount</Text>
-            <Text style={styles.statValuePrimary}>{item.amount}</Text>
+            <Text style={styles.statLabel}>Coverage/Units</Text>
+            <Text style={styles.statValuePrimary}>{item.quantity}</Text>
           </View>
           <View style={styles.statCol}>
-            <Text style={styles.statLabel}>Date</Text>
-            <Text style={styles.statValue}>{item.date.split(',')[0]}</Text>
+            <Text style={styles.statLabel}>Charge</Text>
+            <Text style={styles.statValue}>{item.amount}</Text>
           </View>
           <View style={styles.statCol}>
             <Text style={styles.statLabel}>Payment</Text>
@@ -401,44 +401,44 @@ export default function RawMaterialClientsPage() {
                   </View>
                   <View style={styles.contactRow}>
                     <Mail size={16} color="#64748B" />
-                    <Text style={styles.contactText}>orders@{selectedClient.name.toLowerCase().replace(/\s/g, '')}.com</Text>
+                    <Text style={styles.contactText}>ops@{selectedClient.name.toLowerCase().replace(/\s/g, '')}.com</Text>
                   </View>
                 </View>
 
-                {/* Orders Summary */}
+                {/* Placements Summary */}
                 <View style={styles.sectionCard}>
-                  <Text style={styles.sectionTitle}>Order History</Text>
+                  <Text style={styles.sectionTitle}>Services History</Text>
                   <View style={styles.historyGrid}>
                     <View style={styles.historyCol}>
-                      <Text style={styles.historyLabel}>Total Orders</Text>
-                      <Text style={styles.historyVal}>{selectedClient.orders}</Text>
+                      <Text style={styles.historyLabel}>Active Work</Text>
+                      <Text style={styles.historyVal}>{selectedClient.activeServices} services</Text>
                     </View>
                     <View style={styles.historyCol}>
-                      <Text style={styles.historyLabel}>Last Order</Text>
-                      <Text style={styles.historyVal}>12 Jul 2026</Text>
+                      <Text style={styles.historyLabel}>Last Job</Text>
+                      <Text style={styles.historyVal}>16 Jul 2026</Text>
                     </View>
                     <View style={styles.historyCol}>
-                      <Text style={styles.historyLabel}>Avg Value</Text>
-                      <Text style={styles.historyVal}>₹19,500</Text>
+                      <Text style={styles.historyLabel}>LTV</Text>
+                      <Text style={styles.historyVal}>{selectedClient.ltv}</Text>
                     </View>
                   </View>
                   <TouchableOpacity style={styles.linkBtn}>
-                    <Text style={styles.linkText}>View All Orders</Text>
+                    <Text style={styles.linkText}>View Service Orders</Text>
                   </TouchableOpacity>
                 </View>
 
-                {/* Frequent Products */}
+                {/* Frequent Placements */}
                 <View style={styles.sectionCard}>
-                  <Text style={styles.sectionTitle}>Frequently Ordered</Text>
+                  <Text style={styles.sectionTitle}>Frequently Requested Services</Text>
                   <View style={styles.freqItem}>
                     <Package size={16} color="#64748B" />
-                    <Text style={styles.freqText}>Premium Basmati Rice</Text>
-                    <Text style={styles.freqQty}>80% of orders</Text>
+                    <Text style={styles.freqText}>Deep Kitchen Cleaning</Text>
+                    <Text style={styles.freqQty}>75% of services</Text>
                   </View>
                   <View style={styles.freqItem}>
                     <Package size={16} color="#64748B" />
-                    <Text style={styles.freqText}>Extra Virgin Olive Oil</Text>
-                    <Text style={styles.freqQty}>45% of orders</Text>
+                    <Text style={styles.freqText}>Pest Control & Sanitization</Text>
+                    <Text style={styles.freqQty}>30% of services</Text>
                   </View>
                 </View>
 
@@ -451,11 +451,8 @@ export default function RawMaterialClientsPage() {
                   </View>
                   <View style={styles.paymentRow}>
                     <Text style={styles.paymentLabel}>Payment Terms</Text>
-                    <Text style={styles.paymentValText}>Net 30</Text>
+                    <Text style={styles.paymentValText}>Net 15</Text>
                   </View>
-                  <TouchableOpacity style={styles.linkBtn}>
-                    <Text style={styles.linkText}>View Statements</Text>
-                  </TouchableOpacity>
                 </View>
 
                 <View style={{height: 40}} />
@@ -482,15 +479,15 @@ export default function RawMaterialClientsPage() {
                       <Text style={styles.modalTxnClient}>{selectedTxn.client}</Text>
                       
                       <View style={styles.modalTxnDetailRow}>
-                        <Text style={styles.modalTxnLabel}>Product:</Text>
-                        <Text style={styles.modalTxnVal}>{selectedTxn.product}</Text>
+                        <Text style={styles.modalTxnLabel}>Service Category:</Text>
+                        <Text style={styles.modalTxnVal}>{selectedTxn.service}</Text>
                       </View>
                       <View style={styles.modalTxnDetailRow}>
-                        <Text style={styles.modalTxnLabel}>Quantity:</Text>
+                        <Text style={styles.modalTxnLabel}>Coverage/Units:</Text>
                         <Text style={styles.modalTxnVal}>{selectedTxn.quantity}</Text>
                       </View>
                       <View style={styles.modalTxnDetailRow}>
-                        <Text style={styles.modalTxnLabel}>Total Amount:</Text>
+                        <Text style={styles.modalTxnLabel}>Billing Amount:</Text>
                         <Text style={[styles.modalTxnVal, {color: '#10B981', fontWeight: 'bold'}]}>{selectedTxn.amount}</Text>
                       </View>
                       <View style={styles.modalTxnDetailRow}>
@@ -502,7 +499,7 @@ export default function RawMaterialClientsPage() {
                         <Text style={styles.modalTxnVal}>{selectedTxn.method}</Text>
                       </View>
                       <View style={styles.modalTxnDetailRow}>
-                        <Text style={styles.modalTxnLabel}>Ref ID:</Text>
+                        <Text style={styles.modalTxnLabel}>Reference ID:</Text>
                         <Text style={styles.modalTxnVal}>{selectedTxn.reference}</Text>
                       </View>
                       <View style={styles.modalTxnDetailRow}>
@@ -668,6 +665,11 @@ const styles = StyleSheet.create({
   freqItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   freqText: { flex: 1, marginLeft: 12, fontSize: 14, color: '#334155' },
   freqQty: { fontSize: 12, color: '#64748B' },
+  paymentRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
+  paymentLabel: { fontSize: 14, color: '#475569' },
+  paymentVal: { fontSize: 15, fontWeight: 'bold', color: NAVY },
+  paymentValText: { fontSize: 14, fontWeight: '600', color: NAVY },
+
   tabContainer: { flexDirection: 'row', backgroundColor: '#E2E8F0', padding: 4, borderRadius: 12, marginHorizontal: 16, marginBottom: 12, maxWidth: 400 },
   tabButton: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8 },
   activeTabButton: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },

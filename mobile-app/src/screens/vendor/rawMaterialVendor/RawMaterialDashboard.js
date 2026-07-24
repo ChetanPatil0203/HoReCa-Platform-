@@ -12,6 +12,7 @@ import RawMaterialRevenuePage from './RawMaterialRevenuePage';
 import RawMaterialInventoryPage from './RawMaterialInventoryPage';
 import RawMaterialProfilePage from './RawMaterialProfilePage';
 import RawMaterialHistoryPage from './RawMaterialHistoryPage';
+import RawMaterialClientsPage from './RawMaterialClientsPage';
 
 // Supporting Pages
 import RawMaterialNotificationsPage from './RawMaterialNotificationsPage';
@@ -75,6 +76,8 @@ export default function RawMaterialDashboard() {
         return <RawMaterialProfilePage />;
       case "history":
         return <RawMaterialHistoryPage />;
+      case "clients":
+        return <RawMaterialClientsPage />;
       default: return <View style={styles.placeholder}><Text style={styles.placeholderText}>{activePage} Under Construction</Text></View>;
     }
   };
@@ -84,6 +87,7 @@ export default function RawMaterialDashboard() {
     { key: "requests", label: "Orders", icon: ClipboardList },
     { key: "inventory", label: "Inventory", icon: Boxes },
     { key: "deliveries", label: "Deliveries", icon: Truck },
+    { key: "clients", label: "Clients", icon: Users },
     { key: "history", label: "History", icon: History },
     { key: "notifications", label: "Notifications", icon: Bell },
   ];

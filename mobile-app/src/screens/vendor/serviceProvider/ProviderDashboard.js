@@ -2,7 +2,7 @@ import React, { useState, useContext, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Platform, useWindowDimensions, TouchableOpacity, Image, Animated, Easing, TouchableWithoutFeedback, Alert } from 'react-native';
 import {
   Menu, Bell, Search, User, Home, ClipboardList, Wrench, Briefcase, History,
-  HelpCircle, Settings, Plus, PlusCircle, Calendar
+  HelpCircle, Settings, Plus, PlusCircle, Calendar, Building2
 } from 'lucide-react-native';
 import RoleBasedMobileDrawer from '../../../components/navigation/RoleBasedMobileDrawer';
 import { AuthContext } from '../../../context/AuthContext';
@@ -18,6 +18,7 @@ import ProviderSettingsPage from './ProviderSettingsPage';
 import ProviderProfilePage from './ProviderProfilePage';
 import ProviderFeedWallPage from './ProviderFeedWallPage';
 import ProviderHistoryPage from './ProviderHistoryPage';
+import ProviderClientsPage from './ProviderClientsPage';
 
 const PRIMARY = '#081A3A';
 const ACCENT = '#081A3A';
@@ -79,6 +80,7 @@ export default function ProviderDashboard() {
       case "settings": return <ProviderSettingsPage />;
       case "profile": return <ProviderProfilePage />;
       case "feed": return <ProviderFeedWallPage />;
+      case "clients": return <ProviderClientsPage />;
       default: return <View style={styles.placeholder}><Text style={styles.placeholderText}>{activePage} Under Construction</Text></View>;
     }
   };
@@ -88,6 +90,7 @@ export default function ProviderDashboard() {
     { key: "requests", label: "Service Requests", icon: ClipboardList },
     { key: "services", label: "My Services", icon: Wrench },
     { key: "jobs", label: "Service Work", icon: Briefcase },
+    { key: "clients", label: "Clients", icon: Building2 },
     { key: "history", label: "History", icon: History },
     { key: "notifications", label: "Notifications", icon: Bell },
   ];

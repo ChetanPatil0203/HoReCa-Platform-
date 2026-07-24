@@ -1,6 +1,6 @@
 import React, { useState, useContext, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Platform, useWindowDimensions, TouchableOpacity, Image, Animated, Easing, TouchableWithoutFeedback, Alert } from 'react-native';
-import { Menu, Bell, Search, User, LayoutDashboard, Activity, Truck, Users, DollarSign, HelpCircle, Settings, Home, ClipboardList, Plus, UserPlus, Send, History, UserCheck, LogOut } from 'lucide-react-native';
+import { Menu, Bell, Search, User, LayoutDashboard, Activity, Truck, Users, DollarSign, HelpCircle, Settings, Home, ClipboardList, Plus, UserPlus, Send, History, UserCheck, LogOut, Building2 } from 'lucide-react-native';
 import RoleBasedMobileDrawer from '../../../components/navigation/RoleBasedMobileDrawer';
 import { AuthContext } from '../../../context/AuthContext';
 import { colors } from '../../../theme/colors';
@@ -14,6 +14,7 @@ import ManpowerSettingsPage from './ManpowerSettingsPage';
 import ManpowerSupportPage from './ManpowerSupportPage';
 import ManpowerHistoryPage from './ManpowerHistoryPage';
 import ManpowerProfilePage from './ManpowerProfilePage';
+import ManpowerClientsPage from './ManpowerClientsPage';
 
 const PRIMARY = '#081A3A';
 const ACCENT = '#081A3A';
@@ -85,6 +86,8 @@ export default function ManpowerDashboard() {
         return <ManpowerSettingsPage />;
       case "profile":
         return <ManpowerProfilePage onNavigate={navigateTo} />;
+      case "clients":
+        return <ManpowerClientsPage />;
       default: return <View style={styles.placeholder}><Text style={styles.placeholderText}>{activePage} Under Construction</Text></View>;
     }
   };
@@ -94,6 +97,7 @@ export default function ManpowerDashboard() {
     { key: "job-requirements", label: "Job Requirements", icon: ClipboardList },
     { key: "candidates", label: "Candidates", icon: Users },
     { key: "staff-records", label: "Staff Records", icon: UserCheck },
+    { key: "clients", label: "Clients", icon: Building2 },
     { key: "history", label: "History", icon: History },
     { key: "notifications", label: "Notifications", icon: Bell },
   ];

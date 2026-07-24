@@ -2,7 +2,7 @@ import React, { useState, useContext } from 'react';
 import { View, Text, StyleSheet, Platform, useWindowDimensions, TouchableOpacity, Image, TouchableWithoutFeedback } from 'react-native';
 import {
   Menu, Bell, Search, LayoutDashboard, ClipboardList, Megaphone, FolderOpen, Users, DollarSign, HelpCircle, Settings, LogOut,
-  Home, Inbox, User, Plus, ImagePlus, UserPlus, FileText, Globe
+  Home, Inbox, User, Plus, ImagePlus, UserPlus, FileText, Building2
 } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
 import { colors } from '../../../theme/colors';
@@ -21,6 +21,7 @@ import MarketingNotificationsScreen from './MarketingNotificationsScreen';
 import MarketingSettingsScreen from './MarketingSettingsScreen';
 import MarketingSupportScreen from './MarketingSupportScreen';
 import MarketingFeedWallScreen from './MarketingFeedWallScreen';
+import MarketingClientsScreen from './MarketingClientsScreen';
 
 const NAVY = '#071B3A';
 const PURPLE = '#071B3A';
@@ -62,15 +63,16 @@ export default function MarketingDashboard() {
       case "support": return <MarketingSupportScreen setActivePage={setActivePage} />;
       case "profile": return <MarketingProfileScreen setActivePage={setActivePage} />;
       case "feed": return <MarketingFeedWallScreen setActivePage={setActivePage} />;
+      case "clients": return <MarketingClientsScreen setActivePage={setActivePage} />;
       default: return <View style={styles.placeholder}><Text style={styles.placeholderText}>{activePage} Under Construction</Text></View>;
     }
   };
 
   const navItems = [
     { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { key: "feed", label: "Feed Wall", icon: Globe },
     { key: "requests", label: "Requests", icon: ClipboardList },
     { key: "proposals", label: "Proposals", icon: FileText },
+    { key: "clients", label: "Clients", icon: Building2 },
     { key: "campaigns", label: "Campaigns", icon: Megaphone },
     { key: "team", label: "Team", icon: Users },
     { key: "revenue", label: "Revenue", icon: DollarSign },
