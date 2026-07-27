@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions } from 'react-native';
 import { ArrowLeft, CheckCircle, Image as ImageIcon, MapPin, Calendar, DollarSign, Target, Briefcase, FileText, LayoutList } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
+import { AuthContext } from '../../../context/AuthContext';
+import { createRequirementApi } from '../../../services/api.service';
 
 const NAVY = '#0E2042';
 const GOLD = '#D4AF37';
@@ -9,6 +11,8 @@ const GOLD = '#D4AF37';
 export default function OnlineBroadcastPage({ onBack, onViewCampaigns }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
+  const { user } = useContext(AuthContext);
+  const ownerId = user?.id;
 
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -39,8 +43,27 @@ export default function OnlineBroadcastPage({ onBack, onViewCampaigns }) {
     }));
   };
 
-  const handleSubmit = () => {
-    setIsSubmitted(true);
+  const handleSubmit = async () => {
+    try {
+      await createRequirementApi({
+        ownerId,
+        type: 'marketing',
+        requestType: 'public',
+        title: formData.campaignType || 'Online Marketing Campaign',
+        description: formData.description,
+        budget: formData.budget,
+        location: formData.location,
+        extraData: {
+          objective: formData.objective,
+          duration: formData.duration,
+          audience: formData.audience,
+          platforms: Object.keys(formData.platforms).filter(p => formData.platforms[p]),
+        }
+      });
+      setIsSubmitted(true);
+    } catch (err) {
+      console.error('Failed to post online marketing campaign:', err);
+    }
   };
 
   if (isSubmitted) {

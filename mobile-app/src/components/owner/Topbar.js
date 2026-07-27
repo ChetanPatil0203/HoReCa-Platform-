@@ -42,9 +42,9 @@ export default function Topbar({ activePage, title, user, onMobileMenuPress }) {
 
         <TouchableOpacity style={styles.profileBtn}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{user?.name?.charAt(0)?.toUpperCase() || 'O'}</Text>
+            <Text style={styles.avatarText}>{user?.name ? user.name.charAt(0).toUpperCase() : (user?.businessName ? user.businessName.charAt(0).toUpperCase() : 'U')}</Text>
           </View>
-          <Text style={styles.profileName}>Hello, {user?.name?.split(" ")[0] || 'User'}</Text>
+          <Text style={styles.profileName}>Hello, {user?.name ? user.name.split(" ")[0] : (user?.businessName ? user.businessName.split(" ")[0] : 'User')}</Text>
         </TouchableOpacity>
       </View>
     </View>

@@ -1,9 +1,14 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 
 // Specific Route Modules Import
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const rawMaterialRoutes = require('./routes/rawMaterialRoutes');
+const vendorRoutes = require('./routes/vendorRoutes');
+const requirementRoutes = require('./routes/requirementRoutes');
 
 const app = express();
 
@@ -12,9 +17,16 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Serve uploaded files statically
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // Direct Specific Base URL Mounting
 app.use('/api/auth', authRoutes); // Handles /api/auth/register, /api/auth/login, etc.
 app.use('/api/users', userRoutes); // Handles /api/users/profile, etc.
+app.use('/api/admin', adminRoutes);
+app.use('/api/raw-materials', rawMaterialRoutes);
+app.use('/api/vendors', vendorRoutes);
+app.use('/api/requirements', requirementRoutes);
 
 // Root Health Check Route
 app.get('/', (req, res) => {
@@ -25,6 +37,7 @@ app.get('/', (req, res) => {
     baseUrls: {
       auth: '/api/auth',
       users: '/api/users',
+      admin: '/api/admin',
     },
   });
 });

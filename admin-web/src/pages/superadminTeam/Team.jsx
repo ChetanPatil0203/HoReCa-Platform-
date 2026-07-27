@@ -4,199 +4,8 @@ import {
   Search, X, MoreVertical, Plus, Shield, UserX, UserCheck, Key,
   Eye, Clock, ShieldCheck, Mail, AlertTriangle, Trash2, Check, Lock, Unlock, RefreshCw, Users
 } from 'lucide-react';
-import { mockDb } from '../../utils/mockDb';
-
-const INITIAL_ADMINS = [
-  {
-    id: "ADM-001",
-    name: "Sarah Connor",
-    email: "sarah@hrchub.com",
-    phone: "+91 99999 11111",
-    role: "Super Admin",
-    department: "Information Technology",
-    access: ["Dashboard", "Verification", "HoReCa Directory", "Vendor Network", "Complaints & Support", "Status & Limits", "Reports", "Settings"],
-    status: "Active",
-    isOnline: true,
-    lastLogin: "Just now",
-    regDate: "10 Jan 2025",
-    createdBy: "System Setup",
-    security: {
-      twoFactorStatus: "Enabled",
-      passwordLastChanged: "12 May 2026",
-      failedLoginAttempts: 0,
-      lastLoginDevice: "MacBook Pro / macOS",
-      lastLoginIp: "103.45.201.12",
-      activeSessions: 2
-    },
-    activity: [
-      { action: "Account Suspended", module: "Status & Limits", time: "17 Jul 2026, 11:30 AM" },
-      { action: "Business Verified", module: "Verification", time: "16 Jul 2026, 04:15 PM" },
-      { action: "Report Exported", module: "Reports", time: "15 Jul 2026, 09:00 AM" }
-    ],
-    permissionsMatrix: {
-      "Dashboard": ["View", "Create", "Edit", "Approve", "Delete", "Export"],
-      "Verification": ["View", "Create", "Edit", "Approve", "Delete", "Export"],
-      "HoReCa Directory": ["View", "Create", "Edit", "Approve", "Delete", "Export"],
-      "Vendor Network": ["View", "Create", "Edit", "Approve", "Delete", "Export"],
-      "Complaints & Support": ["View", "Create", "Edit", "Approve", "Delete", "Export"],
-      "Status & Limits": ["View", "Create", "Edit", "Approve", "Delete", "Export"],
-      "Reports": ["View", "Create", "Edit", "Approve", "Delete", "Export"],
-      "Settings": ["View", "Create", "Edit", "Approve", "Delete", "Export"]
-    }
-  },
-  {
-    id: "ADM-002",
-    name: "John Smith",
-    email: "john@hrchub.com",
-    phone: "+91 99999 22222",
-    role: "Verification Admin",
-    department: "Risk & Compliance",
-    access: ["Verification", "HoReCa Directory", "Vendor Network"],
-    status: "Active",
-    isOnline: false,
-    lastLogin: "17 Jul 2026, 12:45 PM",
-    regDate: "12 Mar 2025",
-    createdBy: "Sarah Connor",
-    security: {
-      twoFactorStatus: "Enabled",
-      passwordLastChanged: "01 Jun 2026",
-      failedLoginAttempts: 1,
-      lastLoginDevice: "ThinkPad / Windows 11",
-      lastLoginIp: "103.45.201.14",
-      activeSessions: 1
-    },
-    activity: [
-      { action: "Business Verified", module: "Verification", time: "17 Jul 2026, 10:20 AM" },
-      { action: "Business Verified", module: "Verification", time: "16 Jul 2026, 03:30 PM" }
-    ],
-    permissionsMatrix: {
-      "Verification": ["View", "Approve", "Edit"],
-      "HoReCa Directory": ["View", "Edit"],
-      "Vendor Network": ["View"]
-    }
-  },
-  {
-    id: "ADM-003",
-    name: "Neha Mathews",
-    email: "neha@hrchub.com",
-    phone: "+91 99999 33333",
-    role: "Support Admin",
-    department: "Operations & Support",
-    access: ["Complaints & Support", "HoReCa Directory", "Vendor Network"],
-    status: "Online",
-    isOnline: true,
-    lastLogin: "17 Jul 2026, 02:50 PM",
-    regDate: "14 Apr 2025",
-    createdBy: "Sarah Connor",
-    security: {
-      twoFactorStatus: "Disabled",
-      passwordLastChanged: "15 Apr 2025",
-      failedLoginAttempts: 0,
-      lastLoginDevice: "iPhone 15 / Safari",
-      lastLoginIp: "122.161.42.19",
-      activeSessions: 1
-    },
-    activity: [
-      { action: "Complaint Resolved", module: "Complaints & Support", time: "17 Jul 2026, 01:10 PM" },
-      { action: "Complaint Resolved", module: "Complaints & Support", time: "16 Jul 2026, 11:45 AM" }
-    ],
-    permissionsMatrix: {
-      "Complaints & Support": ["View", "Edit", "Approve"],
-      "HoReCa Directory": ["View"],
-      "Vendor Network": ["View"]
-    }
-  },
-  {
-    id: "ADM-004",
-    name: "Raj Patel",
-    email: "raj@hrchub.com",
-    phone: "+91 99999 44444",
-    role: "Operations Admin",
-    department: "Supply Chain",
-    access: ["HoReCa Directory", "Vendor Network", "Reports"],
-    status: "Disabled",
-    isOnline: false,
-    lastLogin: "14 May 2026, 06:10 PM",
-    regDate: "05 May 2025",
-    createdBy: "Sarah Connor",
-    security: {
-      twoFactorStatus: "Enabled",
-      passwordLastChanged: "05 May 2025",
-      failedLoginAttempts: 3,
-      lastLoginDevice: "Dell Latitude / Ubuntu",
-      lastLoginIp: "182.74.192.110",
-      activeSessions: 0
-    },
-    activity: [
-      { action: "Report Exported", module: "Reports", time: "14 May 2026, 05:30 PM" }
-    ],
-    permissionsMatrix: {
-      "HoReCa Directory": ["View", "Edit"],
-      "Vendor Network": ["View", "Edit"],
-      "Reports": ["View", "Export"]
-    }
-  },
-  {
-    id: "ADM-005",
-    name: "Amit Desai",
-    email: "amit@hrchub.com",
-    phone: "+91 99999 55555",
-    role: "Read-Only Auditor",
-    department: "Internal Audit",
-    access: ["Verification", "HoReCa Directory", "Vendor Network", "Complaints & Support", "Status & Limits", "Reports"],
-    status: "Pending Invite",
-    isOnline: false,
-    lastLogin: "Never",
-    regDate: "17 Jul 2026",
-    createdBy: "Sarah Connor",
-    security: {
-      twoFactorStatus: "Disabled",
-      passwordLastChanged: "Never",
-      failedLoginAttempts: 0,
-      lastLoginDevice: "N/A",
-      lastLoginIp: "N/A",
-      activeSessions: 0
-    },
-    activity: [],
-    permissionsMatrix: {
-      "Verification": ["View"],
-      "HoReCa Directory": ["View"],
-      "Vendor Network": ["View"],
-      "Complaints & Support": ["View"],
-      "Status & Limits": ["View"],
-      "Reports": ["View"]
-    }
-  },
-  {
-    id: "ADM-006",
-    name: "Vikram Sen",
-    email: "vikram@hrchub.com",
-    phone: "+91 99999 66666",
-    role: "Finance Admin",
-    department: "Finance & Accounts",
-    access: ["Reports", "Settings"],
-    status: "Locked",
-    isOnline: false,
-    lastLogin: "10 Jul 2026, 11:15 AM",
-    regDate: "01 Dec 2025",
-    createdBy: "Sarah Connor",
-    security: {
-      twoFactorStatus: "Enabled",
-      passwordLastChanged: "01 Dec 2025",
-      failedLoginAttempts: 5,
-      lastLoginDevice: "Lenovo / Chrome",
-      lastLoginIp: "49.36.192.15",
-      activeSessions: 0
-    },
-    activity: [
-      { action: "Report Exported", module: "Reports", time: "10 Jul 2026, 10:45 AM" }
-    ],
-    permissionsMatrix: {
-      "Reports": ["View", "Export"],
-      "Settings": ["View"]
-    }
-  }
-];
+import { fetchAdminTeam } from '../../services/api.service';
+const INITIAL_ADMINS = [];
 
 export default function Team() {
   const [admins, setAdmins] = useState([]);
@@ -263,13 +72,27 @@ export default function Team() {
   ];
 
   useEffect(() => {
-    let data = mockDb.getAdmins();
-    // Load local mock structure if details like department are missing from older mock list
-    if (!data.length || !data[0].department) {
-      data = INITIAL_ADMINS;
-      mockDb.saveAdmins(INITIAL_ADMINS);
-    }
-    setAdmins(data);
+    const loadTeam = async () => {
+      const data = await fetchAdminTeam();
+      if (data) {
+        const mapped = data.map(u => ({
+          id: u.id,
+          name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Admin User',
+          email: u.email,
+          phone: u.mobile || '-',
+          role: u.role === 'superadmin' ? 'Super Admin' : 'Verification Admin',
+          department: 'Operations',
+          status: u.status === 'suspended' ? 'Disabled' : 'Active',
+          lastLogin: 'Never',
+          access: ["Dashboard", "Verification", "HoReCa Directory", "Vendor Network"],
+          joined: new Date(u.createdAt).toLocaleDateString()
+        }));
+        setAdmins(mapped);
+      } else {
+        setAdmins([]);
+      }
+    };
+    loadTeam();
 
     const handleClickOutside = () => setActiveMenuId(null);
     document.addEventListener('click', handleClickOutside);
@@ -278,9 +101,6 @@ export default function Team() {
 
   const saveAdmins = (updated) => {
     setAdmins(updated);
-    mockDb.saveAdmins(updated);
-    // Dispatch local storage update event to keep consistent between pages
-    window.dispatchEvent(new Event('storage'));
   };
 
   const handleStatusToggle = (id) => {

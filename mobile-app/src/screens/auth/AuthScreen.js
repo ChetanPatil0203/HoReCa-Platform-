@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions, KeyboardAvoidingView, Platform, SafeAreaView, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions, KeyboardAvoidingView, Platform, SafeAreaView, Image, Alert } from 'react-native';
 import { Check, Mail, Lock, Eye, EyeOff, ShieldX, ArrowRight, Building2, User, ShieldCheck, Sparkles, ArrowLeft } from 'lucide-react-native';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
@@ -7,6 +7,7 @@ import CustomInput from '../../components/CustomInput';
 import CustomSelect from '../../components/CustomSelect';
 import PrimaryButton from '../../components/PrimaryButton';
 import { AuthContext } from '../../context/AuthContext';
+import { loginApi } from '../../services/api.service';
 
 const BUSINESS_TYPES = [
   { value: "hotel", label: "Hotel", icon: "🏨" },
@@ -109,20 +110,33 @@ export default function AuthScreen({ navigation }) {
     return Object.keys(e).length === 0;
   };
 
-  const handleLogin = () => {
-    const emailLower = loginEmail.trim().toLowerCase();
-    if (emailLower === 'admin@hrchub.in') {
-      login('superadmin', 'mock-token');
-    } else if (emailLower.includes('manpower') || emailLower.includes('elitemanpower')) {
-      login('manpower', 'mock-token', 'manpower');
-    } else if (emailLower.includes('service') || emailLower.includes('proclean')) {
-      login('serviceProvider', 'mock-token', 'service');
-    } else if (emailLower.includes('marketing') || emailLower.includes('brandcraft') || emailLower.includes('marking')) {
-      login('marketing', 'mock-token', 'marketing');
-    } else if (emailLower.includes('vendor')) {
-      login('vendor', 'mock-token', 'raw-material');
-    } else {
-      login('owner', 'mock-token');
+  const handleLogin = async () => {
+    if (!loginEmail || !loginPass) {
+      Alert.alert('Error', 'Please enter email and password.');
+      return;
+    }
+    
+    try {
+      const res = await loginApi(loginEmail, loginPass);
+      if (res && res.success) {
+        const { token, panelType, user, registration } = res.data;
+        const userData = {
+          ...user,
+          ...registration,
+          name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim(),
+          businessName: registration?.bizName || '',
+          businessType: registration?.bizCategory || '',
+          location: registration?.city || '',
+          accountStatus: 'Active',
+          verificationStatus: registration?.status === 'approved' ? 'Verified' : 'Pending Verification',
+        };
+        login(panelType, token, user?.vendorType || 'raw-material', userData);
+      } else {
+        Alert.alert('Login Failed', res?.message || 'Invalid credentials.');
+      }
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', err.response?.data?.message || 'Login failed. Please try again.');
     }
   };
 
@@ -248,39 +262,6 @@ export default function AuthScreen({ navigation }) {
       } />
       <PrimaryButton title="SIGN IN" onPress={handleLogin} style={{ marginTop: 8 }} />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 24 }}>
-        <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-        <Text style={{ fontSize: 11, fontWeight: 'bold', color: colors.muted, marginHorizontal: 12 }}>QUICK DEMO LOGIN</Text>
-        <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-      </View>
-
-      <View style={{ flexDirection: 'column', gap: 10 }}>
-        <PrimaryButton
-          title="Login as Hotel Owner"
-          onPress={() => login('owner', 'mock-jwt-token')}
-          style={{ backgroundColor: '#0F172A' }}
-        />
-        <PrimaryButton
-          title="Login as Raw Material Vendor"
-          onPress={() => login('vendor', 'mock-jwt-token', 'raw-material')}
-          style={{ backgroundColor: '#1E40AF' }}
-        />
-        <PrimaryButton
-          title="Login as Manpower Vendor"
-          onPress={() => login('manpower', 'mock-jwt-token', 'manpower')}
-          style={{ backgroundColor: '#2563EB' }}
-        />
-        <PrimaryButton
-          title="Login as Service Provider Vendor"
-          onPress={() => login('serviceProvider', 'mock-jwt-token', 'service')}
-          style={{ backgroundColor: '#10B981' }}
-        />
-        <PrimaryButton
-          title="Login as Marketing Vendor"
-          onPress={() => login('marketing', 'mock-jwt-token', 'marketing')}
-          style={{ backgroundColor: '#8B5CF6' }}
-        />
-      </View>
     </View>
   );
 

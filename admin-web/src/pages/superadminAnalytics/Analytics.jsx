@@ -14,10 +14,10 @@ export default function Analytics() {
   };
 
   const kpis = [
-    { label: "Total Platform Revenue", val: "₹ 8,75,000", change: "+18.5% last month" },
-    { label: "Fulfillment Orders", val: "6,428", change: "+15.2% last month" },
-    { label: "Average Order Value", val: "₹ 1,362", change: "+2.4% last month" },
-    { label: "New Merchants Onboarded", val: "112", change: "+122.3% last month" }
+    { label: "Total Platform Revenue", val: "₹ 0", change: "0% last month" },
+    { label: "Fulfillment Orders", val: "0", change: "0% last month" },
+    { label: "Average Order Value", val: "₹ 0", change: "0% last month" },
+    { label: "New Merchants Onboarded", val: "0", change: "0% last month" }
   ];
 
   const audits = [
@@ -83,14 +83,14 @@ export default function Analytics() {
               <line x1="0" y1="25" x2="100" y2="25" stroke="#F1F5F9" strokeWidth="0.5" />
               <line x1="0" y1="40" x2="100" y2="40" stroke="#F1F5F9" strokeWidth="0.5" />
               <path
-                d="M 0,40 L 20,32 L 40,35 L 60,18 L 80,12 L 100,16"
+                d="M 0,40 L 100,40"
                 fill="none"
                 stroke="#1E40AF"
                 strokeWidth="2"
                 strokeLinecap="round"
               />
               <path
-                d="M 0,50 L 0,40 L 20,32 L 40,35 L 60,18 L 80,12 L 100,16 L 100,50 Z"
+                d="M 0,50 L 0,40 L 100,40 L 100,50 Z"
                 fill="url(#grad-revenue)"
               />
             </svg>
@@ -117,7 +117,7 @@ export default function Analytics() {
               <line x1="0" y1="10" x2="100" y2="10" stroke="#F1F5F9" strokeWidth="0.5" />
               <line x1="0" y1="25" x2="100" y2="25" stroke="#F1F5F9" strokeWidth="0.5" />
               <line x1="0" y1="40" x2="100" y2="40" stroke="#F1F5F9" strokeWidth="0.5" />
-              {[12, 28, 18, 35, 45, 30, 42].map((height, i) => (
+              {[0, 0, 0, 0, 0, 0, 0].map((height, i) => (
                 <rect
                   key={i}
                   x={10 + i * 12}

@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions } from 'react-native';
-import { ArrowLeft, Search, Calendar, RefreshCw, FileText, Eye, Check, Pen, XCircle, ChevronRight, Package, Clock } from 'lucide-react-native';
+import React, { useState, useEffect, useContext } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions, ActivityIndicator } from 'react-native';
+import { ArrowLeft, Search, Calendar, RefreshCw, FileText, Eye, Pen, XCircle, ChevronRight, Package, Clock } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchOwnerRequirements } from '../../../services/api.service';
 
 const GOLD = '#D97706';
-
-const ALL_REQUESTS = [];
 
 const TABS = ['All', 'Active', 'Responses', 'Scheduled', 'Completed', 'Cancelled'];
 
@@ -20,11 +20,46 @@ const STATUS_COLORS = {
 export default function MyRequestsPage({ onBack, onViewResponses }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
-  
+  const { user } = useContext(AuthContext);
+  const ownerId = user?.id;
+
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredRequests = ALL_REQUESTS.filter(req => {
+  const loadRequests = async () => {
+    try {
+      setLoading(true);
+      const res = await fetchOwnerRequirements(ownerId);
+      if (res.success) {
+        // Filter only service provider requirements
+        const filtered = (res.data || [])
+          .filter(r => r.type === 'serviceProvider')
+          .map(r => ({
+            id: `#${r.id.slice(0, 8).toUpperCase()}`,
+            _rawId: r.id,
+            title: r.title,
+            category: r.extraData?.category || 'Service',
+            responseCount: 0,
+            budget: r.budget || '—',
+            date: new Date(r.createdAt).toLocaleDateString('en-IN'),
+            status: r.status === 'pending' ? 'Active' : r.status.charAt(0).toUpperCase() + r.status.slice(1)
+          }));
+        setRequests(filtered);
+      }
+    } catch (err) {
+      console.error('Failed to load owner service requirements:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRequests();
+  }, [ownerId]);
+
+  const filteredRequests = requests.filter(req => {
     const matchesSearch = 
       req.id.toLowerCase().includes(searchText.toLowerCase()) || 
       req.title.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -75,7 +110,11 @@ export default function MyRequestsPage({ onBack, onViewResponses }) {
 
           {/* Requests List */}
           <View style={styles.ordersContainer}>
-            {filteredRequests.length === 0 ? (
+            {loading ? (
+              <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={GOLD} />
+              </View>
+            ) : filteredRequests.length === 0 ? (
               <View style={styles.emptyState}>
                 <Package size={48} color="#CBD5E1" style={{ marginBottom: 16 }} />
                 <Text style={styles.emptyTitle}>No Requests Found</Text>

@@ -23,7 +23,7 @@ const NAV_BOTTOM = [
 ];
 
 export default function VendorSidebar({ activePage, setActivePage, isMobile, mobileMenuOpen, setMobileMenuOpen, onLogout }) {
-  const { vendorType } = useContext(AuthContext);
+  const { vendorType, user } = useContext(AuthContext);
 
   const filteredNav = NAV.map(item => {
     if (item.key === 'requests') {
@@ -103,17 +103,13 @@ export default function VendorSidebar({ activePage, setActivePage, isMobile, mob
         <View style={styles.profileCard}>
           <View style={styles.avatarBox}>
             <Text style={styles.avatarInitials}>
-              {vendorType === 'raw-material' ? 'MF' :
-                vendorType === 'manpower' ? 'EM' :
-                  vendorType === 'service' ? 'PC' : 'BC'}
+              {user?.businessName ? user.businessName.substring(0,2).toUpperCase() : 'VP'}
             </Text>
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.profileThe}>The</Text>
             <Text style={styles.profileName} numberOfLines={1}>
-              {vendorType === 'raw-material' ? 'Metro Fresh' :
-                vendorType === 'manpower' ? 'Elite Manpower' :
-                  vendorType === 'service' ? 'ProClean Services' : 'BrandCraft Agency'}
+              {user?.businessName || user?.name || 'Business Partner'}
             </Text>
             <Text style={styles.profileRole} numberOfLines={1}>
               {vendorType === 'raw-material' ? 'Raw Material Supplier' :

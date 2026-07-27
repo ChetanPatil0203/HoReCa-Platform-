@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, useWindowDimensions, Platform, TextInput } from 'react-native';
-import { ArrowLeft, Star, MapPin, Clock, ShieldCheck, ShoppingCart, Plus, Minus, Search, BadgeCheck, CheckCircle2, Heart } from 'lucide-react-native';
+import { ArrowLeft, Star, MapPin, Clock, ShieldCheck, ShoppingCart, Plus, Minus, Search, BadgeCheck, CheckCircle2, Heart, ChevronRight } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
-import { SUPPLIER_PRODUCTS } from '../../../constants/rawMaterialData';
+import { fetchRawMaterialProducts } from '../../../services/api.service';
 
 const PRIMARY_BTN = '#D97706'; // Orange/Gold for Add buttons
 const ACTIVE_TAB = '#16A34A'; // Green for active tabs
@@ -36,18 +36,45 @@ export default function SupplierStorePage({ supplier, cartItems, onCartUpdate, o
   
   const [activeTab, setActiveTab] = useState('All');
   const [search, setSearch] = useState('');
+  const [supplierProducts, setSupplierProducts] = useState([]);
 
-  const products = SUPPLIER_PRODUCTS[supplier.id] || [];
-  
-  const subCategories = ['All', ...new Set(products.map(p => p.subCategory).filter(Boolean))];
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const res = await fetchRawMaterialProducts(null, supplier.id);
+        if (res?.success) {
+          const mappedProducts = res.data.map((p, index) => ({
+            id: p.id,
+            name: p.name,
+            price: parseFloat(p.price),
+            originalPrice: parseFloat(p.price) * 1.2, // mock original price
+            unit: p.unit || 'kg',
+            category: p.category?.name || 'General',
+            image: null,
+            rating: 4.5,
+            stock: p.stock,
+            moq: p.moq || 1,
+            supplierId: p.supplierId,
+            supplierName: supplier.name
+          }));
+          setSupplierProducts(mappedProducts);
+        }
+      } catch (err) {
+        console.error('Error fetching products:', err);
+      }
+    };
+    loadProducts();
+  }, [supplier.id]);
+
+  const categories = ['All', ...new Set(supplierProducts.map(p => p.category))];
 
   const filteredProducts = useMemo(() => {
-    let list = products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
-    if (activeTab !== 'All') {
-      list = list.filter(p => p.subCategory === activeTab);
-    }
-    return list;
-  }, [products, search, activeTab]);
+    return supplierProducts.filter(p => {
+      const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
+      const matchesFilter = activeTab === 'All' || p.category === activeTab;
+      return matchesSearch && matchesFilter;
+    });
+  }, [search, activeTab, supplierProducts]);
 
   const cartItemCount = cartItems.reduce((sum, item) => sum + item.qty, 0);
 
@@ -164,7 +191,7 @@ export default function SupplierStorePage({ supplier, cartItems, onCartUpdate, o
 
         {/* ── Category Chips ── */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll} contentContainerStyle={styles.tabsContainer}>
-          {subCategories.map(cat => (
+          {categories.map(cat => (
             <TouchableOpacity 
               key={cat} 
               style={[styles.tab, activeTab === cat && styles.activeTab]}
@@ -228,7 +255,11 @@ export default function SupplierStorePage({ supplier, cartItems, onCartUpdate, o
                       {inStock && qty === 0 && (
                         <TouchableOpacity 
                           style={styles.cartRowBtn}
-                          onPress={() => handleAddToCart(product, product.moq)}
+                          onPress={(e) => {
+                            if (e && e.stopPropagation) e.stopPropagation();
+                            if (e && e.preventDefault) e.preventDefault();
+                            handleAddToCart(product, product.moq);
+                          }}
                           activeOpacity={0.8}
                         >
                           <ShoppingCart size={14} color="#fff" />
@@ -237,13 +268,21 @@ export default function SupplierStorePage({ supplier, cartItems, onCartUpdate, o
                       )}
                       {inStock && qty > 0 && (
                         <View style={styles.qtyBox}>
-                          <TouchableOpacity style={styles.qtyBtn} onPress={() => handleAddToCart(product, -1)}>
+                          <TouchableOpacity style={styles.qtyBtn} onPress={(e) => {
+                            if (e && e.stopPropagation) e.stopPropagation();
+                            if (e && e.preventDefault) e.preventDefault();
+                            handleAddToCart(product, -1);
+                          }}>
                             <Minus size={14} color={PRIMARY_BTN} />
                           </TouchableOpacity>
                           <View style={styles.qtyValBox}>
                             <Text style={styles.qtyText}>{qty}</Text>
                           </View>
-                          <TouchableOpacity style={styles.qtyBtn} onPress={() => handleAddToCart(product, 1)}>
+                          <TouchableOpacity style={styles.qtyBtn} onPress={(e) => {
+                            if (e && e.stopPropagation) e.stopPropagation();
+                            if (e && e.preventDefault) e.preventDefault();
+                            handleAddToCart(product, 1);
+                          }}>
                             <Plus size={14} color={PRIMARY_BTN} />
                           </TouchableOpacity>
                         </View>
@@ -263,6 +302,24 @@ export default function SupplierStorePage({ supplier, cartItems, onCartUpdate, o
           </View>
         )}
       </ScrollView>
+
+      {/* ── Floating Cart Banner ── */}
+      {cartItems.length > 0 && (
+        <View style={styles.floatingCartWrap}>
+          <TouchableOpacity style={styles.floatingCartBtn} onPress={onViewCart} activeOpacity={0.9}>
+            <View style={styles.floatingCartLeft}>
+              <Text style={styles.floatingCartItemsText}>{cartItems.reduce((acc, i) => acc + i.qty, 0)} Items</Text>
+              <Text style={styles.floatingCartPriceText}>
+                ₹{cartItems.reduce((acc, i) => acc + ((i.price || 0) * i.qty), 0).toLocaleString()}
+              </Text>
+            </View>
+            <View style={styles.floatingCartRight}>
+              <Text style={styles.floatingCartActionText}>View Cart</Text>
+              <ChevronRight size={16} color="#fff" />
+            </View>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
@@ -456,5 +513,18 @@ const styles = StyleSheet.create({
 
   emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
   emptyTitle: { fontSize: 16, fontWeight: '800', color: NAVY, marginBottom: 4 },
-  emptySub: { fontSize: 13, color: '#64748B' }
+  emptySub: { fontSize: 13, color: '#64748B' },
+
+  floatingCartWrap: { position: 'absolute', bottom: 16, left: 16, right: 16, alignItems: 'center' },
+  floatingCartBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    width: '100%', maxWidth: 400, height: 56, borderRadius: 16, paddingHorizontal: 20,
+    backgroundColor: PRIMARY_BTN,
+    ...Platform.select({ web: { boxShadow: '0 8px 32px rgba(217, 119, 6, 0.4)' }, ios: { shadowColor: '#D97706', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 12 }, android: { elevation: 12 } })
+  },
+  floatingCartLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  floatingCartItemsText: { fontSize: 13, fontWeight: '800', color: '#fff' },
+  floatingCartPriceText: { fontSize: 15, fontWeight: '900', color: '#fff' },
+  floatingCartRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  floatingCartActionText: { fontSize: 14, fontWeight: '800', color: '#fff' }
 });

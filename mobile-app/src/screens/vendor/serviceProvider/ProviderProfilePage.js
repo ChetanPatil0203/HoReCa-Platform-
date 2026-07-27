@@ -53,7 +53,7 @@ export default function ProviderProfilePage() {
   const [documentModalVisible, setDocumentModalVisible] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState(null);
 
-  const { logout } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
 
   const handleLogout = () => {
     if (Platform.OS === 'web') {
@@ -135,10 +135,10 @@ export default function ProviderProfilePage() {
         <View style={styles.profileCard}>
           <View style={styles.profileTopRow}>
             <View style={styles.avatarBox}>
-              <Text style={styles.avatarText}>PS</Text>
+              <Text style={styles.avatarText}>{user?.bizName ? user.bizName.substring(0, 2).toUpperCase() : 'PS'}</Text>
             </View>
             <View style={styles.profileIdentity}>
-              <Text style={styles.businessName}>{profile.businessName}</Text>
+              <Text style={styles.businessName}>{user?.bizName || profile.businessName || 'Service Provider'}</Text>
               <View style={styles.badgesRow}>
                 <View style={styles.verifiedBadge}>
                   <BadgeCheck size={12} color="#2563EB" />
@@ -157,15 +157,15 @@ export default function ProviderProfilePage() {
           <View style={styles.contactDetails}>
             <View style={styles.contactRow}>
               <Phone size={14} color="#64748B" />
-              <Text style={styles.contactText}>{profile.mobile}</Text>
+              <Text style={styles.contactText}>{user?.mobile || profile.mobile || 'Not provided'}</Text>
             </View>
             <View style={styles.contactRow}>
               <Mail size={14} color="#64748B" />
-              <Text style={styles.contactText}>{profile.email}</Text>
+              <Text style={styles.contactText}>{user?.email || profile.email || 'Not provided'}</Text>
             </View>
             <View style={styles.contactRow}>
               <MapPin size={14} color="#64748B" />
-              <Text style={styles.contactText}>{profile.city}, {profile.state}</Text>
+              <Text style={styles.contactText}>{user?.city || profile.city || 'City'}, {user?.state || profile.state || 'State'}</Text>
             </View>
           </View>
 
@@ -188,23 +188,23 @@ export default function ProviderProfilePage() {
               <View style={styles.infoGrid}>
                 <View style={styles.infoItem}>
                   <Text style={styles.infoLabel}>Business Type</Text>
-                  <Text style={styles.infoValue}>Service Provider</Text>
+                  <Text style={styles.infoValue}>Vendor / Supplier</Text>
                 </View>
                 <View style={styles.infoItem}>
                   <Text style={styles.infoLabel}>Business Category</Text>
-                  <Text style={styles.infoValue}>Professional Services</Text>
+                  <Text style={styles.infoValue}>{user?.bizCategory || user?.vendorType || 'Professional Services'}</Text>
                 </View>
                 <View style={styles.infoItem}>
                   <Text style={styles.infoLabel}>GST Number</Text>
-                  <Text style={styles.infoValue}>27ABCDE1234F1Z5</Text>
+                  <Text style={styles.infoValue}>{user?.gstin || 'Not Provided'}</Text>
                 </View>
                 <View style={styles.infoItem}>
-                  <Text style={styles.infoLabel}>PAN Number</Text>
-                  <Text style={styles.infoValue}>ABCDE1234F</Text>
+                  <Text style={styles.infoLabel}>Contact Person</Text>
+                  <Text style={styles.infoValue}>{user?.contactPerson || user?.firstName || 'Not Provided'}</Text>
                 </View>
                 <View style={styles.infoItemFull}>
-                  <Text style={styles.infoLabel}>Registration Number</Text>
-                  <Text style={styles.infoValue}>BRN-27-00012345</Text>
+                  <Text style={styles.infoLabel}>Status</Text>
+                  <Text style={styles.infoValue} style={{textTransform: 'capitalize'}}>{user?.status || 'Pending'}</Text>
                 </View>
               </View>
             </View>

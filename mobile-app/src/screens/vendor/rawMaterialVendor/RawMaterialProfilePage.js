@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, SafeAreaView, Dimensions,
@@ -21,7 +21,7 @@ const MUTED = '#64748B';
 export default function RawMaterialProfilePage() {
   const { width } = Dimensions.get('window');
   const isMobile = width < 768;
-  const { logout } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
 
   const [editProfileModal, setEditProfileModal] = useState(false);
   const [manageCatModal, setManageCatModal] = useState(false);
@@ -80,6 +80,31 @@ export default function RawMaterialProfilePage() {
     }
   };
 
+  useEffect(() => {
+    if (editProfileModal && user) {
+      setProfileForm({
+        businessName: user.businessName || user.bizName || '',
+        contactPerson: user.contactPerson || user.firstName || '',
+        mobileNumber: user.mobile || user.phone || '',
+        email: user.email || '',
+        address: user.address || '',
+        city: user.city || '',
+        state: user.state || '',
+        pincode: user.pincode || ''
+      });
+    }
+  }, [editProfileModal, user]);
+
+  const displayName = user?.businessName || user?.bizName || profileForm.businessName || 'Vendor Agency';
+  const displayContact = user?.contactPerson || user?.firstName || profileForm.contactPerson || 'Not Provided';
+  const displayMobile = user?.mobile || user?.phone || profileForm.mobileNumber || 'Not available';
+  const displayEmail = user?.email || profileForm.email || 'Not available';
+  const displayCity = user?.city || profileForm.city || 'Not available';
+  const displayState = user?.state || profileForm.state || '';
+  const displayCategory = user?.businessType || user?.bizCategory || user?.vendorType || 'Food & Hospitality Supplies';
+  const displayGst = user?.gstin || 'Not Provided';
+  const displayStatus = user?.verificationStatus || user?.status || 'Pending';
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -95,10 +120,10 @@ export default function RawMaterialProfilePage() {
           <View style={styles.profileCard}>
             <View style={styles.profileTopRow}>
               <View style={styles.avatarBox}>
-                <Text style={styles.avatarInitial}>MF</Text>
+                <Text style={styles.avatarInitial}>{displayName.substring(0, 2).toUpperCase()}</Text>
               </View>
               <View style={styles.profileInfo}>
-                <Text style={styles.businessName}>Metro Fresh</Text>
+                <Text style={styles.businessName}>{displayName}</Text>
                 <View style={styles.badgeRow}>
                   <BadgeCheck size={14} color="#10B981" />
                   <Text style={styles.badgeText}>Verified Supplier</Text>
@@ -113,15 +138,15 @@ export default function RawMaterialProfilePage() {
             <View style={styles.contactDetailsWrapper}>
               <View style={styles.contactRow}>
                 <Phone size={14} color={MUTED} style={styles.contactIcon} />
-                <Text style={styles.contactText}>{profileForm.mobileNumber}</Text>
+                <Text style={styles.contactText}>{displayMobile}</Text>
               </View>
               <View style={styles.contactRow}>
                 <Mail size={14} color={MUTED} style={styles.contactIcon} />
-                <Text style={styles.contactText}>{profileForm.email}</Text>
+                <Text style={styles.contactText}>{displayEmail}</Text>
               </View>
               <View style={styles.contactRow}>
                 <MapPin size={14} color={MUTED} style={styles.contactIcon} />
-                <Text style={styles.contactText}>{profileForm.city}, {profileForm.state}</Text>
+                <Text style={styles.contactText}>{displayCity}{displayState ? `, ${displayState}` : ''}</Text>
               </View>
             </View>
 
@@ -150,19 +175,19 @@ export default function RawMaterialProfilePage() {
                   </View>
                   <View style={styles.infoCol}>
                     <Text style={styles.infoLabel}>BUSINESS CATEGORY</Text>
-                    <Text style={styles.infoValue}>Food & Hospitality Supplies</Text>
+                    <Text style={styles.infoValue}>{displayCategory}</Text>
                   </View>
                   <View style={styles.infoCol}>
                     <Text style={styles.infoLabel}>GST NUMBER</Text>
-                    <Text style={styles.infoValue}>27ABCDE1234F1Z5</Text>
+                    <Text style={styles.infoValue}>{displayGst}</Text>
                   </View>
                   <View style={styles.infoCol}>
-                    <Text style={styles.infoLabel}>PAN NUMBER</Text>
-                    <Text style={styles.infoValue}>ABCDE1234F</Text>
+                    <Text style={styles.infoLabel}>CONTACT PERSON</Text>
+                    <Text style={styles.infoValue}>{displayContact}</Text>
                   </View>
                   <View style={styles.infoCol}>
-                    <Text style={styles.infoLabel}>REGISTRATION NUMBER</Text>
-                    <Text style={styles.infoValue}>BRN-27-00012345</Text>
+                    <Text style={styles.infoLabel}>STATUS</Text>
+                    <Text style={styles.infoValue} style={{textTransform: 'capitalize'}}>{displayStatus}</Text>
                   </View>
                 </View>
               </View>

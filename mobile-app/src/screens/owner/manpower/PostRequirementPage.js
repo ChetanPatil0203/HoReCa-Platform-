@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Switch, Platform, useWindowDimensions } from 'react-native';
 import { ArrowLeft, CheckCircle, Building, ShieldCheck, MapPin } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
+import { AuthContext } from '../../../context/AuthContext';
+import { createRequirementApi } from '../../../services/api.service';
 
 const GOLD = '#D97706';
 const BLUE = '#2563EB';
@@ -9,6 +11,8 @@ const BLUE = '#2563EB';
 export default function PostRequirementPage({ onBack, onViewRequirements }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
+  const { user } = useContext(AuthContext);
+  const ownerId = user?.id;
 
   const [isSuccess, setIsSuccess] = useState(false);
   const [errors, setErrors] = useState({});
@@ -39,7 +43,7 @@ export default function PostRequirementPage({ onBack, onViewRequirements }) {
     }
   };
 
-  const validateAndSubmit = () => {
+  const validateAndSubmit = async () => {
     const newErrors = {};
     if (!formData.jobRole.trim()) newErrors.jobRole = 'Job Role is required';
     if (!formData.numberOfStaff.trim()) newErrors.numberOfStaff = 'Number of staff is required';
@@ -52,8 +56,32 @@ export default function PostRequirementPage({ onBack, onViewRequirements }) {
       return;
     }
 
-    // Success!
-    setIsSuccess(true);
+    try {
+      await createRequirementApi({
+        ownerId,
+        type: 'manpower',
+        requestType: 'public',
+        title: formData.jobRole,
+        description: formData.description,
+        budget: formData.salaryRange,
+        location: formData.location,
+        extraData: {
+          numberOfStaff: formData.numberOfStaff,
+          experience: formData.experience,
+          employmentType: formData.employmentType,
+          shift: formData.shift,
+          joiningDate: formData.joiningDate,
+          accommodation: formData.accommodation,
+          food: formData.food,
+          weeklyOff: formData.weeklyOff,
+          workingHours: formData.workingHours,
+          urgentRequirement: formData.urgentRequirement,
+        }
+      });
+      setIsSuccess(true);
+    } catch (err) {
+      console.error('Failed to post manpower requirement:', err);
+    }
   };
 
   if (isSuccess) {

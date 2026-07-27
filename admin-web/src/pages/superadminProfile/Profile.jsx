@@ -12,14 +12,14 @@ export default function Profile() {
   const [toasts, setToasts] = useState([]);
 
   // Profile Information States
-  const [profileName, setProfileName] = useState("Sarah Connor");
-  const [profileEmail, setProfileEmail] = useState("sarah@hrchub.com");
-  const [profilePhone, setProfilePhone] = useState("+91 99999 11111");
-  const [employeeId, setEmployeeId] = useState("EMP-98210");
-  const [department, setDepartment] = useState("Information Technology");
-  const [designation, setDesignation] = useState("Lead Systems Security Admin");
-  const [joiningDate, setJoiningDate] = useState("2025-01-10");
-  const [bio, setBio] = useState("Super Admin operator managing HRC HUB directory catalog, safety policies, support desk routing, and escrow verification operations.");
+  const [profileName, setProfileName] = useState("Admin");
+  const [profileEmail, setProfileEmail] = useState("admin@hrchub.com");
+  const [profilePhone, setProfilePhone] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
+  const [department, setDepartment] = useState("");
+  const [designation, setDesignation] = useState("");
+  const [joiningDate, setJoiningDate] = useState("");
+  const [bio, setBio] = useState("");
   const [photo, setPhoto] = useState(null);
 
   // Security States
@@ -28,28 +28,16 @@ export default function Profile() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPasswords, setShowPasswords] = useState(false);
 
-  // Mock Active Sessions
+  // Active Sessions
   const [activeSessions, setActiveSessions] = useState([
-    { id: "S1", device: "MacBook Pro 16\"", browser: "Chrome 126", location: "Mumbai, India", loginTime: "17 Jul 2026, 03:00 PM", status: "Active", current: true },
-    { id: "S2", device: "iPhone 15 Pro", browser: "Safari 17", location: "Pune, India", loginTime: "17 Jul 2026, 12:45 PM", status: "Active", current: false },
-    { id: "S3", device: "ThinkPad T14", browser: "Firefox 125", location: "New Delhi, India", loginTime: "14 Jul 2026, 09:10 AM", status: "Inactive", current: false },
+    { id: "S1", device: "Web Browser", browser: "Current Session", location: "Localhost", loginTime: "Just now", status: "Active", current: true }
   ]);
 
-  // Mock Activity Logs
-  const [activityHistory, setActivityHistory] = useState([
-    { id: 1, action: "Login Successful", time: "17 Jul 2026, 03:00 PM" },
-    { id: 2, action: "Profile Updated", time: "17 Jul 2026, 02:30 PM" },
-    { id: 3, action: "Password Changed", time: "12 May 2026, 11:15 AM" },
-    { id: 4, action: "Email Updated", time: "10 Jan 2026, 09:30 AM" },
-    { id: 5, action: "Role Updated", time: "05 Jan 2026, 02:15 PM" }
-  ]);
+  // Activity Logs
+  const [activityHistory, setActivityHistory] = useState([]);
 
-  // Mock Security Alerts
-  const [alerts] = useState([
-    { id: 1, label: "Password Updated", desc: "Password credentials changed.", time: "12 May 2026, 11:15 AM" },
-    { id: 2, label: "Last Login Successful", desc: "Access from verified IP.", time: "17 Jul 2026, 03:00 PM" },
-    { id: 3, label: "New Device Login", desc: "Access on Safari/Mobile.", time: "17 Jul 2026, 12:45 PM" }
-  ]);
+  // Security Alerts
+  const [alerts] = useState([]);
 
   const showToast = (message, type = 'success') => {
     const id = Math.random().toString(36).substring(2, 9);

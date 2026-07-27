@@ -11,6 +11,7 @@ import PasswordField from '../../components/auth/PasswordField';
 import SelectField from '../../components/auth/SelectField';
 import PrimaryButton from '../../components/auth/PrimaryButton';
 import { AUTH_COLORS } from '../../components/auth/AuthTheme';
+import { registerApi } from '../../services/api.service';
 
 const CITIES = ['Mumbai', 'Delhi', 'Bengaluru', 'Pune', 'Hyderabad', 'Chennai', 'Kolkata', 'Ahmedabad'];
 
@@ -33,6 +34,7 @@ export default function RegisterStepTwoScreen({ navigation, route }) {
   const [pwdError, setPwdError] = useState('');
   const [confError, setConfError] = useState('');
   const [cityError, setCityError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validate = () => {
     let isValid = true;
@@ -66,10 +68,20 @@ export default function RegisterStepTwoScreen({ navigation, route }) {
     return isValid;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!validate()) return;
     const registrationData = { ...existingState, firstName, lastName, email, password, confirmPassword, city };
-    navigation.navigate('RegisterStepThree', { registrationData });
+    
+    setIsSubmitting(true);
+    try {
+      const response = await registerApi(registrationData);
+      const token = response?.data?.token || response?.token;
+      navigation.navigate('RegisterStepThree', { registrationData, token });
+    } catch (error) {
+      alert(error.response?.data?.message || error.message || 'Registration failed.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const docCount = Object.keys(existingState.documents || {}).length;
@@ -216,10 +228,11 @@ export default function RegisterStepTwoScreen({ navigation, route }) {
             <Text style={styles.backBtnText}>Back to Business Details</Text>
           </TouchableOpacity>
           <PrimaryButton 
-            title="NEXT: COMPLETE SECURITY" 
-            icon={ArrowRight} 
+            title={isSubmitting ? "REGISTERING..." : "NEXT: COMPLETE SECURITY"} 
+            icon={isSubmitting ? null : ArrowRight} 
             onPress={handleNext} 
-            disabled={!isFormComplete()} 
+            disabled={!isFormComplete() || isSubmitting}
+            loading={isSubmitting}
           />
         </View>
 

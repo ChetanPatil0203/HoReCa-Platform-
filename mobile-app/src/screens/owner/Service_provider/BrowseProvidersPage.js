@@ -1,23 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions, SafeAreaView } from 'react-native';
 import { ArrowLeft, Search, Star, ShieldCheck, MapPin, Briefcase, SlidersHorizontal, ClipboardCheck } from 'lucide-react-native';
+import { fetchServiceProviders } from '../../../services/api.service';
 
 const NAVY = '#0E2042';
 const GOLD = '#F59E0B'; // Changed to match HRC HUB primary CTA Gold/Orange
 const BLUE = '#2563EB';
 const GREEN = '#10B981';
 
-const MOCK_PROVIDERS = [];
-
 export default function BrowseProvidersPage({ onBack, onViewProfile, onSendRequest }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
+  const [providers, setProviders] = useState([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetchServiceProviders();
+        if (res.success) {
+          const mapped = res.data.map(v => ({
+            id: v.id,
+            name: v.bizName || 'Unknown Provider',
+            verified: v.status === 'approved',
+            rating: 4.7,
+            location: v.city || 'Unknown',
+            experience: '5+ Years',
+            jobs: 120,
+            categories: v.subCategory ? v.subCategory.split(',').map(s => s.trim()) : ['General Maintenance'],
+            availability: 'Available Today'
+          }));
+          setProviders(mapped);
+        }
+      } catch (err) {
+        console.warn('Error fetching service providers:', err);
+      }
+    };
+    load();
+  }, []);
 
   const categories = ['All', 'Cleaning', 'Pest Control', 'Plumbing', 'Electrical', 'AC & Refrigeration', 'Maintenance'];
 
-  const filteredProviders = MOCK_PROVIDERS.filter(provider => {
+  const filteredProviders = providers.filter(provider => {
     if (searchQuery && !provider.name.toLowerCase().includes(searchQuery.toLowerCase()) && !provider.categories.some(c => c.toLowerCase().includes(searchQuery.toLowerCase())) && !provider.location.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     if (activeCategory !== 'All' && !provider.categories.includes(activeCategory)) return false;
     return true;

@@ -1,82 +1,58 @@
-import React, { useState, useContext } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, KeyboardAvoidingView, Platform, Share, Alert } from 'react-native';
-import { Search, Download, Plus, X, Pen } from 'lucide-react-native';
+import React, { useState, useEffect, useContext } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, KeyboardAvoidingView, Platform, Share, Alert, ActivityIndicator } from 'react-native';
+import { Search, Download, Plus, X, Pen, RefreshCw } from 'lucide-react-native';
 import { colors } from '../../theme/colors';
 import { AuthContext } from '../../context/AuthContext';
+import { fetchRawMaterialProducts, createRawMaterialProduct } from '../../services/api.service';
 
-const INVENTORY_DATA_BY_TYPE = {
-  "raw-material": [
-    { id: "PFS-GRN-001", name: "Premium Basmati Rice", category: "Grains", stock: "2,400", unit: "Kg", price: "₹ 85", minOrder: "50 Kg", status: "In Stock" },
-    { id: "PFS-GRN-002", name: "Sona Masoori Rice", category: "Grains", stock: "1,500", unit: "Kg", price: "₹ 58", minOrder: "25 Kg", status: "In Stock" },
-    { id: "PFS-FLR-001", name: "Wheat Flour (Atta)", category: "Flour", stock: "3,200", unit: "Kg", price: "₹ 44", minOrder: "20 Kg", status: "In Stock" },
-    { id: "PFS-FLR-002", name: "Maida (Refined Flour)", category: "Flour", stock: "2,100", unit: "Kg", price: "₹ 38", minOrder: "20 Kg", status: "In Stock" },
-    { id: "PFS-PLS-001", name: "Toor Dal", category: "Pulses", stock: "850", unit: "Kg", price: "₹ 115", minOrder: "10 Kg", status: "In Stock" },
-    { id: "PFS-PLS-002", name: "Chana Dal", category: "Pulses", stock: "720", unit: "Kg", price: "₹ 50", minOrder: "10 Kg", status: "In Stock" },
-    { id: "PFS-PLS-003", name: "Urad Dal (Whole)", category: "Pulses", stock: "0", unit: "Kg", price: "₹ 130", minOrder: "10 Kg", status: "Out of Stock" },
-    { id: "PFS-OIL-001", name: "Refined Sunflower Oil", category: "Oils", stock: "1,200", unit: "L", price: "₹ 145", minOrder: "10 L", status: "In Stock" },
-    { id: "PFS-SWT-001", name: "Sugar (Fine Grade M30)", category: "Sweeteners", stock: "5,000", unit: "Kg", price: "₹ 48", minOrder: "25 Kg", status: "In Stock" },
-    { id: "PFS-SWT-002", name: "Jaggery (Gur) Blocks", category: "Sweeteners", stock: "280", unit: "Kg", price: "₹ 72", minOrder: "10 Kg", status: "In Stock" },
-  ],
-  "manpower": [
-    { id: "EMP-KIT-001", name: "Executive Chef", category: "Kitchen Staff", stock: "8", unit: "agents", price: "₹ 1,200", minOrder: "1 person", status: "In Stock" },
-    { id: "EMP-KIT-002", name: "Sous Chef", category: "Kitchen Staff", stock: "12", unit: "agents", price: "₹ 900", minOrder: "1 person", status: "In Stock" },
-    { id: "EMP-FNB-001", name: "F&B Banquet Server", category: "F&B Staff", stock: "45", unit: "agents", price: "₹ 450", minOrder: "5 persons", status: "In Stock" },
-    { id: "EMP-FNB-002", name: "Barista (Latte Art Pro)", category: "F&B Staff", stock: "10", unit: "agents", price: "₹ 600", minOrder: "1 person", status: "In Stock" },
-    { id: "EMP-HSP-001", name: "Hostess / Front Desk", category: "Hospitality", stock: "15", unit: "agents", price: "₹ 700", minOrder: "1 person", status: "In Stock" },
-    { id: "EMP-SEC-001", name: "Night Security Guard", category: "Security", stock: "0", unit: "agents", price: "₹ 800", minOrder: "2 persons", status: "Out of Stock" },
-  ],
-  "service": [
-    { id: "PCS-MNT-001", name: "HVAC Annual AMC Maintenance", category: "Maintenance", stock: "5", unit: "teams", price: "₹ 85,000", minOrder: "1 contract", status: "In Stock" },
-    { id: "PCS-CLN-001", name: "Kitchen Hood Deep Cleaning", category: "Cleaning", stock: "8", unit: "teams", price: "₹ 15,000", minOrder: "1 section", status: "In Stock" },
-    { id: "PCS-PST-001", name: "FSSAI Pest Control", category: "Pest Control", stock: "12", unit: "teams", price: "₹ 4,800", minOrder: "1 property", status: "In Stock" },
-    { id: "PCS-ELC-001", name: "Commercial Electrical Audit", category: "Electrical", stock: "4", unit: "teams", price: "₹ 12,000", minOrder: "1 audit", status: "In Stock" },
-    { id: "PCS-PLM-001", name: "Plumbing Emergency Support", category: "Plumbing", stock: "0", unit: "teams", price: "₹ 3,500", minOrder: "1 visit", status: "Out of Stock" },
-  ],
-  "marketing": [
-    { id: "BCM-SOC-001", name: "Social Media Campaign (Monthly)", category: "Social Media", stock: "4", unit: "slots", price: "₹ 40,000", minOrder: "1 month", status: "In Stock" },
-    { id: "BCM-PHO-001", name: "Professional Food Photography", category: "Creative", stock: "6", unit: "slots", price: "₹ 18,000", minOrder: "1 photoshoot", status: "In Stock" },
-    { id: "BCM-ADS-001", name: "Google & Meta Ads Setup", category: "Paid Ads", stock: "3", unit: "slots", price: "₹ 24,000", minOrder: "3 months", status: "In Stock" },
-    { id: "BCM-PRL-001", name: "PR & Influencer Campaign", category: "Public Relations", stock: "5", unit: "slots", price: "₹ 55,000", minOrder: "1 campaign", status: "In Stock" },
-    { id: "BCM-CRE-001", name: "Menu Design & Rebranding", category: "Creative", stock: "0", unit: "slots", price: "₹ 12,500", minOrder: "1 service", status: "Out of Stock" },
-  ],
-};
+// Map a backend Product record to the UI shape expected by the card renderer
+const mapProduct = (p) => ({
+  id: p.id,
+  name: p.name,
+  category: p.category?.name || 'Uncategorised',
+  stock: String(p.stock ?? 0),
+  unit: p.unit || 'units',
+  price: `₹ ${parseFloat(p.price || 0).toFixed(0)}`,
+  minOrder: `${p.moq ?? 1}`,
+  status: (p.stock ?? 0) > 0 ? 'In Stock' : 'Out of Stock',
+});
 
 const METADATA_BY_TYPE = {
   "raw-material": {
-    title: "Inventory Control", subTag: "RAW MATERIAL INVENTORY CONTROL", supplier: "Metro Fresh Supplies",
+    title: "Inventory Control", subTag: "RAW MATERIAL INVENTORY CONTROL",
     supplierLabel: "Supplier", totalLabel: "Total SKUs", activeLabel: "In Stock", inactiveLabel: "Out of Stock",
-    valLabel: "Inventory Value", val: "₹12.4L", addBtnLabel: "Add Bulk Stock", priceLabel: "WHOLESALE PRICE",
+    valLabel: "Total Products", addBtnLabel: "Add Product", priceLabel: "WHOLESALE PRICE",
     qtyLabel: "MIN ORDER QTY", stockLabel: "Stock:", priceUnit: "kg",
-    categories: ["Grains", "Flour", "Pulses", "Oils", "Sweeteners"],
+    categories: ["Grains", "Flour", "Pulses", "Oils", "Sweeteners", "Dairy", "Spices", "Other"],
     color: "#F59E0B", bg: "#FFFBEB",
-    iconMap: { "Grains": "🌾", "Flour": "🍞", "Pulses": "🥣", "Oils": "🫙", "Sweeteners": "🍬" },
+    iconMap: { "Grains": "🌾", "Flour": "🍞", "Pulses": "🥣", "Oils": "🫙", "Sweeteners": "🍬", "Dairy": "🥛", "Spices": "🌶️", "Other": "📦" },
   },
   "manpower": {
-    title: "Roster Management", subTag: "STAFF ROSTER CONTROL", supplier: "Elite Staffing Co.",
+    title: "Roster Management", subTag: "STAFF ROSTER CONTROL",
     supplierLabel: "Agency", totalLabel: "Staff Roles", activeLabel: "Available", inactiveLabel: "Fully Deployed",
-    valLabel: "Monthly Payroll Est.", val: "₹4.8L", addBtnLabel: "Add Personnel", priceLabel: "RATE PER SHIFT",
+    valLabel: "Total Listings", addBtnLabel: "Add Personnel", priceLabel: "RATE PER SHIFT",
     qtyLabel: "MIN CONTRACT", stockLabel: "Active Pool:", priceUnit: "shift",
-    categories: ["Kitchen Staff", "F&B Staff", "Hospitality", "Security"],
+    categories: ["Kitchen Staff", "F&B Staff", "Hospitality", "Security", "Other"],
     color: "#2563EB", bg: "#EFF6FF",
-    iconMap: { "Kitchen Staff": "👨‍🍳", "F&B Staff": "🤵", "Hospitality": "☕", "Security": "👮" },
+    iconMap: { "Kitchen Staff": "👨‍🍳", "F&B Staff": "🤵", "Hospitality": "☕", "Security": "👮", "Other": "👤" },
   },
   "service": {
-    title: "Services Catalog", subTag: "FACILITIES SERVICES CONTROL", supplier: "ProClean Services",
+    title: "Services Catalog", subTag: "FACILITIES SERVICES CONTROL",
     supplierLabel: "Provider", totalLabel: "Total Services", activeLabel: "Active Teams", inactiveLabel: "Fully Booked",
-    valLabel: "Operational Value", val: "₹3.2L", addBtnLabel: "Add Service Item", priceLabel: "BASE SERVICE RATE",
+    valLabel: "Total Services", addBtnLabel: "Add Service Item", priceLabel: "BASE SERVICE RATE",
     qtyLabel: "MIN BOOKING", stockLabel: "Teams Available:", priceUnit: "job",
-    categories: ["Maintenance", "Cleaning", "Pest Control", "Electrical", "Plumbing"],
+    categories: ["Maintenance", "Cleaning", "Pest Control", "Electrical", "Plumbing", "Other"],
     color: "#10B981", bg: "#ECFDF5",
-    iconMap: { "Maintenance": "🔧", "Cleaning": "🧹", "Pest Control": "🐜", "Electrical": "⚡", "Plumbing": "🫗" },
+    iconMap: { "Maintenance": "🔧", "Cleaning": "🧹", "Pest Control": "🐜", "Electrical": "⚡", "Plumbing": "🫗", "Other": "🛠️" },
   },
   "marketing": {
-    title: "Campaign Catalog", subTag: "MARKETING SERVICES CONTROL", supplier: "BrandCraft Agency",
+    title: "Campaign Catalog", subTag: "MARKETING SERVICES CONTROL",
     supplierLabel: "Agency", totalLabel: "Total Packages", activeLabel: "Available Slots", inactiveLabel: "Sold Out",
-    valLabel: "Pipeline Value", val: "₹2.9L", addBtnLabel: "Add Package", priceLabel: "BASE PACKAGE RATE",
+    valLabel: "Total Packages", addBtnLabel: "Add Package", priceLabel: "BASE PACKAGE RATE",
     qtyLabel: "MIN PERIOD", stockLabel: "Open Slots:", priceUnit: "pkg",
-    categories: ["Social Media", "Creative", "Paid Ads", "Public Relations"],
+    categories: ["Social Media", "Creative", "Paid Ads", "Public Relations", "Other"],
     color: "#8B5CF6", bg: "#F5F3FF",
-    iconMap: { "Social Media": "📱", "Creative": "📷", "Paid Ads": "📈", "Public Relations": "📣" },
+    iconMap: { "Social Media": "📱", "Creative": "📷", "Paid Ads": "📈", "Public Relations": "📣", "Other": "📦" },
   },
 };
 
@@ -86,13 +62,36 @@ const TODAY = new Date().toLocaleDateString('en-IN', {
 });
 
 export default function VendorInventoryPage() {
-  const { vendorType } = useContext(AuthContext);
+  const { vendorType, user } = useContext(AuthContext);
   const type = vendorType || 'raw-material';
   const meta = METADATA_BY_TYPE[type] || METADATA_BY_TYPE["raw-material"];
+  const supplierId = user?.id;
 
-  const [inventory, setInventory] = useState(
-    () => INVENTORY_DATA_BY_TYPE[type] || INVENTORY_DATA_BY_TYPE["raw-material"]
-  );
+  const [inventory, setInventory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // ── Fetch from backend ─────────────────────────────────
+  const loadInventory = async (silent = false) => {
+    if (!supplierId) { setLoading(false); return; }
+    try {
+      if (!silent) setLoading(true);
+      setError(null);
+      const res = await fetchRawMaterialProducts(null, supplierId);
+      if (res?.success) {
+        setInventory((res.data || []).map(mapProduct));
+      } else {
+        setError(res?.message || 'Failed to load inventory.');
+      }
+    } catch (err) {
+      console.error('VendorInventoryPage: fetchRawMaterialProducts error:', err);
+      setError('Could not connect to server.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { loadInventory(); }, [supplierId]);
 
   // ── Search state ───────────────────────────────────────
   const [searchText, setSearchText] = useState('');
@@ -152,26 +151,33 @@ export default function VendorInventoryPage() {
     setErrors({});
   };
 
-  // ── Add new item ───────────────────────────────────────
-  const handleAddItem = () => {
+  // ── Add new item (via API) ─────────────────────────────
+  const handleAddItem = async () => {
     if (!validate()) return;
     const unitMap = { "raw-material": "Kg", manpower: "agents", service: "teams", marketing: "slots" };
-    const newItem = {
-      id: type.toUpperCase().slice(0, 3) + "-" + category.toUpperCase().slice(0, 3) + "-" + Math.floor(Math.random() * 900 + 100),
-      name: name.trim(),
-      category,
-      stock: Number(stock).toLocaleString("en-IN"),
-      unit: unitMap[type] || "units",
-      price: "₹ " + price,
-      minOrder: minOrder + " " + (unitMap[type] || "unit"),
-      status: Number(stock) > 0 ? "In Stock" : "Out of Stock",
-    };
-    setInventory([newItem, ...inventory]);
-    resetForm();
-    setIsAddModalVisible(false);
+    try {
+      const res = await createRawMaterialProduct({
+        supplierId,
+        name: name.trim(),
+        category,
+        stock: Number(stock),
+        unit: unitMap[type] || 'units',
+        price: Number(price),
+        moq: Number(minOrder) || 1,
+      });
+      if (res?.success) {
+        resetForm();
+        setIsAddModalVisible(false);
+        loadInventory(true); // refresh
+      } else {
+        Alert.alert('Error', res?.message || 'Failed to add product.');
+      }
+    } catch (err) {
+      Alert.alert('Error', err?.response?.data?.message || 'Could not connect to server.');
+    }
   };
 
-  // ── Save edited item ───────────────────────────────────
+  // ── Save edited item (local optimistic update — no PATCH API yet) ────
   const handleSaveEdit = () => {
     if (!validate()) return;
     const unitMap = { "raw-material": "Kg", manpower: "agents", service: "teams", marketing: "slots" };
@@ -181,10 +187,10 @@ export default function VendorInventoryPage() {
             ...item,
             name: name.trim(),
             category,
-            stock: Number(stock).toLocaleString("en-IN"),
-            price: "₹ " + price,
-            minOrder: minOrder + " " + (unitMap[type] || "unit"),
-            status: Number(stock) > 0 ? "In Stock" : "Out of Stock",
+            stock: String(Number(stock)),
+            price: `₹ ${price}`,
+            minOrder: `${minOrder} ${unitMap[type] || 'unit'}`,
+            status: Number(stock) > 0 ? 'In Stock' : 'Out of Stock',
           }
         : item
     );
@@ -293,6 +299,28 @@ export default function VendorInventoryPage() {
     </ScrollView>
   );
 
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FAFAFA' }}>
+        <ActivityIndicator size="large" color={meta.color} />
+        <Text style={{ marginTop: 12, color: '#64748B', fontSize: 13 }}>Loading inventory...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FAFAFA', padding: 24 }}>
+        <Text style={{ fontSize: 16, fontWeight: '700', color: '#EF4444', marginBottom: 8 }}>Could not load inventory</Text>
+        <Text style={{ fontSize: 13, color: '#64748B', textAlign: 'center', marginBottom: 20 }}>{error}</Text>
+        <TouchableOpacity onPress={() => loadInventory()} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: meta.color, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 }}>
+          <RefreshCw size={14} color="#fff" />
+          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
 
@@ -309,7 +337,7 @@ export default function VendorInventoryPage() {
           <Text style={[styles.sectionTag, { color: meta.color }]}>{meta.subTag}</Text>
           <Text style={styles.sectionTitle}>{meta.title}</Text>
           <Text style={styles.sectionSupplier}>
-            {meta.supplierLabel}: <Text style={{ fontWeight: '700', color: '#1E293B' }}>{meta.supplier}</Text>
+            {meta.supplierLabel}: <Text style={{ fontWeight: '700', color: '#1E293B' }}>{user?.bizName || user?.businessName || 'Your Business'}</Text>
           </Text>
         </View>
 
@@ -369,7 +397,7 @@ export default function VendorInventoryPage() {
               <Text style={styles.statLabel}>{meta.inactiveLabel}</Text>
             </View>
             <View style={[styles.statCard, { backgroundColor: '#FFFBEB', borderColor: '#FEF3C7' }]}>
-              <Text style={[styles.statValue, { color: '#F59E0B' }]}>{meta.val}</Text>
+              <Text style={[styles.statValue, { color: '#F59E0B' }]}>{inventory.length}</Text>
               <Text style={styles.statLabel}>{meta.valLabel}</Text>
             </View>
           </View>

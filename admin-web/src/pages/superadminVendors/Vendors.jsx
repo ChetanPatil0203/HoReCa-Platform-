@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Download, Plus, Star, X, MoreVertical, Building, Eye, AlertTriangle, UserCheck, ShieldAlert, CheckCircle, Activity, MapPin, FileText, Phone, Mail, Box, Users, Settings, Megaphone, UserX } from 'lucide-react';
-import { mockDb } from '../../utils/mockDb';
+import { fetchVendorRegistrations } from '../../services/api.service';
 
 export default function Vendors() {
   const [vendors, setVendors] = useState([]);
@@ -21,7 +21,36 @@ export default function Vendors() {
   const [toasts, setToasts] = useState([]);
 
   useEffect(() => {
-    setVendors(mockDb.getVendors());
+    const loadData = async () => {
+      const data = await fetchVendorRegistrations();
+      if (data) {
+        const approvedData = data.filter(v => v.status === 'approved');
+        const mapped = approvedData.map(v => ({
+          id: v.id,
+          name: v.ownerName || (v.user ? `${v.user.firstName} ${v.user.lastName}`.trim() : 'Unknown Owner'),
+          businessName: v.bizName || 'Unknown Business',
+          category: v.vendorType || v.bizCategory || 'Other',
+          city: v.city || 'Unknown',
+          accountStatus: v.status === 'approved' ? 'Active' : 'Pending',
+          verification: v.status === 'approved' ? 'Approved' : 'Pending',
+          rating: 4.5,
+          orders: 0,
+          revenue: "₹0",
+          joined: v.createdAt ? new Date(v.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Unknown',
+          documentStatus: v.status === 'approved' ? 'Verified' : 'Pending Review',
+          isTopRated: false,
+          phone: v.mobile || '',
+          email: v.email || '',
+          lastActive: 'Just now',
+          gstNumber: v.gstin || '',
+          panNumber: v.panNumber || ''
+        }));
+        setVendors(mapped);
+      } else {
+        setVendors([]);
+      }
+    };
+    loadData();
 
     // Close menus on click outside
     const handleClickOutside = () => setActiveMenuId(null);
@@ -79,7 +108,6 @@ export default function Vendors() {
   const handleApprove = (id) => {
     const updated = vendors.map(v => v.id === id ? { ...v, verification: 'Approved' } : v);
     setVendors(updated);
-    mockDb.saveVendors(updated);
     showToast("Vendor KYC approved successfully!", "success");
     window.dispatchEvent(new Event('storage'));
   };
@@ -87,7 +115,6 @@ export default function Vendors() {
   const handleReject = (id) => {
     const updated = vendors.map(v => v.id === id ? { ...v, verification: 'Rejected' } : v);
     setVendors(updated);
-    mockDb.saveVendors(updated);
     showToast("Vendor KYC rejected successfully!", "error");
     window.dispatchEvent(new Event('storage'));
   };
@@ -110,8 +137,6 @@ export default function Vendors() {
       return v;
     });
     setVendors(updated);
-    mockDb.saveVendors(updated);
-    const current = updated.find(v => v.id === id);
     showToast(`Vendor account is now ${current.accountStatus}!`, "info");
     window.dispatchEvent(new Event('storage'));
   };
@@ -120,8 +145,6 @@ export default function Vendors() {
     if (window.confirm("Are you sure you want to delete this vendor?")) {
       const updated = vendors.filter(v => v.id !== id);
       setVendors(updated);
-      mockDb.saveVendors(updated);
-      showToast("Vendor deleted successfully!", "success");
       window.dispatchEvent(new Event('storage'));
     }
   };
@@ -142,8 +165,6 @@ export default function Vendors() {
     if (window.confirm("Are you sure you want to delete this vendor?")) {
       const updated = vendors.filter(v => v.id !== id);
       setVendors(updated);
-      mockDb.saveVendors(updated);
-      setSelectedProfileId(null);
       showToast("Vendor deleted successfully!", "success");
       window.dispatchEvent(new Event('storage'));
     }

@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions } from 'react-native';
 import { ArrowLeft, CheckCircle, Image as ImageIcon, MapPin, Calendar, DollarSign, Target, Briefcase, FileText, LayoutList } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
+import { AuthContext } from '../../../context/AuthContext';
+import { createRequirementApi } from '../../../services/api.service';
 
 const NAVY = '#0E2042';
 
 export default function AgencyDirectReqPage({ agency, onBack, onHome }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
+  const { user } = useContext(AuthContext);
+  const ownerId = user?.id;
 
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -19,8 +23,25 @@ export default function AgencyDirectReqPage({ agency, onBack, onHome }) {
     description: ''
   });
 
-  const handleSubmit = () => {
-    setIsSubmitted(true);
+  const handleSubmit = async () => {
+    try {
+      await createRequirementApi({
+        ownerId,
+        supplierId: agency?.id, // specific marketing agency vendor
+        type: 'marketing',
+        requestType: 'direct',
+        title: formData.campaignType || 'Direct Marketing Campaign Request',
+        description: formData.description,
+        budget: formData.budget,
+        location: agency?.location || '',
+        extraData: {
+          duration: formData.duration,
+        }
+      });
+      setIsSubmitted(true);
+    } catch (err) {
+      console.error('Failed to submit direct marketing requirement:', err);
+    }
   };
 
   if (isSubmitted) {

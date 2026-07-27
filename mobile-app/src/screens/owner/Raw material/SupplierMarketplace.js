@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, Platform, useWindowDimensions } from 'react-native';
 import { ArrowLeft, Search, ShoppingCart, Plus, Minus, Zap, Clock, Star, Filter, Check, CheckCircle } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
-import { mockDb } from '../../../services/mockDb';
+
 
 const CATEGORIES = [
   { id: "vegetables", label: "Vegetables", emoji: "🥦" },
@@ -278,8 +278,8 @@ export default function SupplierMarketplace({ onBack, onNavigate }) {
                        amount: "₹" + orderAmount.toLocaleString("en-IN"),
                        client: "Business Owner"
                      };
-                     mockDb.addOrder(orderObj);
                      ordersToPlace.push(orderObj);
+
                    });
                    setPlacedOrders(ordersToPlace);
                    setPlacedTotal(totalAmount);

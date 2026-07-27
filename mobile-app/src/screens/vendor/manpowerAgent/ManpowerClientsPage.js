@@ -13,75 +13,17 @@ const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
 
 const SUMMARY_DATA = [
-  { label: 'Total Clients', value: '28', icon: Users, color: '#3B82F6' },
-  { label: 'Active Deployments', value: '14', icon: User, color: '#10B981' },
-  { label: 'Repeat Partners', value: '18', icon: RefreshCw, color: '#8B5CF6' },
-  { label: 'Outstanding Payments', value: '₹75K', icon: AlertCircle, color: '#EF4444' },
+  { label: 'Total Clients', value: '0', icon: Users, color: '#3B82F6' },
+  { label: 'Active Deployments', value: '0', icon: User, color: '#10B981' },
+  { label: 'Repeat Partners', value: '0', icon: RefreshCw, color: '#8B5CF6' },
+  { label: 'Outstanding Payments', value: '₹0', icon: AlertCircle, color: '#EF4444' },
 ];
 
 const CHIPS = ['All', 'Hotel', 'Restaurant', 'Cafe'];
 
-const MOCK_CLIENTS = [
-  {
-    id: "CLI-MP-001", name: "The Meridian Grand", initials: "MG", type: "Hotel", location: "Downtown, Metro City",
-    rating: "4.9", activeStaff: 12, ltv: "₹18.4L", outstanding: "₹25,000", tag: "VIP"
-  },
-  {
-    id: "CLI-MP-002", name: "Café Zephyr", initials: "CZ", type: "Cafe", location: "Westside Hub",
-    rating: "4.7", activeStaff: 4, ltv: "₹5.1L", outstanding: "₹0", tag: "Regular"
-  },
-  {
-    id: "CLI-MP-003", name: "Azure Palace Hotel", initials: "AP", type: "Hotel", location: "Azure Coast",
-    rating: "4.6", activeStaff: 8, ltv: "₹11.2L", outstanding: "₹50,000", tag: "VIP"
-  }
-];
+const MOCK_CLIENTS = [];
 
-const TRANSACTIONS = [
-  {
-    id: "TXN-MP-501",
-    client: "The Meridian Grand",
-    role: "Weekend Kitchen Staff (2)",
-    quantity: "2 persons",
-    amount: "₹6,400",
-    date: "24 Jul 2026, 11:30 AM",
-    status: "Paid",
-    method: "UPI",
-    reference: "ref-upi-443322"
-  },
-  {
-    id: "TXN-MP-502",
-    client: "Azure Palace Hotel",
-    role: "Temporary Stewards (5)",
-    quantity: "5 persons",
-    amount: "₹18,000",
-    date: "23 Jul 2026, 09:00 AM",
-    status: "Pending",
-    method: "Net Banking",
-    reference: "ref-bank-776655"
-  },
-  {
-    id: "TXN-MP-503",
-    client: "Café Zephyr",
-    role: "Barista Replacement (1)",
-    quantity: "1 person",
-    amount: "₹3,500",
-    date: "22 Jul 2026, 03:30 PM",
-    status: "Paid",
-    method: "UPI",
-    reference: "ref-upi-112244"
-  },
-  {
-    id: "TXN-MP-504",
-    client: "Spice Route Restaurant",
-    role: "Prep Cooks (3)",
-    quantity: "3 persons",
-    amount: "₹9,200",
-    date: "21 Jul 2026, 04:00 PM",
-    status: "Overdue",
-    method: "Cash",
-    reference: "ref-cash-99881"
-  }
-];
+const TRANSACTIONS = [];
 
 export default function ManpowerClientsPage() {
   const { width } = useWindowDimensions();

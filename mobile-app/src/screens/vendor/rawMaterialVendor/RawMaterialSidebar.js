@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform } from 'react-native';
 import { 
   LayoutDashboard, Activity, Truck, Briefcase,
   DollarSign, BarChart2, Settings, LogOut,
   HelpCircle, Package, X
 } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
 
 const NAV = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -22,6 +23,8 @@ const NAV_BOTTOM = [
 ];
 
 export default function RawMaterialSidebar({ activePage, setActivePage, isMobile, mobileMenuOpen, setMobileMenuOpen, onLogout }) {
+  const { user } = useContext(AuthContext);
+
   const handleSelect = (id) => {
     setActivePage(id);
     if (isMobile) setMobileMenuOpen(false);
@@ -81,11 +84,11 @@ export default function RawMaterialSidebar({ activePage, setActivePage, isMobile
         {/* Luxury Profile Card */}
         <View style={styles.profileCard}>
           <View style={styles.avatarBox}>
-            <Text style={styles.avatarInitials}>MF</Text>
+            <Text style={styles.avatarInitials}>{user?.bizName ? user.bizName.substring(0, 2).toUpperCase() : 'MF'}</Text>
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.profileThe}>The</Text>
-            <Text style={styles.profileName} numberOfLines={1}>Metro Fresh</Text>
+            <Text style={styles.profileName} numberOfLines={1}>{user?.bizName || 'Metro Fresh'}</Text>
             <Text style={styles.profileRole} numberOfLines={1}>Raw Material Supplier</Text>
           </View>
           <View style={styles.vendorBadge}>

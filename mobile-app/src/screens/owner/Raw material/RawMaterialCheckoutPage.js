@@ -2,16 +2,18 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions, TextInput } from 'react-native';
 import { ArrowLeft, MapPin, Calendar, Clock, CreditCard, ChevronRight, Check, Plus, Store } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
+import { placeRawMaterialOrder } from '../../../services/api.service';
 
 const PURPLE = '#D97706';
 
-export default function RawMaterialCheckoutPage({ cartItems, onBack, onSuccess, isSuccess, onHome, onTrackOrder }) {
+export default function RawMaterialCheckoutPage({ cartItems, user, onBack, onSuccess, isSuccess, onHome, onTrackOrder }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
 
   const [addressId, setAddressId] = useState('a1');
   const [schedule, setSchedule] = useState('tomorrow_morning');
   const [payment, setPayment] = useState('cod');
+  const [placedOrders, setPlacedOrders] = useState([]);
 
   // Group by supplierName
   const groupedCart = useMemo(() => {
@@ -29,9 +31,41 @@ export default function RawMaterialCheckoutPage({ cartItems, onBack, onSuccess, 
   const delivery = subtotal > 1000 ? 0 : 50 * Object.keys(groupedCart).length; 
   const grandTotal = subtotal + gst + delivery;
 
-  const handlePlaceOrder = () => {
-    onSuccess();
+  const handlePlaceOrder = async () => {
+    try {
+      const ownerId = user?.id || '';
+      const deliveryAddress = user?.address 
+        ? `${user.bizName || ''}, ${user.address}, ${user.city || ''}`.trim()
+        : `${user?.bizName || 'My Business'}, ${user?.city || 'Mumbai'}`;
+
+      const orderPromises = Object.keys(groupedCart).map(async (supplierName) => {
+        const items = groupedCart[supplierName];
+        const supplierId = items[0]?.supplierId;
+        
+        const orderData = {
+          ownerId,
+          supplierId,
+          deliveryAddress,
+          paymentMethod: payment,
+          items: items.map(i => ({ productId: i.id, quantity: i.qty }))
+        };
+
+        return await placeRawMaterialOrder(orderData);
+      });
+
+      const results = await Promise.all(orderPromises);
+      setPlacedOrders(results.map(r => r.data));
+      onSuccess();
+    } catch (err) {
+      console.error('Failed to place order:', err);
+      alert('Failed to place order. Please try again.');
+    }
   };
+
+  const firstOrderId = placedOrders.length > 0 
+    ? placedOrders[0].id?.substring(0, 8).toUpperCase() 
+    : 'NEW';
+  const displayOrderId = `#ORD-${firstOrderId}`;
 
   if (isSuccess) {
     return (
@@ -39,7 +73,7 @@ export default function RawMaterialCheckoutPage({ cartItems, onBack, onSuccess, 
         <View style={styles.successContainer}>
           <Check size={64} color="#10B981" style={{ marginBottom: 24 }} />
           <Text style={styles.successTitle}>Order Placed Successfully!</Text>
-          <Text style={styles.successSub}>Your order ID is #ORD-49201</Text>
+          <Text style={styles.successSub}>Your order ID is {displayOrderId}</Text>
           
           <View style={styles.successCard}>
             <View style={styles.successRow}>
@@ -57,7 +91,25 @@ export default function RawMaterialCheckoutPage({ cartItems, onBack, onSuccess, 
           </View>
 
           <View style={styles.successActions}>
-            <TouchableOpacity style={styles.trackBtn} onPress={() => onTrackOrder({ id: '#ORD-49201', items: cartItems, total: grandTotal, status: 'confirmed', date: new Date().toLocaleDateString() })}>
+            <TouchableOpacity style={styles.trackBtn} onPress={() => {
+              const orderForTracking = placedOrders[0] || {};
+              onTrackOrder({
+                id: orderForTracking.id || '',
+                displayId: displayOrderId,
+                items: orderForTracking.items?.map(oi => ({
+                  id: oi.product?.id || oi.productId,
+                  name: oi.product?.name || 'Product',
+                  qty: oi.quantity,
+                  price: parseFloat(oi.priceAtPurchase),
+                  unit: oi.product?.unit || 'kg'
+                })) || cartItems,
+                total: parseFloat(orderForTracking.totalAmount) || grandTotal,
+                status: orderForTracking.status || 'pending',
+                supplierName: orderForTracking.supplier?.bizName || '',
+                deliveryAddress: orderForTracking.deliveryAddress || '',
+                date: new Date(orderForTracking.createdAt || Date.now()).toLocaleDateString()
+              });
+            }}>
               <Text style={styles.trackBtnText}>Track Order</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.homeBtn} onPress={onHome}>
@@ -105,12 +157,12 @@ export default function RawMaterialCheckoutPage({ cartItems, onBack, onSuccess, 
                 </View>
                 <View style={styles.radioContent}>
                   <View style={styles.addressTop}>
-                    <Text style={styles.addressName}>The Grand Restaurant</Text>
+                <Text style={styles.addressName}>{user?.bizName || 'My Business'}</Text>
                     <View style={styles.addressBadge}><Text style={styles.addressBadgeText}>Primary</Text></View>
                   </View>
-                  <Text style={styles.addressText}>45, Culinary Street, Near Main Market, Andheri West</Text>
-                  <Text style={styles.addressText}>Mumbai, Maharashtra 400053</Text>
-                  <Text style={styles.addressPhone}>+91 98765 43210</Text>
+                  <Text style={styles.addressText}>{user?.address || '45, Culinary Street, Near Main Market'}</Text>
+                  <Text style={styles.addressText}>{user?.city || 'Mumbai'}, Maharashtra</Text>
+                  <Text style={styles.addressPhone}>{user?.mobile || '+91 98765 43210'}</Text>
                 </View>
               </TouchableOpacity>
             </View>

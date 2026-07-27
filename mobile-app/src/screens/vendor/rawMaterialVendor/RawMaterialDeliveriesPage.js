@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity,
-  useWindowDimensions, Modal, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, TouchableWithoutFeedback
+  useWindowDimensions, Modal, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, ActivityIndicator
 } from 'react-native';
 import {
-  Menu, Bell, Search, SlidersHorizontal, Package, ChevronRight, X, XCircle,
-  MoreVertical, CheckCircle, Truck, User, Home, ClipboardList,
-  Plus, MapPin, CalendarDays, UserRound
+  Search, SlidersHorizontal, Package, ChevronRight, X, XCircle,
+  CheckCircle, Truck, User, Home, ClipboardList,
+  Plus, MapPin, CalendarDays, UserRound, RefreshCw
 } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorOrders } from '../../../services/api.service';
 
 const NAVY = '#071B3A';
 const GOLD = '#071B3A';
@@ -15,16 +17,68 @@ const BG = '#F8FAFC';
 const WHITE = '#FFFFFF';
 const MUTED = '#64748B';
 
-const STATUS_CHIPS = ['Scheduled', 'Packed', 'Assigned', 'Out for Delivery', 'Delivered', 'Delayed', 'Cancelled'];
+const STATUS_CHIPS = ['All', 'Scheduled', 'Out for Delivery', 'Delivered', 'Cancelled'];
 
-const MOCK_DELIVERIES = [];
+// Map a vendor order (status=shipped/delivered) to a delivery card shape
+const mapDelivery = (o) => {
+  const firstItem = (o.items || [])[0];
+  const dbToUiStatus = {
+    shipped: 'Out for Delivery',
+    delivered: 'Delivered',
+    confirmed: 'Scheduled',
+    cancelled: 'Cancelled',
+  };
+  return {
+    id: `#${o.id.slice(0, 8).toUpperCase()}`,
+    _rawId: o.id,
+    orderId: `#${o.id.slice(0, 8).toUpperCase()}`,
+    client: o.owner?.bizName || o.owner?.ownerName || 'Client',
+    location: o.owner?.city || o.deliveryAddress || '—',
+    product: firstItem?.product?.name || 'Mixed Items',
+    qty: `${(o.items || []).reduce((s, i) => s + (i.quantity || 0), 0)} ${firstItem?.product?.unit || ''}`.trim(),
+    amount: `₹${parseFloat(o.totalAmount || 0).toFixed(0)}`,
+    date: new Date(o.createdAt).toLocaleDateString('en-IN'),
+    status: dbToUiStatus[o.status] || o.status,
+    driver: null,
+    driverMobile: null,
+    vehicleNo: null,
+  };
+};
 
 export default function RawMaterialDeliveriesPage() {
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.id;
 
   const [activeFilter, setActiveFilter] = useState('All');
-  const [deliveries, setDeliveries] = useState(MOCK_DELIVERIES);
+  const [deliveries, setDeliveries] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const loadDeliveries = async () => {
+    if (!supplierId) { setLoading(false); return; }
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetchVendorOrders(supplierId);
+      if (res?.success) {
+        // Show orders that are in delivery lifecycle
+        const deliveryStatuses = ['confirmed', 'shipped', 'delivered', 'cancelled'];
+        const filtered = (res.data || []).filter(o => deliveryStatuses.includes(o.status));
+        setDeliveries(filtered.map(mapDelivery));
+      } else {
+        setError(res?.message || 'Failed to load deliveries.');
+      }
+    } catch (err) {
+      console.error('RawMaterialDeliveriesPage: error:', err);
+      setError('Could not connect to server.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { loadDeliveries(); }, [supplierId]);
   const [searchActive, setSearchActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterVisible, setFilterVisible] = useState(false);
@@ -248,7 +302,7 @@ export default function RawMaterialDeliveriesPage() {
 
           <View style={styles.tabsContainer}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsScroll}>
-              {['All', ...STATUS_CHIPS].map(chip => (
+              {STATUS_CHIPS.map(chip => (
                 <TouchableOpacity
                   key={chip}
                   style={[styles.tab, activeFilter === chip && styles.activeTab]}

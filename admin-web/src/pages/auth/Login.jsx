@@ -34,15 +34,9 @@ export default function Login() {
         }));
         navigate('/dashboard');
       } else {
-        setError('Invalid credentials. Use admin@hrchub.in for the demo.');
+        setError('Invalid email or password.');
       }
     }, 1200);
-  };
-
-  const handleFillDemo = () => {
-    setEmail('admin@hrchub.in');
-    setPassword('admin123');
-    setError('');
   };
 
   return (
@@ -79,7 +73,7 @@ export default function Login() {
                 <Mail className="w-4 h-4 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
                 <input
                   type="email"
-                  placeholder="admin@hrchub.in"
+                  placeholder="admin@hrchub.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 bg-[#0c1936] border border-slate-800 rounded-2xl text-xs font-semibold text-white placeholder-slate-600 focus:outline-none focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37]/20 transition-all"
@@ -125,23 +119,6 @@ export default function Login() {
               )}
             </button>
           </form>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3 w-full my-6">
-            <div className="h-[1px] bg-slate-800 flex-1" />
-            <span className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">Demo Sandbox</span>
-            <div className="h-[1px] bg-slate-800 flex-1" />
-          </div>
-
-          {/* Quick Login Button */}
-          <button
-            type="button"
-            onClick={handleFillDemo}
-            className="w-full py-3 bg-[#081a3a]/40 border border-[#d4af37]/30 hover:border-[#d4af37] hover:bg-[#081a3a]/75 text-[#d4af37] font-bold rounded-2xl text-xs tracking-wide uppercase transition-all flex items-center justify-center gap-2"
-          >
-            <ShieldCheck className="w-4 h-4" />
-            <span>Use Super Admin Demo Credentials</span>
-          </button>
         </div>
       </div>
     </div>

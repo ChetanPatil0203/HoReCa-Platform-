@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions } from 'react-native';
 import { ArrowLeft, CheckCircle, Upload, Image as ImageIcon, FileText, MapPin, Calendar, Clock, DollarSign, Briefcase } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
+import { AuthContext } from '../../../context/AuthContext';
+import { createRequirementApi } from '../../../services/api.service';
 
 const NAVY = '#0E2042';
 const GOLD = '#D4AF37';
@@ -9,6 +11,8 @@ const GOLD = '#D4AF37';
 export default function BroadcastRequirementPage({ onBack, onViewRequests }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
+  const { user } = useContext(AuthContext);
+  const ownerId = user?.id;
 
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -26,9 +30,28 @@ export default function BroadcastRequirementPage({ onBack, onViewRequests }) {
     description: ''
   });
 
-  const handleSubmit = () => {
-    // In a real app, API call goes here
-    setIsSubmitted(true);
+  const handleSubmit = async () => {
+    try {
+      await createRequirementApi({
+        ownerId,
+        type: 'serviceProvider',
+        requestType: 'public',
+        title: formData.title || `${formData.category} Service`,
+        description: formData.description,
+        budget: formData.budget,
+        location: formData.location,
+        extraData: {
+          category: formData.category,
+          serviceType: formData.type,
+          urgency: formData.urgency,
+          date: formData.date,
+          time: formData.time,
+        }
+      });
+      setIsSubmitted(true);
+    } catch (err) {
+      console.error('Failed to post service provider requirement:', err);
+    }
   };
 
   if (isSubmitted) {

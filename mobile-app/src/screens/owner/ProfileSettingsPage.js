@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { 
   View, Text, StyleSheet, TouchableOpacity, ScrollView, 
   Modal, TextInput, KeyboardAvoidingView, Platform, Dimensions,
@@ -9,6 +9,7 @@ import {
   Mail, MapPin, Pencil, Store, Files, FileText, ChevronRight, X,
   AlertCircle, LogOut
 } from 'lucide-react-native';
+import { AuthContext } from '../../context/AuthContext';
 
 const { width } = Dimensions.get('window');
 const isMobile = width < 768;
@@ -24,6 +25,7 @@ const WHITE = '#FFFFFF';
 const LIGHT_BG = '#F8FAFC';
 
 export default function ProfileSettingsPage({ user }) {
+  const { logout } = useContext(AuthContext);
   // Use 'Hotel', 'Restaurant', or 'Cafe' to test dynamic support
   const [businessType, setBusinessType] = useState('Hotel'); 
   
@@ -32,20 +34,20 @@ export default function ProfileSettingsPage({ user }) {
     businessName: user?.businessName || '',
     mobile: user?.mobile || '',
     email: user?.email || '',
-    location: '',
-    address: '',
-    city: '',
-    state: '',
-    pincode: ''
+    location: user?.location || '',
+    address: user?.address || '',
+    city: user?.city || '',
+    state: user?.state || '',
+    pincode: user?.pincode || ''
   });
 
   const businessInfo = {
-    category: businessType === 'Hotel' ? 'Hospitality Business' : businessType === 'Restaurant' ? 'Food Service Business' : 'Cafe & Beverage Business',
-    gst: '',
-    pan: '',
-    brn: '',
-    accountStatus: 'Pending',
-    verificationStatus: 'Pending Verification'
+    category: user?.businessType || '',
+    gst: user?.gst || '',
+    pan: user?.pan || '',
+    brn: user?.brn || '',
+    accountStatus: user?.accountStatus || 'Pending',
+    verificationStatus: user?.verificationStatus || 'Pending Verification'
   };
 
   const getDocuments = () => {
@@ -477,7 +479,7 @@ export default function ProfileSettingsPage({ user }) {
               <TouchableOpacity style={[styles.btnOutlineModal, { flex: 1 }]} onPress={() => setLogoutModal(false)}>
                 <Text style={styles.btnOutlineTextBlack}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.btnPrimaryModal, { backgroundColor: RED, flex: 1, borderColor: RED }]} onPress={() => setLogoutModal(false)}>
+              <TouchableOpacity style={[styles.btnPrimaryModal, { backgroundColor: RED, flex: 1, borderColor: RED }]} onPress={() => { setLogoutModal(false); logout(); }}>
                 <Text style={[styles.btnPrimaryText, { color: WHITE }]}>Logout</Text>
               </TouchableOpacity>
             </View>

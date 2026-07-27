@@ -1,22 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions } from 'react-native';
 import { ArrowLeft, Search, Filter, Star, ShieldCheck, MapPin, Briefcase, ChevronRight } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
+import { fetchMarketingAgencies } from '../../../services/api.service';
 
 const NAVY = '#0E2042';
 const GOLD = '#D4AF37';
-
-const MOCK_AGENCIES = [];
 
 export default function BrowseAgenciesPage({ onBack, onViewProfile }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
+  const [agencies, setAgencies] = useState([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetchMarketingAgencies();
+        if (res.success) {
+          const mapped = res.data.map(v => ({
+            id: v.id,
+            name: v.bizName || 'Unknown Agency',
+            verified: v.status === 'approved',
+            type: v.subCategory && v.subCategory.toLowerCase().includes('offline') ? 'Offline' : 'Online',
+            rating: 4.8,
+            projects: '50+',
+            experience: '4+ Years'
+          }));
+          setAgencies(mapped);
+        }
+      } catch (err) {
+        console.warn('Error fetching marketing agencies:', err);
+      }
+    };
+    load();
+  }, []);
 
   const filters = ['All', 'Online', 'Offline', 'Verified', 'Top Rated'];
 
-  const filteredAgencies = MOCK_AGENCIES.filter(ag => {
+  const filteredAgencies = agencies.filter(ag => {
     if (activeFilter === 'Online' && ag.type !== 'Online') return false;
     if (activeFilter === 'Offline' && ag.type !== 'Offline') return false;
     if (activeFilter === 'Verified' && !ag.verified) return false;

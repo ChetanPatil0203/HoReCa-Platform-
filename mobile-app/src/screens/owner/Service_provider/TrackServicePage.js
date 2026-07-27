@@ -5,21 +5,13 @@ import { colors } from '../../../theme/colors';
 
 const NAVY = '#0E2042';
 
-const MOCK_TIMELINE = [
-  { id: 1, title: 'Request Sent', time: '14 Jul, 09:00 AM', completed: true },
-  { id: 2, title: 'Accepted by Provider', time: '14 Jul, 09:30 AM', completed: true },
-  { id: 3, title: 'Technician Assigned', time: '14 Jul, 10:15 AM', subtitle: 'John Doe (+91 9876543210)', completed: true },
-  { id: 4, title: 'On The Way', time: '15 Jul, 09:30 AM', completed: true },
-  { id: 5, title: 'Work Started', time: '15 Jul, 10:00 AM', completed: true },
-  { id: 6, title: 'Completed', time: '15 Jul, 01:30 PM', completed: true } // Toggle this for active vs completed state
-];
+const MOCK_TIMELINE = [];
 
 export default function TrackServicePage({ request, onBack, onReview, onComplaint, onBookAgain }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
   
-  // Hardcoding true for demonstration of Completed Services view
-  const isServiceCompleted = true; 
+  const isServiceCompleted = request?.status === 'Completed'; 
 
   return (
     <View style={styles.wrapper}>

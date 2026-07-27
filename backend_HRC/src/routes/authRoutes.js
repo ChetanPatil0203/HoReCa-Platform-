@@ -1,6 +1,7 @@
 const express = require('express');
 const authController = require('../controllers/authController');
 const authMiddleware = require('../middlewares/authMiddleware');
+const upload = require('../middlewares/upload');
 
 const router = express.Router();
 
@@ -17,5 +18,13 @@ router.get('/login-logs', authController.getUserLoginLogs);
 router.get('/me', authMiddleware, authController.getMe);
 router.post('/verify-otp', authMiddleware, authController.verifyOTP);
 router.post('/resend-otp', authMiddleware, authController.resendOTP);
+
+// Document Upload (Protected — requires Bearer token)
+router.post(
+  '/upload-document',
+  authMiddleware,
+  upload.single('file'),
+  authController.uploadDocument
+);
 
 module.exports = router;

@@ -5,12 +5,36 @@ import { colors } from '../../../theme/colors';
 
 const PURPLE = '#D97706';
 
-const STATUS_STAGES = [
-  { id: 'confirmed', label: 'Order Confirmed', time: '12 Jul, 10:30 AM', completed: true },
-  { id: 'accepted', label: 'Preparing Your Order', time: '12 Jul, 11:15 AM', completed: true },
-  { id: 'out', label: 'Out for Delivery', time: 'Today, 09:00 AM', completed: true, current: true },
-  { id: 'delivered', label: 'Delivered', time: 'Pending', completed: false }
-];
+// Derive tracking stages from the actual order status
+const getTrackingStages = (order) => {
+  const status = order?.status || 'pending';
+  const orderDate = order?.rawDate || order?.date || new Date().toISOString();
+  const formattedDate = new Date(orderDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+  const stages = [
+    { id: 'pending', label: 'Order Placed', time: formattedDate, completed: true },
+    { id: 'confirmed', label: 'Order Confirmed', time: '', completed: false },
+    { id: 'shipped', label: 'Out for Delivery', time: '', completed: false },
+    { id: 'delivered', label: 'Delivered', time: '', completed: false }
+  ];
+
+  if (status === 'cancelled') {
+    return [
+      { id: 'pending', label: 'Order Placed', time: formattedDate, completed: true },
+      { id: 'cancelled', label: 'Order Cancelled', time: 'Cancelled', completed: true, current: true, isCancelled: true }
+    ];
+  }
+
+  const statusOrder = ['pending', 'confirmed', 'shipped', 'delivered'];
+  const currentIndex = statusOrder.indexOf(status);
+
+  return stages.map((stage, index) => ({
+    ...stage,
+    completed: index <= currentIndex,
+    current: index === currentIndex,
+    time: index <= currentIndex ? (index === 0 ? formattedDate : (index === currentIndex ? 'Current' : 'Done')) : 'Pending'
+  }));
+};
 
 export default function RawMaterialOrderTrackingPage({ order, onBack }) {
   const { width } = useWindowDimensions();
@@ -18,11 +42,27 @@ export default function RawMaterialOrderTrackingPage({ order, onBack }) {
   
   const currentOrder = order || {
     id: '',
-    status: '',
+    displayId: '',
+    status: 'pending',
     supplierName: '',
-    expectedDelivery: '',
+    vendor: '',
+    deliveryAddress: '',
     amount: 0,
+    total: 0,
     items: []
+  };
+
+  const stages = getTrackingStages(currentOrder);
+  const supplierName = currentOrder.supplierName || currentOrder.vendor || '';
+  const totalAmount = currentOrder.total || currentOrder.amount || 0;
+  const displayId = currentOrder.displayId || `#ORD-${(currentOrder.id || '').substring(0, 8).toUpperCase()}`;
+
+  const statusLabels = {
+    pending: 'Order Placed',
+    confirmed: 'Confirmed',
+    shipped: 'Out for Delivery',
+    delivered: 'Delivered',
+    cancelled: 'Cancelled'
   };
 
   return (
@@ -34,7 +74,7 @@ export default function RawMaterialOrderTrackingPage({ order, onBack }) {
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Order Tracking</Text>
-          <Text style={styles.headerSub}>{currentOrder.id}</Text>
+          <Text style={styles.headerSub}>{displayId}</Text>
         </View>
         <View style={{ width: 36 }} />
       </View>
@@ -47,8 +87,12 @@ export default function RawMaterialOrderTrackingPage({ order, onBack }) {
             <View style={styles.statusHeaderCard}>
               <View style={styles.statusHeaderRow}>
                 <View>
-                  <Text style={styles.statusTitle}>{currentOrder.status}</Text>
-                  <Text style={styles.expectedText}>Expected: {currentOrder.expectedDelivery}</Text>
+                  <Text style={styles.statusTitle}>{statusLabels[currentOrder.status] || currentOrder.status}</Text>
+                  <Text style={styles.expectedText}>
+                    {currentOrder.status === 'delivered' ? 'Order Delivered' : 
+                     currentOrder.status === 'cancelled' ? 'Order Cancelled' :
+                     'Expected: Tomorrow by 10:00 AM'}
+                  </Text>
                 </View>
                 <View style={styles.truckIconBox}>
                   <Truck size={24} color={PURPLE} />
@@ -61,15 +105,19 @@ export default function RawMaterialOrderTrackingPage({ order, onBack }) {
               <Text style={styles.sectionTitle}>Tracking Updates</Text>
               
               <View style={styles.timeline}>
-                {STATUS_STAGES.map((stage, index) => {
-                  const isLast = index === STATUS_STAGES.length - 1;
+                {stages.map((stage, index) => {
+                  const isLast = index === stages.length - 1;
                   return (
                     <View key={stage.id} style={styles.timelineRow}>
                       <View style={styles.timelineIndicator}>
-                        <View style={[styles.dot, stage.completed ? styles.dotCompleted : null, stage.current ? styles.dotCurrent : null]}>
+                        <View style={[
+                          styles.dot, 
+                          stage.completed ? (stage.isCancelled ? styles.dotCancelled : styles.dotCompleted) : null, 
+                          stage.current && !stage.isCancelled ? styles.dotCurrent : null
+                        ]}>
                           {stage.completed && !stage.current && <Check size={10} color="#fff" />}
                         </View>
-                        {!isLast && <View style={[styles.line, stage.completed ? styles.lineCompleted : null]} />}
+                        {!isLast && <View style={[styles.line, stage.completed ? (stage.isCancelled ? styles.lineCancelled : styles.lineCompleted) : null]} />}
                       </View>
                       
                       <View style={[styles.timelineContent, isLast && { paddingBottom: 0 }]}>
@@ -94,7 +142,7 @@ export default function RawMaterialOrderTrackingPage({ order, onBack }) {
                 <MapPin size={18} color="#64748B" />
                 <View style={styles.detailTextCol}>
                   <Text style={styles.detailLabel}>Delivery Address</Text>
-                  <Text style={styles.detailValue}>Hotel Grand Palace, Plot 42, MIDC Road, Andheri East, Mumbai, MH</Text>
+                  <Text style={styles.detailValue}>{currentOrder.deliveryAddress || 'Not specified'}</Text>
                 </View>
               </View>
 
@@ -104,7 +152,7 @@ export default function RawMaterialOrderTrackingPage({ order, onBack }) {
                 <Store size={18} color="#64748B" />
                 <View style={styles.detailTextCol}>
                   <Text style={styles.detailLabel}>Supplier</Text>
-                  <Text style={styles.detailValue}>{currentOrder.supplierName}</Text>
+                  <Text style={styles.detailValue}>{supplierName}</Text>
                 </View>
               </View>
 
@@ -118,23 +166,23 @@ export default function RawMaterialOrderTrackingPage({ order, onBack }) {
 
             {/* Order Items */}
             <View style={styles.card}>
-              <Text style={styles.sectionTitle}>Products ({currentOrder.items.length})</Text>
-              {currentOrder.items.map(item => (
-                <View key={item.id} style={styles.itemRow}>
+              <Text style={styles.sectionTitle}>Products ({currentOrder.items?.length || 0})</Text>
+              {(currentOrder.items || []).map((item, index) => (
+                <View key={item.id || index} style={styles.itemRow}>
                   <View style={styles.itemThumb}>
-                    <Text style={styles.itemInitial}>{item.name.charAt(0)}</Text>
+                    <Text style={styles.itemInitial}>{(item.name || 'P').charAt(0)}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.itemName}>{item.name}</Text>
                     <Text style={styles.itemQty}>Qty: {item.qty}</Text>
                   </View>
-                  <Text style={styles.itemPrice}>₹{item.price * item.qty}</Text>
+                  <Text style={styles.itemPrice}>₹{(item.price * item.qty).toLocaleString()}</Text>
                 </View>
               ))}
               <View style={styles.divider} />
               <View style={styles.totalRow}>
                 <Text style={styles.totalLabel}>Total Amount</Text>
-                <Text style={styles.totalValue}>₹{currentOrder.amount}</Text>
+                <Text style={styles.totalValue}>₹{typeof totalAmount === 'number' ? totalAmount.toLocaleString() : totalAmount}</Text>
               </View>
             </View>
           </View>
@@ -178,8 +226,10 @@ const styles = StyleSheet.create({
   dot: { width: 16, height: 16, borderRadius: 8, backgroundColor: '#E2E8F0', borderWidth: 2, borderColor: '#fff', alignItems: 'center', justifyContent: 'center', zIndex: 2 },
   dotCompleted: { backgroundColor: '#10B981' },
   dotCurrent: { backgroundColor: PURPLE, width: 20, height: 20, borderRadius: 10, borderWidth: 4, borderColor: '#E2D4F8' },
+  dotCancelled: { backgroundColor: '#DC2626' },
   line: { width: 2, flex: 1, backgroundColor: '#E2E8F0', marginVertical: -4, zIndex: 1 },
   lineCompleted: { backgroundColor: '#10B981' },
+  lineCancelled: { backgroundColor: '#DC2626' },
   
   timelineContent: { flex: 1, paddingLeft: 16, paddingBottom: 32, paddingTop: -2 },
   timelineLabel: { fontSize: 15, fontWeight: '700', color: '#64748B', marginBottom: 4 },

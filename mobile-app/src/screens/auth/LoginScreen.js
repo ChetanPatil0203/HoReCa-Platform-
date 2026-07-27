@@ -62,8 +62,22 @@ export default function LoginScreen({ navigation }) {
     try {
       const response = await loginApi(email, password);
       if (response.success && response.data) {
-        const { token, panelType } = response.data;
-        login(panelType || 'owner', token);
+        const { token, panelType, user, registration } = response.data;
+        
+        // Structure the user object for AuthContext and Profile Settings to match the backend schema exactly,
+        // while also maintaining backward compatibility with manually mapped fields used by some dashboards.
+        const userObj = {
+          ...user,
+          ...registration,
+          name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim(),
+          businessName: registration?.bizName || '',
+          businessType: registration?.bizCategory || '',
+          location: registration?.city || '',
+          accountStatus: 'Active',
+          verificationStatus: registration?.status === 'approved' ? 'Verified' : 'Pending Verification',
+        };
+        
+        login(panelType || 'owner', token, user?.vendorType || 'raw-material', userObj);
       } else {
         setLoginError(response.message || 'Login failed.');
       }
@@ -156,24 +170,6 @@ export default function LoginScreen({ navigation }) {
           disabled={!isFormValid()}
         />
 
-        <View style={styles.dividerRow}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>OR</Text>
-          <View style={styles.dividerLine} />
-        </View>
-
-        {/* Demo Access Button */}
-        <TouchableOpacity
-          style={styles.demoBtn}
-          onPress={() => setDemoModalVisible(true)}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-        >
-          <Zap size={20} color={AUTH_COLORS.accent} style={{ marginRight: 8 }} />
-          <Text style={styles.demoBtnText}>QUICK DEMO ACCESS</Text>
-        </TouchableOpacity>
-        <Text style={styles.demoHelper}>Explore the application using demo business data.</Text>
-
         {/* Registration Prompt */}
         <View style={[styles.regPrompt, isNarrow && { flexDirection: 'column', alignItems: 'center' }]}>
           <Text style={styles.regPromptText}>Don't have a business account? </Text>
@@ -182,35 +178,6 @@ export default function LoginScreen({ navigation }) {
           </TouchableOpacity>
         </View>
       </AuthCard>
-
-      {/* Demo Selection Modal */}
-      <Modal visible={demoModalVisible} transparent animationType="slide" onRequestClose={() => setDemoModalVisible(false)}>
-        <SafeAreaView style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Demo Account</Text>
-              <TouchableOpacity onPress={() => setDemoModalVisible(false)} style={styles.closeBtn}>
-                <X size={24} color={AUTH_COLORS.primary} />
-              </TouchableOpacity>
-            </View>
-            <ScrollView style={styles.demoList}>
-              {[
-                'Super Admin Panel',
-                'Owner Panel',
-                'Service Provider Panel',
-                'Manpower Agent Panel',
-                'Raw Material Vendor Panel',
-                'Marketing Agency Panel'
-              ].map((panel, idx) => (
-                <TouchableOpacity key={idx} style={styles.demoItem} onPress={() => handleDemoSelect(panel)}>
-                  <Text style={styles.demoItemText}>{panel}</Text>
-                  <ChevronRight size={20} color={AUTH_COLORS.muted} />
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </SafeAreaView>
-      </Modal>
 
     </AuthScreenWrapper>
   );

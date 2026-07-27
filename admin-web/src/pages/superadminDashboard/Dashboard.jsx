@@ -7,249 +7,9 @@ import {
   MessageSquare, RefreshCw, ChevronRight, CheckCircle, Info,
   Wrench, Megaphone, Eye
 } from 'lucide-react';
+import { fetchDashboardStats } from '../../services/api.service';
 
-const COMMON_WALL_VENDORS = {
-  "SkillPoint Manpower": {
-    name: "SkillPoint Manpower",
-    businessName: "SkillPoint Staffing Solutions Pvt Ltd",
-    proprietor: "Amit Deshmukh",
-    phone: "+91 98234 56701",
-    email: "info@skillpointmanpower.com",
-    category: "Manpower Agency",
-    location: "Mumbai MMR",
-    rating: 4.7,
-    status: "Active",
-    verification: "Approved",
-    joinedDate: "14 Jan 2024",
-    deployments: 240,
-    activeStaff: "80 Waiters, 40 Cooks, 30 Helpers",
-    documents: "GST, PAN, Labour License Verified"
-  },
-  "WorkForce Agency": {
-    name: "WorkForce Agency",
-    businessName: "WorkForce Recruitment Ltd",
-    proprietor: "Karan Johar",
-    phone: "+91 98234 56702",
-    email: "contact@workforce.in",
-    category: "Manpower Agency",
-    location: "Pune, Maharashtra",
-    rating: 4.5,
-    status: "Active",
-    verification: "Approved",
-    joinedDate: "18 Aug 2024",
-    deployments: 180,
-    activeStaff: "120 Servers, 30 Cleaners",
-    documents: "GST, PAN Verified"
-  },
-  "TalentCrew Solutions": {
-    name: "TalentCrew Solutions",
-    businessName: "TalentCrew Hospitality Support",
-    proprietor: "Meera Nair",
-    phone: "+91 98234 56703",
-    email: "hr@talentcrew.co",
-    category: "Manpower Agency",
-    location: "Bangalore Urban",
-    rating: 4.6,
-    status: "Active",
-    verification: "Approved",
-    joinedDate: "05 Nov 2023",
-    deployments: 150,
-    activeStaff: "40 Baristas, 60 Banquet Staff",
-    documents: "GST, PAN, EPF Registered"
-  },
-  "QuickHire Services": {
-    name: "QuickHire Services",
-    businessName: "QuickHire Manpower Services",
-    proprietor: "Rajesh Gond",
-    phone: "+91 91234 00002",
-    email: "rajesh@quickhire.com",
-    category: "Manpower Agency",
-    location: "Mumbai",
-    rating: 4.2,
-    status: "Active",
-    verification: "Under Review",
-    joinedDate: "02 Jun 2026",
-    deployments: 95,
-    activeStaff: "30 Cooks, 40 Kitchen Staff",
-    documents: "PAN, Labour License Verified"
-  },
-  "PeopleSync Agency": {
-    name: "PeopleSync Agency",
-    businessName: "PeopleSync Partners Ltd",
-    proprietor: "Sneha Patil",
-    phone: "+91 98234 56705",
-    email: "partners@peoplesync.in",
-    category: "Manpower Agency",
-    location: "Mumbai MMR",
-    rating: 4.4,
-    status: "Active",
-    verification: "Approved",
-    joinedDate: "12 Mar 2025",
-    deployments: 110,
-    activeStaff: "50 Security Guards, 20 Valets",
-    documents: "GST, PAN Verified"
-  },
-  "FixRight Services": {
-    name: "FixRight Services",
-    businessName: "FixRight Commercial Maintenance",
-    proprietor: "Harish Rao",
-    phone: "+91 88888 00003",
-    email: "service@fixright.in",
-    category: "Service Provider",
-    location: "Bangalore",
-    rating: 4.8,
-    status: "Active",
-    verification: "Approved",
-    joinedDate: "15 Aug 2022",
-    deployments: 310,
-    activeStaff: "HVAC Techs, Electricians, Plumbers",
-    documents: "FSSAI compliance, ISO 9001:2015"
-  },
-  "Reliable Tech Solutions": {
-    name: "Reliable Tech Solutions",
-    businessName: "Reliable Restaurant Technologies",
-    proprietor: "Vikram Singh",
-    phone: "+91 98234 56707",
-    email: "tech@reliable.com",
-    category: "Service Provider",
-    location: "Pune",
-    rating: 4.3,
-    status: "Active",
-    verification: "Under Review",
-    joinedDate: "26 May 2026",
-    deployments: 85,
-    activeStaff: "POS Technicians, Kitchen Equipment Mechanics",
-    documents: "GST, PAN Verified"
-  },
-  "ProCare Services": {
-    name: "ProCare Services",
-    businessName: "ProCare Commercial Cleaning",
-    proprietor: "Vikash Jain",
-    phone: "+91 98234 56708",
-    email: "clean@procare.co.in",
-    category: "Service Provider",
-    location: "Mumbai MMR",
-    rating: 4.5,
-    status: "Active",
-    verification: "Approved",
-    joinedDate: "09 Feb 2024",
-    deployments: 140,
-    activeStaff: "45 Kitchen Deep Cleaning Specialists",
-    documents: "GST, PAN Verified"
-  },
-  "ServiceHub India": {
-    name: "ServiceHub India",
-    businessName: "ServiceHub Restaurant Services Ltd",
-    proprietor: "Deepak Kumar",
-    phone: "+91 98234 56709",
-    email: "support@servicehub.in",
-    category: "Service Provider",
-    location: "Delhi NCR",
-    rating: 4.4,
-    status: "Active",
-    verification: "Approved",
-    joinedDate: "22 Sep 2023",
-    deployments: 200,
-    activeStaff: "30 Fridge Techs, 20 Chimney Cleaners",
-    documents: "GST, PAN Verified"
-  },
-  "QuickFix Support": {
-    name: "QuickFix Support",
-    businessName: "QuickFix Emergency Tech Support",
-    proprietor: "Arjun Mehta",
-    phone: "+91 98234 56710",
-    email: "emergency@quickfix.com",
-    category: "Service Provider",
-    location: "Mumbai MMR",
-    rating: 4.1,
-    status: "Active",
-    verification: "Approved",
-    joinedDate: "11 Oct 2025",
-    deployments: 65,
-    activeStaff: "On-call Tech Support Team",
-    documents: "GST, PAN Verified"
-  },
-  "BrandBoost Agency": {
-    name: "BrandBoost Agency",
-    businessName: "BrandBoost Creative Solutions",
-    proprietor: "Anita Desai",
-    phone: "+91 99999 00004",
-    email: "hello@brandboost.com",
-    category: "Marketing Agency",
-    location: "Mumbai",
-    rating: 4.5,
-    status: "Suspended",
-    verification: "Pending",
-    joinedDate: "05 Jan 2026",
-    deployments: 12,
-    activeStaff: "Social Media Managers, Photographers",
-    documents: "GST (Expired), PAN Verified"
-  },
-  "Creative Minds Studio": {
-    name: "Creative Minds Studio",
-    businessName: "Creative Minds Design & Photo Studio",
-    proprietor: "Rohan Kapoor",
-    phone: "+91 98234 56712",
-    email: "contact@creativeminds.in",
-    category: "Marketing Agency",
-    location: "Delhi NCR",
-    rating: 4.6,
-    status: "Active",
-    verification: "Approved",
-    joinedDate: "30 Nov 2024",
-    deployments: 95,
-    activeStaff: "Food Photographers, Graphic Designers",
-    documents: "GST, PAN Verified"
-  },
-  "Marketify Solutions": {
-    name: "Marketify Solutions",
-    businessName: "Marketify Ad Agency",
-    proprietor: "Divya Nair",
-    phone: "+91 98234 56713",
-    email: "info@marketify.com",
-    category: "Marketing Agency",
-    location: "Delhi",
-    rating: 4.0,
-    status: "Active",
-    verification: "Rejected",
-    joinedDate: "04 Jun 2026",
-    deployments: 45,
-    activeStaff: "SEO Specialists, PPC Campaign Managers",
-    documents: "GST, PAN Verified"
-  },
-  "AdEdge Marketing": {
-    name: "AdEdge Marketing",
-    businessName: "AdEdge Restaurant Promotions Ltd",
-    proprietor: "Sanjay Singhal",
-    phone: "+91 91234 00002",
-    email: "ads@adedge.com",
-    category: "Marketing Agency",
-    location: "Delhi NCR",
-    rating: 4.4,
-    status: "Active",
-    verification: "Approved",
-    joinedDate: "22 May 2024",
-    deployments: 110,
-    activeStaff: "Content Creators, Influencer Coordinators",
-    documents: "GST, PAN Verified"
-  },
-  "PromoWave Media": {
-    name: "PromoWave Media",
-    businessName: "PromoWave Media & PR Group",
-    proprietor: "Rahul Roy",
-    phone: "+91 98234 56715",
-    email: "media@promowave.in",
-    category: "Marketing Agency",
-    location: "Mumbai MMR",
-    rating: 4.2,
-    status: "Active",
-    verification: "Approved",
-    joinedDate: "07 Apr 2025",
-    deployments: 80,
-    activeStaff: "PR Managers, Event Coordinators",
-    documents: "GST, PAN Verified"
-  }
-};
+const COMMON_WALL_VENDORS = {};
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -264,7 +24,7 @@ export default function Dashboard() {
   const commonWallCategoryData = {
     "Man Power": {
       label: "Man Power Requests",
-      total: "58 Total",
+      total: "0 Total",
       theme: {
         badge: "bg-purple-50 text-purple-700 border-purple-100",
         iconBg: "bg-purple-50 text-purple-600",
@@ -272,17 +32,11 @@ export default function Dashboard() {
         btnView: "text-purple-600 bg-purple-50 hover:bg-purple-100",
         btnAll: "text-purple-600 hover:text-purple-800"
       },
-      items: [
-        { name: "SkillPoint Manpower", count: 18 },
-        { name: "WorkForce Agency", count: 14 },
-        { name: "TalentCrew Solutions", count: 11 },
-        { name: "QuickHire Services", count: 8 },
-        { name: "PeopleSync Agency", count: 7 }
-      ]
+      items: []
     },
     "Service Provider": {
       label: "Service Provider Requests",
-      total: "42 Total",
+      total: "0 Total",
       theme: {
         badge: "bg-blue-50 text-blue-700 border-blue-100",
         iconBg: "bg-blue-50 text-blue-600",
@@ -290,17 +44,11 @@ export default function Dashboard() {
         btnView: "text-blue-600 bg-blue-50 hover:bg-blue-100",
         btnAll: "text-blue-600 hover:text-blue-800"
       },
-      items: [
-        { name: "FixRight Services", count: 12 },
-        { name: "Reliable Tech Solutions", count: 10 },
-        { name: "ProCare Services", count: 8 },
-        { name: "ServiceHub India", count: 7 },
-        { name: "QuickFix Support", count: 5 }
-      ]
+      items: []
     },
     "Marketing": {
       label: "Marketing Requests",
-      total: "36 Total",
+      total: "0 Total",
       theme: {
         badge: "bg-amber-50 text-amber-700 border-amber-100",
         iconBg: "bg-amber-50 text-amber-600",
@@ -308,13 +56,7 @@ export default function Dashboard() {
         btnView: "text-amber-600 bg-amber-50 hover:bg-amber-100",
         btnAll: "text-amber-600 hover:text-amber-800"
       },
-      items: [
-        { name: "BrandBoost Agency", count: 11 },
-        { name: "Creative Minds Studio", count: 9 },
-        { name: "Marketify Solutions", count: 7 },
-        { name: "AdEdge Marketing", count: 5 },
-        { name: "PromoWave Media", count: 4 }
-      ]
+      items: []
     }
   };
 
@@ -326,53 +68,61 @@ export default function Dashboard() {
     }, 3000);
   };
 
+  const [dashboardStats, setDashboardStats] = useState({
+    totalHoreca: 0,
+    totalVendors: 0,
+    pendingVerifications: 0,
+    activeOrders: 0,
+    openComplaints: 0,
+    suspendedAccounts: 0
+  });
+
+  React.useEffect(() => {
+    const loadStats = async () => {
+      const stats = await fetchDashboardStats();
+      if (stats) {
+        setDashboardStats(stats);
+      }
+    };
+    loadStats();
+  }, []);
+
   // Summary Metrics: 6 Cards as requested
   const metrics = [
-    { label: "Total HoReCa Owners", val: "1,524", change: "+5.2% this week", color: "blue", chartData: [1200, 1250, 1300, 1380, 1400, 1524], desc: "Hotels, Restaurants, Cafés" },
-    { label: "Total Vendor Partners", val: "845", change: "+12.4% this week", color: "emerald", chartData: [700, 720, 750, 800, 810, 845], desc: "Suppliers & Agencies" },
-    { label: "Pending Verifications", val: "28", change: "-4% this week", color: "amber", chartData: [35, 32, 40, 30, 30, 28], desc: "Awaiting approval" },
-    { label: "Active Orders / Requests", val: "3,150", change: "+18.1% this week", color: "blue", chartData: [2500, 2700, 2800, 3000, 3100, 3150], desc: "Procurements & bookings" },
-    { label: "Open Complaints", val: "15", change: "-5 this week", color: "rose", chartData: [25, 22, 28, 20, 18, 15], desc: "Unresolved support tickets" },
-    { label: "Suspended Accounts", val: "12", change: "+1 this week", color: "rose", chartData: [5, 8, 8, 10, 11, 12], desc: "Temporarily or permanently blocked" }
+    { label: "Total HoReCa Owners", val: dashboardStats.totalHoreca.toString(), change: "Live from DB", color: "blue", chartData: [0, 0, 0, 0, 0, 0], desc: "Hotels, Restaurants, Cafés" },
+    { label: "Total Vendor Partners", val: dashboardStats.totalVendors.toString(), change: "Live from DB", color: "emerald", chartData: [0, 0, 0, 0, 0, 0], desc: "Suppliers & Agencies" },
+    { label: "Pending Verifications", val: dashboardStats.pendingVerifications.toString(), change: "Live from DB", color: "amber", chartData: [0, 0, 0, 0, 0, 0], desc: "Awaiting approval" },
+    { label: "Active Orders / Requests", val: dashboardStats.activeOrders.toString(), change: "Feature Pending", color: "blue", chartData: [0, 0, 0, 0, 0, 0], desc: "Procurements & bookings" },
+    { label: "Open Complaints", val: dashboardStats.openComplaints.toString(), change: "Feature Pending", color: "rose", chartData: [0, 0, 0, 0, 0, 0], desc: "Unresolved support tickets" },
+    { label: "Suspended Accounts", val: dashboardStats.suspendedAccounts.toString(), change: "Live from DB", color: "rose", chartData: [0, 0, 0, 0, 0, 0], desc: "Temporarily blocked" }
   ];
 
   // Activities Data
-  const activities = [
-    { text: "Owner Registered: The Grand Orchid Hotel", time: "2 mins ago", type: "register" },
-    { text: "Vendor Approved: Metro Fresh Farm Supplies", time: "1 hour ago", type: "approve" },
-    { text: "Complaint Raised: Quality issue on #ORD-291", time: "4 hours ago", type: "complaint" },
-    { text: "Order Completed: #ORD-287 delivered to Juhu branch", time: "12 hours ago", type: "complete" },
-    { text: "Account Suspended: Prime Meats Delhi blocked for SLA violations", time: "1 day ago", type: "suspend" }
-  ];
+  const activities = [];
 
   // Critical Alerts Data
-  const alerts = [
-    { title: "Pending Verifications Queue", desc: "28 requests waiting for verification", color: "amber", path: "/verification" },
-    { title: "SLA Critical Complaints", desc: "3 unresolved support tickets near threshold", color: "rose", path: "/complaints" },
-    { title: "Expiring compliance licenses", desc: "5 vendor GST/Trade licenses expiring in 7 days", color: "indigo", path: "/verification" },
-    { title: "Suspended Accounts audit", desc: "12 flagged accounts review pending", color: "rose", path: "/limits" }
-  ];
+  const alerts = [];
 
   // Platform Growth Analytics calculation
   const growthData = useMemo(() => {
     if (growthFilter === "Weekly") {
       return {
         labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-        owners: [1200, 1250, 1300, 1350, 1400, 1450, 1524],
-        vendors: [700, 720, 750, 770, 800, 820, 845]
+        owners: [0, 0, 0, 0, 0, 0, 0],
+        vendors: [0, 0, 0, 0, 0, 0, 0]
       };
     } else if (growthFilter === "Yearly") {
       return {
         labels: ["2020", "2021", "2022", "2023", "2024", "2025", "2026"],
-        owners: [400, 620, 850, 1100, 1300, 1450, 1524],
-        vendors: [200, 350, 480, 600, 720, 800, 845]
+        owners: [0, 0, 0, 0, 0, 0, 0],
+        vendors: [0, 0, 0, 0, 0, 0, 0]
       };
     }
     // Monthly Default
     return {
       labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
-      owners: [1050, 1120, 1200, 1280, 1350, 1440, 1524],
-      vendors: [620, 660, 700, 740, 780, 810, 845]
+      owners: [0, 0, 0, 0, 0, 0, 0],
+      vendors: [0, 0, 0, 0, 0, 0, 0]
     };
   }, [growthFilter]);
 
@@ -414,19 +164,12 @@ export default function Dashboard() {
 
   // Verification share Donut Math
   const verificationCircles = useMemo(() => {
-    const rawData = verificationToggle === "Owners"
-      ? [
-        { label: "Approved", pct: 85, color: "#10B981", bg: "bg-emerald-500", count: "1,295" },
-        { label: "Pending", pct: 8, color: "#F59E0B", bg: "bg-amber-500", count: "122" },
-        { label: "Under Review", pct: 5, color: "#3B82F6", bg: "bg-blue-500", count: "76" },
-        { label: "Rejected", pct: 2, color: "#EF4444", bg: "bg-rose-500", count: "31" }
-      ]
-      : [
-        { label: "Approved", pct: 78, color: "#10B981", bg: "bg-emerald-500", count: "659" },
-        { label: "Pending", pct: 12, color: "#F59E0B", bg: "bg-amber-500", count: "101" },
-        { label: "Under Review", pct: 6, color: "#3B82F6", bg: "bg-blue-500", count: "51" },
-        { label: "Rejected", pct: 4, color: "#EF4444", bg: "bg-rose-500", count: "34" }
-      ];
+    const rawData = [
+      { label: "Approved", pct: 0, color: "#10B981", bg: "bg-emerald-500", count: "0" },
+      { label: "Pending", pct: 0, color: "#F59E0B", bg: "bg-amber-500", count: "0" },
+      { label: "Under Review", pct: 0, color: "#3B82F6", bg: "bg-blue-500", count: "0" },
+      { label: "Rejected", pct: 0, color: "#EF4444", bg: "bg-rose-500", count: "0" }
+    ];
 
     let offset = 0;
     return rawData.map((item) => {
@@ -435,15 +178,15 @@ export default function Dashboard() {
       offset += (item.pct / 100) * circumference;
       return { ...item, dashArray, dashOffset };
     });
-  }, [verificationToggle, circumference]);
+  }, [circumference]);
 
   // Complaint share Donut Math
   const complaintCircles = useMemo(() => {
     const rawData = [
-      { label: "Resolved", pct: 60, color: "#10B981", bg: "bg-emerald-500", count: "9" },
-      { label: "In Progress", pct: 20, color: "#3B82F6", bg: "bg-blue-500", count: "3" },
-      { label: "SLA Critical", pct: 12, color: "#EF4444", bg: "bg-rose-500", count: "2" },
-      { label: "Open", pct: 8, color: "#F59E0B", bg: "bg-amber-500", count: "1" }
+      { label: "Resolved", pct: 0, color: "#10B981", bg: "bg-emerald-500", count: "0" },
+      { label: "In Progress", pct: 0, color: "#3B82F6", bg: "bg-blue-500", count: "0" },
+      { label: "SLA Critical", pct: 0, color: "#EF4444", bg: "bg-rose-500", count: "0" },
+      { label: "Open", pct: 0, color: "#F59E0B", bg: "bg-amber-500", count: "0" }
     ];
 
     let offset = 0;
@@ -694,7 +437,7 @@ export default function Dashboard() {
                 ))}
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-800">
-                <span className="text-base font-black">{verificationToggle === 'Owners' ? '85%' : '78%'}</span>
+                <span className="text-base font-black">0%</span>
                 <span className="text-[7px] font-bold text-slate-400 uppercase">Approved</span>
               </div>
             </div>

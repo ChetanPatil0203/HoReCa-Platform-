@@ -8,6 +8,7 @@ const {
   getUserLoginLogsService,
 } = require('../services/authService');
 const { getUserProfileService } = require('../services/userService');
+const { Document } = require('../models');
 
 // Register User
 exports.register = async (req, res) => {
@@ -153,6 +154,62 @@ exports.getUserLoginLogs = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message || 'Failed to fetch user login logs.',
+    });
+  }
+};
+
+// POST /api/auth/upload-document — Upload a document file for the authenticated user
+exports.uploadDocument = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { docKey, docName } = req.body;
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded.' });
+    }
+    if (!docKey) {
+      return res.status(400).json({ success: false, message: 'docKey is required.' });
+    }
+
+    // Build the public file URL
+    const fileUrl = `/uploads/${req.file.filename}`;
+
+    // Upsert: update existing document record for this user+docKey, or create new
+    const [docRecord, created] = await Document.findOrCreate({
+      where: { userId, docKey },
+      defaults: {
+        userId,
+        docKey,
+        docName: docName || docKey,
+        fileUrl,
+        status: 'pending',
+      },
+    });
+
+    if (!created) {
+      // Update existing record
+      docRecord.fileUrl = fileUrl;
+      docRecord.docName = docName || docRecord.docName;
+      docRecord.status = 'pending';
+      await docRecord.save();
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Document uploaded successfully.',
+      data: {
+        id: docRecord.id,
+        docKey: docRecord.docKey,
+        docName: docRecord.docName,
+        fileUrl: docRecord.fileUrl,
+        status: docRecord.status,
+      },
+    });
+  } catch (error) {
+    console.error('Upload document error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Document upload failed.',
     });
   }
 };

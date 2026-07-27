@@ -1,30 +1,79 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions, ActivityIndicator } from 'react-native';
 import { ArrowLeft, Search, Calendar, RefreshCw, FileText, Eye, Truck, Package, Clock, ShieldCheck, Check } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
+import { fetchRawMaterialOrders } from '../../../services/api.service';
 
 const GOLD = '#D97706';
 
-const MOCK_ORDERS = [];
-
 const STATUS_COLORS = {
-  'Pending': { bg: '#FEF3C7', text: '#D97706' },
-  'Processing': { bg: '#E0F2FE', text: '#0284C7' },
-  'Out for Delivery': { bg: '#FEF3C7', text: '#D97706' },
-  'Delivered': { bg: '#DCFCE7', text: '#16A34A' },
-  'Cancelled': { bg: '#FEE2E2', text: '#DC2626' }
+  'pending': { bg: '#FEF3C7', text: '#D97706', label: 'Pending' },
+  'confirmed': { bg: '#E0F2FE', text: '#0284C7', label: 'Confirmed' },
+  'shipped': { bg: '#FEF3C7', text: '#D97706', label: 'Out for Delivery' },
+  'delivered': { bg: '#DCFCE7', text: '#16A34A', label: 'Delivered' },
+  'cancelled': { bg: '#FEE2E2', text: '#DC2626', label: 'Cancelled' }
 };
 
-export default function RawMaterialOrdersPage({ onBack, onTrackOrder, onQuickReorder }) {
+export default function RawMaterialOrdersPage({ user, onBack, onTrackOrder, onQuickReorder }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
   
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const filteredOrders = MOCK_ORDERS.filter(order => {
+  useEffect(() => {
+    loadOrders();
+  }, [user?.id]);
+
+  const loadOrders = async () => {
+    const ownerId = user?.id;
+    if (!ownerId) {
+      setLoading(false);
+      setError('User not found. Please login again.');
+      return;
+    }
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetchRawMaterialOrders(ownerId);
+      if (res?.success) {
+        const mapped = res.data.map(order => ({
+          id: order.id,
+          displayId: `#ORD-${order.id.substring(0, 8).toUpperCase()}`,
+          vendor: order.supplier?.bizName || 'Unknown Vendor',
+          vendorCity: order.supplier?.city || '',
+          supplierId: order.supplierId,
+          amount: parseFloat(order.totalAmount),
+          status: order.status,
+          date: new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+          rawDate: order.createdAt,
+          deliveryAddress: order.deliveryAddress,
+          paymentMethod: order.paymentMethod,
+          items: (order.items || []).map(oi => ({
+            id: oi.product?.id || oi.productId,
+            name: oi.product?.name || 'Product',
+            qty: oi.quantity,
+            price: parseFloat(oi.priceAtPurchase),
+            unit: oi.product?.unit || 'kg',
+            image: oi.product?.imageUrl || null
+          }))
+        }));
+        setOrders(mapped);
+      }
+    } catch (err) {
+      console.error('Failed to load orders:', err);
+      setError('Failed to load orders. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredOrders = orders.filter(order => {
     const matchesSearch = 
-      order.id.toLowerCase().includes(searchText.toLowerCase()) || 
+      order.displayId.toLowerCase().includes(searchText.toLowerCase()) || 
       order.vendor.toLowerCase().includes(searchText.toLowerCase());
     const matchesStatus = statusFilter === 'All' || order.status === statusFilter;
     return matchesSearch && matchesStatus;
@@ -38,7 +87,9 @@ export default function RawMaterialOrdersPage({ onBack, onTrackOrder, onQuickReo
           <ArrowLeft size={20} color="#0F172A" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Orders</Text>
-        <View style={{ width: 36 }} />
+        <TouchableOpacity onPress={loadOrders} style={styles.backBtn}>
+          <RefreshCw size={18} color="#0F172A" />
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
@@ -59,42 +110,62 @@ export default function RawMaterialOrdersPage({ onBack, onTrackOrder, onQuickReo
           </View>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statusScroll} contentContainerStyle={styles.statusTabs}>
-            {['All', 'Pending', 'Out for Delivery', 'Delivered', 'Cancelled'].map(status => (
+            {['All', 'pending', 'confirmed', 'shipped', 'delivered', 'cancelled'].map(status => (
               <TouchableOpacity 
                 key={status} 
                 style={[styles.statusTab, statusFilter === status && styles.statusTabActive]}
                 onPress={() => setStatusFilter(status)}
               >
-                <Text style={[styles.statusTabText, statusFilter === status && styles.statusTabTextActive]}>{status}</Text>
+                <Text style={[styles.statusTabText, statusFilter === status && styles.statusTabTextActive]}>
+                  {status === 'All' ? 'All' : (STATUS_COLORS[status]?.label || status)}
+                </Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
 
           {/* Orders List */}
           <View style={styles.ordersContainer}>
-            {filteredOrders.length === 0 ? (
+            {loading ? (
+              <View style={styles.emptyState}>
+                <ActivityIndicator size="large" color={GOLD} />
+                <Text style={styles.emptySub}>Loading orders...</Text>
+              </View>
+            ) : error ? (
+              <View style={styles.emptyState}>
+                <Package size={48} color="#CBD5E1" style={{ marginBottom: 16 }} />
+                <Text style={styles.emptyTitle}>Error</Text>
+                <Text style={styles.emptySub}>{error}</Text>
+                <TouchableOpacity style={styles.retryBtn} onPress={loadOrders}>
+                  <Text style={styles.retryText}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            ) : filteredOrders.length === 0 ? (
               <View style={styles.emptyState}>
                 <Package size={48} color="#CBD5E1" style={{ marginBottom: 16 }} />
                 <Text style={styles.emptyTitle}>No Orders Found</Text>
-                <Text style={styles.emptySub}>Try adjusting your filters or search term.</Text>
+                <Text style={styles.emptySub}>
+                  {orders.length === 0 
+                    ? 'You haven\'t placed any orders yet. Start shopping!' 
+                    : 'Try adjusting your filters or search term.'}
+                </Text>
               </View>
             ) : (
               filteredOrders.map(order => {
-                const sColor = STATUS_COLORS[order.status] || STATUS_COLORS['Pending'];
+                const sColor = STATUS_COLORS[order.status] || STATUS_COLORS['pending'];
                 
                 return (
                   <View key={order.id} style={styles.orderCard}>
                     
                     <View style={styles.cardHeader}>
                       <View>
-                        <Text style={styles.orderId}>{order.id}</Text>
+                        <Text style={styles.orderId}>{order.displayId}</Text>
                         <View style={styles.dateRow}>
                           <Calendar size={12} color="#64748B" />
                           <Text style={styles.orderDate}>{order.date}</Text>
                         </View>
                       </View>
                       <View style={[styles.statusBadge, { backgroundColor: sColor.bg }]}>
-                        <Text style={[styles.statusText, { color: sColor.text }]}>{order.status}</Text>
+                        <Text style={[styles.statusText, { color: sColor.text }]}>{sColor.label}</Text>
                       </View>
                     </View>
 
@@ -107,7 +178,7 @@ export default function RawMaterialOrdersPage({ onBack, onTrackOrder, onQuickReo
                           <Text style={styles.vendorName}>{order.vendor}</Text>
                           <Text style={styles.itemCount}>{order.items.length} Product{order.items.length > 1 ? 's' : ''}</Text>
                         </View>
-                        <Text style={styles.orderAmount}>₹{order.amount}</Text>
+                        <Text style={styles.orderAmount}>₹{order.amount.toLocaleString()}</Text>
                       </View>
                     </View>
 
@@ -116,17 +187,15 @@ export default function RawMaterialOrdersPage({ onBack, onTrackOrder, onQuickReo
                         <Eye size={14} color="#0F172A" />
                         <Text style={styles.actionBtnText}>View Details</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity style={[styles.actionBtn, { borderColor: '#E2E8F0' }]}>
-                        <FileText size={14} color="#64748B" />
-                        <Text style={[styles.actionBtnText, { color: '#64748B' }]}>Invoice</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity 
-                        style={[styles.actionBtn, { backgroundColor: '#FFFBEB', borderColor: GOLD }]}
-                        onPress={() => onQuickReorder && onQuickReorder(order)}
-                      >
-                        <RefreshCw size={14} color={GOLD} />
-                        <Text style={[styles.actionBtnText, { color: GOLD }]}>Reorder</Text>
-                      </TouchableOpacity>
+                      {order.status !== 'cancelled' && (
+                        <TouchableOpacity 
+                          style={[styles.actionBtn, { backgroundColor: '#FFFBEB', borderColor: GOLD }]}
+                          onPress={() => onQuickReorder && onQuickReorder(order)}
+                        >
+                          <RefreshCw size={14} color={GOLD} />
+                          <Text style={[styles.actionBtnText, { color: GOLD }]}>Reorder</Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
 
                   </View>
@@ -167,7 +236,9 @@ const styles = StyleSheet.create({
   
   emptyState: { alignItems: 'center', justifyContent: 'center', padding: 40, backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: colors.border },
   emptyTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A', marginBottom: 4 },
-  emptySub: { fontSize: 13, color: '#64748B' },
+  emptySub: { fontSize: 13, color: '#64748B', textAlign: 'center', marginTop: 8 },
+  retryBtn: { marginTop: 16, backgroundColor: GOLD, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryText: { fontSize: 14, fontWeight: '700', color: '#fff' },
 
   orderCard: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },

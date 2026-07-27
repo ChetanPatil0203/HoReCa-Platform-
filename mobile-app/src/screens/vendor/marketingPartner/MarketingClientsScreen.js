@@ -16,51 +16,9 @@ const GRAY = '#64748B';
 const LIGHT_BG = '#F8FAFC';
 const BORDER_COLOR = '#E2E8F0';
 
-const CLIENTS = [
-  { id: "C-1", name: "The Meridian Grand", type: "Luxury Hotel", lifetime: "₹12.4L", rating: 4.9, location: "Andheri, Mumbai", activeCampaigns: 1 },
-  { id: "C-2", name: "Spice Route Restaurant", type: "Fine Dining", lifetime: "₹4.2L", rating: 4.7, location: "Bandra, Mumbai", activeCampaigns: 0 },
-  { id: "C-3", name: "Azure Palace Hotel", type: "Resort", lifetime: "₹8.9L", rating: 4.8, location: "Juhu, Mumbai", activeCampaigns: 1 },
-  { id: "C-4", name: "Café Zephyr Group", type: "Café Chain", lifetime: "₹1.1L", rating: 4.5, location: "Lower Parel, Mumbai", activeCampaigns: 0 },
-];
+const CLIENTS = [];
 
-const TRANSACTIONS = [
-  {
-    id: 'ORD-284',
-    client: 'The Meridian Grand',
-    type: 'June Social Campaign',
-    amount: '₹35,000',
-    date: '12 Jun 2026',
-    status: 'Active',
-    method: 'Bank Transfer'
-  },
-  {
-    id: 'INV-26001',
-    client: 'Azure Palace Hotel',
-    type: 'Campaign Fee',
-    amount: '₹50,000',
-    date: '01 Jul 2026',
-    status: 'Sent',
-    method: 'Net Banking'
-  },
-  {
-    id: 'INV-26002',
-    client: 'Café Zephyr Group',
-    type: 'Photography Fee',
-    amount: '₹12,000',
-    date: '15 Jun 2026',
-    status: 'Paid',
-    method: 'UPI'
-  },
-  {
-    id: 'INV-26003',
-    client: 'Spice Route Restaurant',
-    type: 'Printing Fee',
-    amount: '₹8,500',
-    date: '01 Jun 2026',
-    status: 'Overdue',
-    method: 'Cash'
-  },
-];
+const TRANSACTIONS = [];
 
 export default function MarketingClientsScreen({ setActivePage }) {
   const [activeTab, setActiveTab] = useState('clients'); // 'clients' or 'transactions'

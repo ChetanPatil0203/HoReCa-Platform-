@@ -103,9 +103,9 @@ export default function OwnerDashboard() {
   ];
 
   const profileData = {
-    initials: user?.name ? user.name.substring(0,2).toUpperCase() : "AD",
-    name: user?.name || "Admin User",
-    role: "System Administrator",
+    initials: user?.name ? user.name.substring(0,2).toUpperCase() : (user?.email ? user.email.substring(0,2).toUpperCase() : "U"),
+    name: user?.name || user?.email || "User",
+    role: user?.businessType || "Business Owner",
     badge: "OWNER"
   };
 

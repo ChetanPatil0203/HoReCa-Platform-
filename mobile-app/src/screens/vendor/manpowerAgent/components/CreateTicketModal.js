@@ -61,7 +61,7 @@ export default function CreateTicketModal({ visible, onClose, onSave }) {
               </View>
 
               <Text style={styles.inputLabel}>Attachments</Text>
-              <TouchableOpacity style={styles.attachBox} onPress={() => showToast("Attachment system unavailable in demo")}>
+              <TouchableOpacity style={styles.attachBox} onPress={() => showToast("Attachment system unavailable")}>
                 <Paperclip size={20} color="#64748B" />
                 <Text style={styles.attachText}>Tap to upload files (Screenshots, PDFs)</Text>
               </TouchableOpacity>

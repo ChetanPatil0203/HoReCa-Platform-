@@ -34,7 +34,7 @@ const MOCK_DOCUMENTS = [
 export default function MarketingProfileScreen({ setActivePage }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
-  const { logout } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
 
   // State
   const [profileData, setProfileData] = useState({
@@ -131,10 +131,10 @@ export default function MarketingProfileScreen({ setActivePage }) {
           <View style={[styles.profileTop, !isMobile && {flexDirection: 'row', alignItems: 'center'}]}>
             <View style={[styles.profileLeft, !isMobile && {flex: 1, flexDirection: 'row', alignItems: 'center'}]}>
               <View style={styles.avatarLarge}>
-                <Text style={styles.avatarInitials}>BC</Text>
+                <Text style={styles.avatarInitials}>{user?.bizName ? user.bizName.substring(0, 2).toUpperCase() : 'MA'}</Text>
               </View>
               <View style={[!isMobile && {marginLeft: 20}]}>
-                <Text style={styles.agencyName}>{profileData.name}</Text>
+                <Text style={styles.agencyName}>{user?.bizName || profileData.name || 'Marketing Agency'}</Text>
                 <View style={styles.badgeRow}>
                   <View style={styles.verifiedBadge}>
                     <BadgeCheck size={14} color={GREEN} style={{marginRight: 4}} />
@@ -153,15 +153,15 @@ export default function MarketingProfileScreen({ setActivePage }) {
             <View style={[styles.profileMiddle, !isMobile && {flex: 1, paddingHorizontal: 20}]}>
               <View style={styles.contactRow}>
                 <Phone size={14} color={MUTED} style={{marginRight: 8}} />
-                <Text style={styles.contactText}>{profileData.mobile}</Text>
+                <Text style={styles.contactText}>{user?.mobile || profileData.mobile || 'Not provided'}</Text>
               </View>
               <View style={styles.contactRow}>
                 <Mail size={14} color={MUTED} style={{marginRight: 8}} />
-                <Text style={styles.contactText}>{profileData.email}</Text>
+                <Text style={styles.contactText}>{user?.email || profileData.email || 'Not provided'}</Text>
               </View>
               <View style={styles.contactRow}>
                 <MapPin size={14} color={MUTED} style={{marginRight: 8}} />
-                <Text style={styles.contactText}>{profileData.city}, {profileData.state}</Text>
+                <Text style={styles.contactText}>{user?.city || profileData.city || 'City'}, {user?.state || profileData.state || 'State'}</Text>
               </View>
             </View>
 
@@ -193,19 +193,19 @@ export default function MarketingProfileScreen({ setActivePage }) {
             </View>
             <View style={styles.businessCol}>
               <Text style={styles.businessLabel}>BUSINESS CATEGORY</Text>
-              <Text style={styles.businessValue}>Marketing Services</Text>
+              <Text style={styles.businessValue}>{user?.bizCategory || user?.vendorType || 'Marketing Services'}</Text>
             </View>
             <View style={styles.businessCol}>
               <Text style={styles.businessLabel}>GST NUMBER</Text>
-              <Text style={styles.businessValue}>27ABCDE1234F1Z5</Text>
+              <Text style={styles.businessValue}>{user?.gstin || 'Not Provided'}</Text>
             </View>
             <View style={styles.businessCol}>
-              <Text style={styles.businessLabel}>PAN NUMBER</Text>
-              <Text style={styles.businessValue}>ABCDE1234F</Text>
+              <Text style={styles.businessLabel}>CONTACT PERSON</Text>
+              <Text style={styles.businessValue}>{user?.contactPerson || user?.firstName || 'Not Provided'}</Text>
             </View>
             <View style={styles.businessCol}>
-              <Text style={styles.businessLabel}>REGISTRATION NUMBER</Text>
-              <Text style={styles.businessValue}>BRN-27-00012345</Text>
+              <Text style={styles.businessLabel}>STATUS</Text>
+              <Text style={styles.businessValue} style={{textTransform: 'capitalize'}}>{user?.status || 'Pending'}</Text>
             </View>
           </View>
         </View>

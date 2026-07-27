@@ -3,14 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { Truck, Search, Eye, MapPin } from 'lucide-react-native';
 import { colors } from '../../theme/colors';
 
-const DELIVERIES_DATA = [
-  { id: "DEL-2026-291", orderId: "ORD-211", client: "The Meridian Grand", address: "Hotel - Bandra, Mumbai", item: "Premium Basmati Rice", qty: "500 kg", date: "18 Jun 2026", time: "Today 7:30 AM", driver: "Ravi Kumar", driverStatus: "Out for Delivery", amount: "₹21,000", status: "In Transit" },
-  { id: "DEL-2026-287", orderId: "ORD-287", client: "Azure Palace Hotel", address: "Hotel - Juhu, Mumbai", item: "Atlantic Salmon Fillet", qty: "80 kg", date: "15 Jun 2026", time: "Delivered", driver: "Suresh Nair", driverStatus: "Delivered", amount: "₹78,400", status: "Delivered" },
-  { id: "DEL-2026-283", orderId: "ORD-283", client: "Café Zephyr Group", address: "Café - Lower Parel, Mumbai", item: "Fresh Vegetables Pack", qty: "200 kg", date: "14 Jun 2026", time: "Delivered", driver: "Mukesh Yadav", driverStatus: "Delivered", amount: "₹8,200", status: "Delivered" },
-  { id: "DEL-2026-280", orderId: "ORD-280", client: "The Grand Bistro", address: "Restaurant - Fort, Mumbai", item: "Toor Dal + Chana Dal", qty: "80 kg", date: "18 Jun 2026", time: "Tomorrow 10:00 AM", driver: "Ravi Kumar", driverStatus: "Out for Delivery", amount: "₹11,400", status: "Scheduled" },
-  { id: "DEL-2026-279", orderId: "ORD-279", client: "Spice Route Restaurant", address: "Restaurant - Andheri, Mumbai", item: "Kashmiri Red Chilli", qty: "25 kg", date: "15 Jun 2026", time: "Delivered", driver: "Anand Patil", driverStatus: "Delivered", amount: "₹13,000", status: "Delivered" },
-  { id: "DEL-2026-276", orderId: "ORD-276", client: "The Meridian Grand", address: "Hotel - Bandra, Mumbai", item: "Refined Sunflower Oil", qty: "100 L", date: "19 Jun 2026", time: "11 Jun, 8:00 AM", driver: "Add Driver", driverStatus: "Add Driver", amount: "₹14,500", status: "Pending" },
-];
+const DELIVERIES_DATA = [];
 
 export default function VendorDeliveriesPage() {
   return (
@@ -49,23 +42,23 @@ export default function VendorDeliveriesPage() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginBottom: 16}}>
           <View style={styles.statsContainer}>
             <View style={[styles.statCard, { borderTopColor: '#3B82F6', borderTopWidth: 2 }]}>
-              <Text style={[styles.statValue, { color: '#1E293B' }]}>10</Text>
+              <Text style={[styles.statValue, { color: '#1E293B' }]}>0</Text>
               <Text style={styles.statLabel}>Total</Text>
             </View>
             <View style={[styles.statCard, { borderTopColor: '#10B981', borderTopWidth: 2, backgroundColor: '#ECFDF5' }]}>
-              <Text style={[styles.statValue, { color: '#10B981' }]}>5</Text>
+              <Text style={[styles.statValue, { color: '#10B981' }]}>0</Text>
               <Text style={[styles.statLabel, {color: '#10B981'}]}>Delivered</Text>
             </View>
             <View style={[styles.statCard, { borderTopColor: '#8B5CF6', borderTopWidth: 2, backgroundColor: '#F5F3FF' }]}>
-              <Text style={[styles.statValue, { color: '#8B5CF6' }]}>1</Text>
+              <Text style={[styles.statValue, { color: '#8B5CF6' }]}>0</Text>
               <Text style={[styles.statLabel, {color: '#8B5CF6'}]}>In Transit</Text>
             </View>
             <View style={[styles.statCard, { borderTopColor: '#F59E0B', borderTopWidth: 2, backgroundColor: '#FFFBEB' }]}>
-              <Text style={[styles.statValue, { color: '#F59E0B' }]}>2</Text>
+              <Text style={[styles.statValue, { color: '#F59E0B' }]}>0</Text>
               <Text style={[styles.statLabel, {color: '#F59E0B'}]}>Scheduled</Text>
             </View>
             <View style={[styles.statCard, { borderTopColor: '#3B82F6', borderTopWidth: 2, backgroundColor: '#EFF6FF' }]}>
-              <Text style={[styles.statValue, { color: '#3B82F6' }]}>1</Text>
+              <Text style={[styles.statValue, { color: '#3B82F6' }]}>0</Text>
               <Text style={[styles.statLabel, {color: '#3B82F6'}]}>Pending</Text>
             </View>
           </View>

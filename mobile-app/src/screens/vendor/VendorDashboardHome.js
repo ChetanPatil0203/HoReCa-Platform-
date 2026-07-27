@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity , Alert} from 'react-native';
 import { Truck, TrendingUp, Star, Zap, Package, Users, Wrench, Megaphone } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
-import { mockDb } from '../../services/mockDb';
+
 
 const CAT = {
   "raw-material": { icon: Package, color: "#F59E0B", bg: "#FFFBEB", border: "#FDE68A", label: "Raw Material Supplier", accent: "#D97706" },
@@ -13,36 +13,36 @@ const CAT = {
 
 const KPI_DATA = {
   "raw-material": [
-    { label: "Active Deliveries", value: "12", delta: "+2 this week", icon: Truck, color: "#F59E0B" },
-    { label: "Monthly Revenue", value: "₹2.8L", delta: "+16% vs last month", icon: TrendingUp, color: "#10B981" },
-    { label: "Avg. Rating", value: "4.8 ★", delta: "From 142 reviews", icon: Star, color: "#F59E0B" },
-    { label: "On-Time Rate", value: "97.2%", delta: "+1.2% this month", icon: Zap, color: "#2563EB" },
+    { label: "Active Deliveries", value: "—", delta: "Data coming soon", icon: Truck, color: "#F59E0B" },
+    { label: "Monthly Revenue", value: "—", delta: "Data coming soon", icon: TrendingUp, color: "#10B981" },
+    { label: "Avg. Rating", value: "—", delta: "Data coming soon", icon: Star, color: "#F59E0B" },
+    { label: "On-Time Rate", value: "—", delta: "Data coming soon", icon: Zap, color: "#2563EB" },
   ],
   manpower: [
-    { label: "Active Placements", value: "28", delta: "+4 this week", icon: Users, color: "#2563EB" },
-    { label: "Monthly Revenue", value: "₹1.9L", delta: "+22% vs last month", icon: TrendingUp, color: "#10B981" },
-    { label: "Avg. Rating", value: "4.7 ★", delta: "From 84 reviews", icon: Star, color: "#F59E0B" },
-    { label: "Fill Rate", value: "94.5%", delta: "+2.1% this month", icon: Zap, color: "#2563EB" },
+    { label: "Active Placements", value: "—", delta: "Data coming soon", icon: Users, color: "#2563EB" },
+    { label: "Monthly Revenue", value: "—", delta: "Data coming soon", icon: TrendingUp, color: "#10B981" },
+    { label: "Avg. Rating", value: "—", delta: "Data coming soon", icon: Star, color: "#F59E0B" },
+    { label: "Fill Rate", value: "—", delta: "Data coming soon", icon: Zap, color: "#2563EB" },
   ],
   service: [
-    { label: "Jobs This Month", value: "17", delta: "+3 vs last month", icon: Wrench, color: "#10B981" },
-    { label: "Monthly Revenue", value: "₹1.1L", delta: "+18% vs last month", icon: TrendingUp, color: "#10B981" },
-    { label: "Avg. Rating", value: "4.9 ★", delta: "From 61 reviews", icon: Star, color: "#F59E0B" },
-    { label: "Completion Rate", value: "100%", delta: "All jobs completed", icon: Zap, color: "#2563EB" },
+    { label: "Jobs This Month", value: "—", delta: "Data coming soon", icon: Wrench, color: "#10B981" },
+    { label: "Monthly Revenue", value: "—", delta: "Data coming soon", icon: TrendingUp, color: "#10B981" },
+    { label: "Avg. Rating", value: "—", delta: "Data coming soon", icon: Star, color: "#F59E0B" },
+    { label: "Completion Rate", value: "—", delta: "Data coming soon", icon: Zap, color: "#2563EB" },
   ],
   marketing: [
-    { label: "Active Campaigns", value: "3", delta: "+1 this month", icon: Megaphone, color: "#8B5CF6" },
-    { label: "Monthly Revenue", value: "₹1.2L", delta: "+34% vs last month", icon: TrendingUp, color: "#10B981" },
-    { label: "Avg. Rating", value: "4.5 ★", delta: "From 38 reviews", icon: Star, color: "#F59E0B" },
-    { label: "Client Retention", value: "86%", delta: "+4% this month", icon: Zap, color: "#2563EB" },
+    { label: "Active Campaigns", value: "—", delta: "Data coming soon", icon: Megaphone, color: "#8B5CF6" },
+    { label: "Monthly Revenue", value: "—", delta: "Data coming soon", icon: TrendingUp, color: "#10B981" },
+    { label: "Avg. Rating", value: "—", delta: "Data coming soon", icon: Star, color: "#F59E0B" },
+    { label: "Client Retention", value: "—", delta: "Data coming soon", icon: Zap, color: "#2563EB" },
   ],
 };
 
 const REVENUE_DATA = {
-  "raw-material": [{ month: "Jan", revenue: 1.8 }, { month: "Feb", revenue: 1.6 }, { month: "Mar", revenue: 2.1 }, { month: "Apr", revenue: 2.4 }, { month: "May", revenue: 2.2 }, { month: "Jun", revenue: 2.8 }],
-  manpower: [{ month: "Jan", revenue: 1.1 }, { month: "Feb", revenue: 1.3 }, { month: "Mar", revenue: 1.4 }, { month: "Apr", revenue: 1.5 }, { month: "May", revenue: 1.4 }, { month: "Jun", revenue: 1.9 }],
-  service: [{ month: "Jan", revenue: 0.5 }, { month: "Feb", revenue: 0.6 }, { month: "Mar", revenue: 0.8 }, { month: "Apr", revenue: 0.7 }, { month: "May", revenue: 0.9 }, { month: "Jun", revenue: 1.1 }],
-  marketing: [{ month: "Jan", revenue: 0.4 }, { month: "Feb", revenue: 0.5 }, { month: "Mar", revenue: 0.7 }, { month: "Apr", revenue: 0.8 }, { month: "May", revenue: 0.9 }, { month: "Jun", revenue: 1.2 }],
+  "raw-material": [],
+  manpower: [],
+  service: [],
+  marketing: [],
 };
 
 const RECENT_ORDERS = {
@@ -60,7 +60,7 @@ const STATUS_STYLES = {
 };
 
 export default function VendorDashboardHome() {
-  const { vendorType } = useContext(AuthContext);
+  const { vendorType, user } = useContext(AuthContext);
   const type = vendorType || 'raw-material';
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
@@ -73,8 +73,10 @@ export default function VendorDashboardHome() {
   const [orders, setOrders] = React.useState([]);
 
   React.useEffect(() => {
-    setOrders(mockDb.getOrders());
+    // Orders come from real API via VendorRequestsPage
+    setOrders([]);
   }, []);
+
 
   const maxRev = Math.max(...revenueData.map(d => d.revenue));
   const WelcomeIcon = activeMeta.icon;
@@ -93,11 +95,7 @@ export default function VendorDashboardHome() {
         <View style={styles.bannerContent}>
           <Text style={styles.bannerTitle}>Welcome back, Partner</Text>
           <Text style={styles.bannerSub}>
-            {activeMeta.label} · {
-              type === 'raw-material' ? 'Metro Fresh' : 
-              type === 'manpower' ? 'Elite Manpower' : 
-              type === 'service' ? 'ProClean Services' : 'BrandCraft Agency'
-            }
+            {activeMeta.label} · {user?.businessName || user?.name || 'Business Partner'}
           </Text>
         </View>
         <View style={styles.activePill}>

@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, useWindowDimensions, Platform } from 'react-native';
 import { ArrowLeft, Search, Star, Clock, MapPin, BadgeCheck, ChevronRight, Store } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
-import { SUPPLIERS } from '../../../constants/rawMaterialData';
+import { fetchRawMaterialSuppliers } from '../../../services/api.service';
 
 const GOLD = '#D97706';
 const PURPLE = '#D97706';
@@ -16,10 +16,40 @@ export default function CategorySuppliersPage({ category, onBack, onSupplierPres
   const isMobile = width < 768 || Platform.OS !== 'web';
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState('All Suppliers');
+  const [suppliers, setSuppliers] = useState([]);
+
+  React.useEffect(() => {
+    const loadSuppliers = async () => {
+      try {
+        const res = await fetchRawMaterialSuppliers();
+        if (res?.success) {
+          const mappedSuppliers = res.data.map((s, index) => ({
+            id: s.id,
+            name: s.bizName,
+            initials: s.bizName.substring(0, 2).toUpperCase(),
+            bg: index % 2 === 0 ? '#FEF3C7' : '#E0E7FF',
+            color: index % 2 === 0 ? '#B45309' : '#3730A3',
+            verified: true,
+            rating: 4.8,
+            reviews: 120,
+            wholesale: true,
+            location: s.city,
+            deliveryTime: 'Next Day',
+            minOrder: 500,
+            categories: s.categories || []
+          }));
+          setSuppliers(mappedSuppliers);
+        }
+      } catch (err) {
+        console.error('Error fetching suppliers:', err);
+      }
+    };
+    loadSuppliers();
+  }, []);
 
   const filteredSuppliers = useMemo(() => {
-    let list = SUPPLIERS.filter(s => 
-      s.categories.includes(category.id) &&
+    let list = suppliers.filter(s => 
+      s.categories.includes(category.label) &&
       s.name.toLowerCase().includes(search.toLowerCase())
     );
 
@@ -32,7 +62,7 @@ export default function CategorySuppliersPage({ category, onBack, onSupplierPres
     }
 
     return list;
-  }, [search, category, activeFilter]);
+  }, [search, activeFilter, suppliers]);
 
   const getTagsForSupplier = (id) => {
     switch (id) {

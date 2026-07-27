@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions, Image } from 'react-native';
 import { Search, Heart, Bell, ShoppingCart, ChevronRight, Package, User } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
 
 import { colors } from '../../../theme/colors';
-import { CATEGORIES, PRODUCTS, VENDORS, FEATURES } from '../../../constants/rawMaterialData';
+import { CATEGORIES, FEATURES } from '../../../constants/rawMaterialData';
+import { fetchRawMaterialSuppliers } from '../../../services/api.service';
 
 // Components
 import ProductCard from '../../../components/owner/rawmaterial/ProductCard';
@@ -26,6 +28,7 @@ const PURPLE = '#D97706';
 export default function RawMaterialPage({ onNavigate }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
+  const { user } = useContext(AuthContext);
 
   const [searchText, setSearchText] = useState('');
   const [cartItems, setCartItems] = useState([]);
@@ -36,6 +39,36 @@ export default function RawMaterialPage({ onNavigate }) {
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
+
+  const [vendors, setVendors] = useState([]);
+
+  React.useEffect(() => {
+    const loadVendors = async () => {
+      try {
+        const res = await fetchRawMaterialSuppliers();
+        if (res?.success) {
+          const mappedVendors = res.data.map((v, index) => ({
+            id: v.id,
+            name: v.bizName,
+            location: v.city,
+            rating: 4.5,
+            reviews: 100,
+            image: null,
+            initials: v.bizName.substring(0, 2).toUpperCase(),
+            bg: index % 2 === 0 ? '#FEF3C7' : '#E0E7FF',
+            color: index % 2 === 0 ? '#B45309' : '#3730A3',
+            products: v.products?.length || 10,
+            badge: index === 0 ? 'Top Seller' : null,
+            badgeColor: index === 0 ? '#16A34A' : null
+          }));
+          setVendors(mappedVendors);
+        }
+      } catch (err) {
+        console.error('Error fetching vendors:', err);
+      }
+    };
+    loadVendors();
+  }, []);
 
   // Bottom Nav items
   const NAV_ITEMS = [
@@ -61,6 +94,7 @@ export default function RawMaterialPage({ onNavigate }) {
       <View style={{ flex: 1 }}>
         <RawMaterialCheckoutPage
           cartItems={cartItems}
+          user={user}
           onBack={() => setCurrentView('cart')}
           onSuccess={() => {
             setCartItems([]);
@@ -96,6 +130,7 @@ export default function RawMaterialPage({ onNavigate }) {
     return (
       <View style={{ flex: 1 }}>
         <RawMaterialOrdersPage
+          user={user}
           onBack={() => setCurrentView('home')}
           onTrackOrder={(order) => {
             setSelectedOrder(order);
@@ -125,6 +160,7 @@ export default function RawMaterialPage({ onNavigate }) {
       <View style={{ flex: 1 }}>
         <RawMaterialOrderDetailsPage
           order={selectedOrder}
+          user={user}
           onBack={() => setCurrentView('orders')}
           onReorder={(order) => {
             setCartItems(prev => {
@@ -276,8 +312,11 @@ export default function RawMaterialPage({ onNavigate }) {
         {/* ── Top Rated Vendors ── */}
         <SectionHeader title="Top Rated Vendors" action="View All" />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hScroll} contentContainerStyle={styles.hScrollContent}>
-          {VENDORS.map(vendor => (
-            <VendorCard key={vendor.id} vendor={vendor} onPress={() => { }} />
+          {vendors.map(vendor => (
+            <VendorCard key={vendor.id} vendor={vendor} onPress={() => { 
+              setSelectedSupplier(vendor);
+              setCurrentView('supplierStore');
+             }} />
           ))}
         </ScrollView>
 

@@ -3,12 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
 import { Building2, Star } from 'lucide-react-native';
 import { colors } from '../../theme/colors';
 
-const CLIENTS = [
-  { id: "C-1", name: "The Meridian Grand", type: "Luxury Hotel", lifetime: "₹12.4L", rating: 4.9 },
-  { id: "C-2", name: "Spice Route Restaurant", type: "Fine Dining", lifetime: "₹4.2L", rating: 4.7 },
-  { id: "C-3", name: "Azure Palace Hotel", type: "Resort", lifetime: "₹8.9L", rating: 4.8 },
-  { id: "C-4", name: "Café Zephyr Group", type: "Café Chain", lifetime: "₹1.1L", rating: 4.5 },
-];
+const CLIENTS = [];
 
 export default function VendorClientsPage() {
   return (

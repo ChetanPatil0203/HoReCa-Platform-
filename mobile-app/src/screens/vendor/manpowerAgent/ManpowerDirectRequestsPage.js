@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Modal, SafeAreaView, FlatList, TextInput, Pressable, useWindowDimensions
+  Modal, SafeAreaView, FlatList, TextInput, Pressable, useWindowDimensions, ActivityIndicator
 } from 'react-native';
 import {
   Briefcase, Users, Calendar, MapPin,
@@ -9,12 +9,10 @@ import {
   Building2, UsersRound, IndianRupee,
   FilePlus2, CircleCheck, Clock3
 } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorRequirements, updateRequirementStatusApi } from '../../../services/api.service';
 
 const NAVY = '#081A3A';
-
-const INITIAL_REQUESTS = [];
-
-const MOCK_CANDIDATES = [];
 
 const DECLINE_REASONS = [
   "Suitable candidates unavailable",
@@ -29,8 +27,11 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
   const { width } = useWindowDimensions();
   const summaryGridGap = 12;
   const summaryCardWidth = (width - 32 - summaryGridGap) / 2;
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.id;
 
-  const [requests, setRequests] = useState(INITIAL_REQUESTS);
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const filters = ["All", "New", "Accepted", "Candidates Sent", "Closed", "Declined"];
@@ -45,13 +46,36 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
   // Toast
   const [toastMsg, setToastMsg] = useState("");
 
-  React.useEffect(() => {
-    if (initialAction === 'submit-candidates' && INITIAL_REQUESTS.length > 0) {
-      setSelectedReq(INITIAL_REQUESTS[0]);
-      setSelectedCands([]);
-      setSendCandVisible(true);
+  const loadRequests = async () => {
+    try {
+      setLoading(true);
+      const res = await fetchVendorRequirements(supplierId);
+      if (res.success) {
+        const mapped = (res.data || []).map(r => ({
+          id: r.id,
+          role: r.title,
+          businessName: r.owner?.bizName || 'HRC Partner',
+          location: r.location || r.owner?.city || 'India',
+          postedDate: new Date(r.createdAt).toLocaleDateString('en-IN'),
+          salary: r.budget || '—',
+          staffRequired: String(r.extraData?.numberOfStaff || '1'),
+          status: r.status === 'pending' ? 'New' : r.status === 'confirmed' ? 'Accepted' : r.status === 'cancelled' ? 'Declined' : r.status.charAt(0).toUpperCase() + r.status.slice(1),
+          description: r.description || ''
+        }));
+        setRequests(mapped);
+      }
+    } catch (err) {
+      console.error('Failed to fetch direct manpower requests:', err);
+    } finally {
+      setLoading(false);
     }
-  }, [initialAction]);
+  };
+
+  useEffect(() => {
+    if (supplierId) {
+      loadRequests();
+    }
+  }, [supplierId]);
 
   const showToast = (msg) => {
     setToastMsg(msg);
@@ -69,10 +93,15 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
     }
   };
 
-  const handleAccept = (reqId) => {
-    setRequests(prev => prev.map(r => r.id === reqId ? { ...r, status: "Accepted" } : r));
-    setDetailsVisible(false);
-    showToast("Direct request accepted.");
+  const handleAccept = async (reqId) => {
+    try {
+      await updateRequirementStatusApi(reqId, 'confirmed');
+      setRequests(prev => prev.map(r => r.id === reqId ? { ...r, status: "Accepted" } : r));
+      setDetailsVisible(false);
+      showToast("Direct request accepted.");
+    } catch (err) {
+      console.error('Failed to accept requirement:', err);
+    }
   };
 
   const handleDeclineSelect = (req) => {
@@ -80,11 +109,16 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
     setDeclineVisible(true);
   };
 
-  const submitDecline = (reason) => {
-    setRequests(prev => prev.map(r => r.id === selectedReq.id ? { ...r, status: "Declined" } : r));
-    setDeclineVisible(false);
-    setDetailsVisible(false);
-    showToast("Direct request declined.");
+  const submitDecline = async (reason) => {
+    try {
+      await updateRequirementStatusApi(selectedReq.id, 'cancelled');
+      setRequests(prev => prev.map(r => r.id === selectedReq.id ? { ...r, status: "Declined" } : r));
+      setDeclineVisible(false);
+      setDetailsVisible(false);
+      showToast("Direct request declined.");
+    } catch (err) {
+      console.error('Failed to decline requirement:', err);
+    }
   };
 
   const handleSendCandidatesOpen = (req) => {
@@ -215,10 +249,16 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
           </>
         )}
         ListEmptyComponent={() => (
-          <View style={styles.emptyBox}>
-            <Text style={styles.emptyTitle}>No job requirements found</Text>
-            <Text style={styles.emptyDesc}>Requirements will appear here when businesses post them or send them to you.</Text>
-          </View>
+          loading ? (
+            <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+              <ActivityIndicator size="large" color={NAVY} />
+            </View>
+          ) : (
+            <View style={styles.emptyBox}>
+              <Text style={styles.emptyTitle}>No job requirements found</Text>
+              <Text style={styles.emptyDesc}>Requirements will appear here when businesses post them or send them to you.</Text>
+            </View>
+          )
         )}
         renderItem={({ item }) => (
           <View style={styles.recordCard}>
@@ -241,7 +281,7 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
             </View>
 
             <View style={styles.summaryRow}>
-              <View style={styles.summaryItem}><UsersRound size={14} color="#64748B" /><Text style={styles.summaryText}>{item.count} Staff Needed</Text></View>
+              <View style={styles.summaryItem}><UsersRound size={14} color="#64748B" /><Text style={styles.summaryText}>{item.staffRequired} Staff Needed</Text></View>
               <View style={styles.summaryItem}><IndianRupee size={14} color="#64748B" /><Text style={styles.summaryText}>{item.salary}</Text></View>
             </View>
 

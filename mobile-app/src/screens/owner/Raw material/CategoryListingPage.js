@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import {
   ArrowLeft, Search, SlidersHorizontal, ChevronDown,
-  Heart, ShoppingCart, Star, X, Check, Clock,
+  Heart, ShoppingCart, Star, X, Check, Clock, ChevronRight
 } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 import { CATEGORY_PRODUCTS, SORT_OPTIONS } from '../../../constants/rawMaterialData';
@@ -24,7 +24,9 @@ function ProductRowCard({ product, onAddToCart, onPress }) {
   const [isFav, setIsFav] = useState(false);
   const [added, setAdded] = useState(false);
 
-  const handleCart = () => {
+  const handleCart = (e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (e && e.preventDefault) e.preventDefault();
     setAdded(true);
     onAddToCart && onAddToCart(product);
     setTimeout(() => setAdded(false), 1500);
@@ -50,7 +52,10 @@ function ProductRowCard({ product, onAddToCart, onPress }) {
       <View style={styles.rowInfo}>
         <View style={styles.rowTopRow}>
           <Text style={styles.rowName} numberOfLines={1}>{product.name}</Text>
-          <TouchableOpacity onPress={() => setIsFav(!isFav)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <TouchableOpacity onPress={(e) => {
+            if (e && e.stopPropagation) e.stopPropagation();
+            setIsFav(!isFav);
+          }} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Heart
               size={15}
               color={isFav ? '#EF4444' : '#CBD5E1'}
@@ -579,6 +584,24 @@ export default function CategoryListingPage({ category, cartItems = [], onCartUp
         initialFilters={activeFilters}
         catColor={catColor}
       />
+
+      {/* ── Floating Cart Banner ── */}
+      {cartItems.length > 0 && (
+        <View style={styles.floatingCartWrap}>
+          <TouchableOpacity style={[styles.floatingCartBtn, { backgroundColor: catColor }]} onPress={onViewCart} activeOpacity={0.9}>
+            <View style={styles.floatingCartLeft}>
+              <Text style={styles.floatingCartItemsText}>{cartItems.reduce((acc, i) => acc + i.qty, 0)} Items</Text>
+              <Text style={styles.floatingCartPriceText}>
+                ₹{cartItems.reduce((acc, i) => acc + ((i.price || 0) * i.qty), 0).toLocaleString()}
+              </Text>
+            </View>
+            <View style={styles.floatingCartRight}>
+              <Text style={styles.floatingCartActionText}>View Cart</Text>
+              <ChevronRight size={16} color="#fff" />
+            </View>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
@@ -678,11 +701,22 @@ const styles = StyleSheet.create({
   cartRowBtnAdded: { backgroundColor: '#10B981' },
   cartRowBtnText: { fontSize: 12, fontWeight: '700', color: '#fff' },
 
-  // ── Empty State ─────────────────────────────────────────────
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
   emptyEmoji: { fontSize: 48, marginBottom: 14 },
   emptyTitle: { fontSize: 17, fontWeight: '800', color: '#0F172A', marginBottom: 6 },
   emptySub: { fontSize: 13, color: '#94A3B8', marginBottom: 20 },
   emptyBtn: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 },
   emptyBtnText: { fontSize: 13, fontWeight: '700', color: '#fff' },
+
+  floatingCartWrap: { position: 'absolute', bottom: 16, left: 16, right: 16, alignItems: 'center' },
+  floatingCartBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    width: '100%', maxWidth: 400, height: 56, borderRadius: 16, paddingHorizontal: 20,
+    ...Platform.select({ web: { boxShadow: '0 8px 32px rgba(217, 119, 6, 0.4)' }, ios: { shadowColor: '#D97706', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 12 }, android: { elevation: 12 } })
+  },
+  floatingCartLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  floatingCartItemsText: { fontSize: 13, fontWeight: '800', color: '#fff' },
+  floatingCartPriceText: { fontSize: 15, fontWeight: '900', color: '#fff' },
+  floatingCartRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  floatingCartActionText: { fontSize: 14, fontWeight: '800', color: '#fff' }
 });

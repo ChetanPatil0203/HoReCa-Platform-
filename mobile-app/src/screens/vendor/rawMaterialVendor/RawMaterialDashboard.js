@@ -98,8 +98,8 @@ export default function RawMaterialDashboard() {
   ];
 
   const profileData = {
-    initials: user?.name ? user.name.slice(0, 2).toUpperCase() : "RM",
-    name: user?.name || "Raw Material Vendor",
+    initials: (user?.businessName || user?.bizName) ? (user?.businessName || user?.bizName).slice(0, 2).toUpperCase() : "RM",
+    name: user?.businessName || user?.bizName || user?.name || "Raw Material Vendor",
     role: "Raw Material Supplier",
     badge: "VENDOR"
   };
@@ -180,7 +180,7 @@ export default function RawMaterialDashboard() {
                 <View style={styles.mobileNotificationDot} />
               </TouchableOpacity>
               <TouchableOpacity style={styles.mobileAvatarBtn} onPress={() => navigateTo('profile')}>
-                <Text style={styles.avatarText}>MF</Text>
+                <Text style={styles.avatarText}>{profileData.initials}</Text>
                 <View style={styles.onlineIndicator} />
               </TouchableOpacity>
             </View>

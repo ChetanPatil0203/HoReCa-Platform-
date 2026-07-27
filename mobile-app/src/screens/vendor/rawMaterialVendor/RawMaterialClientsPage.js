@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity,
-  useWindowDimensions, Modal, SafeAreaView, Platform, TouchableWithoutFeedback
+  useWindowDimensions, Modal, SafeAreaView, Platform, TouchableWithoutFeedback, ActivityIndicator
 } from 'react-native';
 import {
   Search, Filter, Users, User, RefreshCw, AlertCircle, MapPin, 
   Star, ShoppingBag, MessageSquare, MoreVertical, FileText, Gift, XCircle,
   Building, Phone, Mail, FileCheck, Package, CreditCard, Clock3, CheckCircle2, HelpCircle
 } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorOrders } from '../../../services/api.service';
 
 const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
@@ -21,68 +23,64 @@ const SUMMARY_DATA = [
 
 const CHIPS = ['All', 'Hotel', 'Restaurant', 'Cafe'];
 
-const MOCK_CLIENTS = [];
-
-const TRANSACTIONS = [
-  {
-    id: "PAY-2026-441",
-    client: "The Meridian Grand",
-    product: "Premium Basmati Rice",
-    quantity: "500 kg",
-    amount: "₹45,000",
-    date: "24 Jul 2026, 10:30 AM",
-    status: "Paid",
-    method: "UPI",
-    reference: "ref-upi-778822"
-  },
-  {
-    id: "ORD-2026-1024",
-    client: "Azure Palace",
-    product: "Atlantic Salmon",
-    quantity: "50 kg",
-    amount: "₹24,000",
-    date: "23 Jul 2026, 02:00 PM",
-    status: "Pending",
-    method: "Net Banking",
-    reference: "ref-bank-998822"
-  },
-  {
-    id: "PAY-2026-440",
-    client: "Café Zephyr",
-    product: "Sunflower Oil",
-    quantity: "50 L",
-    amount: "₹12,750",
-    date: "22 Jul 2026, 04:30 PM",
-    status: "Paid",
-    method: "Bank Transfer",
-    reference: "ref-trf-112233"
-  },
-  {
-    id: "ORD-2026-1017",
-    client: "Royal Orchid Hotel",
-    product: "Premium Dairy Kit",
-    quantity: "15 units",
-    amount: "₹8,500",
-    date: "22 Jul 2026, 11:20 AM",
-    status: "Overdue",
-    method: "Cash",
-    reference: "ref-cash-00123"
-  }
-];
+// Transactions are derived from real orders — no hardcoded data
+const TRANSACTIONS = [];
 
 export default function RawMaterialClientsPage() {
   const { width } = useWindowDimensions();
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.id;
+
   const [activeFilter, setActiveFilter] = useState('All');
-  const [clients, setClients] = useState(MOCK_CLIENTS);
-  const [activeTab, setActiveTab] = useState('clients'); // 'clients' or 'transactions'
-  
+  const [clients, setClients] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('clients');
+
+  // Load clients by deriving unique owners from vendor orders
+  useEffect(() => {
+    const load = async () => {
+      if (!supplierId) { setLoading(false); return; }
+      try {
+        const res = await fetchVendorOrders(supplierId);
+        if (res?.success) {
+          // Build unique client list from order owners
+          const seen = new Set();
+          const derived = [];
+          for (const o of (res.data || [])) {
+            const owner = o.owner;
+            if (owner && !seen.has(owner.id)) {
+              seen.add(owner.id);
+              derived.push({
+                id: owner.id,
+                name: owner.bizName || owner.ownerName || 'Client',
+                initials: (owner.bizName || owner.ownerName || 'C').slice(0, 2).toUpperCase(),
+                type: 'Hotel',
+                location: owner.city || '—',
+                address: owner.address || '—',
+                phone: owner.mobile || '—',
+                email: owner.email || '—',
+                tag: 'Regular',
+                orders: (res.data || []).filter(x => x.owner?.id === owner.id).length,
+                totalSpend: `₹${(res.data || []).filter(x => x.owner?.id === owner.id).reduce((s, x) => s + parseFloat(x.totalAmount || 0), 0).toFixed(0)}`,
+                lastOrder: new Date(o.createdAt).toLocaleDateString('en-IN'),
+                rating: 0,
+              });
+            }
+          }
+          setClients(derived);
+        }
+      } catch (e) {
+        console.error('RawMaterialClientsPage: load error:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [supplierId]);
+
   const [menuVisibleId, setMenuVisibleId] = useState(null);
-  
-  // Profile Modal
   const [selectedClient, setSelectedClient] = useState(null);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
-
-  // Transaction Detail Modal
   const [selectedTxn, setSelectedTxn] = useState(null);
   const [txnModalVisible, setTxnModalVisible] = useState(false);
 

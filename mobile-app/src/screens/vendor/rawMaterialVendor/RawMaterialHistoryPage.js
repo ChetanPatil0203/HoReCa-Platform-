@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity,
   useWindowDimensions, Modal, SafeAreaView, TextInput, KeyboardAvoidingView, 
-  Platform, TouchableWithoutFeedback, Alert
+  Platform, TouchableWithoutFeedback, Alert, ActivityIndicator
 } from 'react-native';
 import {
   Search, SlidersHorizontal, Package, ChevronRight, X, XCircle,
-  MoreVertical, CheckCircle, Truck, User, Home, ClipboardList,
+  CheckCircle, Truck, User, Home, ClipboardList,
   Plus, Calendar, IndianRupee, Boxes, CreditCard, ArrowUpRight,
   ChevronDown, FileSpreadsheet, Download, FileText
 } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorOrders } from '../../../services/api.service';
 
 const NAVY = '#071B3A';
 const GOLD = '#071B3A';
@@ -17,20 +19,62 @@ const BG = '#F8FAFC';
 const WHITE = '#FFFFFF';
 const MUTED = '#64748B';
 
-const MOCK_HISTORY = [];
-
-const SUMMARY_CARDS = [
-  { label: 'Completed Orders', value: '0', icon: CheckCircle, color: '#10B981' },
-  { label: 'Delivered Orders', value: '0', icon: Truck, color: '#3B82F6' },
-  { label: 'Inventory Updates', value: '0', icon: Boxes, color: '#8B5CF6' },
-  { label: 'Total Revenue', value: '₹0', icon: IndianRupee, color: '#F59E0B' }
-];
-
-const TABS = ['All', 'Orders', 'Deliveries', 'Inventory', 'Payments'];
+// Map a completed/cancelled DB order to a history record shape
+const mapHistory = (o) => {
+  const firstItem = (o.items || [])[0];
+  const dbToLabel = {
+    delivered: 'Delivered',
+    cancelled: 'Cancelled',
+    shipped: 'Dispatched',
+    confirmed: 'Accepted',
+  };
+  return {
+    id: `#${o.id.slice(0, 8).toUpperCase()}`,
+    _rawId: o.id,
+    type: 'Orders',
+    date: new Date(o.createdAt).toLocaleDateString('en-IN'),
+    client: o.owner?.bizName || o.owner?.ownerName || 'Client',
+    product: firstItem?.product?.name || 'Mixed Items',
+    qty: `${(o.items || []).reduce((s, i) => s + (i.quantity || 0), 0)} ${firstItem?.product?.unit || ''}`.trim(),
+    amount: `₹${parseFloat(o.totalAmount || 0).toFixed(0)}`,
+    status: dbToLabel[o.status] || o.status,
+    paymentMethod: o.paymentMethod || '—',
+    notes: o.notes || '',
+  };
+};
 
 export default function RawMaterialHistoryPage() {
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.id;
+
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+
+  useEffect(() => {
+    const load = async () => {
+      if (!supplierId) { setLoading(false); return; }
+      try {
+        const res = await fetchVendorOrders(supplierId);
+        if (res?.success) {
+          const historyStatuses = ['delivered', 'cancelled', 'shipped'];
+          const filtered = (res.data || []).filter(o => historyStatuses.includes(o.status));
+          setHistory(filtered.map(mapHistory));
+          const revenue = filtered
+            .filter(o => o.status === 'delivered')
+            .reduce((s, o) => s + parseFloat(o.totalAmount || 0), 0);
+          setTotalRevenue(revenue);
+        }
+      } catch (e) {
+        console.error('RawMaterialHistoryPage: load error:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [supplierId]);
 
   // State Variables
   const [searchQuery, setSearchQuery] = useState('');
@@ -87,18 +131,24 @@ export default function RawMaterialHistoryPage() {
     setExpandedItems(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const deliveredCount = history.filter(h => h.status === 'Delivered').length;
+  const cancelledCount = history.filter(h => h.status === 'Cancelled').length;
+
+  const SUMMARY_CARDS = [
+    { label: 'Completed Orders', value: String(deliveredCount + cancelledCount), icon: CheckCircle, color: '#10B981' },
+    { label: 'Delivered Orders', value: String(deliveredCount), icon: Truck, color: '#3B82F6' },
+    { label: 'Cancelled Orders', value: String(cancelledCount), icon: XCircle, color: '#EF4444' },
+    { label: 'Total Revenue', value: `₹${totalRevenue.toFixed(0)}`, icon: IndianRupee, color: '#F59E0B' },
+  ];
+
+  const TABS = ['All', 'Orders', 'Delivered', 'Cancelled'];
+
   // Main filter function
-  const filteredHistory = MOCK_HISTORY.filter(item => {
+  const filteredHistory = history.filter(item => {
     // 1. Tab Filter
-    if (activeTab !== 'All') {
-      const typeMap = {
-        'Orders': 'Order',
-        'Deliveries': 'Delivery',
-        'Inventory': 'Inventory',
-        'Payments': 'Payment'
-      };
-      if (item.type !== typeMap[activeTab]) return false;
-    }
+    if (activeTab === 'Orders') return item.type === 'Orders';
+    if (activeTab === 'Delivered') return item.status === 'Delivered';
+    if (activeTab === 'Cancelled') return item.status === 'Cancelled';
 
     // 2. Search query filter
     if (searchQuery) {
@@ -110,8 +160,8 @@ export default function RawMaterialHistoryPage() {
     }
 
     // 3. Date Filter
-    const today = new Date("2026-07-23T23:59:59"); // Mock "current date"
-    const itemDate = new Date(item.rawDate);
+    const today = new Date();
+    const itemDate = new Date(item.date);
 
     if (dateFilter === 'Today') {
       return itemDate.toDateString() === today.toDateString();

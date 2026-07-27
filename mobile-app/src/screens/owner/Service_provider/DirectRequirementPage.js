@@ -1,13 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions } from 'react-native';
 import { ArrowLeft, CheckCircle, Upload, Image as ImageIcon, MapPin, Calendar, Clock, DollarSign, Briefcase } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
+import { AuthContext } from '../../../context/AuthContext';
+import { createRequirementApi } from '../../../services/api.service';
 
 const NAVY = '#0E2042';
 
 export default function DirectRequirementPage({ provider, onBack, onHome }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
+  const { user } = useContext(AuthContext);
+  const ownerId = user?.id;
+
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -20,8 +25,27 @@ export default function DirectRequirementPage({ provider, onBack, onHome }) {
     description: ''
   });
 
-  const handleSubmit = () => {
-    setIsSubmitted(true);
+  const handleSubmit = async () => {
+    try {
+      await createRequirementApi({
+        ownerId,
+        supplierId: provider?.id, // specific provider vendor
+        type: 'serviceProvider',
+        requestType: 'direct',
+        title: formData.service || `${formData.category} Service Request`,
+        description: formData.description,
+        budget: formData.budget,
+        location: formData.location,
+        extraData: {
+          category: formData.category,
+          date: formData.date,
+          time: formData.time,
+        }
+      });
+      setIsSubmitted(true);
+    } catch (err) {
+      console.error('Failed to submit direct service requirement:', err);
+    }
   };
 
   if (isSubmitted) {

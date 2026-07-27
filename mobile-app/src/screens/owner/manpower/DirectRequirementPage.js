@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions } from 'react-native';
 import { ArrowLeft, ShieldCheck } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
+import { AuthContext } from '../../../context/AuthContext';
+import { createRequirementApi } from '../../../services/api.service';
 
 const GOLD = '#D97706';
 const BLUE = '#2563EB';
@@ -9,6 +11,8 @@ const BLUE = '#2563EB';
 export default function DirectRequirementPage({ agency, onBack, onHome }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
+  const { user } = useContext(AuthContext);
+  const ownerId = user?.id;
 
   const [isSuccess, setIsSuccess] = useState(false);
   const [errors, setErrors] = useState({});
@@ -29,7 +33,7 @@ export default function DirectRequirementPage({ agency, onBack, onHome }) {
     if (errors[key]) setErrors(prev => ({ ...prev, [key]: null }));
   };
 
-  const validateAndSubmit = () => {
+  const validateAndSubmit = async () => {
     const newErrors = {};
     if (!formData.jobRole.trim()) newErrors.jobRole = 'Required';
     if (!formData.numberOfStaff.trim()) newErrors.numberOfStaff = 'Required';
@@ -42,7 +46,27 @@ export default function DirectRequirementPage({ agency, onBack, onHome }) {
       return;
     }
 
-    setIsSuccess(true);
+    try {
+      await createRequirementApi({
+        ownerId,
+        supplierId: agency.id, // Target specific agency vendor
+        type: 'manpower',
+        requestType: 'direct',
+        title: formData.jobRole,
+        description: formData.notes,
+        budget: formData.salaryRange,
+        location: formData.location,
+        extraData: {
+          numberOfStaff: formData.numberOfStaff,
+          experience: formData.experience,
+          joiningDate: formData.joiningDate,
+          shift: formData.shift,
+        }
+      });
+      setIsSuccess(true);
+    } catch (err) {
+      console.error('Failed to submit direct requirement:', err);
+    }
   };
 
   if (isSuccess) {

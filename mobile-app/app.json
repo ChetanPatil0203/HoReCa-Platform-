@@ -7,6 +7,10 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
+    },
+    "splash": {
+      "backgroundColor": "#071B3A",
+      "resizeMode": "contain"
     }
   }
 }

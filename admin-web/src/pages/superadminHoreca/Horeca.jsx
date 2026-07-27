@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Download, Plus, Star, X, MoreVertical, Building, Eye, ShoppingBag, ClipboardList, Activity, UserX, UserCheck, AlertTriangle, CheckCircle, MapPin, FileText, Phone, Mail, ShieldAlert } from 'lucide-react';
-import { mockDb } from '../../utils/mockDb';
+import { fetchHorecaRegistrations } from '../../services/api.service';
 
 export default function Horeca() {
   const [horecaListings, setHorecaListings] = useState([]);
@@ -21,7 +21,35 @@ export default function Horeca() {
   const [toasts, setToasts] = useState([]);
 
   useEffect(() => {
-    setHorecaListings(mockDb.getHoreca());
+    const loadData = async () => {
+      const data = await fetchHorecaRegistrations();
+      if (data) {
+        const approvedData = data.filter(h => h.status === 'approved');
+        const mapped = approvedData.map(h => ({
+          id: h.id,
+          businessName: h.bizName || 'Unknown Business',
+          owner: h.ownerName || (h.user ? `${h.user.firstName} ${h.user.lastName}`.trim() : 'Unknown Owner'),
+          type: h.bizCategory || 'Other',
+          city: h.city || 'Unknown',
+          accountStatus: h.status === 'approved' ? 'Active' : 'Pending',
+          verification: h.status === 'approved' ? 'Approved' : 'Pending',
+          rating: 4.5,
+          orders: 0,
+          revenue: "₹0",
+          joined: h.createdAt ? new Date(h.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Unknown',
+          licenseStatus: h.status === 'approved' ? 'Valid' : 'Pending',
+          email: h.email || '',
+          phone: h.mobile || '',
+          address: h.address || '',
+          gstNumber: h.gstin || '',
+          fssaiNumber: h.fssaiNo || ''
+        }));
+        setHorecaListings(mapped);
+      } else {
+        setHorecaListings([]);
+      }
+    };
+    loadData();
 
     // Close menus on click outside
     const handleClickOutside = () => setActiveMenuId(null);
@@ -66,8 +94,6 @@ export default function Horeca() {
   const handleApproveFromDrawer = (id) => {
     const updated = horecaListings.map(b => b.id === id ? { ...b, verification: 'Approved' } : b);
     setHorecaListings(updated);
-    mockDb.saveHoreca(updated);
-    showToast("Business KYC approved successfully!", "success");
     window.dispatchEvent(new Event('storage'));
   };
 
@@ -109,8 +135,6 @@ export default function Horeca() {
     if (window.confirm("Are you sure you want to delete this business?")) {
       const updated = horecaListings.filter(b => b.id !== id);
       setHorecaListings(updated);
-      mockDb.saveHoreca(updated);
-      setSelectedProfileId(null);
       showToast("Business deleted successfully!", "success");
       window.dispatchEvent(new Event('storage'));
     }

@@ -9,11 +9,12 @@ import RegistrationStepIndicator from '../../components/auth/RegistrationStepInd
 import PrimaryButton from '../../components/auth/PrimaryButton';
 import { AuthContext } from '../../context/AuthContext';
 import { AUTH_COLORS } from '../../components/auth/AuthTheme';
-import { registerApi } from '../../services/api.service';
+import { verifyOTPApi, resendOTPApi } from '../../services/api.service';
 
 export default function RegisterStepThreeScreen({ navigation, route }) {
   const { login } = useContext(AuthContext);
   const registrationData = route.params?.registrationData || {};
+  const token = route.params?.token;
   
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -47,13 +48,18 @@ export default function RegisterStepThreeScreen({ navigation, route }) {
     }
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     if (resendTimer === 0) {
-      setResendTimer(30);
-      setOtp(['', '', '', '', '', '']);
-      inputRefs.current[0].focus();
-      setActiveIndex(0);
-      // Backend resend logic would go here
+      try {
+        await resendOTPApi(token);
+        setResendTimer(30);
+        setOtp(['', '', '', '', '', '']);
+        inputRefs.current[0].focus();
+        setActiveIndex(0);
+        alert('Verification code resent successfully.');
+      } catch (err) {
+        alert(err.response?.data?.message || err.message || 'Failed to resend code.');
+      }
     }
   };
 
@@ -64,14 +70,15 @@ export default function RegisterStepThreeScreen({ navigation, route }) {
     
     setIsSubmitting(true);
     try {
-      await registerApi(registrationData);
-      alert('Registration Successful! Please log in with your credentials to continue.');
+      const otpCode = otp.join('');
+      await verifyOTPApi(otpCode, token);
+      alert('Verification Successful! Please log in with your credentials to continue.');
       navigation.reset({
         index: 0,
         routes: [{ name: 'Login' }],
       });
     } catch (err) {
-      alert(err.response?.data?.message || err.message || 'Registration failed.');
+      alert(err.response?.data?.message || err.message || 'Verification failed.');
     } finally {
       setIsSubmitting(false);
     }
@@ -161,10 +168,10 @@ export default function RegisterStepThreeScreen({ navigation, route }) {
             <Text style={styles.backBtnText}>Back to Executive Details</Text>
           </TouchableOpacity>
           <PrimaryButton 
-            title={isSubmitting ? "CREATING PROFILE..." : "ACTIVATE BUSINESS PROFILE"} 
+            title={isSubmitting ? "VERIFYING..." : "ACTIVATE BUSINESS PROFILE"} 
             icon={isSubmitting ? null : Lock} 
             onPress={handleCompleteRegistration} 
-            disabled={!isOtpComplete}
+            disabled={!isOtpComplete || isSubmitting}
             loading={isSubmitting}
           />
         </View>

@@ -1,99 +1,9 @@
-import React, { useState, useContext } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Platform } from 'react-native';
+import React, { useState, useContext, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Platform, ActivityIndicator } from 'react-native';
 import { Bell, Zap, MapPin, Calendar, Building2, Send, Eye, EyeOff, Tag, CheckCircle, XCircle } from 'lucide-react-native';
 import { colors } from '../../theme/colors';
 import { AuthContext } from '../../context/AuthContext';
-import { mockDb } from '../../services/mockDb';
-
-const ALL_FEED_ITEMS = [
-  {
-    id: "fw-01", orderId: "ORD-M001", category: "manpower", title: "Weekend Banquet Servers – 10 persons",
-    description: "Need 10 trained servers for Saturday evening gala dinner. 6PM–midnight shift. Formal attire mandatory. Experience in fine dining essential.",
-    businessName: "The Meridian Grand", businessType: "Hotel", location: "Bandra, Mumbai",
-    qty: "10 persons", date: "21 Jun 2026", budget: "₹20,000", tags: ["Fine Dining", "Weekend", "Formal"],
-    status: "New", postedAt: "5 min ago", urgency: "Urgent"
-  },
-
-  {
-    id: "fw-02", orderId: "ORD-M002", category: "manpower", title: "Head Chef – Italian Cuisine (Long Term)",
-    description: "Seeking experienced Head Chef specialising in Italian cuisine. Min 5yr experience. Pasta, risotto, wood-fired pizza expertise required. Trial shift before confirmation.",
-    businessName: "Trattoria Milano", businessType: "Restaurant", location: "Colaba, Mumbai",
-    qty: "1 person", date: "25 Jun 2026", budget: "₹65,000/mo", tags: ["Head Chef", "Italian", "Long Term"],
-    status: "Pending", postedAt: "2 hrs ago", urgency: "Normal"
-  },
-
-  {
-    id: "fw-03", orderId: "ORD-M003", category: "manpower", title: "Barista – Part-time (Weekends Only)",
-    description: "Looking for a skilled barista for weekend shifts (Sat & Sun, 8AM–4PM). Latte art essential. English proficiency required.",
-    businessName: "Café Zephyr Group", businessType: "Café", location: "Lower Parel, Mumbai",
-    qty: "2 persons", date: "22 Jun 2026", budget: "₹7,200", tags: ["Barista", "Part-time", "Coffee"],
-    status: "New", postedAt: "3 hrs ago", urgency: "Normal"
-  },
-
-  {
-    id: "fw-04", orderId: "ORD-M004", category: "manpower", title: "Security Guards – Night Shift",
-    description: "Require 2 security guards for night shift (10PM–6AM). Ex-military or retired police preferred. CCTV monitoring experience required.",
-    businessName: "Azure Palace Hotel", businessType: "Hotel", location: "Juhu, Mumbai",
-    qty: "2 persons", date: "20 Jun 2026", budget: "₹36,000/mo", tags: ["Security", "Night Shift", "Hotel"],
-    status: "Proposal Sent", postedAt: "Yesterday", urgency: "Normal"
-  },
-
-  {
-    id: "fw-05", orderId: "ORD-S001", category: "service", title: "HVAC Annual Maintenance – 22 Units",
-    description: "Full annual maintenance contract for 22 HVAC units across 4 floors. Includes quarterly filter replacement and emergency call-out within 4 hours.",
-    businessName: "Sunset Resort", businessType: "Hotel", location: "Versova, Mumbai",
-    qty: "22 units / 12 months", date: "25 Jun 2026", budget: "₹85,000/yr", tags: ["HVAC", "AMC", "Annual Contract"],
-    status: "New", postedAt: "1 hr ago", urgency: "Normal"
-  },
-
-  {
-    id: "fw-06", orderId: "ORD-S002", category: "service", title: "Commercial Kitchen Deep Cleaning (3 Sections)",
-    description: "Overnight deep clean required for 3 kitchen sections. Must use FSSAI-approved food-safe chemicals only. Work window: 12AM–5AM.",
-    businessName: "The Meridian Grand", businessType: "Hotel", location: "Bandra, Mumbai",
-    qty: "3 kitchen sections", date: "20 Jun 2026", budget: "₹22,000", tags: ["Deep Clean", "Overnight", "FSSAI"],
-    status: "Pending", postedAt: "4 hrs ago", urgency: "Urgent"
-  },
-
-  {
-    id: "fw-07", orderId: "ORD-S003", category: "service", title: "Monthly Pest Control – Full Property",
-    description: "FSSAI-compliant rodent and cockroach treatment for full restaurant premises. Certified pest control agency only. Child and food-safe chemicals mandatory.",
-    businessName: "Spice Route Restaurant", businessType: "Restaurant", location: "Andheri, Mumbai",
-    qty: "Full property", date: "22 Jun 2026", budget: "₹4,800", tags: ["Pest Control", "FSSAI", "Monthly"],
-    status: "New", postedAt: "6 hrs ago", urgency: "Normal"
-  },
-
-  {
-    id: "fw-08", orderId: "ORD-S004", category: "service", title: "Electrical Wiring Audit & Repair",
-    description: "Complete electrical audit of kitchen and dining area. Identify and repair faults. Must be a licensed electrical contractor. Compliance certificate required on completion.",
-    businessName: "Café Zephyr Group", businessType: "Café", location: "Lower Parel, Mumbai",
-    qty: "Full property", date: "24 Jun 2026", budget: "₹12,000", tags: ["Electrical", "Licensed", "Audit"],
-    status: "Accepted", postedAt: "2 days ago", urgency: "Normal"
-  },
-
-  {
-    id: "fw-09", orderId: "ORD-K001", category: "marketing", title: "July Social Media Campaign – 30 Days",
-    description: "Full social media management for July. 12 Reels + 20 static posts for Instagram & Facebook. Food-forward aesthetic. Influencer collaboration preferred.",
-    businessName: "Azure Palace Hotel", businessType: "Hotel", location: "Juhu, Mumbai",
-    qty: "30 days", date: "01 Jul 2026", budget: "₹40,000", tags: ["Social Media", "Instagram", "Reels"],
-    status: "New", postedAt: "30 min ago", urgency: "Normal"
-  },
-
-  {
-    id: "fw-10", orderId: "ORD-K002", category: "marketing", title: "Complete Menu Photography – 82 Items",
-    description: "Professional food photography for full menu (82 dishes). Dark-wood table styling preferred. Natural light setup. RAW files + retouched JPEGs. Delivery within 5 working days.",
-    businessName: "Spice Route Restaurant", businessType: "Restaurant", location: "Andheri, Mumbai",
-    qty: "82 menu items", date: "26 Jun 2026", budget: "₹18,000", tags: ["Photography", "Menu", "Food Styling"],
-    status: "Proposal Sent", postedAt: "Yesterday", urgency: "Normal"
-  },
-
-  {
-    id: "fw-11", orderId: "ORD-K003", category: "marketing", title: "Google Ads Campaign – 3 Months",
-    description: "Search + Display Ads setup and management for 3 months. Focus on reservation conversions. ₹8,000/month ad spend handled by client. ROI reporting monthly.",
-    businessName: "The Grand Bistro", businessType: "Restaurant", location: "Fort, Mumbai",
-    qty: "3 months", date: "01 Jul 2026", budget: "₹24,000", tags: ["Google Ads", "PPC", "ROI"],
-    status: "New", postedAt: "5 hrs ago", urgency: "Urgent"
-  },
-];
+import { fetchPublicRequirements, updateRequirementStatusApi } from '../../services/api.service';
 
 const CAT_META = {
   manpower: { color: "#1E40AF", bg: "#EFF6FF", border: "#BFDBFE", label: "Manpower", routeLabel: "Broadcast → Manpower Vendors" },
@@ -113,57 +23,90 @@ export default function FeedWallPage() {
   const { vendorType } = useContext(AuthContext);
   const type = vendorType || 'manpower';
 
-  const [feedItems, setFeedItems] = useState(() => {
-    return ALL_FEED_ITEMS.filter(item => item.category === type);
-  });
+  const [feedItems, setFeedItems] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
   const [proposalBid, setProposalBid] = useState('');
   const [proposalMsg, setProposalMsg] = useState('');
   const [biddingId, setBiddingId] = useState(null);
 
-  const handleSendProposal = (itemId) => {
+  const loadFeed = async () => {
+    try {
+      setLoading(true);
+      const reqType = type === 'service' ? 'serviceProvider' : type;
+      const res = await fetchPublicRequirements(reqType);
+      if (res.success) {
+        const mapped = (res.data || []).map(r => ({
+          id: r.id,
+          orderId: `#REQ-${r.id.slice(0, 6).toUpperCase()}`,
+          title: r.title,
+          description: r.description || '',
+          postedAt: new Date(r.createdAt).toLocaleDateString('en-IN'),
+          client: r.owner?.bizName || 'HRC Partner',
+          location: r.location || r.owner?.city || 'India',
+          budget: r.budget || 'Negotiable',
+          urgency: r.extraData?.urgency || (r.extraData?.urgentRequirement ? 'Urgent' : 'Normal'),
+          status: r.status === 'pending' ? 'New' : r.status,
+          category: type,
+          details: type === 'manpower' ? [
+            { label: 'Staff Count', value: String(r.extraData?.numberOfStaff || '1') },
+            { label: 'Experience', value: String(r.extraData?.experience || 'Any') },
+            { label: 'Shift', value: String(r.extraData?.shift || 'Day Shift') },
+          ] : type === 'service' ? [
+            { label: 'Service Type', value: String(r.extraData?.serviceType || 'General') },
+            { label: 'Scheduled Date', value: String(r.extraData?.date || 'As scheduled') },
+          ] : [
+            { label: 'Objective', value: String(r.extraData?.objective || 'Branding') },
+            { label: 'Duration', value: String(r.extraData?.duration || '1 Month') },
+          ]
+        }));
+        setFeedItems(mapped);
+      }
+    } catch (err) {
+      console.error('Failed to load feed items:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadFeed();
+  }, [type]);
+
+  const handleSendProposal = async (itemId) => {
     if (!proposalBid) {
       Alert.alert('Required', 'Please enter your bid amount.');
       return;
     }
-
-    // Update local state status
-    setFeedItems(prev => prev.map(item => {
-      if (item.id === itemId) {
-        return { ...item, status: 'Proposal Sent', budget: '₹' + parseInt(proposalBid).toLocaleString('en-IN') };
-      }
-      return item;
-    }));
-
-    // Add order to mock db so hotel owner can see proposal
-    const item = feedItems.find(i => i.id === itemId);
-    if (item) {
-      mockDb.addOrder({
-        id: item.orderId,
-        title: item.title,
-        category: item.category,
-        qty: item.qty,
-        vendor: vendorType === 'manpower' ? 'Elite Manpower' : vendorType === 'service' ? 'ProClean Services' : 'BrandCraft Agency',
-        date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
-        status: 'Pending',
-        amount: '₹' + parseInt(proposalBid).toLocaleString('en-IN'),
-        client: item.businessName
-      });
+    try {
+      await updateRequirementStatusApi(itemId, 'Proposal Sent');
+      setFeedItems(prev => prev.map(item => {
+        if (item.id === itemId) {
+          return { ...item, status: 'Proposal Sent', budget: '₹' + parseInt(proposalBid).toLocaleString('en-IN') };
+        }
+        return item;
+      }));
+      setBiddingId(null);
+      setProposalBid('');
+      setProposalMsg('');
+      Alert.alert('Success', 'Your proposal bid has been sent to the client!');
+    } catch (err) {
+      console.error('Failed to send proposal:', err);
     }
-
-    setBiddingId(null);
-    setProposalBid('');
-    setProposalMsg('');
-    Alert.alert('Success', 'Your proposal bid has been sent to the client!');
   };
 
-  const handleDecline = (itemId) => {
-    setFeedItems(prev => prev.map(item => {
-      if (item.id === itemId) {
-        return { ...item, status: 'Rejected' };
-      }
-      return item;
-    }));
+  const handleDecline = async (itemId) => {
+    try {
+      await updateRequirementStatusApi(itemId, 'Rejected');
+      setFeedItems(prev => prev.map(item => {
+        if (item.id === itemId) {
+          return { ...item, status: 'Rejected' };
+        }
+        return item;
+      }));
+    } catch (err) {
+      console.error('Failed to decline requirement:', err);
+    }
   };
 
   const activeMeta = CAT_META[type] || CAT_META.manpower;
@@ -198,7 +141,11 @@ export default function FeedWallPage() {
         </View>
 
         {/* Requirement cards list */}
-        {feedItems.length === 0 ? (
+        {loading ? (
+          <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+            <ActivityIndicator size="large" color={activeMeta.color} />
+          </View>
+        ) : feedItems.length === 0 ? (
           <View style={styles.emptyState}>
             <Bell size={40} color={colors.muted} />
             <Text style={styles.emptyText}>No requirements posted on your feed today</Text>

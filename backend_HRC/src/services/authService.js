@@ -8,6 +8,7 @@ const {
   UserLoginLog,
   sequelize
 } = require('../models');
+const { sendOTPEmail } = require('../utils/emailService');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'hrchub_jwt_secret_key_12345';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '30d';
@@ -56,7 +57,7 @@ exports.registerService = async (registrationData) => {
   // 3. Determine User Role & Categorization
   const isVendor = bizCategory === 'Vendor / Supplier' || Boolean(specialized);
   const role = isVendor ? 'vendor' : 'owner';
-  const generatedOTP = '123456';
+  const generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
 
   // 4. Database Transaction
   const transaction = await sequelize.transaction();
@@ -144,6 +145,13 @@ exports.registerService = async (registrationData) => {
     newUser.token = token;
     await newUser.save();
 
+    // Send OTP via Email
+    try {
+      await sendOTPEmail(newUser.email, generatedOTP);
+    } catch (emailError) {
+      console.error('Failed to send OTP Email on Registration:', emailError);
+    }
+
     return {
       token,
       user: {
@@ -207,6 +215,18 @@ exports.loginService = async (email, password, reqIp = null) => {
     throw new Error('Invalid email or password.');
   }
 
+  // Check Admin Approval for Owners and Vendors
+  if (user.role !== 'admin' && user.role !== 'superadmin') {
+    const registration = user.horecaRegistration || user.vendorRegistration;
+    if (registration) {
+      if (registration.status === 'rejected') {
+        throw new Error('Your registration was rejected by the Super Admin.');
+      } else if (registration.status !== 'approved') {
+        throw new Error('Your account is currently under review. Profile access is granted after Super Admin approval.');
+      }
+    }
+  }
+
   let panelType = user.role;
   if (user.role === 'vendor' && user.vendorType) {
     if (user.vendorType === 'Raw Material') panelType = 'vendor';
@@ -259,7 +279,11 @@ exports.loginService = async (email, password, reqIp = null) => {
 exports.getHorecaRegistrationsService = async () => {
   return await HorecaRegistration.findAll({
     order: [['createdAt', 'DESC']],
-    include: [{ model: User, as: 'user' }],
+    include: [{
+      model: User,
+      as: 'user',
+      include: [{ model: Document, as: 'documents' }],
+    }],
   });
 };
 
@@ -267,7 +291,11 @@ exports.getHorecaRegistrationsService = async () => {
 exports.getVendorRegistrationsService = async () => {
   return await VendorRegistration.findAll({
     order: [['createdAt', 'DESC']],
-    include: [{ model: User, as: 'user' }],
+    include: [{
+      model: User,
+      as: 'user',
+      include: [{ model: Document, as: 'documents' }],
+    }],
   });
 };
 
@@ -290,11 +318,10 @@ exports.verifyOTPService = async (userId, otp) => {
     throw new Error('Invalid verification code.');
   }
 
-  user.isVerified = true;
   user.otpCode = null;
   await user.save();
 
-  return { message: 'Account activated successfully!', isVerified: true };
+  return { message: 'Email verified successfully!', isVerified: user.isVerified };
 };
 
 // Resend OTP
@@ -304,9 +331,16 @@ exports.resendOTPService = async (userId) => {
     throw new Error('User not found.');
   }
 
-  const newOTP = '123456';
+  const newOTP = Math.floor(100000 + Math.random() * 900000).toString();
   user.otpCode = newOTP;
   await user.save();
+
+  try {
+    await sendOTPEmail(user.email, newOTP);
+  } catch (emailError) {
+    console.error('Failed to resend OTP Email:', emailError);
+    throw new Error('Failed to send OTP email. Please try again later.');
+  }
 
   return { message: 'Verification code resent successfully.' };
 };

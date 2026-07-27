@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { 
   View, Text, StyleSheet, ScrollView, 
-  TouchableOpacity, SafeAreaView, Dimensions 
+  TouchableOpacity, SafeAreaView, Dimensions, ActivityIndicator
 } from 'react-native';
 import { 
-  ShoppingBag, Clock3, Truck, 
-  TriangleAlert, ChevronRight, Package, Box, RefreshCcw, CheckCircle2, Navigation
+  TrendingUp, Package, Users, Truck, AlertCircle, ChevronRight,
+  ArrowUpRight, ArrowDownRight, PackageSearch, CheckCircle2, Clock, MapPin, RefreshCw
 } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorOrders } from '../../../services/api.service';
 
 const PRIMARY = '#071B3A';
 const NAVY = '#071B3A';
@@ -15,24 +17,81 @@ const BG = '#F8FAFC';
 const WHITE = '#FFFFFF';
 const MUTED = '#64748B';
 
-const OVERVIEW_CARDS = [
-  { id: 'new', label: 'New Orders', value: '0', icon: ShoppingBag, bg: '#EFF6FF', iconColor: '#3B82F6', target: 'requests', filter: 'New' },
-  { id: 'pending', label: 'Pending Orders', value: '0', icon: Clock3, bg: '#FFF7ED', iconColor: '#F97316', target: 'requests', filter: 'Pending' },
-  { id: 'low', label: 'Low Stock Items', value: '0', icon: TriangleAlert, bg: '#FEF2F2', iconColor: '#EF4444', target: 'inventory', filter: 'Low Stock' },
-  { id: 'deliveries', label: 'Deliveries Today', value: '0', icon: Truck, bg: '#F0FDF4', iconColor: '#22C55E', target: 'deliveries', filter: 'Today' },
-];
+const DB_TO_UI_STATUS = {
+  pending: 'New',
+  confirmed: 'Accepted',
+  processing: 'Processing',
+  packed: 'Packed',
+  shipped: 'Dispatched',
+  delivered: 'Delivered',
+  cancelled: 'Cancelled',
+};
 
-const RECENT_ORDERS = [];
+const STATUS_COLORS = {
+  New: { bg: '#EFF6FF', color: '#3B82F6' },
+  Accepted: { bg: '#D1FAE5', color: '#059669' },
+  Processing: { bg: '#FFF7ED', color: '#F97316' },
+  Packed: { bg: '#FEF9C3', color: '#D97706' },
+  Dispatched: { bg: '#EEF2FF', color: '#4F46E5' },
+  Delivered: { bg: '#F0FDF4', color: '#16A34A' },
+  Cancelled: { bg: '#FEF2F2', color: '#DC2626' },
+};
 
-const TODAY_DELIVERIES = [];
-
-const RECENT_ACTIVITY = [];
-
-export default function RawMaterialDashboardHome({ onNavigate }) {
+export default function RawMaterialDashboardHome({ setActivePage }) {
   const { width } = Dimensions.get('window');
   const isMobile = width < 768;
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.id;
+
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadOrders = async () => {
+    if (!supplierId) { setLoading(false); return; }
+    try {
+      const res = await fetchVendorOrders(supplierId);
+      if (res?.success) setOrders(res.data || []);
+    } catch (e) {
+      console.error('RawMaterialDashboardHome: fetchVendorOrders error:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { loadOrders(); }, [supplierId]);
+
+  // Computed counts from real orders
+  const newCount = orders.filter(o => o.status === 'pending').length;
+  const acceptedCount = orders.filter(o => o.status === 'confirmed').length;
+  const shippedCount = orders.filter(o => o.status === 'shipped').length;
+
+  const OVERVIEW_CARDS = [
+    { id: 'new', label: 'New Orders', value: String(newCount), icon: Package, bg: '#EFF6FF', iconColor: '#3B82F6', target: 'requests' },
+    { id: 'accepted', label: 'Accepted', value: String(acceptedCount), icon: CheckCircle2, bg: '#F0FDF4', iconColor: '#22C55E', target: 'requests' },
+    { id: 'shipping', label: 'In Transit', value: String(shippedCount), icon: Truck, bg: '#EEF2FF', iconColor: '#4F46E5', target: 'deliveries' },
+    { id: 'total', label: 'Total Orders', value: String(orders.length), icon: TrendingUp, bg: '#FFF7ED', iconColor: '#F97316', target: 'requests' },
+  ];
+
+  // Last 3 orders for "Recent Orders" section
+  const recentOrders = orders.slice(0, 3).map(o => {
+    const uiStatus = DB_TO_UI_STATUS[o.status] || o.status;
+    const sc = STATUS_COLORS[uiStatus] || { bg: '#F1F5F9', color: '#64748B' };
+    const firstItem = (o.items || [])[0];
+    return {
+      id: `#${o.id.slice(0, 8).toUpperCase()}`,
+      hotel: o.owner?.bizName || o.owner?.ownerName || 'Client',
+      product: firstItem?.product?.name || 'Mixed Items',
+      qty: `${(o.items || []).reduce((s, i) => s + (i.quantity || 0), 0)} ${firstItem?.product?.unit || ''}`.trim(),
+      amount: `₹${parseFloat(o.totalAmount || 0).toFixed(0)}`,
+      date: new Date(o.createdAt).toLocaleDateString('en-IN'),
+      status: uiStatus,
+      statusBg: sc.bg,
+      statusColor: sc.color,
+    };
+  });
 
   return (
+
     <SafeAreaView style={styles.safeArea}>
       <ScrollView 
         style={styles.container} 
@@ -43,11 +102,11 @@ export default function RawMaterialDashboardHome({ onNavigate }) {
 
           {/* Premium Welcome Hero */}
           <View style={styles.heroCard}>
-            <View style={styles.heroContent}>
-              <Text style={styles.heroGreeting}>Good Morning 👋</Text>
-              <Text style={styles.heroVendorName}>Metro Fresh</Text>
-              <Text style={styles.heroVendorRole}>Raw Material Supplier</Text>
-              
+            <View style={[styles.heroContent, !isMobile && { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+            <View>
+              <Text style={styles.heroVendorName}>{user?.businessName || user?.bizName || 'Vendor Agency'}</Text>
+              <Text style={styles.heroGreeting}>Welcome back to your dashboard</Text>
+            </View>  
               <Text style={styles.heroSubText}>Manage orders, inventory and deliveries from one place.</Text>
               
 
@@ -89,11 +148,18 @@ export default function RawMaterialDashboardHome({ onNavigate }) {
                   <Text style={styles.viewAllText}>View All {'>'}</Text>
                 </TouchableOpacity>
               </View>
-              {RECENT_ORDERS.map(order => (
+              {loading ? (
+                <ActivityIndicator style={{ marginVertical: 20 }} color={GOLD} />
+              ) : recentOrders.length === 0 ? (
+                <View style={{ alignItems: 'center', paddingVertical: 24 }}>
+                  <PackageSearch size={28} color='#CBD5E1' />
+                  <Text style={{ color: MUTED, fontSize: 13, marginTop: 8 }}>No orders yet</Text>
+                </View>
+              ) : recentOrders.map(order => (
                 <TouchableOpacity 
                   key={order.id} 
                   style={styles.card}
-                  onPress={() => onNavigate && onNavigate('requests')}
+                  onPress={() => setActivePage && setActivePage('orders')}
                   activeOpacity={0.7}
                 >
                   <View style={styles.cardHeader}>
@@ -120,63 +186,7 @@ export default function RawMaterialDashboardHome({ onNavigate }) {
               ))}
             </View>
 
-            {/* 3. Today's Deliveries */}
-            <View style={[styles.section, isMobile ? {} : { flex: 1 }]}>
-              <View style={styles.sectionHeaderRow}>
-                <Text style={styles.sectionTitle}>Today's Deliveries</Text>
-                <TouchableOpacity onPress={() => onNavigate && onNavigate('deliveries', 'Today')}>
-                  <Text style={styles.viewAllText}>View All {'>'}</Text>
-                </TouchableOpacity>
-              </View>
-              {TODAY_DELIVERIES.map(del => (
-                <TouchableOpacity 
-                  key={del.id} 
-                  style={styles.card}
-                  onPress={() => onNavigate && onNavigate('deliveries')}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.deliveryRow}>
-                    <View style={styles.deliveryInfo}>
-                      <Text style={styles.primaryText} numberOfLines={1}>{del.hotel}</Text>
-                      <Text style={styles.secondaryText} numberOfLines={1}>{del.product} · {del.qty}</Text>
-                      <View style={styles.deliveryMeta}>
-                        <Text style={styles.timeText}>{del.time}</Text>
-                        <Text style={[styles.deliveryStatusText, { color: del.statusColor }]}>{del.status}</Text>
-                      </View>
-                    </View>
-                    <ChevronRight size={18} color={MUTED} />
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* 4. Recent Activity */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>Recent Activity</Text>
-              <TouchableOpacity onPress={() => onNavigate && onNavigate('history')}>
-                <Text style={styles.viewAllText}>View All {'>'}</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.activityContainer}>
-              {RECENT_ACTIVITY.map((act, index) => (
-                <View key={act.id}>
-                  <View style={styles.activityRow}>
-                    <View style={styles.activityIconBox}>
-                      <act.icon size={16} color={act.color} />
-                    </View>
-                    <View style={styles.activityInfo}>
-                      <Text style={styles.activityTitle}>{act.title}</Text>
-                      <Text style={styles.activityDesc}>{act.desc}</Text>
-                      <Text style={styles.activityTime}>{act.time}</Text>
-                    </View>
-                  </View>
-                  {index < RECENT_ACTIVITY.length - 1 && <View style={styles.activityDivider} />}
-                </View>
-              ))}
-            </View>
-          </View>
+          </View>{/* end row */}
 
           <View style={styles.bottomSpacer} />
         </View>

@@ -21,7 +21,7 @@ export default function TrackCampaignPage({ campaign, onBack, onReview, onBookAg
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
   
-  const isCompleted = true; // Hardcoded for demo of report
+  const isCompleted = campaign?.status === 'Completed';
 
   return (
     <View style={styles.wrapper}>

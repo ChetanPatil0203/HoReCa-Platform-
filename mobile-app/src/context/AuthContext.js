@@ -6,16 +6,21 @@ export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [userToken, setUserToken] = useState('token-service-provider');
-  const [userRole, setUserRole] = useState('serviceProvider');
-  const [vendorType, setVendorType] = useState('service');
+  const [userToken, setUserToken] = useState(null);
+  const [userRole, setUserRole] = useState(null);
+  const [vendorType, setVendorType] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const login = (role, token, type = 'raw-material') => {
+  const [userData, setUserData] = useState(null);
+
+  const login = (role, token, type = 'raw-material', userObj = null) => {
     setIsLoading(true);
     setUserToken(token);
     setUserRole(role);
     setVendorType(type);
+    if (userObj) {
+      setUserData(userObj);
+    }
     setIsLoading(false);
   };
 
@@ -37,10 +42,10 @@ export const AuthProvider = ({ children }) => {
     setShowLogoutModal(false);
   };
 
-  const user = {
-    name: userRole === 'owner' ? 'Business Owner' : 'ProClean Services',
-    businessName: userRole === 'owner' ? 'Hotel & Restaurant' : 'ProClean Services',
-    role: userRole || 'serviceProvider'
+  const user = userData || {
+    name: '',
+    businessName: '',
+    role: userRole || 'owner'
   };
 
   return (

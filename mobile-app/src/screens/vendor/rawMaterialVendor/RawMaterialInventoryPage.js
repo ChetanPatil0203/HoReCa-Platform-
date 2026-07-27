@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity,
   useWindowDimensions, Modal, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Alert
 } from 'react-native';
 import {
   Search, SlidersHorizontal, PackagePlus, Package, MoreVertical, ChevronRight, XCircle,
-  Boxes, CircleCheck, TriangleAlert, CircleX
+  Boxes, CircleCheck, TriangleAlert, CircleX, ArrowLeft, Plus, Filter, Edit2, Trash2
 } from 'lucide-react-native';
+import { createRawMaterialProduct, fetchRawMaterialProducts } from '../../../services/api.service';
+import { AuthContext } from '../../../context/AuthContext';
 
 const NAVY = '#071B3A';
 const GOLD = '#F6B800';
@@ -26,6 +28,7 @@ const MOCK_INVENTORY = [];
 export default function RawMaterialInventoryPage() {
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
+  const { user } = useContext(AuthContext);
 
   const [activeFilter, setActiveFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,6 +37,36 @@ export default function RawMaterialInventoryPage() {
   const [filterVisible, setFilterVisible] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [tempCategoryFilter, setTempCategoryFilter] = useState('All');
+  
+  useEffect(() => {
+    const loadProducts = async () => {
+      if (!user?.id) return;
+      try {
+        const res = await fetchRawMaterialProducts(null, user.id);
+        if (res?.success) {
+          const mapped = res.data.map(p => ({
+            id: p.id,
+            sku: p.sku || 'N/A',
+            name: p.name,
+            category: p.category?.name || 'General',
+            currentStock: p.stock,
+            reservedStock: 0,
+            availableStock: p.stock,
+            unit: p.unit || 'kg',
+            wholesalePrice: p.price,
+            moq: p.moq || 1,
+            expiry: p.expiry || null,
+            status: p.stock === 0 ? 'Out of Stock' : (p.stock <= 20 ? 'Low Stock' : 'In Stock'),
+            history: [], created: "Today", updated: "Today"
+          }));
+          setProducts(mapped);
+        }
+      } catch (err) {
+        console.error('Failed to load inventory products:', err);
+      }
+    };
+    loadProducts();
+  }, [user?.id]);
   
   // Modals & Menus
   const [activeMenuId, setActiveMenuId] = useState(null);
@@ -46,7 +79,10 @@ export default function RawMaterialInventoryPage() {
   const [stockUpdateForm, setStockUpdateForm] = useState({ type: 'Add Stock', qty: '', reason: '', expiry: '', note: '' });
 
   // Add Product Form
-  const [productForm, setProductForm] = useState({ name: '', category: '', sku: '', unit: '', price: '', moq: '', openingStock: '', reservedStock: '0', expiry: '', status: 'Active' });
+  const [productForm, setProductForm] = useState({ name: '', category: user?.subCategory || '', unit: '', price: '', moq: '', openingStock: '', minStock: '', expiry: '' });
+  const [isSaving, setIsSaving] = useState(false);
+  const [catDropdownOpen, setCatDropdownOpen] = useState(false);
+  const [unitDropdownOpen, setUnitDropdownOpen] = useState(false);
 
   // Derived state
   const filteredProducts = products.filter(p => {
@@ -123,32 +159,63 @@ export default function RawMaterialInventoryPage() {
     setUpdateStockModalVisible(false);
   };
 
-  const submitAddProduct = () => {
-    if (!productForm.name || !productForm.sku || !productForm.category) return;
+  const submitAddProduct = async () => {
+    if (!productForm.name || !productForm.category || !productForm.unit || !productForm.price || !productForm.moq || !productForm.openingStock) return;
+    
+    setIsSaving(true);
+    
+    const catPrefix = productForm.category.split(' ')[0].toUpperCase().substring(0, 4);
+    const generatedSku = `RM-${catPrefix}-${Math.floor(1000 + Math.random() * 9000)}`;
+
     const newStock = parseInt(productForm.openingStock, 10) || 0;
-    const resStock = parseInt(productForm.reservedStock, 10) || 0;
-    const availStock = newStock - resStock;
-    const newStatus = availStock === 0 ? 'Out of Stock' : (availStock <= 20 ? 'Low Stock' : 'In Stock');
+    const availStock = newStock;
+    const minThreshold = parseInt(productForm.minStock, 10) || 20;
+    const newStatus = availStock === 0 ? 'Out of Stock' : (availStock <= minThreshold ? 'Low Stock' : 'In Stock');
 
-    const newProduct = {
-      id: `PRD-${Date.now()}`,
-      sku: productForm.sku,
-      name: productForm.name,
-      category: productForm.category,
-      currentStock: newStock,
-      reservedStock: resStock,
-      availableStock: availStock,
-      unit: productForm.unit || 'kg',
-      wholesalePrice: productForm.price || 0,
-      moq: productForm.moq || 1,
-      expiry: productForm.expiry || null,
-      status: newStatus,
-      history: [], created: "Today", updated: "Today"
-    };
+    try {
+      const payload = {
+        name: productForm.name,
+        category: productForm.category,
+        sku: generatedSku,
+        stock: newStock,
+        unit: productForm.unit,
+        price: parseFloat(productForm.price) || 0,
+        moq: parseInt(productForm.moq, 10) || 1,
+        expiry: productForm.expiry || null,
+        supplierId: user?.id || '0949abbd-1002-4d8d-9984-9bd97e559ca8' // Use active vendor ID
+      };
 
-    setProducts(prev => [newProduct, ...prev]);
-    setAddProductModalVisible(false);
-    setProductForm({ name: '', category: '', sku: '', unit: '', price: '', moq: '', openingStock: '', reservedStock: '0', expiry: '', status: 'Active' });
+      const res = await createRawMaterialProduct(payload);
+      
+      if (res?.success) {
+        const newProduct = {
+          id: res.data.id,
+          sku: generatedSku,
+          name: res.data.name,
+          category: res.data.category?.name || productForm.category,
+          currentStock: res.data.stock,
+          reservedStock: 0,
+          availableStock: res.data.stock,
+          unit: res.data.unit,
+          wholesalePrice: res.data.price,
+          moq: productForm.moq,
+          expiry: productForm.expiry || null,
+          status: newStatus,
+          history: [], created: "Today", updated: "Today"
+        };
+        setProducts(prev => [newProduct, ...prev]);
+        setAddProductModalVisible(false);
+        setProductForm({ name: '', category: user?.subCategory || '', unit: '', price: '', moq: '', openingStock: '', minStock: '', expiry: '' });
+        alert('Product added successfully.');
+      } else {
+        alert(res?.message || 'Failed to add product');
+      }
+    } catch (err) {
+      console.error('Error adding product:', err);
+      alert('Failed to add product');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const getMenuOptions = (status) => {
@@ -267,7 +334,10 @@ export default function RawMaterialInventoryPage() {
               <TouchableOpacity style={styles.iconBtn} onPress={() => setSearchActive(!searchActive)}><Search size={22} color={NAVY} /></TouchableOpacity>
               <TouchableOpacity style={styles.iconBtn} onPress={() => setFilterVisible(true)}><SlidersHorizontal size={22} color={NAVY} /></TouchableOpacity>
               {!isMobile && (
-                <TouchableOpacity style={styles.btnAddProductDesktop} onPress={() => setAddProductModalVisible(true)}>
+                <TouchableOpacity style={styles.btnAddProductDesktop} onPress={(e) => {
+                  if (e && e.stopPropagation) e.stopPropagation();
+                  setAddProductModalVisible(true);
+                }}>
                   <PackagePlus size={18} color={WHITE} style={{marginRight: 6}} />
                   <Text style={styles.btnAddProductText}>Add Product</Text>
                 </TouchableOpacity>
@@ -277,7 +347,10 @@ export default function RawMaterialInventoryPage() {
 
           {isMobile && (
             <View style={styles.mobileAddBtnContainer}>
-              <TouchableOpacity style={styles.btnAddProductDesktop} onPress={() => setAddProductModalVisible(true)}>
+              <TouchableOpacity style={styles.btnAddProductDesktop} onPress={(e) => {
+                  if (e && e.stopPropagation) e.stopPropagation();
+                  setAddProductModalVisible(true);
+                }}>
                 <PackagePlus size={18} color={WHITE} style={{marginRight: 6}} />
                 <Text style={styles.btnAddProductText}>Add Product</Text>
               </TouchableOpacity>
@@ -454,58 +527,95 @@ export default function RawMaterialInventoryPage() {
                     <TouchableOpacity onPress={() => setAddProductModalVisible(false)}><XCircle size={24} color={MUTED} /></TouchableOpacity>
                   </View>
                   <ScrollView style={styles.modalBody}>
-                    <Text style={styles.inputLabel}>Product Name</Text>
-                    <TextInput style={styles.input} value={productForm.name} onChangeText={t => setProductForm({...productForm, name: t})} />
+                    <Text style={styles.inputLabel}>Product Name *</Text>
+                    <TextInput style={styles.input} placeholder="Enter product name" value={productForm.name} onChangeText={t => setProductForm({...productForm, name: t})} />
                     
-                    <View style={{flexDirection: 'row', gap: 12}}>
+                    <Text style={styles.inputLabel}>Category *</Text>
+                    <TouchableOpacity style={styles.dropdownToggle} onPress={() => { setCatDropdownOpen(!catDropdownOpen); setUnitDropdownOpen(false); }}>
+                       <Text style={productForm.category ? styles.dropdownToggleText : styles.dropdownTogglePlaceholder}>
+                         {productForm.category || 'Select category'}
+                       </Text>
+                    </TouchableOpacity>
+                    {catDropdownOpen && (
+                      <View style={styles.dropdownListContainer}>
+                        {CATEGORIES.map(cat => (
+                          <TouchableOpacity key={cat} style={styles.dropdownListItem} onPress={() => { setProductForm({...productForm, category: cat}); setCatDropdownOpen(false); }}>
+                            <Text style={styles.dropdownListItemText}>{cat}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+
+                    <Text style={styles.inputLabel}>Selling Unit *</Text>
+                    <TouchableOpacity style={styles.dropdownToggle} onPress={() => { setUnitDropdownOpen(!unitDropdownOpen); setCatDropdownOpen(false); }}>
+                       <Text style={productForm.unit ? styles.dropdownToggleText : styles.dropdownTogglePlaceholder}>
+                         {productForm.unit || 'Select unit'}
+                       </Text>
+                    </TouchableOpacity>
+                    {unitDropdownOpen && (
+                      <View style={styles.dropdownListContainer}>
+                        {['kg', 'g', 'L', 'ml', 'Piece', 'Pack', 'Box', 'Crate'].map(u => (
+                          <TouchableOpacity key={u} style={styles.dropdownListItem} onPress={() => { setProductForm({...productForm, unit: u}); setUnitDropdownOpen(false); }}>
+                            <Text style={styles.dropdownListItemText}>{u}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+
+                    <View style={isMobile ? {flexDirection: 'column'} : {flexDirection: 'row', gap: 12}}>
                       <View style={{flex: 1}}>
-                        <Text style={styles.inputLabel}>SKU</Text>
-                        <TextInput style={styles.input} value={productForm.sku} onChangeText={t => setProductForm({...productForm, sku: t})} />
+                        <Text style={styles.inputLabel}>Wholesale Price *</Text>
+                        <View style={styles.inputWithSuffix}>
+                          <Text style={styles.prefixText}>₹</Text>
+                          <TextInput style={styles.inputNoBorder} placeholder="0.00" keyboardType="numeric" value={productForm.price} onChangeText={t => setProductForm({...productForm, price: t})} />
+                          {!!productForm.unit && <Text style={styles.suffixText}>/ {productForm.unit}</Text>}
+                        </View>
                       </View>
                       <View style={{flex: 1}}>
-                        <Text style={styles.inputLabel}>Unit (e.g. kg, L)</Text>
-                        <TextInput style={styles.input} value={productForm.unit} onChangeText={t => setProductForm({...productForm, unit: t})} />
+                        <Text style={styles.inputLabel}>MOQ *</Text>
+                        <View style={styles.inputWithSuffix}>
+                          <TextInput style={styles.inputNoBorder} keyboardType="numeric" value={productForm.moq} onChangeText={t => setProductForm({...productForm, moq: t})} />
+                          {!!productForm.unit && <Text style={styles.suffixText}>{productForm.unit}</Text>}
+                        </View>
                       </View>
                     </View>
 
-                    <Text style={styles.inputLabel}>Category</Text>
-                    <View style={styles.categoryGrid}>
-                      {CATEGORIES.map(cat => (
-                        <TouchableOpacity key={cat} style={[styles.catPill, productForm.category === cat && styles.catPillActive]} onPress={() => setProductForm({...productForm, category: cat})}>
-                          <Text style={[styles.catPillText, productForm.category === cat && styles.catPillTextActive]}>{cat}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-
-                    <View style={{flexDirection: 'row', gap: 12}}>
+                    <View style={isMobile ? {flexDirection: 'column'} : {flexDirection: 'row', gap: 12}}>
                       <View style={{flex: 1}}>
-                        <Text style={styles.inputLabel}>Wholesale Price</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" value={productForm.price} onChangeText={t => setProductForm({...productForm, price: t})} />
+                        <Text style={styles.inputLabel}>Opening Stock *</Text>
+                        <View style={styles.inputWithSuffix}>
+                          <TextInput style={styles.inputNoBorder} keyboardType="numeric" value={productForm.openingStock} onChangeText={t => setProductForm({...productForm, openingStock: t})} />
+                          {!!productForm.unit && <Text style={styles.suffixText}>{productForm.unit}</Text>}
+                        </View>
                       </View>
+                      
                       <View style={{flex: 1}}>
-                        <Text style={styles.inputLabel}>MOQ</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" value={productForm.moq} onChangeText={t => setProductForm({...productForm, moq: t})} />
+                        <Text style={styles.inputLabel}>Min. Stock (Alert) *</Text>
+                        <View style={styles.inputWithSuffix}>
+                          <TextInput style={styles.inputNoBorder} keyboardType="numeric" placeholder="e.g. 20" value={productForm.minStock} onChangeText={t => setProductForm({...productForm, minStock: t})} />
+                          {!!productForm.unit && <Text style={styles.suffixText}>{productForm.unit}</Text>}
+                        </View>
                       </View>
                     </View>
 
-                    <View style={{flexDirection: 'row', gap: 12}}>
-                      <View style={{flex: 1}}>
-                        <Text style={styles.inputLabel}>Opening Stock</Text>
-                        <TextInput style={styles.input} keyboardType="numeric" value={productForm.openingStock} onChangeText={t => setProductForm({...productForm, openingStock: t})} />
-                      </View>
-                      <View style={{flex: 1}}>
+                    {['Dairy Products', 'Bakery Products', 'Meat', 'Seafood', 'Grocery', 'Oils'].includes(productForm.category) && (
+                      <View style={{marginTop: 12}}>
                         <Text style={styles.inputLabel}>Expiry Date</Text>
                         <TextInput style={styles.input} placeholder="Optional" value={productForm.expiry} onChangeText={t => setProductForm({...productForm, expiry: t})} />
                       </View>
-                    </View>
+                    )}
                     <View style={{height: 20}} />
                   </ScrollView>
                   <View style={styles.modalFooterActions}>
-                    <TouchableOpacity style={styles.btnModalOutline} onPress={() => setAddProductModalVisible(false)}>
+                    <TouchableOpacity style={styles.btnModalOutline} onPress={() => setAddProductModalVisible(false)} disabled={isSaving}>
                       <Text style={styles.btnModalOutlineText}>Cancel</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.btnModalPrimary} onPress={submitAddProduct}>
-                      <Text style={styles.btnModalPrimaryText}>Save Product</Text>
+                    <TouchableOpacity 
+                      style={[styles.btnModalPrimary, (!productForm.name || !productForm.category || !productForm.unit || !productForm.price || !productForm.moq || !productForm.openingStock || !productForm.minStock || isSaving) && styles.btnModalDisabled]} 
+                      onPress={submitAddProduct}
+                      disabled={!productForm.name || !productForm.category || !productForm.unit || !productForm.price || !productForm.moq || !productForm.openingStock || !productForm.minStock || isSaving}
+                    >
+                      <Text style={styles.btnModalPrimaryText}>{isSaving ? 'Saving...' : 'Save Product'}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -725,12 +835,20 @@ const styles = StyleSheet.create({
   segmentBtnActive: { backgroundColor: WHITE, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 },
   segmentBtnText: { fontSize: 13, fontWeight: '500', color: MUTED },
   segmentBtnTextActive: { color: NAVY, fontWeight: 'bold' },
+
+  inputWithSuffix: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 12, height: 48 },
+  inputNoBorder: { flex: 1, fontSize: 14, color: NAVY, height: 48 },
+  prefixText: { fontSize: 14, color: NAVY, marginRight: 4, fontWeight: '600' },
+  suffixText: { fontSize: 14, color: MUTED, marginLeft: 8, fontWeight: '500' },
   
-  categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  catPill: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0' },
-  catPillActive: { backgroundColor: '#EFF6FF', borderColor: '#3B82F6' },
-  catPillText: { fontSize: 13, color: MUTED },
-  catPillTextActive: { color: '#1E40AF', fontWeight: '600' },
+  dropdownToggle: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 12, height: 48, justifyContent: 'center' },
+  dropdownToggleText: { fontSize: 14, color: NAVY },
+  dropdownTogglePlaceholder: { fontSize: 14, color: '#94A3B8' },
+  dropdownListContainer: { backgroundColor: WHITE, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, marginTop: 4, maxHeight: 150, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
+  dropdownListItem: { paddingVertical: 12, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  dropdownListItemText: { fontSize: 14, color: NAVY },
+  
+  btnModalDisabled: { opacity: 0.6 },
 
   modalFooterActions: { flexDirection: 'row', padding: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9', gap: 12 },
   btnModalOutline: { flex: 1, height: 44, justifyContent: 'center', alignItems: 'center', borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0' },

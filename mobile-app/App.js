@@ -5,8 +5,11 @@ import { checkBackendHealth } from './src/services/api.service';
 import { View } from 'react-native';
 import { AuthProvider } from './src/context/AuthContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import SplashScreen from './src/screens/auth/SplashScreen';
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
+
   useEffect(() => {
     const checkHealth = async () => {
       try {
@@ -21,9 +24,13 @@ export default function App() {
   return (
     <SafeAreaProvider style={{ flex: 1 }}>
       <AuthProvider>
-        <NavigationContainer>
-          <RootNavigator />
-        </NavigationContainer>
+        {showSplash ? (
+          <SplashScreen onFinish={() => setShowSplash(false)} />
+        ) : (
+          <NavigationContainer>
+            <RootNavigator />
+          </NavigationContainer>
+        )}
       </AuthProvider>
     </SafeAreaProvider>
   );

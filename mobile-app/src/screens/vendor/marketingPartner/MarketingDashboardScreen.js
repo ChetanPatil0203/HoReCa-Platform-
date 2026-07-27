@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity , Alert} from 'react-native';
 import { TrendingUp, Star, Zap, Megaphone } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
-import { mockDb } from '../../../services/mockDb';
+
 
 const KPI_DATA = [
   { label: "Active Campaigns", value: "0", delta: "0 this month", icon: Megaphone, color: "#071B3A" },
@@ -30,8 +30,10 @@ export default function MarketingDashboardScreen() {
   const [orders, setOrders] = React.useState([]);
 
   React.useEffect(() => {
-    setOrders(mockDb.getOrders());
+    // Orders will come from real API in future
+    setOrders([]);
   }, []);
+
 
   const maxRev = Math.max(...REVENUE_DATA.map(d => d.revenue));
 

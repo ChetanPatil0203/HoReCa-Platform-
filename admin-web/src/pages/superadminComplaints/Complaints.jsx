@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, MapPin, Phone, Mail, FileText, CheckCircle, AlertTriangle, X, MoreVertical, Building, Eye, Clock, MessageSquare, Paperclip, Activity, Zap, Flag, Download, Users, RefreshCw } from 'lucide-react';
-import { mockDb } from '../../utils/mockDb';
+
 
 export default function Complaints() {
   const [tickets, setTickets] = useState([]);
@@ -25,7 +25,7 @@ export default function Complaints() {
   const [resolveModalOpen, setResolveModalOpen] = useState(false);
 
   // Assign Admin Form
-  const [selectedAdmin, setSelectedAdmin] = useState("Sarah Connor");
+  const [selectedAdmin, setSelectedAdmin] = useState("Admin");
   const [selectedDept, setSelectedDept] = useState("Support");
   const [assignPriority, setAssignPriority] = useState("Medium");
   const [assignNote, setAssignNote] = useState("");
@@ -45,7 +45,8 @@ export default function Complaints() {
   const [newNoteText, setNewNoteText] = useState("");
 
   useEffect(() => {
-    setTickets(mockDb.getTickets());
+    // Waiting for Complaints module backend API
+    setTickets([]);
     const handleClickOutside = () => setActiveMenuId(null);
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
@@ -903,9 +904,7 @@ export default function Complaints() {
                     onChange={(e) => setSelectedAdmin(e.target.value)}
                     className="w-full border border-slate-200 bg-slate-50/50 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 font-semibold text-slate-700"
                   >
-                    <option value="Sarah Connor">Sarah Connor (Super Admin)</option>
-                    <option value="John Smith">John Smith (Verification Admin)</option>
-                    <option value="Neha Mathews">Neha Mathews (Support Admin)</option>
+                    <option value="Admin">Admin (Super Control)</option>
                   </select>
                 </div>
 

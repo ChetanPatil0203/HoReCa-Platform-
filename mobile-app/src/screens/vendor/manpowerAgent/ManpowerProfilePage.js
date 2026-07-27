@@ -11,13 +11,13 @@ import {
 } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
 
-const NAVY = '#081A3A';
+const NAVY = '#071B3A';
 const BG = '#F7F9FC';
 
 export default function ManpowerProfilePage() {
   const { width } = useWindowDimensions();
   const isLargeScreen = width >= 768;
-  const { logout } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
 
   // Modal & Form State
   const [isEditProfileVisible, setIsEditProfileVisible] = useState(false);
@@ -25,14 +25,14 @@ export default function ManpowerProfilePage() {
   const [toastMsg, setToastMsg] = useState("");
 
   const [profile, setProfile] = useState({
-    agencyName: '',
-    contactPerson: '',
-    mobile: '',
-    email: '',
-    address: '',
-    city: '',
-    state: '',
-    pincode: ''
+    agencyName: user?.bizName || '',
+    contactPerson: user?.contactPerson || '',
+    mobile: user?.mobile || '',
+    email: user?.email || '',
+    address: user?.address || '',
+    city: user?.city || '',
+    state: user?.state || '',
+    pincode: user?.pincode || ''
   });
 
   const [profileForm, setProfileForm] = useState({ ...profile });
@@ -105,7 +105,7 @@ export default function ManpowerProfilePage() {
   ];
 
   const documents = [
-    { name: "GST Certificate", ref: "27ABCDE1234F1Z5", status: "Verified" },
+    { name: "GST Certificate", ref: user?.gstin || "N/A", status: "Verified" },
     { name: "PAN Card", ref: "ABCDE1234F", status: "Verified" },
     { name: "Business Registration", ref: "BRN-27-00012345", status: "Pending" }
   ];
@@ -137,10 +137,10 @@ export default function ManpowerProfilePage() {
             <View style={styles.heroTop}>
               <View style={styles.heroInfoRow}>
                 <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>{profile.agencyName.charAt(0)}</Text>
+                  <Text style={styles.avatarText}>{profile.agencyName.charAt(0) || 'A'}</Text>
                 </View>
                 <View style={styles.profileInfo}>
-                  <Text style={styles.agencyName}>{profile.agencyName}</Text>
+                  <Text style={styles.agencyName}>{profile.agencyName || 'Agency Name'}</Text>
 
                   <View style={styles.badgesRow}>
                     <View style={styles.verifiedBadge}>
@@ -166,9 +166,9 @@ export default function ManpowerProfilePage() {
             <View style={styles.contactDivider} />
 
             <View style={styles.contactInfo}>
-              <View style={styles.contactRow}><Phone size={16} color="#64748B" /><Text style={styles.contactText}>+91 {profile.mobile.substring(0, 5)} {profile.mobile.substring(5, 10)}</Text></View>
-              <View style={styles.contactRow}><Mail size={16} color="#64748B" /><Text style={styles.contactText}>{profile.email}</Text></View>
-              <View style={styles.contactRow}><MapPin size={16} color="#64748B" /><Text style={styles.contactText}>{profile.city}, {profile.state}</Text></View>
+              <View style={styles.contactRow}><Phone size={16} color="#64748B" /><Text style={styles.contactText}>{profile.mobile || 'No mobile provided'}</Text></View>
+              <View style={styles.contactRow}><Mail size={16} color="#64748B" /><Text style={styles.contactText}>{profile.email || 'No email provided'}</Text></View>
+              <View style={styles.contactRow}><MapPin size={16} color="#64748B" /><Text style={styles.contactText}>{profile.city ? `${profile.city}, ${profile.state}` : 'Address not set'}</Text></View>
             </View>
 
             {!isLargeScreen && (
@@ -186,34 +186,31 @@ export default function ManpowerProfilePage() {
               <View style={[styles.card, styles.flexCard]}>
                 <View style={styles.cardHeader}>
                   <Text style={styles.cardTitle}>Business Information</Text>
-                  <TouchableOpacity onPress={() => Platform.OS === 'web' ? window.alert('Coming Soon: Business Information edit will be available soon.') : Alert.alert('Coming Soon', 'Business Information edit will be available soon.')}>
-                    <Text style={styles.editText}>Edit</Text>
-                  </TouchableOpacity>
                 </View>
 
                 <View style={styles.businessGrid}>
                   <View style={styles.bizCol}>
                     <View style={styles.bizItem}>
-                      <Text style={styles.bizLabel}>Agency Type</Text>
-                      <Text style={styles.bizValue}>Manpower Agency</Text>
+                      <Text style={styles.bizLabel}>BUSINESS TYPE</Text>
+                      <Text style={styles.bizValue}>Vendor / Supplier</Text>
                     </View>
                     <View style={styles.bizItem}>
-                      <Text style={styles.bizLabel}>GST Number</Text>
-                      <Text style={styles.bizValue}>27ABCDE1234F1Z5</Text>
+                      <Text style={styles.bizLabel}>BUSINESS CATEGORY</Text>
+                      <Text style={styles.bizValue}>{user?.bizCategory || 'Manpower Services'}</Text>
                     </View>
                     <View style={styles.bizItem}>
-                      <Text style={styles.bizLabel}>Registration Number</Text>
-                      <Text style={styles.bizValue}>BRN-27-00012345</Text>
+                      <Text style={styles.bizLabel}>GST NUMBER</Text>
+                      <Text style={styles.bizValue}>{user?.gstin || 'Not Provided'}</Text>
                     </View>
                   </View>
                   <View style={styles.bizCol}>
                     <View style={styles.bizItem}>
-                      <Text style={styles.bizLabel}>Business Category</Text>
-                      <Text style={styles.bizValue}>Manpower Services</Text>
+                      <Text style={styles.bizLabel}>CONTACT PERSON</Text>
+                      <Text style={styles.bizValue}>{user?.contactPerson || 'Not Provided'}</Text>
                     </View>
                     <View style={styles.bizItem}>
-                      <Text style={styles.bizLabel}>PAN Number</Text>
-                      <Text style={styles.bizValue}>ABCDE1234F</Text>
+                      <Text style={styles.bizLabel}>STATUS</Text>
+                      <Text style={[styles.bizValue, { textTransform: 'capitalize' }]}>{user?.status || 'Pending'}</Text>
                     </View>
                   </View>
                 </View>
@@ -228,9 +225,6 @@ export default function ManpowerProfilePage() {
                     <Text style={styles.cardTitle}>Roles / Services Offered</Text>
                     <Text style={styles.cardSubtitle}>Staff categories provided by your agency</Text>
                   </View>
-                  <TouchableOpacity onPress={() => Platform.OS === 'web' ? window.alert('Coming Soon: Roles / Services management will be available soon.') : Alert.alert('Coming Soon', 'Roles / Services management will be available soon.')}>
-                    <Text style={styles.editText}>Manage</Text>
-                  </TouchableOpacity>
                 </View>
 
                 <View style={styles.chipsContainer}>

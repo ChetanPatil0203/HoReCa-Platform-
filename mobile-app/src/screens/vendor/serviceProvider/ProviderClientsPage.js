@@ -13,75 +13,17 @@ const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
 
 const SUMMARY_DATA = [
-  { label: 'Total Clients', value: '34', icon: Users, color: '#3B82F6' },
-  { label: 'Active Jobs', value: '8', icon: User, color: '#10B981' },
-  { label: 'Repeat Clients', value: '22', icon: RefreshCw, color: '#8B5CF6' },
-  { label: 'Outstanding Payments', value: '₹42K', icon: AlertCircle, color: '#EF4444' },
+  { label: 'Total Clients', value: '0', icon: Users, color: '#3B82F6' },
+  { label: 'Active Jobs', value: '0', icon: User, color: '#10B981' },
+  { label: 'Repeat Clients', value: '0', icon: RefreshCw, color: '#8B5CF6' },
+  { label: 'Outstanding Payments', value: '₹0', icon: AlertCircle, color: '#EF4444' },
 ];
 
 const CHIPS = ['All', 'Hotel', 'Restaurant', 'Cafe'];
 
-const MOCK_CLIENTS = [
-  {
-    id: "CLI-SP-001", name: "The Meridian Grand", initials: "MG", type: "Hotel", location: "Downtown, Metro City",
-    rating: "4.8", activeServices: 3, ltv: "₹14.2L", outstanding: "₹15,000", tag: "VIP"
-  },
-  {
-    id: "CLI-SP-002", name: "Café Zephyr", initials: "CZ", type: "Cafe", location: "Westside Hub",
-    rating: "4.7", activeServices: 1, ltv: "₹3.8L", outstanding: "₹0", tag: "Regular"
-  },
-  {
-    id: "CLI-SP-003", name: "Azure Palace Hotel", initials: "AP", type: "Hotel", location: "Azure Coast",
-    rating: "4.5", activeServices: 2, ltv: "₹8.9L", outstanding: "₹27,000", tag: "Regular"
-  }
-];
+const MOCK_CLIENTS = [];
 
-const TRANSACTIONS = [
-  {
-    id: "TXN-SP-601",
-    client: "The Meridian Grand",
-    service: "Deep Kitchen Cleaning",
-    quantity: "Full property",
-    amount: "₹8,500",
-    date: "24 Jul 2026, 11:30 AM",
-    status: "Paid",
-    method: "Bank Transfer",
-    reference: "ref-trf-991122"
-  },
-  {
-    id: "TXN-SP-602",
-    client: "Azure Palace Hotel",
-    service: "AC Maintenance",
-    quantity: "15 Units",
-    amount: "₹6,000",
-    date: "23 Jul 2026, 02:00 PM",
-    status: "Pending",
-    method: "Net Banking",
-    reference: "ref-bank-882233"
-  },
-  {
-    id: "TXN-SP-603",
-    client: "Café Zephyr",
-    service: "Pest Control & Sanitization",
-    quantity: "1 property",
-    amount: "₹4,200",
-    date: "22 Jul 2026, 10:15 AM",
-    status: "Paid",
-    method: "UPI",
-    reference: "ref-upi-445588"
-  },
-  {
-    id: "TXN-SP-604",
-    client: "Spice Route Restaurant",
-    service: "Exhaust System Repair",
-    quantity: "Main kitchen",
-    amount: "₹12,400",
-    date: "21 Jul 2026, 04:30 PM",
-    status: "Overdue",
-    method: "Cash",
-    reference: "ref-cash-77331"
-  }
-];
+const TRANSACTIONS = [];
 
 export default function ProviderClientsPage() {
   const { width } = useWindowDimensions();

@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions } from 'react-native';
 import { ArrowLeft, CheckCircle, Upload, MapPin, Calendar, DollarSign, Target, Briefcase, FileText, Presentation } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
+import { AuthContext } from '../../../context/AuthContext';
+import { createRequirementApi } from '../../../services/api.service';
 
 const NAVY = '#0E2042';
 
 export default function OfflineBroadcastPage({ onBack, onViewRequests }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
+  const { user } = useContext(AuthContext);
+  const ownerId = user?.id;
 
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -40,8 +44,27 @@ export default function OfflineBroadcastPage({ onBack, onViewRequests }) {
     }));
   };
 
-  const handleSubmit = () => {
-    setIsSubmitted(true);
+  const handleSubmit = async () => {
+    try {
+      await createRequirementApi({
+        ownerId,
+        type: 'marketing',
+        requestType: 'public',
+        title: formData.campaignType || 'Offline Marketing Campaign',
+        description: formData.description,
+        budget: formData.budget,
+        location: formData.location,
+        extraData: {
+          businessType: formData.businessType,
+          duration: formData.duration,
+          targetArea: formData.targetArea,
+          services: Object.keys(formData.services).filter(s => formData.services[s]),
+        }
+      });
+      setIsSubmitted(true);
+    } catch (err) {
+      console.error('Failed to post offline marketing campaign:', err);
+    }
   };
 
   if (isSubmitted) {

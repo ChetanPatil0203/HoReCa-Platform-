@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions } from 'react-native';
 import { ArrowLeft, Search, Star, ShieldCheck, SlidersHorizontal, MapPin, Users, Briefcase } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
-import { TOP_AGENCIES } from '../../../constants/manpowerData';
+import { fetchManpowerVendors } from '../../../services/api.service';
 
 const NAVY = '#081A3A';
 const GOLD = '#F59E0B'; // HRC HUB Gold/Orange accent
@@ -15,8 +15,35 @@ export default function BrowseAgenciesPage({ onBack, onViewAgency, onSendRequire
   const isMobile = width < 768 || Platform.OS !== 'web';
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
+  const [agencies, setAgencies] = useState([]);
 
-  const filteredAgencies = TOP_AGENCIES.filter(ag => {
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetchManpowerVendors();
+        if (res.success) {
+          const mapped = res.data.map(v => ({
+            id: v.id,
+            name: v.bizName || 'Unknown Agency',
+            verified: v.status === 'approved',
+            rating: 4.8,
+            location: v.city || 'Unknown',
+            experience: '3+ Years',
+            availableStaff: '15+',
+            logo: (v.bizName || 'A').charAt(0).toUpperCase(),
+            roles: v.subCategory ? v.subCategory.split(',').map(s => s.trim()) : ['General Staff'],
+            availability: 'Available Now'
+          }));
+          setAgencies(mapped);
+        }
+      } catch (err) {
+        console.warn('Error fetching manpower vendors:', err);
+      }
+    };
+    load();
+  }, []);
+
+  const filteredAgencies = agencies.filter(ag => {
     if (searchQuery && !ag.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     if (activeFilter === 'Verified' && !ag.verified) return false;
     if (activeFilter === 'Top Rated' && ag.rating < 4.5) return false;
