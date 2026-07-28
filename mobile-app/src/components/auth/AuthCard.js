@@ -4,7 +4,7 @@ import { AUTH_COLORS } from './AuthTheme';
 
 export default function AuthCard({ children }) {
   const { width } = useWindowDimensions();
-  
+
   let dynamicPadding = 24;
   if (width < 360) dynamicPadding = 16;
   else if (width < 600) dynamicPadding = 20;

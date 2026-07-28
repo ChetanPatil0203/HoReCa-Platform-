@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput } from 'react-native';
 import { AUTH_COLORS } from './AuthTheme';
 
-export default function FormField({ 
-  label, icon: Icon, error, containerStyle, valid, ...textInputProps 
+export default function FormField({
+  label, icon: Icon, error, containerStyle, valid, ...textInputProps
 }) {
   const [isFocused, setIsFocused] = useState(false);
 
@@ -29,17 +29,17 @@ export default function FormField({
       )}
       <View style={styles.inputWrapper}>
         {Icon && <Icon size={20} color={iconColor} style={styles.inputIcon} />}
-        <TextInput 
+        <TextInput
           style={[
-            styles.input, 
+            styles.input,
             Icon ? styles.inputWithIcon : styles.inputWithoutIcon,
             isFocused && styles.inputFocused,
             error && styles.inputError
-          ]} 
+          ]}
           placeholderTextColor={AUTH_COLORS.muted}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          {...textInputProps} 
+          {...textInputProps}
         />
       </View>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -49,25 +49,25 @@ export default function FormField({
 
 const styles = StyleSheet.create({
   fieldBlock: { marginBottom: 16 },
-  label: { 
-    fontSize: 11, 
-    fontWeight: '600', 
-    color: AUTH_COLORS.primary, 
-    marginBottom: 7, 
+  label: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: AUTH_COLORS.primary,
+    marginBottom: 7,
     textTransform: 'uppercase',
-    letterSpacing: 0.5 
+    letterSpacing: 0.5
   },
   asterisk: { color: AUTH_COLORS.error },
   inputWrapper: { position: 'relative', justifyContent: 'center' },
   inputIcon: { position: 'absolute', left: 16, zIndex: 1 },
-  input: { 
-    backgroundColor: AUTH_COLORS.input, 
-    borderWidth: 1, 
-    borderColor: AUTH_COLORS.border, 
-    borderRadius: 14, 
-    height: 52, 
-    fontSize: 15, 
-    color: AUTH_COLORS.text 
+  input: {
+    backgroundColor: AUTH_COLORS.input,
+    borderWidth: 1,
+    borderColor: AUTH_COLORS.border,
+    borderRadius: 14,
+    height: 52,
+    fontSize: 15,
+    color: AUTH_COLORS.text
   },
   inputFocused: {
     borderColor: AUTH_COLORS.primary,

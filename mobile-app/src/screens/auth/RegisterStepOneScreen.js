@@ -148,12 +148,6 @@ export default function RegisterStepOneScreen({ navigation, route }) {
         <View style={styles.headerBlock}>
           <Text style={styles.stepHeader}>STEP 1 OF 3</Text>
           <Text style={styles.heading}>Business Verification</Text>
-          <Text style={styles.subtitle}>Establish your business identity and upload verification documents.</Text>
-        </View>
-
-        <View style={styles.sectionHeader}>
-          <Building2 size={16} color={AUTH_COLORS.primary} style={{ marginRight: 8 }} />
-          <Text style={styles.sectionTitle}>Business Identity</Text>
         </View>
 
         <FormField 
@@ -217,10 +211,7 @@ export default function RegisterStepOneScreen({ navigation, route }) {
           </View>
         )}
 
-        <View style={styles.sectionHeader}>
-          <MapPin size={16} color={AUTH_COLORS.primary} style={{ marginRight: 8 }} />
-          <Text style={styles.sectionTitle}>Location & Compliance Details</Text>
-        </View>
+
 
         <FormField 
           label="REGISTERED BUSINESS ADDRESS *" 
@@ -251,10 +242,7 @@ export default function RegisterStepOneScreen({ navigation, route }) {
           />
         )}
 
-        <View style={styles.sectionHeader}>
-          <Phone size={16} color={AUTH_COLORS.primary} style={{ marginRight: 8 }} />
-          <Text style={styles.sectionTitle}>Contact Information</Text>
-        </View>
+
 
         <View style={styles.phoneFieldContainer}>
           <Text style={styles.phoneLabel}>CONTACT MOBILE *</Text>
@@ -281,7 +269,6 @@ export default function RegisterStepOneScreen({ navigation, route }) {
               <FileText size={16} color={AUTH_COLORS.primary} style={{ marginRight: 8 }} />
               <View>
                 <Text style={styles.sectionTitle}>Verification Documents</Text>
-                <Text style={styles.sectionSub}>Upload the documents required for your selected business profile.</Text>
               </View>
             </View>
 

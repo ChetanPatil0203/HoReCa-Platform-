@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Modal, ScrollView, SafeAreaView, Image } from 'react-native';
-import { Mail, ArrowRight, AlertCircle, Zap, ChevronRight, X } from 'lucide-react-native';
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, ScrollView, SafeAreaView, Platform } from 'react-native';
+import { Mail, ArrowRight, AlertCircle } from 'lucide-react-native';
 
 import AuthScreenWrapper from '../../components/auth/AuthScreenWrapper';
 import AuthCard from '../../components/auth/AuthCard';
@@ -24,8 +24,6 @@ export default function LoginScreen({ navigation }) {
 
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
-
-  const [demoModalVisible, setDemoModalVisible] = useState(false);
 
   const { login } = useContext(AuthContext);
 
@@ -64,8 +62,6 @@ export default function LoginScreen({ navigation }) {
       if (response.success && response.data) {
         const { token, panelType, user, registration } = response.data;
         
-        // Structure the user object for AuthContext and Profile Settings to match the backend schema exactly,
-        // while also maintaining backward compatibility with manually mapped fields used by some dashboards.
         const userObj = {
           ...user,
           ...registration,
@@ -88,47 +84,43 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
-  const handleDemoSelect = (panel) => {
-    setDemoModalVisible(false);
-    if (panel === 'Owner Panel') login('owner', 'demo-token');
-    else if (panel === 'Super Admin Panel') login('superadmin', 'demo-token');
-    else if (panel === 'Service Provider Panel') login('serviceProvider', 'demo-token');
-    else if (panel === 'Manpower Agent Panel') login('manpower', 'demo-token');
-    else if (panel === 'Raw Material Vendor Panel') login('vendor', 'demo-token');
-    else if (panel === 'Marketing Agency Panel') login('marketing', 'demo-token');
-  };
-
   const isFormValid = () => {
     return email && /^\S+@\S+\.\S+$/.test(email) && password && password.length >= 8;
   };
 
   return (
     <AuthScreenWrapper>
-
-      {/* Brand Identity */}
+      {/* Top Branding Section */}
       <View style={styles.brandContainer}>
-        <View style={styles.brandIconBox}>
-          <Image 
-            source={require('../../assets/HoReCa_Logo.png')} 
-            style={{ width: 32, height: 32, resizeMode: 'contain' }} 
-          />
+        {/* Rounded Navy Card */}
+        <View style={styles.brandCard}>
+          {/* Thin Gold Circle */}
+          <View style={styles.monogramCircle}>
+            <Text style={styles.monogram}>H</Text>
+          </View>
         </View>
+        {/* Brand Text below the Navy card */}
         <Text style={styles.brandName}>
-          <Text style={{ color: AUTH_COLORS.card }}>HRC </Text>
-          <Text style={{ color: AUTH_COLORS.accent }}>HUB</Text>
+          <Text style={{ color: '#0E2244' }}>HRC </Text>
+          <Text style={{ color: '#D4A017' }}>HUB</Text>
         </Text>
         <Text style={styles.brandSub}>HoReCa Business Partner</Text>
       </View>
 
+      {/* Main Login Card */}
       <AuthCard>
-        <AuthTabs activeTab="login" onTabChange={(tab) => tab === 'register' && navigation.navigate('RegisterStepOne')} />
+        <AuthTabs 
+          activeTab="login" 
+          onTabChange={(tab) => tab === 'register' && navigation.navigate('RegisterStepOne')} 
+        />
 
-        {/* Login Introduction */}
-        <Text style={styles.heading}>Welcome back</Text>
-        <Text style={styles.subtitle}>Enter your credentials to access your HRC HUB business account.</Text>
+        {/* Heading & Subtitle */}
+        <Text style={styles.heading}>Welcome Back</Text>
+        <Text style={styles.subtitle}>Sign in to continue.</Text>
 
+        {/* Input Fields */}
         <FormField
-          label="EMAIL ADDRESS *"
+          label="Email Address"
           icon={Mail}
           placeholder="business@email.com"
           keyboardType="email-address"
@@ -141,7 +133,7 @@ export default function LoginScreen({ navigation }) {
         />
 
         <PasswordField
-          label="PASSWORD *"
+          label="Password"
           placeholder="Enter your password"
           returnKeyType="done"
           value={password}
@@ -150,18 +142,24 @@ export default function LoginScreen({ navigation }) {
           containerStyle={{ marginBottom: 12 }}
         />
 
-        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} style={styles.forgotLink} accessibilityRole="button">
+        {/* Forgot Password Link */}
+        <TouchableOpacity 
+          onPress={() => navigation.navigate('ForgotPassword')} 
+          style={styles.forgotLink} 
+          accessibilityRole="button"
+        >
           <Text style={styles.forgotText}>Forgot Password?</Text>
         </TouchableOpacity>
 
         {/* Inline Error Banner */}
         {!!loginError && (
           <View style={styles.errorBanner}>
-            <AlertCircle size={18} color={AUTH_COLORS.error} style={{ marginRight: 8 }} />
+            <AlertCircle size={18} color="#DC2626" style={{ marginRight: 8 }} />
             <Text style={styles.errorBannerText}>{loginError}</Text>
           </View>
         )}
 
+        {/* Primary Action Button */}
         <PrimaryButton
           title={isLoading ? "SIGNING IN..." : "SIGN IN"}
           icon={isLoading ? null : ArrowRight}
@@ -171,14 +169,16 @@ export default function LoginScreen({ navigation }) {
         />
 
         {/* Registration Prompt */}
-        <View style={[styles.regPrompt, isNarrow && { flexDirection: 'column', alignItems: 'center' }]}>
-          <Text style={styles.regPromptText}>Don't have a business account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('RegisterStepOne')} accessibilityRole="button">
-            <Text style={styles.regPromptLink}>Create a business profile</Text>
+        <View style={[styles.regPrompt, isNarrow && { alignItems: 'center' }]}>
+          <Text style={styles.regPromptText}>Don't have a business account?</Text>
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('RegisterStepOne')} 
+            accessibilityRole="button"
+          >
+            <Text style={styles.regPromptLink}>Create Business Profile</Text>
           </TouchableOpacity>
         </View>
       </AuthCard>
-
     </AuthScreenWrapper>
   );
 }
@@ -186,53 +186,111 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   brandContainer: {
     alignItems: 'center',
-    marginBottom: 24,
-    marginTop: 16,
-    backgroundColor: AUTH_COLORS.primary,
-    paddingVertical: 18,
-    paddingHorizontal: 32,
-    borderRadius: 20
+    justifyContent: 'center',
+    marginBottom: 32,
+    marginTop: 40,
+    width: '100%',
+    maxWidth: 620
   },
-  brandIconBox: {
-    backgroundColor: 'transparent',
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+  brandCard: {
+    backgroundColor: '#0E2244',
+    width: 80,
+    height: 80,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10
+    marginBottom: 16,
+    shadowColor: '#0E2244',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 3
   },
-  brandName: { fontSize: 20, fontWeight: '900', letterSpacing: 0.5, marginBottom: 2 },
-  brandSub: { fontSize: 13, color: '#A0B3C6', fontWeight: '500' }, // slightly lighter than muted for dark bg
-
-  heading: { fontSize: 26, fontWeight: 'bold', color: AUTH_COLORS.primary, marginBottom: 8, marginTop: 24 },
-  subtitle: { fontSize: 14, color: AUTH_COLORS.muted, marginBottom: 24, lineHeight: 20 },
-
-  forgotLink: { alignSelf: 'flex-end', paddingVertical: 4, paddingHorizontal: 4, marginBottom: 20, marginTop: 2 },
-  forgotText: { fontSize: 13, fontWeight: '600', color: AUTH_COLORS.primary },
-
-  errorBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF7ED', padding: 12, borderRadius: 12, marginBottom: 16, borderWidth: 1, borderColor: '#FFEDD5' },
-  errorBannerText: { fontSize: 13, color: '#C2410C', fontWeight: '500', flex: 1 },
-
-  dividerRow: { flexDirection: 'row', alignItems: 'center', marginTop: 24, marginBottom: 20 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: AUTH_COLORS.border },
-  dividerText: { marginHorizontal: 16, fontSize: 13, color: AUTH_COLORS.muted, fontWeight: 'bold' },
-
-  demoBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%', height: 50, backgroundColor: AUTH_COLORS.input, borderWidth: 1, borderColor: AUTH_COLORS.border, borderRadius: 14 },
-  demoBtnText: { fontSize: 14, fontWeight: 'bold', color: AUTH_COLORS.text },
-  demoHelper: { fontSize: 12, color: AUTH_COLORS.muted, textAlign: 'center', marginTop: 8, marginBottom: 24 },
-
-  regPrompt: { flexDirection: 'row', justifyContent: 'center', marginTop: 8, flexWrap: 'wrap' },
-  regPromptText: { fontSize: 14, color: AUTH_COLORS.muted },
-  regPromptLink: { fontSize: 14, fontWeight: '600', color: AUTH_COLORS.primary },
-
-  // Modal styles
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(7,27,58,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: AUTH_COLORS.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '80%' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: AUTH_COLORS.border },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', color: AUTH_COLORS.primary },
-  closeBtn: { padding: 4 },
-  demoList: { paddingHorizontal: 8, paddingBottom: 32 },
-  demoItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: AUTH_COLORS.border },
-  demoItemText: { fontSize: 15, color: AUTH_COLORS.text, fontWeight: '500' }
+  monogramCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#D4A017',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  monogram: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#D4A017',
+    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+    lineHeight: Platform.OS === 'ios' ? 26 : 30,
+  },
+  brandName: { 
+    fontSize: 22, 
+    fontWeight: '800', 
+    letterSpacing: 1.5, 
+    marginBottom: 6,
+    textAlign: 'center'
+  },
+  brandSub: { 
+    fontSize: 12, 
+    color: '#71829B',
+    fontWeight: '600', 
+    letterSpacing: 0.8,
+    textAlign: 'center'
+  },
+  heading: { 
+    fontSize: 24, 
+    fontWeight: '700', 
+    color: '#1A1A1A', 
+    marginBottom: 6, 
+    marginTop: 8,
+    letterSpacing: -0.5
+  },
+  subtitle: { 
+    fontSize: 14, 
+    color: '#71829B', 
+    marginBottom: 24, 
+    lineHeight: 20 
+  },
+  forgotLink: { 
+    alignSelf: 'flex-end', 
+    paddingVertical: 4, 
+    paddingHorizontal: 4, 
+    marginBottom: 24, 
+    marginTop: -8
+  },
+  forgotText: { 
+    fontSize: 13, 
+    fontWeight: '600', 
+    color: '#0E2244' 
+  },
+  errorBanner: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#FFF5F5', 
+    padding: 12, 
+    borderRadius: 12, 
+    marginBottom: 16, 
+    borderWidth: 1, 
+    borderColor: '#FEE2E2' 
+  },
+  errorBannerText: { 
+    fontSize: 13, 
+    color: '#DC2626', 
+    fontWeight: '500', 
+    flex: 1 
+  },
+  regPrompt: { 
+    alignItems: 'center', 
+    marginTop: 28, 
+    justifyContent: 'center' 
+  },
+  regPromptText: { 
+    fontSize: 14, 
+    color: '#71829B', 
+    marginBottom: 6 
+  },
+  regPromptLink: { 
+    fontSize: 14, 
+    fontWeight: '700', 
+    color: '#0E2244' 
+  }
 });

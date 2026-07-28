@@ -3,8 +3,8 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-nativ
 import { Lock, Eye, EyeOff, CheckCircle2, Circle } from 'lucide-react-native';
 import { AUTH_COLORS } from './AuthTheme';
 
-export default function PasswordField({ 
-  label, error, containerStyle, showChecklist = false, ...textInputProps 
+export default function PasswordField({
+  label, error, containerStyle, showChecklist = false, ...textInputProps
 }) {
   const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -17,7 +17,7 @@ export default function PasswordField({
   }
 
   const value = textInputProps.value || '';
-  
+
   const rules = [
     { label: '8+ characters', met: value.length >= 8 },
     { label: 'Uppercase letter', met: /[A-Z]/.test(value) },
@@ -39,28 +39,28 @@ export default function PasswordField({
       )}
       <View style={styles.inputWrapper}>
         <Lock size={20} color={iconColor} style={styles.inputIcon} />
-        <TextInput 
+        <TextInput
           style={[
-            styles.input, 
+            styles.input,
             isFocused && styles.inputFocused,
             error && styles.inputError
-          ]} 
+          ]}
           placeholderTextColor={AUTH_COLORS.muted}
           secureTextEntry={!showPassword}
           autoCapitalize="none"
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          {...textInputProps} 
+          {...textInputProps}
         />
-        <TouchableOpacity 
-          style={styles.rightIcon} 
+        <TouchableOpacity
+          style={styles.rightIcon}
           onPress={() => setShowPassword(!showPassword)}
           accessibilityRole="button"
         >
           {showPassword ? <EyeOff size={20} color={AUTH_COLORS.primary} /> : <Eye size={20} color={AUTH_COLORS.muted} />}
         </TouchableOpacity>
       </View>
-      
+
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
       {showChecklist && isFocused && (
@@ -85,28 +85,28 @@ export default function PasswordField({
 
 const styles = StyleSheet.create({
   fieldBlock: { marginBottom: 16 },
-  label: { 
-    fontSize: 11, 
-    fontWeight: '600', 
-    color: AUTH_COLORS.primary, 
-    marginBottom: 7, 
+  label: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: AUTH_COLORS.primary,
+    marginBottom: 7,
     textTransform: 'uppercase',
-    letterSpacing: 0.5 
+    letterSpacing: 0.5
   },
   asterisk: { color: AUTH_COLORS.error },
   inputWrapper: { position: 'relative', justifyContent: 'center' },
   inputIcon: { position: 'absolute', left: 16, zIndex: 1 },
   rightIcon: { position: 'absolute', right: 8, zIndex: 1, padding: 8 },
-  input: { 
-    backgroundColor: AUTH_COLORS.input, 
-    borderWidth: 1, 
-    borderColor: AUTH_COLORS.border, 
-    borderRadius: 14, 
-    height: 52, 
-    paddingLeft: 46, 
+  input: {
+    backgroundColor: AUTH_COLORS.input,
+    borderWidth: 1,
+    borderColor: AUTH_COLORS.border,
+    borderRadius: 14,
+    height: 52,
+    paddingLeft: 46,
     paddingRight: 46,
-    fontSize: 15, 
-    color: AUTH_COLORS.text 
+    fontSize: 15,
+    color: AUTH_COLORS.text
   },
   inputFocused: {
     borderColor: AUTH_COLORS.primary,
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   },
   inputError: { borderColor: AUTH_COLORS.error, backgroundColor: '#FEF2F2' },
   errorText: { color: AUTH_COLORS.error, fontSize: 12, marginTop: 6, fontWeight: '500' },
-  
+
   checklist: {
     flexDirection: 'row',
     flexWrap: 'wrap',
