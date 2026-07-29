@@ -2,7 +2,7 @@ import React from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView
 } from 'react-native';
-import { FileText, CheckCircle, AlertCircle, Clock, Eye, RefreshCw } from 'lucide-react-native';
+import { FileText, CircleCheck as CheckCircle, CircleAlert as AlertCircle, Clock, Eye, RefreshCw } from 'lucide-react-native';
 
 const NAVY = '#081A3A';
 

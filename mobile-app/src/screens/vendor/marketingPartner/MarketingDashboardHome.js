@@ -1,9 +1,11 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, useWindowDimensions, SafeAreaView } from 'react-native';
+import React, { useState, useEffect, useContext } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, useWindowDimensions, SafeAreaView, ActivityIndicator } from 'react-native';
 import { 
   Megaphone, Inbox, Rocket, FileClock, ChevronRight, Sparkles, ShieldCheck, 
   Video, Image as ImageIcon, FileText, Phone, MonitorPlay, Presentation
 } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchPublicRequirements, fetchVendorRequirements } from '../../../services/api.service';
 
 const NAVY = '#071B3A';
 const PURPLE = '#071B3A';
@@ -15,16 +17,46 @@ const WHITE = '#FFFFFF';
 const MUTED = '#64748B';
 
 const MOCK_NEEDS_ATTENTION = [];
-
-const MOCK_OPPORTUNITIES = [];
-
 const MOCK_SCHEDULE = [];
 
 export default function MarketingDashboardHome({ setActivePage, handleSendProposal }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
-  const isTablet = width >= 768 && width < 1024;
-  const isDesktop = width >= 1024;
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.registration?.id || user?.id;
+
+  const [loading, setLoading] = useState(true);
+  const [publicReqs, setPublicReqs] = useState([]);
+  const [directReqs, setDirectReqs] = useState([]);
+
+  useEffect(() => {
+    const loadHomeData = async () => {
+      try {
+        const [pubRes, dirRes] = await Promise.all([
+          fetchPublicRequirements('marketing'),
+          supplierId ? fetchVendorRequirements(supplierId) : Promise.resolve([])
+        ]);
+
+        setPublicReqs(pubRes?.data || pubRes || []);
+        setDirectReqs(dirRes?.data || dirRes || []);
+      } catch (err) {
+        console.warn('Error loading marketing home:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadHomeData();
+  }, [supplierId]);
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning 🖐️';
+    if (hour < 17) return 'Good Afternoon 🖐️';
+    return 'Good Evening 🖐️';
+  };
+
+  const agencyName = user?.registration?.bizName || user?.bizName || user?.contactPerson || (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Marketing Agency Partner');
+  const vendorType = user?.registration?.vendorType || 'Full-Service Marketing Agency';
 
   const contentPad = width < 340 ? 12 : (isMobile ? 16 : 24);
 
@@ -36,9 +68,9 @@ export default function MarketingDashboardHome({ setActivePage, handleSendPropos
         <View style={styles.heroCard}>
           <View style={styles.heroTop}>
             <View>
-              <Text style={styles.heroGreeting}>Good Morning 👋</Text>
-              <Text style={styles.heroTitle}>BrandCraft Agency</Text>
-              <Text style={styles.heroSubtitle}>Marketing Agency</Text>
+              <Text style={styles.heroGreeting}>{getGreeting()}</Text>
+              <Text style={styles.heroTitle}>{agencyName}</Text>
+              <Text style={styles.heroSubtitle}>{vendorType}</Text>
             </View>
             <View style={styles.heroIconBox}>
               <Sparkles size={24} color={WHITE} opacity={0.6} />
@@ -53,35 +85,35 @@ export default function MarketingDashboardHome({ setActivePage, handleSendPropos
         {/* 2. Overview */}
         <Text style={styles.sectionTitle}>Overview</Text>
         <View style={styles.overviewGrid}>
-          <View style={[styles.overviewCard, { width: isMobile ? '48%' : '23.5%' }]}>
+          <TouchableOpacity style={[styles.overviewCard, { width: isMobile ? '48%' : '23.5%' }]} onPress={() => setActivePage && setActivePage('feedwall')}>
             <View style={styles.overviewCardTop}>
               <View style={[styles.overviewIconWrap, {backgroundColor: '#F5F3FF'}]}>
                 <Megaphone size={18} color={PURPLE} />
               </View>
             </View>
-            <Text style={styles.overviewCount}>12</Text>
+            <Text style={styles.overviewCount}>{publicReqs.length}</Text>
             <Text style={styles.overviewLabel}>Open Opportunities</Text>
-          </View>
+          </TouchableOpacity>
 
-          <View style={[styles.overviewCard, { width: isMobile ? '48%' : '23.5%' }]}>
+          <TouchableOpacity style={[styles.overviewCard, { width: isMobile ? '48%' : '23.5%' }]} onPress={() => setActivePage && setActivePage('requests')}>
             <View style={styles.overviewCardTop}>
               <View style={[styles.overviewIconWrap, {backgroundColor: '#EFF6FF'}]}>
                 <Inbox size={18} color={BLUE} />
               </View>
             </View>
-            <Text style={styles.overviewCount}>4</Text>
+            <Text style={styles.overviewCount}>{directReqs.length}</Text>
             <Text style={styles.overviewLabel}>Direct Requests</Text>
-          </View>
+          </TouchableOpacity>
 
-          <View style={[styles.overviewCard, { width: isMobile ? '48%' : '23.5%' }]}>
+          <TouchableOpacity style={[styles.overviewCard, { width: isMobile ? '48%' : '23.5%' }]} onPress={() => setActivePage && setActivePage('campaigns')}>
             <View style={styles.overviewCardTop}>
               <View style={[styles.overviewIconWrap, {backgroundColor: '#F0FDF4'}]}>
                 <Rocket size={18} color={GREEN} />
               </View>
             </View>
-            <Text style={styles.overviewCount}>3</Text>
+            <Text style={styles.overviewCount}>{directReqs.filter(r => r.status === 'accepted' || r.status === 'confirmed').length}</Text>
             <Text style={styles.overviewLabel}>Active Campaigns</Text>
-          </View>
+          </TouchableOpacity>
 
           <View style={[styles.overviewCard, { width: isMobile ? '48%' : '23.5%' }]}>
             <View style={styles.overviewCardTop}>
@@ -107,33 +139,39 @@ export default function MarketingDashboardHome({ setActivePage, handleSendPropos
             </View>
 
             <View style={styles.attentionContainer}>
-              {MOCK_NEEDS_ATTENTION.map((item, index) => (
-                <TouchableOpacity 
-                  key={item.id} 
-                  style={[styles.attentionRow, index !== MOCK_NEEDS_ATTENTION.length - 1 && styles.borderBottom]}
-                  onPress={() => setActivePage(item.action === 'Open' ? 'proposals' : 'campaigns')}
-                >
-                  <View style={[styles.attentionIconBox, { backgroundColor: item.color + '15' }]}>
-                    <item.icon size={16} color={item.color} />
-                  </View>
-                  <View style={styles.attentionContent}>
-                    <Text style={styles.attentionTitle}>{item.title}</Text>
-                    <Text style={styles.attentionContext}>{item.context}</Text>
-                    <Text style={[styles.attentionStatus, { color: item.color }]}>{item.status}</Text>
-                  </View>
-                  <View style={styles.textActionBtn}>
-                    <Text style={styles.textActionText}>{item.action}</Text>
-                    <ChevronRight size={14} color={NAVY} />
-                  </View>
-                </TouchableOpacity>
-              ))}
+              {MOCK_NEEDS_ATTENTION.length > 0 ? (
+                MOCK_NEEDS_ATTENTION.map((item, index) => (
+                  <TouchableOpacity 
+                    key={item.id} 
+                    style={[styles.attentionRow, index !== MOCK_NEEDS_ATTENTION.length - 1 && styles.borderBottom]}
+                    onPress={() => setActivePage(item.action === 'Open' ? 'proposals' : 'campaigns')}
+                  >
+                    <View style={[styles.attentionIconBox, { backgroundColor: item.color + '15' }]}>
+                      <item.icon size={16} color={item.color} />
+                    </View>
+                    <View style={styles.attentionContent}>
+                      <Text style={styles.attentionTitle}>{item.title}</Text>
+                      <Text style={styles.attentionContext}>{item.context}</Text>
+                      <Text style={[styles.attentionStatus, { color: item.color }]}>{item.status}</Text>
+                    </View>
+                    <View style={styles.textActionBtn}>
+                      <Text style={styles.textActionText}>{item.action}</Text>
+                      <ChevronRight size={14} color={NAVY} />
+                    </View>
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <View style={{ padding: 16, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 13, color: MUTED }}>No items requiring attention.</Text>
+                </View>
+              )}
             </View>
 
           </View>
 
           <View style={!isMobile && styles.desktopColRight}>
             
-            {/* 5. Today's Schedule (Reordered logically if side-by-side, but numbers match spec sections) */}
+            {/* 5. Today's Schedule */}
             <View style={styles.sectionHeaderRow}>
               <View>
                 <Text style={styles.sectionTitle}>Today’s Schedule</Text>
@@ -142,23 +180,29 @@ export default function MarketingDashboardHome({ setActivePage, handleSendPropos
             </View>
 
             <View style={styles.scheduleBox}>
-              {MOCK_SCHEDULE.map((sch, index) => (
-                <TouchableOpacity 
-                  key={sch.id} 
-                  style={[styles.scheduleRow, index !== MOCK_SCHEDULE.length - 1 && styles.borderBottom]}
-                  onPress={() => setActivePage('campaigns')}
-                >
-                  <Text style={styles.scheduleTime}>{sch.time}</Text>
-                  <View style={styles.scheduleIconWrap}>
-                    <sch.icon size={14} color={MUTED} />
-                  </View>
-                  <View style={styles.scheduleContent}>
-                    <Text style={styles.scheduleTitle}>{sch.title}</Text>
-                    <Text style={styles.scheduleBusiness}>{sch.business}</Text>
-                  </View>
-                  <ChevronRight size={16} color={MUTED} />
-                </TouchableOpacity>
-              ))}
+              {MOCK_SCHEDULE.length > 0 ? (
+                MOCK_SCHEDULE.map((sch, index) => (
+                  <TouchableOpacity 
+                    key={sch.id} 
+                    style={[styles.scheduleRow, index !== MOCK_SCHEDULE.length - 1 && styles.borderBottom]}
+                    onPress={() => setActivePage('campaigns')}
+                  >
+                    <Text style={styles.scheduleTime}>{sch.time}</Text>
+                    <View style={styles.scheduleIconWrap}>
+                      <sch.icon size={14} color={MUTED} />
+                    </View>
+                    <View style={styles.scheduleContent}>
+                      <Text style={styles.scheduleTitle}>{sch.title}</Text>
+                      <Text style={styles.scheduleBusiness}>{sch.business}</Text>
+                    </View>
+                    <ChevronRight size={16} color={MUTED} />
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <View style={{ padding: 16, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 13, color: MUTED }}>No events scheduled for today.</Text>
+                </View>
+              )}
             </View>
 
           </View>
@@ -174,26 +218,32 @@ export default function MarketingDashboardHome({ setActivePage, handleSendPropos
         </View>
 
         <View style={styles.oppsGrid}>
-          {MOCK_OPPORTUNITIES.map(req => (
-            <TouchableOpacity key={req.id} style={[styles.oppCard, !isMobile && { width: '48%' }]} onPress={() => handleSendProposal(req)}>
-              <View style={styles.oppTopRow}>
-                <Text style={styles.oppId}>{req.id}</Text>
-                {req.priority === 'HIGH PRIORITY' && (
-                  <View style={styles.badgeRed}><Text style={styles.badgeRedText}>{req.priority}</Text></View>
-                )}
-              </View>
-              <Text style={styles.oppTitle}>{req.title}</Text>
-              <Text style={styles.oppBusiness}>{req.business}</Text>
-              
-              <Text style={styles.oppCategory}>{req.category}</Text>
-              <Text style={styles.oppDetails}>{req.budget} · {req.duration}</Text>
-              
-              <View style={styles.oppFooter}>
-                <Text style={styles.textActionText}>View Opportunity</Text>
-                <ChevronRight size={16} color={NAVY} />
-              </View>
-            </TouchableOpacity>
-          ))}
+          {publicReqs.length > 0 ? (
+            publicReqs.map(req => (
+              <TouchableOpacity key={req.id} style={[styles.oppCard, !isMobile && { width: '48%' }]} onPress={() => handleSendProposal(req)}>
+                <View style={styles.oppTopRow}>
+                  <Text style={styles.oppId}>{req.id}</Text>
+                  {req.priority === 'HIGH PRIORITY' && (
+                    <View style={styles.badgeRed}><Text style={styles.badgeRedText}>{req.priority}</Text></View>
+                  )}
+                </View>
+                <Text style={styles.oppTitle}>{req.title || req.jobRole || 'Marketing Requirement'}</Text>
+                <Text style={styles.oppBusiness}>{req.owner?.bizName || 'HoReCa Establishment'}</Text>
+                
+                <Text style={styles.oppCategory}>{req.category || 'Marketing'}</Text>
+                <Text style={styles.oppDetails}>{req.budget || 'Custom Budget'}</Text>
+                
+                <View style={styles.oppFooter}>
+                  <Text style={styles.textActionText}>View Opportunity</Text>
+                  <ChevronRight size={16} color={NAVY} />
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={{ width: '100%', padding: 20, backgroundColor: WHITE, borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center' }}>
+              <Text style={{ fontSize: 13, color: MUTED }}>No open marketing opportunities found.</Text>
+            </View>
+          )}
         </View>
 
       </ScrollView>

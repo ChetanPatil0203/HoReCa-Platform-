@@ -3,11 +3,7 @@ import {
   View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity,
   useWindowDimensions, Modal, SafeAreaView, Platform, TouchableWithoutFeedback
 } from 'react-native';
-import {
-  Search, Filter, Users, User, RefreshCw, AlertCircle, MapPin, 
-  Star, ShoppingBag, MessageSquare, MoreVertical, FileText, Gift, XCircle,
-  Building, Phone, Mail, FileCheck, Package, CreditCard, Clock3, CheckCircle2, HelpCircle
-} from 'lucide-react-native';
+import { Search, Filter, Users, User, RefreshCw, CircleAlert as AlertCircle, MapPin, Star, ShoppingBag, MessageSquare, EllipsisVertical as MoreVertical, FileText, Gift, CircleX as XCircle, Building, Phone, Mail, FileCheck, Package, CreditCard, Clock3, CircleCheck as CheckCircle2, CircleHelp as HelpCircle } from 'lucide-react-native';
 
 const NAVY = '#081A3A';
 const GOLD = '#D4AF37';

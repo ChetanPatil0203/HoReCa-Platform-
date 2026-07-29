@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, CheckCircle2, AlertTriangle, ShieldAlert, UserPlus, FileText, Send, MessageSquare, History } from 'lucide-react';
+import { X, CircleCheck as CheckCircle2, TriangleAlert as AlertTriangle, ShieldAlert, UserPlus, FileText, Send, MessageSquare, History } from 'lucide-react';
 
 /* ==========================================================================
    1. VERIFY DOCUMENT CONFIRMATION MODAL

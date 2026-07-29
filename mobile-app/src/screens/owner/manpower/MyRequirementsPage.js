@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions, ActivityIndicator } from 'react-native';
-import { ArrowLeft, Search, Calendar, RefreshCw, FileText, Eye, Pen, XCircle, ChevronRight, Package, Clock } from 'lucide-react-native';
+import { ArrowLeft, Search, Calendar, RefreshCw, FileText, Eye, Pen, CircleX as XCircle, ChevronRight, Package, Clock } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 import { AuthContext } from '../../../context/AuthContext';
 import { fetchOwnerRequirements } from '../../../services/api.service';

@@ -3,9 +3,7 @@ import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, 
   TouchableWithoutFeedback
 } from 'react-native';
-import { 
-  ChevronRight, MoreVertical, FileText
-} from 'lucide-react-native';
+import { ChevronRight, EllipsisVertical as MoreVertical, FileText } from 'lucide-react-native';
 
 const MY_PROPOSALS = [];
 

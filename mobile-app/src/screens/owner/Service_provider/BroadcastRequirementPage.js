@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions } from 'react-native';
-import { ArrowLeft, CheckCircle, MapPin, Calendar, Clock, DollarSign, Briefcase } from 'lucide-react-native';
+import { ArrowLeft, CircleCheck as CheckCircle, MapPin, Calendar, Clock, DollarSign, Briefcase } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 import { AuthContext } from '../../../context/AuthContext';
 import { createRequirementApi } from '../../../services/api.service';

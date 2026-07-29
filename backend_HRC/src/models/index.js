@@ -12,6 +12,7 @@ const Requirement = require('./Requirement');
 const ManpowerRequirement = require('./ManpowerRequirement');
 const MarketingRequirement = require('./MarketingRequirement');
 const ServiceProviderRequirement = require('./ServiceProviderRequirement');
+const PasswordReset = require('./PasswordReset');
 
 // Associations
 User.hasMany(Document, { foreignKey: 'userId', as: 'documents', onDelete: 'CASCADE' });
@@ -63,6 +64,12 @@ ServiceProviderRequirement.belongsTo(HorecaRegistration, { foreignKey: 'ownerId'
 VendorRegistration.hasMany(ServiceProviderRequirement, { foreignKey: 'supplierId', as: 'receivedServiceProviderRequirements' });
 ServiceProviderRequirement.belongsTo(VendorRegistration, { foreignKey: 'supplierId', as: 'supplier' });
 
+// Generic Requirement Associations
+HorecaRegistration.hasMany(Requirement, { foreignKey: 'ownerId', as: 'requirements' });
+Requirement.belongsTo(HorecaRegistration, { foreignKey: 'ownerId', as: 'owner' });
+VendorRegistration.hasMany(Requirement, { foreignKey: 'supplierId', as: 'receivedRequirements' });
+Requirement.belongsTo(VendorRegistration, { foreignKey: 'supplierId', as: 'supplier' });
+
 module.exports = {
   sequelize,
   User,
@@ -78,4 +85,5 @@ module.exports = {
   ManpowerRequirement,
   MarketingRequirement,
   ServiceProviderRequirement,
+  PasswordReset,
 };

@@ -4,12 +4,7 @@ import {
   useWindowDimensions, Modal, SafeAreaView, TextInput, KeyboardAvoidingView, 
   Platform, TouchableWithoutFeedback, Alert
 } from 'react-native';
-import {
-  Search, SlidersHorizontal, ChevronRight, X, XCircle,
-  MoreVertical, CheckCircle, User, Home, ClipboardList,
-  Plus, Calendar, IndianRupee, Wrench, ArrowUpRight,
-  ChevronDown, FileSpreadsheet, Download, FileText
-} from 'lucide-react-native';
+import { Search, SlidersHorizontal, ChevronRight, X, CircleX as XCircle, EllipsisVertical as MoreVertical, CircleCheck as CheckCircle, User, Home, ClipboardList, Plus, Calendar, IndianRupee, Wrench, ArrowUpRight, ChevronDown, FileSpreadsheet, Download, FileText } from 'lucide-react-native';
 
 const NAVY = '#071B3A';
 const BG = '#F8FAFC';

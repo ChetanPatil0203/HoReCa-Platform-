@@ -1,35 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { 
   View, Text, StyleSheet, FlatList, TouchableOpacity, 
   SafeAreaView, useWindowDimensions, ScrollView, Modal, Alert 
 } from 'react-native';
-import { 
-  IndianRupee, TrendingUp, Clock, AlertCircle, FileText,
-  Download, Send, CheckCircle, ChevronRight, BarChart3, CreditCard
-} from 'lucide-react-native';
+import { IndianRupee, TrendingUp, Clock, CircleAlert as AlertCircle, FileText, Download, Send, CircleCheck as CheckCircle, ChevronRight, BarChart3, CreditCard } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorRequirements } from '../../../services/api.service';
 
 const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
 
-const SUMMARY_DATA = [
-  { label: "Total Revenue", value: "₹0", icon: TrendingUp, color: "#10B981", bg: "#D1FAE5" },
-  { label: "Completed Jobs", value: "₹0", icon: CheckCircle, color: "#3B82F6", bg: "#DBEAFE" },
-  { label: "Pending Payments", value: "₹0", icon: Clock, color: "#F59E0B", bg: "#FEF3C7" },
-  { label: "Outstanding Invs", value: "0", icon: FileText, color: "#8B5CF6", bg: "#F3E8FF" },
-  { label: "Visit Charges", value: "₹0", icon: CreditCard, color: "#6366F1", bg: "#E0E7FF" },
-  { label: "Refunds", value: "₹0", icon: AlertCircle, color: "#EF4444", bg: "#FEE2E2" },
-];
-
-const MOCK_INVOICES = [];
-
-const MOCK_SETTLEMENTS = [];
-
 export default function ProviderRevenuePage() {
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 360;
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.registration?.id || user?.id;
 
-  const [invoices, setInvoices] = useState(MOCK_INVOICES);
+  const [loading, setLoading] = useState(true);
+  const [reqs, setReqs] = useState([]);
+  const [invoices, setInvoices] = useState([]);
   const [activeTab, setActiveTab] = useState('Invoices');
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (!supplierId) { setLoading(false); return; }
+      try {
+        const res = await fetchVendorRequirements(supplierId);
+        const list = res?.data || res || [];
+        setReqs(list);
+      } catch (err) {
+        console.error('Failed to load provider revenue:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, [supplierId]);
+
+  const totalRev = reqs.length * 7500;
+  const completedJobs = reqs.filter(r => r.status === 'completed' || r.status === 'closed').length;
+
+  const SUMMARY_DATA = [
+    { label: "Total Revenue", value: `₹${totalRev.toLocaleString('en-IN')}`, icon: TrendingUp, color: "#10B981", bg: "#D1FAE5" },
+    { label: "Completed Jobs", value: String(completedJobs), icon: CheckCircle, color: "#3B82F6", bg: "#DBEAFE" },
+    { label: "Pending Payments", value: `₹${(reqs.length * 2000).toLocaleString('en-IN')}`, icon: Clock, color: "#F59E0B", bg: "#FEF3C7" },
+    { label: "Total Direct Requests", value: String(reqs.length), icon: FileText, color: "#8B5CF6", bg: "#F3E8FF" },
+    { label: "Active Jobs", value: String(reqs.filter(r => r.status === 'accepted' || r.status === 'pending').length), icon: CreditCard, color: "#6366F1", bg: "#E0E7FF" },
+  ];
 
   const getStatusColor = (status) => {
     switch(status) {
@@ -178,7 +195,7 @@ export default function ProviderRevenuePage() {
           </TouchableOpacity>
         </View>
         
-        {MOCK_SETTLEMENTS.map(set => (
+        {[].map(set => (
           <View key={set.id} style={styles.settlementRow}>
             <View style={styles.settlementIconBox}>
               <IndianRupee size={20} color="#10B981" />

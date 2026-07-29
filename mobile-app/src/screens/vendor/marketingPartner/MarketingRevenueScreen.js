@@ -4,12 +4,7 @@ import {
   Modal, TextInput, KeyboardAvoidingView, Platform, Dimensions, 
   TouchableWithoutFeedback 
 } from 'react-native';
-import { 
-  FilePlus2, IndianRupee, Clock3, TriangleAlert, Search, 
-  SlidersHorizontal, ChevronRight, MoreVertical, Pencil, Copy, 
-  Trash2, Download, CheckCircle, XCircle, BellRing, Receipt, 
-  CreditCard, X 
-} from 'lucide-react-native';
+import { FilePlus2, IndianRupee, Clock3, TriangleAlert, Search, SlidersHorizontal, ChevronRight, EllipsisVertical as MoreVertical, Pencil, Copy, Trash2, Download, CircleCheck as CheckCircle, CircleX as XCircle, BellRing, Receipt, CreditCard, X } from 'lucide-react-native';
 
 const { width, height } = Dimensions.get('window');
 const isMobile = width < 768;

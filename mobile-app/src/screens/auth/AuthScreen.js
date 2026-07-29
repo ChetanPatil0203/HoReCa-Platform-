@@ -144,7 +144,7 @@ export default function AuthScreen({ navigation }) {
     <View style={styles.leftCol}>
       <View style={styles.brandRow}>
         <View style={styles.brandIconBox}>
-          <Image source={require('../../assets/HoReCa_Logo.png')} style={{ width: 24, height: 24, resizeMode: 'contain' }} />
+          <Image source={require('../../assets/HRCHUB_Logo.png')} style={{ width: 24, height: 24, resizeMode: 'contain' }} />
         </View>
         <View>
           <Text style={styles.brandTitle}>HRC<Text style={{ color: '#60A5FA' }}>HUB</Text></Text>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform } from 'react-native';
-import { Package, Users, Wrench, Megaphone, Plus, Search, Star, Clock, CheckCircle, XCircle, ArrowLeft, MessageSquare } from 'lucide-react-native';
+import { Package, Users, Wrench, Megaphone, Plus, Search, Star, Clock, CircleCheck as CheckCircle, CircleX as XCircle, ArrowLeft, MessageSquare } from 'lucide-react-native';
 import { typography } from '../../../theme/typography';
 import { colors } from '../../../theme/colors';
 

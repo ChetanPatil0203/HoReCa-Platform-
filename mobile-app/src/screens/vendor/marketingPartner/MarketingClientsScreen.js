@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Dimensions, Modal, TouchableWithoutFeedback, SafeAreaView } from 'react-native';
-import { Building2, Star, Clock3, CreditCard, IndianRupee, User, Calendar, CheckCircle2, AlertCircle, HelpCircle, XCircle } from 'lucide-react-native';
+import { Building2, Star, Clock3, CreditCard, IndianRupee, User, Calendar, CircleCheck as CheckCircle2, CircleAlert as AlertCircle, CircleHelp as HelpCircle, CircleX as XCircle } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 
 const { width } = Dimensions.get('window');

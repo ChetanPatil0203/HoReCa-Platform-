@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Switch, Platform, useWindowDimensions } from 'react-native';
-import { ArrowLeft, UserMinus, ShieldCheck, Clock, CheckCircle } from 'lucide-react-native';
+import { ArrowLeft, UserMinus, ShieldCheck, Clock, CircleCheck as CheckCircle } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 import { REPLACEMENT_HISTORY } from '../../../constants/manpowerData';
 

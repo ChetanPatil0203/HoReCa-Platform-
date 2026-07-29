@@ -6,3 +6,5 @@ build/
 coverage/
 .DS_Store
 *.log
+backend_HRC/uploads/*
+!backend_HRC/uploads/.gitkeep

@@ -3,12 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Modal, SafeAreaView, FlatList, TextInput, Pressable, useWindowDimensions, ActivityIndicator
 } from 'react-native';
-import {
-  Briefcase, Users, Calendar, MapPin,
-  Search, X, CheckCircle, Send, DollarSign, Building, ChevronRight,
-  Building2, UsersRound, IndianRupee,
-  FilePlus2, CircleCheck, Clock3
-} from 'lucide-react-native';
+import { Briefcase, Users, Calendar, MapPin, Search, X, CircleCheck as CheckCircle, Send, DollarSign, Building, ChevronRight, Building2, UsersRound, IndianRupee, FilePlus2, CircleCheck, Clock3 } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
 import { fetchVendorRequirements, updateRequirementStatusApi } from '../../../services/api.service';
 
@@ -23,12 +18,15 @@ const DECLINE_REASONS = [
   "Other"
 ];
 
+const MOCK_CANDIDATES = [];
+
+
 export default function ManpowerDirectRequestsPage({ initialAction }) {
   const { width } = useWindowDimensions();
   const summaryGridGap = 12;
   const summaryCardWidth = (width - 32 - summaryGridGap) / 2;
   const { user } = useContext(AuthContext);
-  const supplierId = user?.id;
+  const supplierId = user?.registration?.id || user?.id;
 
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,17 +48,23 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
     try {
       setLoading(true);
       const res = await fetchVendorRequirements(supplierId);
-      if (res.success) {
-        const mapped = (res.data || []).map(r => ({
+      const list = res?.data || res || [];
+      if (Array.isArray(list)) {
+        const mapped = list.map(r => ({
           id: r.id,
-          role: r.title,
+          role: r.title || 'Manpower Requirement',
           businessName: r.owner?.bizName || 'HRC Partner',
           location: r.location || r.owner?.city || 'India',
-          postedDate: new Date(r.createdAt).toLocaleDateString('en-IN'),
+          postedDate: r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-IN') : 'Recently',
           salary: r.budget || '—',
-          staffRequired: String(r.extraData?.numberOfStaff || '1'),
-          status: r.status === 'pending' ? 'New' : r.status === 'confirmed' ? 'Accepted' : r.status === 'cancelled' ? 'Declined' : r.status.charAt(0).toUpperCase() + r.status.slice(1),
-          description: r.description || ''
+          count: String(r.extraData?.numberOfStaff || r.staffRequired || '1'),
+          staffRequired: String(r.extraData?.numberOfStaff || r.staffRequired || '1'),
+          status: r.status === 'pending' ? 'New' : r.status === 'confirmed' ? 'Accepted' : r.status === 'cancelled' ? 'Declined' : r.status ? (r.status.charAt(0).toUpperCase() + r.status.slice(1)) : 'New',
+          description: r.description || 'No description provided.',
+          desc: r.description || 'No description provided.',
+          experience: r.extraData?.experience || 'Any experience',
+          joining: r.extraData?.date || 'As scheduled',
+          skills: Array.isArray(r.extraData?.skills) ? r.extraData.skills : (r.extraData?.skills ? [r.extraData.skills] : ['Staffing'])
         }));
         setRequests(mapped);
       }
@@ -352,7 +356,7 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
                   <View style={{ marginBottom: 20 }}>
                     <Text style={styles.sectionHeading}>Skills Required</Text>
                     <View style={styles.skillsWrap}>
-                      {selectedReq.skills.map((s, idx) => (
+                      {(selectedReq?.skills || []).map((s, idx) => (
                         <View key={idx} style={styles.skillPill}><Text style={styles.skillText}>{s}</Text></View>
                       ))}
                     </View>

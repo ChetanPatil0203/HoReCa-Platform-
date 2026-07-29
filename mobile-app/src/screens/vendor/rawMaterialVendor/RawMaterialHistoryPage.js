@@ -4,12 +4,7 @@ import {
   useWindowDimensions, Modal, SafeAreaView, TextInput, KeyboardAvoidingView, 
   Platform, TouchableWithoutFeedback, Alert, ActivityIndicator
 } from 'react-native';
-import {
-  Search, SlidersHorizontal, Package, ChevronRight, X, XCircle,
-  CheckCircle, Truck, User, Home, ClipboardList,
-  Plus, Calendar, IndianRupee, Boxes, CreditCard, ArrowUpRight,
-  ChevronDown, FileSpreadsheet, Download, FileText
-} from 'lucide-react-native';
+import { Search, SlidersHorizontal, Package, ChevronRight, X, CircleX as XCircle, CircleCheck as CheckCircle, Truck, User, Home, ClipboardList, Plus, Calendar, IndianRupee, Boxes, CreditCard, ArrowUpRight, ChevronDown, FileSpreadsheet, Download, FileText } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
 import { fetchVendorOrders } from '../../../services/api.service';
 

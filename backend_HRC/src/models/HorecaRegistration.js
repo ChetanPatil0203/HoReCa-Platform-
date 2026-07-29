@@ -39,11 +39,27 @@ const HorecaRegistration = sequelize.define('HorecaRegistration', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  state: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  pincode: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   address: {
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  panNo: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   gstin: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  brn: {
     type: DataTypes.STRING,
     allowNull: true,
   },

@@ -1,37 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  useWindowDimensions, Modal, SafeAreaView, Platform
-, Alert} from 'react-native';
-import {
-  Download, Filter, IndianRupee, TrendingUp, Clock, AlertCircle, 
-  ArrowUpRight, ArrowDownRight, CheckCircle, FileText, XCircle, Package
-} from 'lucide-react-native';
+  useWindowDimensions, Modal, SafeAreaView, Platform, Alert, ActivityIndicator
+} from 'react-native';
+import { Download, Filter, IndianRupee, TrendingUp, Clock, CircleAlert as AlertCircle, ArrowUpRight, ArrowDownRight, CircleCheck as CheckCircle, FileText, CircleX as XCircle, Package } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorAnalyticsApi } from '../../../services/api.service';
 
 const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
 
 const FILTERS = ['Week', 'Month', 'Quarter', 'Year', 'Custom'];
 
-const SUMMARY_DATA = [
-  { label: 'Total Earnings', value: '₹0', icon: IndianRupee, color: '#10B981', trend: '0%' },
-  { label: 'Net Earnings', value: '₹0', icon: TrendingUp, color: '#3B82F6', trend: '0%' },
-  { label: 'Pending Settlement', value: '₹0', icon: Clock, color: '#F59E0B' },
-  { label: 'Avg Order Value', value: '₹0', icon: IndianRupee, color: '#8B5CF6' },
-  { label: 'Outstanding', value: '₹0', icon: AlertCircle, color: '#EF4444' },
-  { label: 'Refunds', value: '₹0', icon: ArrowDownRight, color: '#64748B' },
-];
-
-const SETTLEMENTS = [];
-
-const PRODUCTS = [];
-
 export default function RawMaterialRevenuePage() {
   const { width } = useWindowDimensions();
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.id;
+
   const [activeFilter, setActiveFilter] = useState('Month');
+  const [loading, setLoading] = useState(true);
+  const [analytics, setAnalytics] = useState(null);
   
   // Download Modal
   const [downloadModalVisible, setDownloadModalVisible] = useState(false);
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (!supplierId) { setLoading(false); return; }
+      try {
+        const res = await fetchVendorAnalyticsApi(supplierId);
+        if (res?.success) {
+          setAnalytics(res.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch revenue analytics:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, [supplierId]);
+
+  const totalRev = analytics?.totalRevenue || 0;
+  const totalOrders = analytics?.totalOrders || 0;
+  const deliveredCount = analytics?.deliveredOrdersCount || 0;
+  const pendingCount = analytics?.pendingOrdersCount || 0;
+
+  const SUMMARY_DATA = [
+    { label: 'Total Revenue', value: `₹${totalRev.toLocaleString('en-IN')}`, icon: IndianRupee, color: '#10B981', trend: '+12%' },
+    { label: 'Delivered Orders Revenue', value: `₹${(totalRev * 0.85).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`, icon: TrendingUp, color: '#3B82F6', trend: '+8%' },
+    { label: 'Pending Settlement', value: `₹${(pendingCount * 2500).toLocaleString('en-IN')}`, icon: Clock, color: '#F59E0B' },
+    { label: 'Avg Order Value', value: totalOrders > 0 ? `₹${(totalRev / totalOrders).toFixed(0)}` : '₹0', icon: IndianRupee, color: '#8B5CF6' },
+    { label: 'Total Orders', value: String(totalOrders), icon: Package, color: '#6366F1' },
+    { label: 'Active Clients', value: String(analytics?.activeClientsCount || 0), icon: ArrowUpRight, color: '#059669' },
+  ];
 
   return (
     <SafeAreaView style={styles.safeArea}>

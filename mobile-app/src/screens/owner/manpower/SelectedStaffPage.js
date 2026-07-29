@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
-import { ArrowLeft, User, Building, Calendar, Phone, MessageSquare, CheckCircle } from 'lucide-react-native';
+import { ArrowLeft, User, Building, Calendar, Phone, MessageSquare, CircleCheck as CheckCircle } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 import { SELECTED_STAFF } from '../../../constants/manpowerData';
 

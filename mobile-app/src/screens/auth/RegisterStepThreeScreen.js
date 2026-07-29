@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
-import { ShieldCheck, ArrowRight, Lock, CheckCircle2, RotateCcw } from 'lucide-react-native';
+import { ShieldCheck, ArrowRight, Lock, CircleCheck as CheckCircle2, RotateCcw } from 'lucide-react-native';
 
 import AuthScreenWrapper from '../../components/auth/AuthScreenWrapper';
 import AuthCard from '../../components/auth/AuthCard';

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ToastAndroid, Dimensions } from 'react-native';
-import { ArrowLeft, UploadCloud, FileImage, Send, Save, AlertCircle, FileDown, MessageSquare, Clock } from 'lucide-react-native';
+import { ArrowLeft, CloudUpload as UploadCloud, FileImage, Send, Save, CircleAlert as AlertCircle, FileDown, MessageSquare, Clock } from 'lucide-react-native';
 
 const CREATIVE_TYPES = [
   "Social Post", "Story", "Reel", "Video", "Poster", 

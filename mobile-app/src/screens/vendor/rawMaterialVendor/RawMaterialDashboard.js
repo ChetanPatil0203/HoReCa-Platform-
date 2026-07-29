@@ -1,6 +1,6 @@
 import React, { useState, useContext, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Platform, useWindowDimensions, TouchableOpacity, Image, Animated, Easing, TouchableWithoutFeedback } from 'react-native';
-import { Menu, Bell, User, Truck, HelpCircle, Settings, Home, ClipboardList, Plus, PackagePlus, Boxes, Users, History, CircleHelp, LogOut } from 'lucide-react-native';
+import { Menu, Bell, User, Truck, CircleHelp as HelpCircle, Settings, Home, ClipboardList, Plus, PackagePlus, Boxes, Users, History, CircleHelp, LogOut } from 'lucide-react-native';
 import RoleBasedMobileDrawer from '../../../components/navigation/RoleBasedMobileDrawer';
 import { AuthContext } from '../../../context/AuthContext';
 import { colors } from '../../../theme/colors';
@@ -18,6 +18,8 @@ import RawMaterialClientsPage from './RawMaterialClientsPage';
 import RawMaterialNotificationsPage from './RawMaterialNotificationsPage';
 import RawMaterialSettingsPage from './RawMaterialSettingsPage';
 import RawMaterialSupportPage from './RawMaterialSupportPage';
+import CompliancePage from '../../owner/compliance/CompliancePage';
+import DocumentsKycScreen from '../../common/DocumentsKycScreen';
 
 const PRIMARY = '#0B1736';
 const ACCENT = '#0B1736';
@@ -69,15 +71,17 @@ export default function RawMaterialDashboard() {
       case "notifications":
         return <RawMaterialNotificationsPage />;
       case "settings":
-        return <RawMaterialSettingsPage />;
-      case "support":
-        return <RawMaterialSupportPage />;
       case "profile":
-        return <RawMaterialProfilePage />;
+        return <RawMaterialSettingsPage onNavigate={navigateTo} />;
       case "history":
         return <RawMaterialHistoryPage />;
       case "clients":
         return <RawMaterialClientsPage />;
+      case "compliance":
+        return <CompliancePage />;
+      case "documentsKyc":
+      case "documents-kyc":
+        return <DocumentsKycScreen onBack={() => navigateTo('settings')} />;
       default: return <View style={styles.placeholder}><Text style={styles.placeholderText}>{activePage} Under Construction</Text></View>;
     }
   };
@@ -167,7 +171,7 @@ export default function RawMaterialDashboard() {
 
             <View style={styles.mobileLogoContainer}>
               <View style={styles.mobileLogoIconBox}>
-                <Image source={require('../../../assets/HoReCa_Logo.png')} style={{ width: 18, height: 18, resizeMode: 'contain' }} />
+                <Image source={require('../../../assets/HRCHUB_Logo.png')} style={{ width: 18, height: 18, resizeMode: 'contain' }} />
               </View>
               <Text style={styles.mobileLogoText}>
                 HRC<Text style={{ color: '#D4AF37' }}>HUB</Text>

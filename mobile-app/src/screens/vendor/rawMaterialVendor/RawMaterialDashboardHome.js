@@ -3,10 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, 
   TouchableOpacity, SafeAreaView, Dimensions, ActivityIndicator
 } from 'react-native';
-import { 
-  TrendingUp, Package, Users, Truck, AlertCircle, ChevronRight,
-  ArrowUpRight, ArrowDownRight, PackageSearch, CheckCircle2, Clock, MapPin, RefreshCw
-} from 'lucide-react-native';
+import { TrendingUp, Package, Users, Truck, CircleAlert as AlertCircle, ChevronRight, ArrowUpRight, ArrowDownRight, PackageSearch, CircleCheck as CheckCircle2, Clock, MapPin, RefreshCw } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
 import { fetchVendorOrders } from '../../../services/api.service';
 
@@ -37,7 +34,7 @@ const STATUS_COLORS = {
   Cancelled: { bg: '#FEF2F2', color: '#DC2626' },
 };
 
-export default function RawMaterialDashboardHome({ setActivePage }) {
+export default function RawMaterialDashboardHome({ onNavigate, setActivePage }) {
   const { width } = Dimensions.get('window');
   const isMobile = width < 768;
   const { user } = useContext(AuthContext);
@@ -104,8 +101,8 @@ export default function RawMaterialDashboardHome({ setActivePage }) {
           <View style={styles.heroCard}>
             <View style={[styles.heroContent, !isMobile && { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
             <View>
-              <Text style={styles.heroVendorName}>{user?.businessName || user?.bizName || 'Vendor Agency'}</Text>
-              <Text style={styles.heroGreeting}>Welcome back to your dashboard</Text>
+              <Text style={styles.heroVendorName}>{user?.registration?.bizName || user?.businessName || user?.bizName || 'Vendor Agency'}</Text>
+              <Text style={styles.heroGreeting}>{new Date().getHours() < 12 ? 'Good Morning 🖐️' : new Date().getHours() < 17 ? 'Good Afternoon 🖐️' : 'Good Evening 🖐️'}</Text>
             </View>  
               <Text style={styles.heroSubText}>Manage orders, inventory and deliveries from one place.</Text>
               

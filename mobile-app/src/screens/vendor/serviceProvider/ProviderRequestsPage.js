@@ -1,12 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useContext, useCallback, useRef } from 'react';
 import { 
   View, Text, StyleSheet, FlatList, TouchableOpacity, 
-  useWindowDimensions, Modal, TextInput, ScrollView, KeyboardAvoidingView, Platform, Pressable, Alert 
+  useWindowDimensions, Modal, TextInput, ScrollView, KeyboardAvoidingView, Platform, Pressable, Alert, RefreshControl
 } from 'react-native';
-import { 
-  Search, SlidersHorizontal, ChevronRight, MoreVertical, 
-  XCircle, Send, CheckCircle, MapPin, FileText
-} from 'lucide-react-native';
+import { Search, SlidersHorizontal, ChevronRight, EllipsisVertical as MoreVertical, CircleX as XCircle, Send, CircleCheck as CheckCircle, MapPin, FileText, RefreshCw } from 'lucide-react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorRequirements } from '../../../services/api.service';
 
 const NAVY = '#071B3A';
 const GOLD = '#F6B800';
@@ -14,18 +14,71 @@ const BG = '#F8FAFC';
 const WHITE = '#FFFFFF';
 const GREEN = '#10B981';
 
-const INITIAL_REQUESTS = [];
-
 const TABS = ['New', 'Quote Sent', 'Accepted', 'Declined', 'Closed'];
 
 export default function ProviderRequestsPage() {
   const { width } = useWindowDimensions();
   const isLargeScreen = width >= 768;
+  const { user } = useContext(AuthContext);
+
+  const userRef = useRef(user);
+  userRef.current = user;
 
   const [activeTab, setActiveTab] = useState('New');
-  const [requests, setRequests] = useState(INITIAL_REQUESTS);
+  const [requests, setRequests] = useState([]);
   const [search, setSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const loadDirectRequests = async () => {
+    const currentSupplierId = userRef.current?.registration?.id || userRef.current?.id;
+    if (!currentSupplierId) return;
+
+    try {
+      const res = await fetchVendorRequirements(currentSupplierId);
+      const list = res?.data || res || [];
+      if (Array.isArray(list)) {
+        const mapped = list.map(r => ({
+          id: `DIR-${r.id ? r.id.substring(0, 5).toUpperCase() : '101'}`,
+          rawId: r.id,
+          service: r.title || 'Direct Service Request',
+          client: r.owner?.bizName || 'HoReCa Owner',
+          businessType: r.extraData?.category || 'Service',
+          location: r.location || 'Location Specified',
+          date: r.extraData?.date || 'As scheduled',
+          budget: r.budget || 'Custom Quote',
+          requestedAt: r.createdAt ? new Date(r.createdAt).toLocaleDateString() : 'Recently',
+          status: r.status === 'pending' ? 'New' : r.status === 'approved' ? 'Accepted' : r.status === 'rejected' ? 'Declined' : r.status,
+          priorityBadge: r.status === 'pending' ? 'New' : r.status,
+          description: r.description || 'Direct request from HoReCa owner.',
+          source: 'Direct'
+        }));
+        setRequests(mapped);
+      }
+    } catch (err) {
+      console.warn('Error fetching direct requests for vendor:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadDirectRequests();
+    const interval = setInterval(loadDirectRequests, 3000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadDirectRequests();
+      const interval = setInterval(loadDirectRequests, 3000);
+      return () => clearInterval(interval);
+    }, [user])
+  );
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadDirectRequests();
+    setIsRefreshing(false);
+  };
   
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [selectedRequest, setSelectedRequest] = useState(null);
@@ -181,6 +234,9 @@ export default function ProviderRequestsPage() {
             <Text style={styles.pageSubtitle}>Service requests sent directly to your business</Text>
           </View>
           <View style={styles.headerActions}>
+            <TouchableOpacity style={styles.headerBtn} onPress={handleRefresh}>
+              <RefreshCw size={20} color={NAVY} />
+            </TouchableOpacity>
             <TouchableOpacity style={styles.headerBtn} onPress={() => setShowSearch(!showSearch)}>
               <Search size={20} color={NAVY} />
             </TouchableOpacity>
@@ -227,6 +283,9 @@ export default function ProviderRequestsPage() {
           renderItem={renderItem}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[NAVY]} tintColor={NAVY} />
+          }
           ListEmptyComponent={() => (
             <View style={styles.emptyState}>
               <View style={styles.emptyIconBox}><Search size={24} color="#94A3B8" /></View>

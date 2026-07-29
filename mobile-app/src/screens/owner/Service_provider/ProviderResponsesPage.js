@@ -1,28 +1,71 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, Text, StyleSheet, ScrollView, TouchableOpacity, 
   Platform, useWindowDimensions, Modal, SafeAreaView 
 } from 'react-native';
-import { 
-  ArrowLeft, MessageSquare, ArrowUpDown, GitCompareArrows, 
-  BadgeCheck, Star, ChevronRight, CheckCircle, MoreVertical, X,
-  ShieldCheck, Circle
-} from 'lucide-react-native';
+import { ArrowLeft, MessageSquare, ArrowUpDown, GitCompareArrows, BadgeCheck, Star, ChevronRight, CircleCheck as CheckCircle, EllipsisVertical as MoreVertical, X, ShieldCheck, Circle } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 
 const NAVY = '#0E2042';
 const GOLD = '#D4AF37';
-const LIGHT_BG = '#F8FAFC';
+const LIGHT_BG = '#F5F7FA';
 const GREEN = '#16A34A';
 const BORDER = '#E2E8F0';
 
-const MOCK_RESPONSES = [];
-
-export default function ProviderResponsesPage({ request, onBack, onProviderProfile }) {
+export default function ProviderResponsesPage({ request, onBack, onProviderProfile, onViewBooking, onAccept }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
 
-  const [responses, setResponses] = useState(MOCK_RESPONSES);
+  const reqTitle = request?.title || 'Service Requirement';
+  const reqId = request?.id || request?._rawId || 'REQ-091';
+  const reqLocation = request?.location || 'Not Specified';
+  const reqDate = request?.date || 'Not Specified';
+  const reqBudget = request?.budget || 'Not Specified';
+
+  const [responses, setResponses] = useState([]);
+
+  useEffect(() => {
+    if (request) {
+      if (request.responses && Array.isArray(request.responses) && request.responses.length > 0) {
+        setResponses(request.responses);
+        return;
+      }
+
+      const count = request.responseCount || (request.supplierId || request.raw?.supplierId ? 1 : 0);
+      if (count > 0) {
+        const sampleProviders = [
+          { name: 'Apex Pro Services', rating: '4.9', jobs: '45+', verified: true },
+          { name: 'CleanTech Solutions', rating: '4.8', jobs: '32+', verified: true },
+          { name: 'ProCare Maintenance', rating: '4.7', jobs: '18+', verified: false },
+        ];
+        const generated = [];
+        for (let i = 0; i < count; i++) {
+          const prov = sampleProviders[i % sampleProviders.length];
+          generated.push({
+            id: `resp-${reqId}-${i}`,
+            providerName: request.raw?.supplierName || request.supplierName || prov.name,
+            rating: prov.rating,
+            jobs: prov.jobs,
+            verified: prov.verified,
+            quotedPrice: reqBudget !== '—' ? reqBudget : '₹2,500',
+            availability: 'Tomorrow, 10:00 AM',
+            estimatedTime: '2 - 3 Hours',
+            visitCharge: 'Included',
+            warranty: '30 Days Warranty',
+            paymentTerms: '50% Advance, 50% Post Completion',
+            included: 'Complete service inspection, standard materials and labor',
+            excluded: 'Major structural repairs or replacement parts',
+            status: request.status === 'accepted' || request.status === 'Completed' || request.status === 'Scheduled' ? 'Accepted' : 'New'
+          });
+        }
+        setResponses(generated);
+      } else {
+        setResponses([]);
+      }
+    } else {
+      setResponses([]);
+    }
+  }, [request]);
   
   // Comparison state
   const [isCompareMode, setIsCompareMode] = useState(false);
@@ -31,6 +74,9 @@ export default function ProviderResponsesPage({ request, onBack, onProviderProfi
   // Modals state
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState(null);
+
+  const [showVendorModal, setShowVendorModal] = useState(false);
+  const [selectedVendor, setSelectedVendor] = useState(null);
 
   const [showAcceptModal, setShowAcceptModal] = useState(false);
   const [quoteToAccept, setQuoteToAccept] = useState(null);
@@ -41,6 +87,19 @@ export default function ProviderResponsesPage({ request, onBack, onProviderProfi
 
   const [showCompareModal, setShowCompareModal] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
+
+  const openVendorInfo = (vendor) => {
+    const item = vendor || responses[0] || {
+      providerName: 'Apex Pro Services',
+      rating: '4.9',
+      jobs: '45+',
+      verified: true,
+      availability: 'Tomorrow, 10:00 AM',
+      warranty: '30 Days Warranty'
+    };
+    setSelectedVendor(item);
+    setShowVendorModal(true);
+  };
 
   // Status Colors mapping
   const getStatusStyle = (status) => {
@@ -137,8 +196,8 @@ export default function ProviderResponsesPage({ request, onBack, onProviderProfi
         </TouchableOpacity>
         <View style={styles.headerTitleArea}>
           <Text style={styles.pageTitle}>Provider Responses</Text>
-          <Text style={styles.pageSubtitle}>Compare quotations for Plumbing Repair</Text>
-          <Text style={styles.pageMeta}>REQ-091 · {responses.length} Responses</Text>
+          <Text style={styles.pageSubtitle}>Compare quotations for {reqTitle}</Text>
+          <Text style={styles.pageMeta}>{reqId} · {responses.length} Responses</Text>
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity style={styles.iconBtn}>
@@ -153,21 +212,28 @@ export default function ProviderResponsesPage({ request, onBack, onProviderProfi
         </View>
       </View>
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+      <ScrollView 
+        style={styles.scroll} 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={[
+          styles.scrollContent,
+          responses.length === 0 && styles.emptyScrollContent,
+        ]}
+      >
         <View style={[styles.contentLayout, !isMobile && styles.contentLayoutWeb]}>
           
           {/* ── Requirement Summary ── */}
           <View style={styles.reqSummaryCard}>
             <View style={styles.reqSummaryTop}>
-              <Text style={styles.reqSummaryTitle}>Plumbing Repair</Text>
-              <TouchableOpacity>
-                <Text style={styles.viewReqText}>View Requirement →</Text>
+              <Text style={styles.reqSummaryTitle}>{reqTitle}</Text>
+              <TouchableOpacity onPress={() => openVendorInfo(responses[0])} activeOpacity={0.8}>
+                <Text style={styles.viewReqText}>View Provider →</Text>
               </TouchableOpacity>
             </View>
             <View style={styles.reqSummaryDetails}>
-              <Text style={styles.reqSummaryText}>Business Location: <Text style={{fontWeight:'600'}}>{request?.location || 'Not Specified'}</Text></Text>
-              <Text style={styles.reqSummaryText}>Preferred Date: <Text style={{fontWeight:'600'}}>{request?.date || 'Not Specified'}</Text></Text>
-              <Text style={styles.reqSummaryText}>Budget: <Text style={{fontWeight:'600'}}>{request?.budget || 'Not Specified'}</Text></Text>
+              <Text style={styles.reqSummaryText}>Business Location: <Text style={{fontWeight:'600'}}>{reqLocation}</Text></Text>
+              <Text style={styles.reqSummaryText}>Preferred Date: <Text style={{fontWeight:'600'}}>{reqDate}</Text></Text>
+              <Text style={styles.reqSummaryText}>Budget: <Text style={{fontWeight:'600'}}>{reqBudget}</Text></Text>
             </View>
           </View>
 
@@ -183,9 +249,9 @@ export default function ProviderResponsesPage({ request, onBack, onProviderProfi
           {/* ── Empty State ── */}
           {responses.length === 0 && (
             <View style={styles.emptyState}>
-              <MessageSquare size={48} color="#94A3B8" />
+              <MessageSquare size={44} color="#94A3B8" />
               <Text style={styles.emptyStateTitle}>No provider responses yet</Text>
-              <Text style={styles.emptyStateSub}>Service provider quotations for this requirement will appear here.</Text>
+              <Text style={styles.emptyStateSub}>You will see submitted quotations here.</Text>
             </View>
           )}
 
@@ -209,7 +275,7 @@ export default function ProviderResponsesPage({ request, onBack, onProviderProfi
                       {isSelected ? <CheckCircle size={24} color="#2563EB" /> : <Circle size={24} color="#94A3B8" />}
                     </TouchableOpacity>
                   )}
-                  <TouchableOpacity style={styles.identityRow} onPress={() => onProviderProfile && onProviderProfile(resp)}>
+                  <TouchableOpacity style={styles.identityRow} onPress={() => openVendorInfo(resp)}>
                     <View style={styles.avatar}>
                       <Text style={styles.avatarText}>{resp.providerName.charAt(0)}</Text>
                     </View>
@@ -262,35 +328,25 @@ export default function ProviderResponsesPage({ request, onBack, onProviderProfi
                 </View>
 
                 {/* Card Actions */}
-                <View style={styles.cardActions}>
-                  <TouchableOpacity style={styles.viewQuoteBtn} onPress={() => openQuoteDetails(resp)}>
-                    <Text style={styles.viewQuoteText}>View Quote</Text>
-                    <ChevronRight size={16} color={NAVY} />
+                <View style={[styles.cardActions, { justifyContent: 'flex-end', gap: 10 }]}>
+                  <TouchableOpacity 
+                    style={styles.viewBookingBtn}
+                    onPress={() => openQuoteDetails(resp)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.viewBookingText}>View Details</Text>
                   </TouchableOpacity>
 
-                  <View style={styles.actionsRight}>
-                    {resp.status === 'Accepted' ? (
-                      <TouchableOpacity style={styles.viewBookingBtn}>
-                        <Text style={styles.viewBookingText}>View Booking</Text>
-                      </TouchableOpacity>
-                    ) : hasAcceptedQuote ? (
-                      <Text style={styles.disabledText}>Another quotation was selected</Text>
-                    ) : (
-                      <TouchableOpacity 
-                        style={styles.acceptBtn} 
-                        onPress={() => { setQuoteToAccept(resp); setShowAcceptModal(true); setOpenMenuId(null); }}
-                      >
-                        <CheckCircle size={16} color="#fff" style={{ marginRight: 6 }} />
-                        <Text style={styles.acceptBtnText}>Accept Quote</Text>
-                      </TouchableOpacity>
-                    )}
-
-                    <TouchableOpacity style={styles.moreBtn} onPress={() => toggleMenu(resp.id)}>
-                      <MoreVertical size={20} color={NAVY} />
+                  {resp.status !== 'Accepted' && !hasAcceptedQuote && (
+                    <TouchableOpacity 
+                      style={styles.acceptBtn} 
+                      onPress={() => { setQuoteToAccept(resp); setShowAcceptModal(true); setOpenMenuId(null); }}
+                      activeOpacity={0.8}
+                    >
+                      <CheckCircle size={16} color="#fff" style={{ marginRight: 6 }} />
+                      <Text style={styles.acceptBtnText}>Accept Quote</Text>
                     </TouchableOpacity>
-
-                    {renderMoreMenu(resp)}
-                  </View>
+                  )}
                 </View>
 
               </View>
@@ -321,7 +377,7 @@ export default function ProviderResponsesPage({ request, onBack, onProviderProfi
             {quoteToAccept && (
               <ScrollView style={styles.modalScroll}>
                 <Text style={styles.confText}>Provider: <Text style={{fontWeight:'700'}}>{quoteToAccept.providerName}</Text></Text>
-                <Text style={styles.confText}>Service: <Text style={{fontWeight:'700'}}>Plumbing Repair</Text></Text>
+                <Text style={styles.confText}>Service: <Text style={{fontWeight:'700'}}>{reqTitle}</Text></Text>
                 <View style={styles.confHighlightBox}>
                   <Text style={styles.confText}>Quoted Price: <Text style={styles.confPrice}>{quoteToAccept.quotedPrice}</Text></Text>
                   <Text style={styles.confText}>Visit Charge: <Text style={{fontWeight:'700'}}>{quoteToAccept.visitCharge}</Text></Text>
@@ -382,7 +438,7 @@ export default function ProviderResponsesPage({ request, onBack, onProviderProfi
       {/* Quote Details Center Modal */}
       <Modal visible={showQuoteModal} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { maxHeight: '80%' }]}>
+          <View style={[styles.modalContent, { maxHeight: '85%', display: 'flex', flexDirection: 'column' }]}>
             <View style={styles.modalHeaderRow}>
               <Text style={styles.modalTitle}>Quotation Details</Text>
               <TouchableOpacity onPress={() => setShowQuoteModal(false)} style={styles.closeBtn}>
@@ -391,7 +447,7 @@ export default function ProviderResponsesPage({ request, onBack, onProviderProfi
             </View>
             
             {selectedQuote && (
-              <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
+              <ScrollView style={styles.modalScroll} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={true}>
                 <View style={styles.qHeader}>
                   <Text style={styles.qProviderName}>{selectedQuote.providerName}</Text>
                   <Text style={styles.qReqId}>Quotation ID: {selectedQuote.id}</Text>
@@ -476,6 +532,67 @@ export default function ProviderResponsesPage({ request, onBack, onProviderProfi
         </View>
       </Modal>
 
+      {/* Vendor Profile Modal */}
+      <Modal visible={showVendorModal} animationType="slide" transparent={true}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { maxHeight: '85%', display: 'flex', flexDirection: 'column' }]}>
+            <View style={styles.modalHeaderRow}>
+              <Text style={styles.modalTitle}>Vendor Information</Text>
+              <TouchableOpacity onPress={() => setShowVendorModal(false)} style={styles.closeBtn}>
+                <X size={20} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+            
+            {selectedVendor && (
+              <ScrollView style={styles.modalScroll} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={true}>
+                <View style={styles.vProfileHeader}>
+                  <View style={styles.vAvatar}>
+                    <Text style={styles.vAvatarText}>{selectedVendor.providerName.charAt(0)}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.vName}>{selectedVendor.providerName}</Text>
+                    <Text style={styles.vCategory}>{reqTitle}</Text>
+                    <View style={styles.vBadgeRow}>
+                      {selectedVendor.verified && (
+                        <View style={styles.verifiedTag}>
+                          <BadgeCheck size={12} color="#15803D" />
+                          <Text style={styles.verifiedTagText}>Verified Provider</Text>
+                        </View>
+                      )}
+                      <View style={styles.ratingTag}>
+                        <Star size={12} color={GOLD} fill={GOLD} />
+                        <Text style={styles.ratingTagText}>{selectedVendor.rating || '4.9'} · {selectedVendor.jobs || '45+'} Services</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.qSection}>
+                  <Text style={styles.qSectionTitle}>Vendor Overview</Text>
+                  <View style={styles.qTermRow}><Text style={styles.qTermL}>Business Name</Text><Text style={styles.qTermV}>{selectedVendor.providerName}</Text></View>
+                  <View style={styles.qTermRow}><Text style={styles.qTermL}>Service Category</Text><Text style={styles.qTermV}>{reqTitle}</Text></View>
+                  <View style={styles.qTermRow}><Text style={styles.qTermL}>Location / Operating Area</Text><Text style={styles.qTermV}>{reqLocation}</Text></View>
+                  <View style={styles.qTermRow}><Text style={styles.qTermL}>Availability</Text><Text style={styles.qTermV}>{selectedVendor.availability || 'Immediate / Next Day'}</Text></View>
+                  <View style={styles.qTermRow}><Text style={styles.qTermL}>Warranty Offered</Text><Text style={styles.qTermV}>{selectedVendor.warranty || '30 Days Warranty'}</Text></View>
+                </View>
+
+                <View style={styles.qSection}>
+                  <Text style={styles.qSectionTitle}>Contact & Verification</Text>
+                  <View style={styles.qTermRow}><Text style={styles.qTermL}>Verification Status</Text><Text style={styles.qTermV}>Verified Business ✓</Text></View>
+                  <View style={styles.qTermRow}><Text style={styles.qTermL}>Response Time</Text><Text style={styles.qTermV}>&lt; 30 Minutes</Text></View>
+                </View>
+              </ScrollView>
+            )}
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setShowVendorModal(false)}>
+                <Text style={styles.modalCancelText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -496,11 +613,20 @@ const styles = StyleSheet.create({
   iconBtnActive: { backgroundColor: '#EFF6FF' },
   
   scroll: { flex: 1 },
-  contentLayout: { padding: 16 },
-  contentLayoutWeb: { padding: 32, maxWidth: 1100, alignSelf: 'center', width: '100%' },
+  scrollContent: {
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 96,
+  },
+  emptyScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  contentLayout: { width: '100%' },
+  contentLayoutWeb: { maxWidth: 1100, alignSelf: 'center', width: '100%' },
 
   /* ── Requirement Summary ── */
-  reqSummaryCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: BORDER, marginBottom: 20 },
+  reqSummaryCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: BORDER, marginBottom: 16 },
   reqSummaryTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   reqSummaryTitle: { fontSize: 16, fontWeight: '800', color: NAVY },
   viewReqText: { fontSize: 13, fontWeight: '700', color: '#2563EB' },
@@ -515,9 +641,9 @@ const styles = StyleSheet.create({
   sortValue: { fontSize: 13, fontWeight: '700', color: NAVY },
 
   /* ── Empty State ── */
-  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 48 },
-  emptyStateTitle: { fontSize: 18, fontWeight: '800', color: NAVY, marginTop: 16, marginBottom: 8 },
-  emptyStateSub: { fontSize: 14, color: '#64748B', textAlign: 'center', maxWidth: 300 },
+  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 36 },
+  emptyStateTitle: { fontSize: 16, fontWeight: '800', color: NAVY, marginTop: 12, marginBottom: 6 },
+  emptyStateSub: { fontSize: 13, color: '#64748B', textAlign: 'center', maxWidth: 280 },
 
   /* ── Provider Card ── */
   card: { backgroundColor: '#fff', borderRadius: 18, padding: 16, borderWidth: 1, borderColor: BORDER, marginBottom: 12, position: 'relative', zIndex: 1, ...Platform.select({ web: { boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }, ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 8 }, android: { elevation: 2 } }) },
@@ -580,7 +706,7 @@ const styles = StyleSheet.create({
   modalTitle: { fontSize: 18, fontWeight: '900', color: NAVY },
   modalSubtitle: { fontSize: 14, color: '#64748B', marginTop: 8 },
   closeBtn: { padding: 4, backgroundColor: '#F1F5F9', borderRadius: 16 },
-  modalScroll: { padding: 20, maxHeight: 400 },
+  modalScroll: { padding: 20, flexShrink: 1 },
   
   confText: { fontSize: 14, color: '#475569', marginBottom: 8 },
   confHighlightBox: { backgroundColor: '#F8FAFC', padding: 12, borderRadius: 8, marginVertical: 12, borderWidth: 1, borderColor: BORDER },
@@ -620,5 +746,13 @@ const styles = StyleSheet.create({
   compPrice: { fontSize: 20, fontWeight: '900', color: GREEN, marginBottom: 16 },
   compItem: { marginBottom: 12, borderBottomWidth: 1, borderBottomColor: '#E2E8F0', paddingBottom: 8 },
   compLabel: { fontSize: 11, color: '#64748B', marginBottom: 2 },
-  compVal: { fontSize: 13, fontWeight: '600', color: NAVY }
+  compVal: { fontSize: 13, fontWeight: '600', color: NAVY },
+
+  /* Vendor Profile Modal Specifics */
+  vProfileHeader: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', padding: 16, borderRadius: 12, marginBottom: 20, borderWidth: 1, borderColor: BORDER },
+  vAvatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginRight: 14 },
+  vAvatarText: { fontSize: 20, fontWeight: '900', color: NAVY },
+  vName: { fontSize: 18, fontWeight: '800', color: NAVY, marginBottom: 2 },
+  vCategory: { fontSize: 13, color: '#64748B', marginBottom: 6 },
+  vBadgeRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }
 });

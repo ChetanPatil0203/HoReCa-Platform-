@@ -3,10 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   useWindowDimensions, Modal, SafeAreaView, FlatList, TextInput, KeyboardAvoidingView, Platform
 } from 'react-native';
-import {
-  UsersRound, UserPlus, MoreVertical, Search, SlidersHorizontal, Users, UserRoundCheck, BriefcaseBusiness,
-  BadgeCheck, Clock3, CircleX, ChevronRight, Send, X, MapPin, Briefcase, DollarSign, Calendar, Upload, Download, FileText, User
-} from 'lucide-react-native';
+import { UsersRound, UserPlus, EllipsisVertical as MoreVertical, Search, SlidersHorizontal, Users, UserRoundCheck, BriefcaseBusiness, BadgeCheck, Clock3, CircleX, ChevronRight, Send, X, MapPin, Briefcase, DollarSign, Calendar, Upload, Download, FileText, User } from 'lucide-react-native';
 
 const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
@@ -429,7 +426,7 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
                 <View style={styles.profSection}>
                   <Text style={styles.formSectionTitle}>Skills</Text>
                   <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-                    {selectedCand.skills.map(s => <View key={s} style={styles.skillBadge}><Text style={styles.skillText}>{s}</Text></View>)}
+                    {( selectedCand?.skills || [] ).map(s => <View key={s} style={styles.skillBadge}><Text style={styles.skillText}>{s}</Text></View>)}
                   </View>
                 </View>
               </ScrollView>

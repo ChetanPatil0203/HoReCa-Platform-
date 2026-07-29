@@ -5,22 +5,15 @@ import { AuthContext } from '../../../context/AuthContext';
 
 
 const KPI_DATA = [
-  { label: "Active Placements", value: "28", delta: "+4 this week", icon: Users, color: "#2563EB" },
-  { label: "Monthly Revenue", value: "₹1.9L", delta: "+22% vs last month", icon: TrendingUp, color: "#10B981" },
-  { label: "Avg. Rating", value: "4.7 ★", delta: "From 84 reviews", icon: Star, color: "#F59E0B" },
-  { label: "Fill Rate", value: "94.5%", delta: "+2.1% this month", icon: Zap, color: "#2563EB" },
+  { label: "Active Placements", value: "0", delta: "", icon: Users, color: "#2563EB" },
+  { label: "Monthly Revenue", value: "₹0", delta: "", icon: TrendingUp, color: "#10B981" },
+  { label: "Avg. Rating", value: "—", delta: "No reviews yet", icon: Star, color: "#F59E0B" },
+  { label: "Fill Rate", value: "—", delta: "", icon: Zap, color: "#2563EB" },
 ];
 
-const REVENUE_DATA = [
-  { month: "Jan", revenue: 1.1 }, { month: "Feb", revenue: 1.3 }, 
-  { month: "Mar", revenue: 1.4 }, { month: "Apr", revenue: 1.5 }, 
-  { month: "May", revenue: 1.4 }, { month: "Jun", revenue: 1.9 }
-];
+const REVENUE_DATA = [];
 
-const RECENT_ORDERS = [
-  { id: "ORD-M001", title: "Weekend Banquet Servers – 10p", client: "The Meridian Grand", value: "₹20,000", date: "16 Jun", status: "Accepted" },
-  { id: "ORD-M004", title: "Security Guards – Night Shift", client: "Azure Palace Hotel", value: "₹36,000", date: "15 Jun", status: "Pending" },
-];
+const RECENT_ORDERS = [];
 
 const STATUS_STYLES = {
   New: { bg: "#DBEAFE", color: "#2563EB" },
@@ -30,6 +23,9 @@ const STATUS_STYLES = {
 };
 
 export default function ManpowerDashboardScreen() {
+  const { user } = useContext(AuthContext);
+  const agencyName = user?.registration?.bizName || user?.bizName || user?.contactPerson || (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Agency Partner');
+  const vendorType = user?.registration?.vendorType || 'Manpower Agency';
   const [orders, setOrders] = React.useState([]);
 
   React.useEffect(() => {
@@ -53,7 +49,7 @@ export default function ManpowerDashboardScreen() {
         </View>
         <View style={styles.bannerContent}>
           <Text style={styles.bannerTitle}>Welcome back, Partner</Text>
-          <Text style={styles.bannerSub}>Manpower Agency · Elite Manpower</Text>
+          <Text style={styles.bannerSub}>{vendorType} · {agencyName}</Text>
         </View>
         <View style={[styles.activePill, { backgroundColor: "#EFF6FF", borderColor: "#BFDBFE" }]}>
           <View style={[styles.activeDot, { backgroundColor: "#2563EB" }]} />

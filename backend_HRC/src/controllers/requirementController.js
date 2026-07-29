@@ -4,6 +4,8 @@ const {
   getVendorRequirementsService,
   getPublicRequirementsService,
   updateRequirementStatusService,
+  getOwnerHistoryService,
+  getOwnerTrackingService,
 } = require('../services/requirementService');
 
 exports.createRequirement = async (req, res) => {
@@ -22,6 +24,28 @@ exports.getOwnerRequirements = async (req, res) => {
     res.status(200).json({ success: true, data: requirements });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.getOwnerHistory = async (req, res) => {
+  try {
+    const { ownerId } = req.params;
+    const history = await getOwnerHistoryService(ownerId);
+    res.status(200).json({ success: true, data: history });
+  } catch (error) {
+    console.warn('getOwnerHistory note:', error?.message);
+    res.status(200).json({ success: true, data: { orders: [], requirements: [] } });
+  }
+};
+
+exports.getOwnerTracking = async (req, res) => {
+  try {
+    const { ownerId } = req.params;
+    const trackingData = await getOwnerTrackingService(ownerId);
+    res.status(200).json({ success: true, data: trackingData });
+  } catch (error) {
+    console.warn('getOwnerTracking note:', error?.message);
+    res.status(200).json({ success: true, data: { orders: [], requirements: [] } });
   }
 };
 

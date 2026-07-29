@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions, TextInput, Modal, TouchableWithoutFeedback } from 'react-native';
-import { History, Search, ChevronRight, X, XCircle } from 'lucide-react-native';
+import { History, Search, ChevronRight, X, CircleX as XCircle } from 'lucide-react-native';
 
 const NAVY = '#081A3A';
 const BG = '#F8FAFC';

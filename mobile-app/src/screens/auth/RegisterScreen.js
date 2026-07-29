@@ -3,11 +3,7 @@ import {
   View, Text, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform,
   ScrollView, TouchableOpacity, TextInput, Dimensions
 } from 'react-native';
-import {
-  User, Building2, ShieldCheck, Check, ArrowLeft, ArrowRight, Home, Utensils,
-  Coffee, Truck, Briefcase, Wrench, Megaphone, CheckCircle2, UploadCloud,
-  FileText, Edit2, AlertCircle
-} from 'lucide-react-native';
+import { User, Building2, ShieldCheck, Check, ArrowLeft, ArrowRight, Home, Utensils, Coffee, Truck, Briefcase, Wrench, Megaphone, CircleCheck as CheckCircle2, CloudUpload as UploadCloud, FileText, Pencil as Edit2, CircleAlert as AlertCircle } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 
 const { width } = Dimensions.get('window');

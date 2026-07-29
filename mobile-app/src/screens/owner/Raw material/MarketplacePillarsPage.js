@@ -1,11 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, SafeAreaView, Platform } from 'react-native';
-import {
-  Menu, Search, SlidersHorizontal, Package, Users, Wrench, Megaphone,
-  AlertCircle, ShoppingCart, Truck, User, LayoutDashboard,
-  ShieldCheck, Tag, Clock, HeadphonesIcon, Bell, ArrowRight,
-  Star, MapPin, BadgeCheck, ChevronRight
-} from 'lucide-react-native';
+import { Menu, Search, SlidersHorizontal, Package, Users, Wrench, Megaphone, CircleAlert as AlertCircle, ShoppingCart, Truck, User, LayoutDashboard, ShieldCheck, Tag, Clock, Headphones as HeadphonesIcon, Bell, ArrowRight, Star, MapPin, BadgeCheck, ChevronRight } from 'lucide-react-native';
 
 const POPULAR_PROVIDERS = [
   {

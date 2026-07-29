@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, Eye, Upload, MoreVertical, AlertTriangle } from 'lucide-react';
+import { FileText, Eye, Upload, EllipsisVertical as MoreVertical, TriangleAlert as AlertTriangle } from 'lucide-react';
 
 export default function DocumentsTab({
   documents = [],

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
-import { Lock, Eye, EyeOff, CheckCircle2, Circle } from 'lucide-react-native';
+import { Lock, Eye, EyeOff, CircleCheck as CheckCircle2, Circle } from 'lucide-react-native';
 import { AUTH_COLORS } from './AuthTheme';
 
 export default function PasswordField({

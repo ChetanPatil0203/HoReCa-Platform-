@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, User, Building, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, User, Building, CircleCheck as CheckCircle2 } from 'lucide-react';
 
 export default function OverviewTab({ application }) {
   const [showIdentity, setShowIdentity] = useState(false);

@@ -1,32 +1,90 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useContext } from 'react';
 import { 
   View, Text, StyleSheet, FlatList, TouchableOpacity, 
   TextInput, Alert, Modal, Pressable, Platform, 
   KeyboardAvoidingView, ScrollView, useWindowDimensions 
 } from 'react-native';
-import { 
-  BriefcaseBusiness, Info, SlidersHorizontal, ArrowUpDown,
-  TriangleAlert, Clock as Clock3, MapPin, Wrench, ChevronRight, 
-  Send, X, Search, MoreVertical, XCircle, FileText
-} from 'lucide-react-native';
+import { BriefcaseBusiness, Info, SlidersHorizontal, ArrowUpDown, TriangleAlert, Clock as Clock3, MapPin, Wrench, ChevronRight, Send, X, Search, EllipsisVertical as MoreVertical, CircleX as XCircle, FileText } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorRequirements, fetchPublicRequirements } from '../../../services/api.service';
 
 const NAVY = '#081A3A';
 const BG = '#F8FAFC';
 const BRAND_GREEN = '#10B981';
-
-// INITIAL FEED
-const INITIAL_FEED = [];
 
 const CATEGORIES = ["All", "Cleaning", "Repair", "Maintenance", "Plumbing", "Electrical", "Pest Control", "Fire & Safety"];
 
 export default function ProviderFeedWallPage() {
   const { width } = useWindowDimensions();
   const isLargeScreen = width >= 768;
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.registration?.id || user?.id;
 
-  const [feedItems, setFeedItems] = useState(INITIAL_FEED);
+  const [feedItems, setFeedItems] = useState([]);
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [hideInfo, setHideInfo] = useState(false);
+
+  useEffect(() => {
+    const loadFeed = async () => {
+      try {
+        const [publicRes, directRes] = await Promise.all([
+          fetchPublicRequirements('serviceProvider'),
+          supplierId ? fetchVendorRequirements(supplierId) : Promise.resolve([])
+        ]);
+
+        const publicList = publicRes?.data || publicRes || [];
+        const directList = directRes?.data || directRes || [];
+
+        const items = [];
+        if (Array.isArray(directList)) {
+          directList.forEach(r => {
+            items.push({
+              id: r.id,
+              reqId: `DIR-${r.id ? r.id.substring(0,5).toUpperCase() : '101'}`,
+              title: r.title || 'Direct Service Request',
+              category: r.extraData?.category || 'General Service',
+              location: r.location || 'Location Specified',
+              business: r.owner?.bizName || 'HoReCa Owner',
+              postedTime: r.createdAt ? new Date(r.createdAt).toLocaleDateString() : 'Just now',
+              description: r.description || 'Direct requirement sent by HoReCa owner.',
+              budget: r.budget || 'Custom Quote',
+              priority: 'High Priority',
+              status: r.status === 'pending' ? 'Open' : r.status,
+              isDirect: true,
+              date: r.extraData?.date || 'As agreed'
+            });
+          });
+        }
+
+        if (Array.isArray(publicList)) {
+          publicList.forEach(r => {
+            items.push({
+              id: r.id,
+              reqId: `REQ-${r.id ? r.id.substring(0,5).toUpperCase() : '201'}`,
+              title: r.title || 'Service Requirement',
+              category: r.extraData?.category || 'Service',
+              location: r.location || 'City',
+              business: r.owner?.bizName || 'HoReCa Establishment',
+              postedTime: r.createdAt ? new Date(r.createdAt).toLocaleDateString() : 'Just now',
+              description: r.description || 'Public service requirement broadcast.',
+              budget: r.budget || 'Open Budget',
+              priority: 'Standard',
+              status: r.status === 'pending' ? 'Open' : r.status,
+              isDirect: false,
+              date: r.extraData?.date || 'Flexible'
+            });
+          });
+        }
+
+        setFeedItems(items);
+      } catch (err) {
+        console.warn('Error loading feed wall items:', err);
+      }
+    };
+
+    loadFeed();
+  }, [supplierId]);
 
   // Modals state
   const [activeMenuId, setActiveMenuId] = useState(null);

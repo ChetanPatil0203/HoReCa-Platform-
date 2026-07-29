@@ -1,423 +1,645 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, 
-  Platform, Dimensions, Modal, KeyboardAvoidingView, FlatList,
-  TouchableWithoutFeedback
+  Platform, useWindowDimensions, Modal, SafeAreaView 
 } from 'react-native';
 import { 
-  History, Search, SlidersHorizontal, Package, UsersRound, Wrench, 
-  Megaphone, ChevronRight, ListChecks, Clock3, CircleCheck, 
-  MoreVertical, Download, CalendarRange, X
+  History, Search, SlidersHorizontal, Package, UsersRound, Wrench, Megaphone, 
+  ChevronRight, ListChecks, Clock3, CircleCheck, CircleAlert, EllipsisVertical as MoreVertical, 
+  Download, X, RotateCcw, Star, Calendar, FileText, Check
 } from 'lucide-react-native';
-
-const { width } = Dimensions.get('window');
-const isMobile = width < 768;
+import { fetchOwnerActivityHistoryApi } from '../../services/api.service';
 
 const NAVY = '#071B3A';
-const WHITE = '#FFFFFF';
-const LIGHT_BG = '#F8FAFC';
-const MUTED = '#94A3B8';
-const GRAY = '#64748B';
+const SECONDARY_NAVY = '#102A4C';
+const GOLD = '#F2C230';
+const BG_COLOR = '#F5F7FA';
+const BORDER = '#E3E9F1';
+const TEXT_MUTED = '#71829B';
 
-const COLORS = {
-  'raw-material': '#D97706', // Soft orange/gold
-  'manpower': '#3B82F6', // Soft blue
-  'service': '#10B981', // Soft green
-  'marketing': '#8B5CF6', // Soft purple
+// Pillar Definitions & Color Accents
+const PILLARS = [
+  { id: 'all', label: 'All', icon: History, color: NAVY },
+  { id: 'raw-material', label: 'Raw Material', icon: Package, color: '#D97706' },
+  { id: 'manpower', label: 'Manpower', icon: UsersRound, color: '#9333EA' },
+  { id: 'service', label: 'Services', icon: Wrench, color: '#2563EB' },
+  { id: 'marketing', label: 'Marketing', icon: Megaphone, color: '#7C3AED' }
+];
+
+const PILLAR_BADGES = {
+  'raw-material': { label: 'RAW MATERIAL', color: '#D97706', bg: '#FFFBEB' },
+  'manpower': { label: 'MANPOWER', color: '#9333EA', bg: '#F3E8FF' },
+  'service': { label: 'SERVICE', color: '#2563EB', bg: '#EFF6FF' },
+  'marketing': { label: 'MARKETING', color: '#7C3AED', bg: '#F5F3FF' }
 };
 
-const BG_COLORS = {
-  'raw-material': '#FEF3C7',
-  'manpower': '#EFF6FF',
-  'service': '#D1FAE5',
-  'marketing': '#F5F3FF',
+const STATUS_BADGES = {
+  'Delivered': { bg: '#DCFCE7', text: '#15803D' },
+  'Completed': { bg: '#DCFCE7', text: '#15803D' },
+  'Active': { bg: '#EFF6FF', text: '#2563EB' },
+  'In Progress': { bg: '#FFFBEB', text: '#D97706' },
+  'Running': { bg: '#DCFCE7', text: '#15803D' },
+  'Paused': { bg: '#F3E8FF', text: '#9333EA' },
+  'Cancelled': { bg: '#FEE2E2', text: '#DC2626' }
 };
 
-const HISTORY_DATA = [];
-
-const CAT_LABELS = {
-  'raw-material': 'RAW MATERIAL',
-  'manpower': 'MANPOWER',
-  'service': 'SERVICE',
-  'marketing': 'MARKETING'
+// Secondary status filter list per pillar
+const STATUS_FILTERS_BY_PILLAR = {
+  'all': ['All', 'In Progress', 'Completed', 'Cancelled'],
+  'raw-material': ['All', 'Delivered', 'In Progress', 'Cancelled'],
+  'manpower': ['All', 'Active', 'Completed', 'Cancelled'],
+  'service': ['All', 'Completed', 'In Progress', 'Cancelled'],
+  'marketing': ['All', 'Completed', 'Running', 'Paused', 'Cancelled']
 };
 
-const getStatusStyle = (status) => {
-  const s = status.toLowerCase();
-  if (s.includes('progress') || s.includes('active') || s.includes('processing') || s.includes('submitted')) {
-    return { bg: '#FEF3C7', text: '#D97706' }; // Orange
-  }
-  if (s.includes('completed') || s.includes('delivered') || s.includes('closed')) {
-    return { bg: '#D1FAE5', text: '#10B981' }; // Green
-  }
-  if (s.includes('cancelled') || s.includes('rejected')) {
-    return { bg: '#FEE2E2', text: '#EF4444' }; // Red
-  }
-  return { bg: '#EFF6FF', text: '#3B82F6' }; // Blue (New, Open, Accepted, Scheduled)
-};
+// Default Mock History Data (Empty by default, populated strictly from backend DB)
+const INITIAL_HISTORY = [];
 
 export default function HistoryPage() {
-  const [search, setSearch] = useState("");
-  const [filterCat, setFilterCat] = useState("All");
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768;
 
-  const [detailsModal, setDetailsModal] = useState(false);
+  const [historyData, setHistoryData] = useState([]);
+  const [selectedPillar, setSelectedPillar] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Modals
+  const [detailsModalVisible, setDetailsModalVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
-  
-  const [moreMenu, setMoreMenu] = useState(false);
-  const [filterSheet, setFilterSheet] = useState(false);
 
-  const filtered = HISTORY_DATA.filter(o => {
-    const matchSearch = o.title.toLowerCase().includes(search.toLowerCase()) || 
-                        o.vendor.toLowerCase().includes(search.toLowerCase()) || 
-                        o.id.toLowerCase().includes(search.toLowerCase());
-    const matchCat = filterCat === "All" || o.category === filterCat;
-    return matchSearch && matchCat;
-  });
+  // Toast
+  const [toastMessage, setToastMessage] = useState('');
 
-  const totalCount = HISTORY_DATA.length;
-  const completedCount = HISTORY_DATA.filter(o => ['Completed', 'Delivered', 'Closed'].includes(o.status)).length;
-  const inProgressCount = totalCount - completedCount - HISTORY_DATA.filter(o => ['Cancelled', 'Rejected'].includes(o.status)).length;
-
-  const renderCard = ({ item }) => {
-    const statStyle = getStatusStyle(item.status);
-    const catColor = COLORS[item.category];
-    const catBg = BG_COLORS[item.category];
-
-    return (
-      <View style={[styles.card, !isMobile && { width: '48%', marginRight: '2%' }]}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.recordId}>{item.id}</Text>
-          <View style={[styles.badge, { backgroundColor: statStyle.bg }]}>
-            <Text style={[styles.badgeText, { color: statStyle.text }]}>{item.status}</Text>
-          </View>
-        </View>
-
-        <View style={[styles.badge, { backgroundColor: catBg, alignSelf: 'flex-start', marginBottom: 12 }]}>
-          <Text style={[styles.badgeText, { color: catColor }]}>{CAT_LABELS[item.category]}</Text>
-        </View>
-
-        <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
-        <Text style={styles.cardProvider} numberOfLines={1}>{item.vendor}</Text>
-
-        <View style={styles.metaRow}>
-          <View style={styles.metaLeft}>
-            {item.qty && <Text style={styles.metaText}>{item.qty} · </Text>}
-            {item.amount && <Text style={styles.metaText}>{item.amount}</Text>}
-          </View>
-          <Text style={styles.metaText}>{item.date}</Text>
-        </View>
-
-        <View style={styles.cardFooter}>
-          <TouchableOpacity 
-            style={styles.actionBtn} 
-            onPress={() => { setSelectedRecord(item); setDetailsModal(true); }}>
-            <Text style={[styles.actionText, { color: catColor }]}>View Details</Text>
-            <ChevronRight size={16} color={catColor} />
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3000);
   };
 
-  const renderDetailsModal = () => {
-    if (!selectedRecord) return null;
-    const catColor = COLORS[selectedRecord.category];
-    const statStyle = getStatusStyle(selectedRecord.status);
+  // Sync history with backend database
+  useEffect(() => {
+    let isMounted = true;
+    const loadBackendHistory = async () => {
+      try {
+        const ownerId = 'OWNER-DEMO-001';
+        const res = await fetchOwnerActivityHistoryApi(ownerId);
+        if (res && res.success && res.data) {
+          const { orders = [], requirements = [] } = res.data;
+          
+          if (orders.length > 0 || requirements.length > 0) {
+            const mappedOrders = orders.map(ord => ({
+              id: `ORD-${(ord.id || '').toString().slice(-4).padStart(4, '0')}`,
+              pillar: 'raw-material',
+              title: ord.items && ord.items[0] ? `${ord.items[0].product?.name || 'Raw Material'} x ${ord.items[0].quantity}` : 'Raw Material Order',
+              vendor: ord.supplier?.bizName || 'Supplier Wholesaler',
+              qty: ord.items ? `${ord.items.length} items` : '1 Item',
+              amount: `₹${parseFloat(ord.totalAmount || 0).toLocaleString('en-IN')}`,
+              date: new Date(ord.createdAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+              status: ord.status === 'confirmed' ? 'Delivered' : ord.status.charAt(0).toUpperCase() + ord.status.slice(1),
+              actionText: 'View Order Summary',
+              timeline: [
+                `Order Status: ${(ord.status || 'pending').toUpperCase()}`,
+                `Delivery Address: ${ord.deliveryAddress || 'Branch Address'}`,
+                `Payment Method: ${(ord.paymentMethod || 'COD').toUpperCase()}`
+              ]
+            }));
 
-    let modalTitle = 'Activity Details';
-    if (selectedRecord.category === 'raw-material') modalTitle = 'Raw Material Order Details';
-    if (selectedRecord.category === 'manpower') modalTitle = 'Manpower Requirement Details';
-    if (selectedRecord.category === 'service') modalTitle = 'Service Booking Details';
-    if (selectedRecord.category === 'marketing') modalTitle = 'Marketing Project Details';
+            const mappedReqs = requirements.map(r => {
+              let pillar = 'service';
+              let actionText = 'View Service Summary';
+              if (r.type === 'manpower') { pillar = 'manpower'; actionText = 'View Hiring Summary'; }
+              else if (r.type === 'marketing') { pillar = 'marketing'; actionText = 'View Campaign Summary'; }
 
-    return (
-      <Modal visible={detailsModal} transparent animationType="slide">
-        <View style={styles.overlay}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{modalTitle}</Text>
-              <TouchableOpacity onPress={() => setDetailsModal(false)}><X size={24} color={GRAY} /></TouchableOpacity>
+              let status = 'In Progress';
+              if (r.status === 'completed' || r.status === 'accepted') status = 'Completed';
+              else if (r.status === 'cancelled') status = 'Cancelled';
+              else if (r.supplierId) status = 'Completed';
+              else status = (r.status || 'pending').charAt(0).toUpperCase() + (r.status || 'pending').slice(1);
+
+              return {
+                id: `REQ-${(r.id || '').toString().slice(-4).padStart(4, '0')}`,
+                pillar,
+                title: r.title || 'Requirement Post',
+                vendor: r.supplier?.bizName || 'Verified Provider',
+                qty: r.extraData?.numberOfStaff ? `${r.extraData.numberOfStaff} Staff` : '1 Requirement',
+                amount: r.budget ? (r.budget.toString().startsWith('₹') ? r.budget : `₹${r.budget}`) : '₹15,000',
+                date: new Date(r.createdAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+                status,
+                actionText,
+                timeline: [
+                  `Requirement Status: ${status.toUpperCase()}`,
+                  `Location: ${r.location || 'Branch Premises'}`
+                ]
+              };
+            });
+
+            if (isMounted) {
+              setHistoryData([...mappedOrders, ...mappedReqs]);
+            }
+          }
+        }
+      } catch (err) {
+        console.log('Error loading backend history:', err);
+      }
+    };
+
+    loadBackendHistory();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Overview Counts
+  const overviewCounts = useMemo(() => {
+    const total = historyData.length;
+    const completed = historyData.filter(d => d.status === 'Completed' || d.status === 'Delivered').length;
+    const inProgress = total - completed - historyData.filter(d => d.status === 'Cancelled').length;
+    return { total, inProgress, completed };
+  }, [historyData]);
+
+  // Secondary status filters available for active pillar
+  const availableStatuses = STATUS_FILTERS_BY_PILLAR[selectedPillar] || STATUS_FILTERS_BY_PILLAR['all'];
+
+  // Pillar filter selection handler
+  const handleSelectPillar = (pillarId) => {
+    setSelectedPillar(pillarId);
+    setSelectedStatus('All');
+  };
+
+  // Filtered History Data
+  const filteredHistory = useMemo(() => {
+    return historyData.filter(rec => {
+      // Pillar filter
+      if (selectedPillar !== 'all' && rec.pillar !== selectedPillar) return false;
+
+      // Status filter
+      if (selectedStatus !== 'All') {
+        if (selectedStatus === 'In Progress') {
+          if (rec.status === 'Completed' || rec.status === 'Delivered' || rec.status === 'Cancelled') return false;
+        } else if (selectedStatus === 'Completed') {
+          if (rec.status !== 'Completed' && rec.status !== 'Delivered') return false;
+        } else if (selectedStatus === 'Cancelled') {
+          if (rec.status !== 'Cancelled') return false;
+        } else {
+          if (rec.status.toLowerCase() !== selectedStatus.toLowerCase()) return false;
+        }
+      }
+
+      // Search Query
+      const q = searchQuery.toLowerCase().trim();
+      if (q) {
+        const matches = 
+          rec.id.toLowerCase().includes(q) ||
+          rec.title.toLowerCase().includes(q) ||
+          rec.vendor.toLowerCase().includes(q) ||
+          (rec.candidate && rec.candidate.toLowerCase().includes(q)) ||
+          rec.status.toLowerCase().includes(q);
+        if (!matches) return false;
+      }
+
+      return true;
+    });
+  }, [historyData, selectedPillar, selectedStatus, searchQuery]);
+
+  // Open Details Modal
+  const handleOpenDetails = (rec) => {
+    setSelectedRecord(rec);
+    setDetailsModalVisible(true);
+  };
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+
+      {/* Toast Notification */}
+      {toastMessage ? (
+        <View style={styles.toastContainer}>
+          <Check size={16} color="#fff" style={{ marginRight: 6 }} />
+          <Text style={styles.toastText}>{toastMessage}</Text>
+        </View>
+      ) : null}
+
+      <ScrollView 
+        style={styles.container} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={[styles.mainLayout, !isMobile && styles.mainLayoutWeb]}>
+
+          {/* ── Page Header ── */}
+          <View style={styles.pageHeader}>
+            <View style={{ flex: 1 }}>
+              <View style={styles.titleRow}>
+                <History size={22} color={NAVY} style={{ marginRight: 8 }} />
+                <Text style={styles.pageTitle}>Activity History</Text>
+              </View>
+              <Text style={styles.pageSubtitle}>
+                Review past orders, hiring, service and marketing activity.
+              </Text>
             </View>
-            <ScrollView style={styles.modalScroll}>
-              <View style={styles.detailHeader}>
-                <View>
-                  <Text style={styles.detailId}>{selectedRecord.id}</Text>
-                  <View style={[styles.badge, { backgroundColor: statStyle.bg, alignSelf: 'flex-start', marginTop: 4 }]}>
-                    <Text style={[styles.badgeText, { color: statStyle.text }]}>{selectedRecord.status}</Text>
+          </View>
+
+          {/* ── History Overview Summary Card ── */}
+          <View style={styles.overviewCard}>
+            <Text style={styles.overviewCardTitle}>History Overview</Text>
+
+            <View style={styles.overviewColsRow}>
+              {/* Total Records */}
+              <TouchableOpacity 
+                style={styles.overviewColItem}
+                onPress={() => { setSelectedPillar('all'); setSelectedStatus('All'); }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.overviewIconBox, { backgroundColor: '#EFF6FF' }]}>
+                  <ListChecks size={18} color="#2563EB" />
+                </View>
+                <Text style={styles.overviewCountVal}>{overviewCounts.total}</Text>
+                <Text style={styles.overviewLabelText}>Total Records</Text>
+              </TouchableOpacity>
+
+              <View style={styles.overviewDividerLine} />
+
+              {/* In Progress */}
+              <TouchableOpacity 
+                style={styles.overviewColItem}
+                onPress={() => setSelectedStatus('In Progress')}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.overviewIconBox, { backgroundColor: '#FFFBEB' }]}>
+                  <Clock3 size={18} color="#D97706" />
+                </View>
+                <Text style={styles.overviewCountVal}>{overviewCounts.inProgress}</Text>
+                <Text style={styles.overviewLabelText}>In Progress</Text>
+              </TouchableOpacity>
+
+              <View style={styles.overviewDividerLine} />
+
+              {/* Completed */}
+              <TouchableOpacity 
+                style={styles.overviewColItem}
+                onPress={() => setSelectedStatus('Completed')}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.overviewIconBox, { backgroundColor: '#DCFCE7' }]}>
+                  <CircleCheck size={18} color="#15803D" />
+                </View>
+                <Text style={styles.overviewCountVal}>{overviewCounts.completed}</Text>
+                <Text style={styles.overviewLabelText}>Completed</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* ── Search Container ── */}
+          <View style={styles.searchContainer}>
+            <Search size={18} color="#94A3B8" style={{ marginRight: 8 }} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search history by ID, title or provider..."
+              placeholderTextColor="#94A3B8"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery ? (
+              <TouchableOpacity onPress={() => setSearchQuery('')} style={{ padding: 4 }}>
+                <X size={16} color="#64748B" />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+
+          {/* ── Primary Pillar Filters ── */}
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false} 
+            style={styles.pillarScroll}
+            contentContainerStyle={styles.pillarContainer}
+          >
+            {PILLARS.map(p => {
+              const IconComp = p.icon;
+              const isActive = selectedPillar === p.id;
+              return (
+                <TouchableOpacity
+                  key={p.id}
+                  style={[styles.pillarPill, isActive && styles.pillarPillActive]}
+                  onPress={() => handleSelectPillar(p.id)}
+                  activeOpacity={0.8}
+                >
+                  <IconComp size={15} color={isActive ? '#fff' : p.color} style={{ marginRight: 6 }} />
+                  <Text style={[styles.pillarPillText, isActive && styles.pillarPillTextActive]}>
+                    {p.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
+          {/* ── Secondary Status Filters ── */}
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false} 
+            style={styles.statusScroll}
+            contentContainerStyle={styles.statusContainer}
+          >
+            {availableStatuses.map(status => {
+              const isActive = selectedStatus === status;
+              return (
+                <TouchableOpacity
+                  key={status}
+                  style={[styles.statusPill, isActive && styles.statusPillActive]}
+                  onPress={() => setSelectedStatus(status)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.statusPillText, isActive && styles.statusPillTextActive]}>
+                    {status}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
+          {/* ── History Record Cards List ── */}
+          {filteredHistory.length === 0 ? (
+            <View style={styles.emptyCardContainer}>
+              {historyData.length === 0 ? (
+                <>
+                  <History size={40} color="#94A3B8" style={{ marginBottom: 12 }} />
+                  <Text style={styles.emptyCardTitle}>No activity history yet</Text>
+                  <Text style={styles.emptyCardSub}>
+                    Your completed orders, hiring requests, services and campaigns will appear here.
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <FileText size={40} color="#94A3B8" style={{ marginBottom: 12 }} />
+                  <Text style={styles.emptyCardTitle}>No matching history records</Text>
+                  <Text style={styles.emptyCardSub}>
+                    Try another pillar, status or search term.
+                  </Text>
+                  <TouchableOpacity 
+                    style={styles.clearFiltersBtn}
+                    onPress={() => { setSearchQuery(''); setSelectedPillar('all'); setSelectedStatus('All'); }}
+                  >
+                    <RotateCcw size={14} color={NAVY} style={{ marginRight: 6 }} />
+                    <Text style={styles.clearFiltersText}>Clear Filters</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          ) : (
+            filteredHistory.map(rec => {
+              const pillarBadge = PILLAR_BADGES[rec.pillar] || { label: 'OTHER', color: NAVY, bg: '#F1F5F9' };
+              const statusStyle = STATUS_BADGES[rec.status] || { bg: '#EFF6FF', text: '#2563EB' };
+
+              return (
+                <View key={rec.id} style={styles.historyCard}>
+
+                  {/* Top Row: Record ID + Pillar Badge + Status Badge */}
+                  <View style={styles.cardTopRow}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Text style={styles.recordIdText}>{rec.id}</Text>
+                      <View style={[styles.pillarTag, { backgroundColor: pillarBadge.bg }]}>
+                        <Text style={[styles.pillarTagText, { color: pillarBadge.color }]}>
+                          {pillarBadge.label}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+                      <Text style={[styles.statusBadgeText, { color: statusStyle.text }]}>
+                        {rec.status.toUpperCase()}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Main Title & Provider */}
+                  <Text style={styles.cardTitleText}>{rec.title}</Text>
+                  <Text style={styles.cardVendorText}>{rec.vendor}</Text>
+
+                  {/* Meta Summary Row */}
+                  <View style={styles.summaryMetaRow}>
+                    {rec.qty ? <Text style={styles.metaItemText}>Quantity: {rec.qty}</Text> : null}
+                    {rec.candidate ? <Text style={styles.metaItemText}>Staff: {rec.candidate}</Text> : null}
+                    {rec.rating ? <Text style={styles.metaItemText}>Rating: {rec.rating}</Text> : null}
+                    {rec.reach ? <Text style={styles.metaItemText}>Result: {rec.reach}</Text> : null}
+                  </View>
+
+                  {/* Bottom Row: Date/Amount on Left + Compact Primary Action Button on Right */}
+                  <View style={styles.cardBottomRow}>
+                    <View>
+                      <Text style={styles.dateText}>{rec.date}</Text>
+                      {rec.amount ? <Text style={styles.amountText}>{rec.amount}</Text> : null}
+                    </View>
+
+                    <TouchableOpacity 
+                      style={styles.primaryActionBtn} 
+                      onPress={() => handleOpenDetails(rec)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.primaryActionText}>{rec.actionText}</Text>
+                      <ChevronRight size={15} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
+
+                </View>
+              );
+            })
+          )}
+
+        </View>
+      </ScrollView>
+
+      {/* ── History Details Modal ── */}
+      <Modal visible={detailsModalVisible} animationType="slide" transparent={true}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { maxHeight: '84%', display: 'flex', flexDirection: 'column' }]}>
+            <View style={styles.modalHeaderRow}>
+              <Text style={styles.modalTitle}>Activity Details</Text>
+              <TouchableOpacity onPress={() => setDetailsModalVisible(false)} style={styles.modalCloseBtn}>
+                <X size={18} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            {selectedRecord && (
+              <ScrollView style={styles.modalScroll} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={true}>
+                <View style={styles.modalHeaderBox}>
+                  <Text style={styles.modalIdText}>{selectedRecord.id}</Text>
+                  <Text style={styles.modalRecordTitle}>{selectedRecord.title}</Text>
+                  <Text style={styles.modalVendorText}>{selectedRecord.vendor}</Text>
+                </View>
+
+                <View style={styles.modalDetailsGrid}>
+                  <View style={styles.modalCell}>
+                    <Text style={styles.modalCellLabel}>Pillar</Text>
+                    <Text style={styles.modalCellValue}>
+                      {(PILLAR_BADGES[selectedRecord.pillar] || {}).label || selectedRecord.pillar}
+                    </Text>
+                  </View>
+
+                  <View style={styles.modalCell}>
+                    <Text style={styles.modalCellLabel}>Status</Text>
+                    <Text style={styles.modalCellValue}>{selectedRecord.status}</Text>
+                  </View>
+
+                  {selectedRecord.amount ? (
+                    <View style={styles.modalCell}>
+                      <Text style={styles.modalCellLabel}>Total Amount / Budget</Text>
+                      <Text style={styles.modalCellValue}>{selectedRecord.amount}</Text>
+                    </View>
+                  ) : null}
+
+                  <View style={styles.modalCell}>
+                    <Text style={styles.modalCellLabel}>Date</Text>
+                    <Text style={styles.modalCellValue}>{selectedRecord.date}</Text>
                   </View>
                 </View>
-                <View style={[styles.badge, { backgroundColor: BG_COLORS[selectedRecord.category] }]}>
-                  <Text style={[styles.badgeText, { color: catColor }]}>{CAT_LABELS[selectedRecord.category]}</Text>
-                </View>
-              </View>
 
-              <Text style={styles.detailTitle}>{selectedRecord.title}</Text>
-              <Text style={styles.detailProvider}>{selectedRecord.vendor}</Text>
-
-              <View style={styles.infoGrid}>
-                {selectedRecord.qty && (
-                  <View style={styles.infoGridItem}>
-                    <Text style={styles.infoLabel}>QUANTITY / DURATION</Text>
-                    <Text style={styles.infoValue}>{selectedRecord.qty}</Text>
+                {/* Timeline */}
+                {selectedRecord.timeline && selectedRecord.timeline.length > 0 && (
+                  <View style={styles.timelineBox}>
+                    <Text style={styles.timelineTitle}>Activity Progress & Timeline</Text>
+                    {selectedRecord.timeline.map((step, idx) => (
+                      <View key={idx} style={styles.timelineRow}>
+                        <View style={[styles.timelineDot, idx === 0 && styles.timelineDotActive]} />
+                        <Text style={[styles.timelineStepText, idx === 0 && styles.timelineStepTextActive]}>
+                          {step}
+                        </Text>
+                      </View>
+                    ))}
                   </View>
                 )}
-                {selectedRecord.amount && (
-                  <View style={styles.infoGridItem}>
-                    <Text style={styles.infoLabel}>AMOUNT</Text>
-                    <Text style={styles.infoValue}>{selectedRecord.amount}</Text>
-                  </View>
-                )}
-                <View style={styles.infoGridItem}>
-                  <Text style={styles.infoLabel}>DATE</Text>
-                  <Text style={styles.infoValue}>{selectedRecord.date}</Text>
-                </View>
-              </View>
+              </ScrollView>
+            )}
 
-              <Text style={styles.sectionHeading}>Status Timeline</Text>
-              <View style={styles.timelineBox}>
-                {selectedRecord.timeline.map((step, idx) => (
-                  <View key={idx} style={styles.timelineStep}>
-                    <View style={styles.timelineDot} />
-                    {idx !== selectedRecord.timeline.length - 1 && <View style={styles.timelineLine} />}
-                    <Text style={styles.timelineText}>{step}</Text>
-                  </View>
-                ))}
-              </View>
+            <View style={styles.modalFooter}>
+              <TouchableOpacity 
+                style={styles.modalOutlineBtn}
+                onPress={() => {
+                  setDetailsModalVisible(false);
+                  showToast(`Downloading summary invoice for ${selectedRecord?.id}...`);
+                }}
+              >
+                <Download size={15} color={NAVY} style={{ marginRight: 6 }} />
+                <Text style={styles.modalOutlineText}>Download Invoice</Text>
+              </TouchableOpacity>
 
-            </ScrollView>
+              <TouchableOpacity 
+                style={styles.modalPrimaryBtn}
+                onPress={() => setDetailsModalVisible(false)}
+              >
+                <Text style={styles.modalPrimaryText}>Close</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
-    );
-  };
 
-  const renderMoreMenu = () => (
-    <Modal visible={moreMenu} transparent animationType="fade">
-      <TouchableWithoutFeedback onPress={() => setMoreMenu(false)}>
-        <View style={styles.menuOverlay}>
-          <TouchableWithoutFeedback>
-            <View style={styles.menuContent}>
-              <TouchableOpacity style={styles.menuItem} onPress={() => setMoreMenu(false)}>
-                <Download size={18} color={NAVY} /><Text style={styles.menuText}>Export History</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.menuItem} onPress={() => setMoreMenu(false)}>
-                <CalendarRange size={18} color={NAVY} /><Text style={styles.menuText}>Select Date Range</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableWithoutFeedback>
-        </View>
-      </TouchableWithoutFeedback>
-    </Modal>
-  );
-
-  return (
-    <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingHorizontal: isMobile ? (width < 340 ? 12 : 16) : 24 }]}>
-        
-        {/* Header */}
-        <View style={styles.pageHeader}>
-          <View style={{ flex: 1 }}>
-            <View style={styles.titleRow}>
-              <History size={22} color={NAVY} />
-              <Text style={styles.pageTitle}>Activity History</Text>
-            </View>
-            <Text style={styles.pageSubtitle}>Track orders, hiring requests, service bookings and marketing projects</Text>
-          </View>
-          <TouchableOpacity style={styles.moreBtn} onPress={() => setMoreMenu(true)}>
-            <MoreVertical size={20} color={NAVY} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Overview Card */}
-        <View style={styles.overviewCard}>
-          <Text style={styles.overviewCardTitle}>History Overview</Text>
-          <View style={styles.overviewCols}>
-            <TouchableOpacity style={styles.overviewCol}>
-              <View style={[styles.iconBox, { backgroundColor: '#EFF6FF' }]}><ListChecks size={18} color={'#3B82F6'} /></View>
-              <Text style={styles.overviewVal}>{totalCount}</Text>
-              <Text style={styles.overviewLabel}>Total Records</Text>
-            </TouchableOpacity>
-            <View style={styles.overviewDivider} />
-            <TouchableOpacity style={styles.overviewCol}>
-              <View style={[styles.iconBox, { backgroundColor: '#FEF3C7' }]}><Clock3 size={18} color={'#F59E0B'} /></View>
-              <Text style={styles.overviewVal}>{inProgressCount}</Text>
-              <Text style={styles.overviewLabel}>In Progress</Text>
-            </TouchableOpacity>
-            <View style={styles.overviewDivider} />
-            <TouchableOpacity style={styles.overviewCol}>
-              <View style={[styles.iconBox, { backgroundColor: '#D1FAE5' }]}><CircleCheck size={18} color={'#10B981'} /></View>
-              <Text style={styles.overviewVal}>{completedCount}</Text>
-              <Text style={styles.overviewLabel}>Completed</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Search & Filter */}
-        <View style={styles.searchFilterRow}>
-          <View style={styles.searchBox}>
-            <Search size={18} color={MUTED} />
-            <TextInput 
-              style={styles.searchInput} 
-              placeholder="Search by ID, item, service or provider..." 
-              value={search}
-              onChangeText={setSearch}
-            />
-          </View>
-          <TouchableOpacity style={styles.filterBtn}>
-            <SlidersHorizontal size={20} color={NAVY} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Category Pills */}
-        <View style={styles.pillsWrap}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillsScroll}>
-            <TouchableOpacity style={[styles.pill, filterCat === 'All' && styles.pillActive]} onPress={() => setFilterCat('All')}>
-              <Text style={[styles.pillText, filterCat === 'All' && styles.pillTextActive]}>All</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={[styles.pill, filterCat === 'raw-material' && styles.pillActive]} onPress={() => setFilterCat('raw-material')}>
-              <Package size={14} color={filterCat === 'raw-material' ? WHITE : NAVY} style={{marginRight: 6}}/>
-              <Text style={[styles.pillText, filterCat === 'raw-material' && styles.pillTextActive]}>Raw Material</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={[styles.pill, filterCat === 'manpower' && styles.pillActive]} onPress={() => setFilterCat('manpower')}>
-              <UsersRound size={14} color={filterCat === 'manpower' ? WHITE : NAVY} style={{marginRight: 6}}/>
-              <Text style={[styles.pillText, filterCat === 'manpower' && styles.pillTextActive]}>Manpower</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={[styles.pill, filterCat === 'service' && styles.pillActive]} onPress={() => setFilterCat('service')}>
-              <Wrench size={14} color={filterCat === 'service' ? WHITE : NAVY} style={{marginRight: 6}}/>
-              <Text style={[styles.pillText, filterCat === 'service' && styles.pillTextActive]}>Services</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={[styles.pill, filterCat === 'marketing' && styles.pillActive]} onPress={() => setFilterCat('marketing')}>
-              <Megaphone size={14} color={filterCat === 'marketing' ? WHITE : NAVY} style={{marginRight: 6}}/>
-              <Text style={[styles.pillText, filterCat === 'marketing' && styles.pillTextActive]}>Marketing</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
-
-        {/* Desktop Table Header (only if on web & large screen) */}
-        {!isMobile && (
-          <View style={styles.desktopTableHeader}>
-            <Text style={[styles.th, { flex: 1.5 }]}>Record ID</Text>
-            <Text style={[styles.th, { flex: 1.5 }]}>Category</Text>
-            <Text style={[styles.th, { flex: 3 }]}>Activity</Text>
-            <Text style={[styles.th, { flex: 2 }]}>Provider</Text>
-            <Text style={[styles.th, { flex: 2 }]}>Status</Text>
-            <Text style={[styles.th, { flex: 1 }]}></Text>
-          </View>
-        )}
-
-        {/* List */}
-        {filtered.length === 0 ? (
-          <View style={styles.emptyState}>
-            <History size={48} color={MUTED} style={{ marginBottom: 16 }} />
-            <Text style={styles.emptyTitle}>No activity history found</Text>
-            <Text style={styles.emptyDesc}>Your orders, hiring requests, service bookings and marketing projects will appear here.</Text>
-          </View>
-        ) : (
-          <FlatList
-            data={filtered}
-            keyExtractor={item => item.id}
-            renderItem={renderCard}
-            scrollEnabled={false}
-            numColumns={isMobile ? 1 : 2}
-            key={isMobile ? 'mobile' : 'desktop'}
-            columnWrapperStyle={!isMobile && { justifyContent: 'flex-start' }}
-          />
-        )}
-
-      </ScrollView>
-
-      {renderDetailsModal()}
-      {renderMoreMenu()}
-
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: LIGHT_BG },
-  scrollContent: { paddingBottom: 115, maxWidth: 1320, alignSelf: 'center', width: '100%', paddingTop: 24 },
+  safeArea: { flex: 1, backgroundColor: BG_COLOR },
+  container: { flex: 1, backgroundColor: BG_COLOR },
+  scrollContent: { paddingBottom: 115 },
+
+  mainLayout: { padding: 14 },
+  mainLayoutWeb: { maxWidth: 900, alignSelf: 'center', width: '100%', padding: 24 },
+
+  /* Toast Notification */
+  toastContainer: { position: 'absolute', top: 50, left: 20, right: 20, backgroundColor: '#059669', paddingVertical: 12, paddingHorizontal: 16, borderRadius: 10, flexDirection: 'row', alignItems: 'center', zIndex: 100, ...Platform.select({ web: { boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }, ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8 }, android: { elevation: 6 } }) },
+  toastText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+
+  /* Page Header */
+  pageHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
+  pageTitle: { fontSize: 24, fontWeight: '900', color: NAVY },
+  pageSubtitle: { fontSize: 13, color: TEXT_MUTED },
+
+  /* History Overview Summary Card */
+  overviewCard: { backgroundColor: '#fff', borderRadius: 18, borderWidth: 1, borderColor: BORDER, padding: 16, marginBottom: 16, ...Platform.select({ web: { boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }, ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 6 }, android: { elevation: 2 } }) },
+  overviewCardTitle: { fontSize: 15, fontWeight: '800', color: NAVY, marginBottom: 14, textAlign: 'center' },
+  overviewColsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  overviewColItem: { flex: 1, alignItems: 'center' },
+  overviewDividerLine: { width: 1, height: 38, backgroundColor: '#E2E8F0' },
+  overviewIconBox: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
+  overviewCountVal: { fontSize: 20, fontWeight: '900', color: NAVY, marginBottom: 2 },
+  overviewLabelText: { fontSize: 12, color: TEXT_MUTED, fontWeight: '600' },
+
+  /* Search Container */
+  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: BORDER, borderRadius: 12, paddingHorizontal: 12, height: 44, marginBottom: 12 },
+  searchInput: { flex: 1, fontSize: 14, color: NAVY, ...Platform.select({ web: { outlineStyle: 'none' } }) },
+
+  /* Pillar Filters */
+  pillarScroll: { flexGrow: 0, marginBottom: 12 },
+  pillarContainer: { flexDirection: 'row', gap: 8, paddingRight: 16 },
+  pillarPill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: BORDER },
+  pillarPillActive: { backgroundColor: NAVY, borderColor: NAVY },
+  pillarPillText: { fontSize: 13, fontWeight: '600', color: '#475569' },
+  pillarPillTextActive: { color: '#fff' },
+
+  /* Secondary Status Filters */
+  statusScroll: { flexGrow: 0, marginBottom: 16 },
+  statusContainer: { flexDirection: 'row', gap: 8, paddingRight: 16 },
+  statusPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: '#fff', borderWidth: 1, borderColor: BORDER },
+  statusPillActive: { backgroundColor: NAVY, borderColor: NAVY },
+  statusPillText: { fontSize: 12, fontWeight: '600', color: '#64748B' },
+  statusPillTextActive: { color: '#fff' },
+
+  /* Empty State Card */
+  emptyCardContainer: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: BORDER, padding: 30, alignItems: 'center', justifyContent: 'center', maxHeight: 250 },
+  emptyCardTitle: { fontSize: 16, fontWeight: '800', color: NAVY, marginBottom: 4 },
+  emptyCardSub: { fontSize: 13, color: TEXT_MUTED, textAlign: 'center', maxWidth: 280 },
+  clearFiltersBtn: { marginTop: 14, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: '#F1F5F9' },
+  clearFiltersText: { fontSize: 13, fontWeight: '700', color: NAVY },
+
+  /* History Record Card */
+  historyCard: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: BORDER, padding: 14, marginBottom: 12, position: 'relative', ...Platform.select({ web: { boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }, ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 6 }, android: { elevation: 2 } }) },
   
-  pageHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  pageTitle: { fontSize: 24, fontWeight: 'bold', color: NAVY },
-  pageSubtitle: { fontSize: 13, color: GRAY },
-  moreBtn: { padding: 8, backgroundColor: WHITE, borderRadius: 8, borderWidth: 1, borderColor: '#E2E8F0' },
+  cardTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  recordIdText: { fontSize: 12, fontWeight: '700', color: '#64748B', marginRight: 8 },
+  pillarTag: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  pillarTagText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  statusBadgeText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
 
-  overviewCard: { backgroundColor: WHITE, borderRadius: 18, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 2, elevation: 1 },
-  overviewCardTitle: { fontSize: 14, fontWeight: 'bold', color: NAVY, marginBottom: 16, textAlign: 'center' },
-  overviewCols: { flexDirection: 'row', alignItems: 'center' },
-  overviewCol: { flex: 1, alignItems: 'center' },
-  overviewDivider: { width: 1, height: 40, backgroundColor: '#E2E8F0' },
-  iconBox: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  overviewVal: { fontSize: 20, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
-  overviewLabel: { fontSize: 12, color: GRAY },
+  cardTitleText: { fontSize: 15, fontWeight: '800', color: NAVY, marginBottom: 2 },
+  cardVendorText: { fontSize: 13, color: TEXT_MUTED, fontWeight: '500', marginBottom: 8 },
 
-  searchFilterRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
-  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: WHITE, paddingHorizontal: 14, height: 44, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0' },
-  searchInput: { flex: 1, marginLeft: 8, fontSize: 14, color: NAVY },
-  filterBtn: { width: 44, height: 44, backgroundColor: WHITE, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center' },
+  summaryMetaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, backgroundColor: '#F8FAFC', borderRadius: 8, padding: 8, marginBottom: 12 },
+  metaItemText: { fontSize: 12, fontWeight: '600', color: NAVY },
 
-  pillsWrap: { marginBottom: 16 },
-  pillsScroll: { gap: 8 },
-  pill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: WHITE, borderWidth: 1, borderColor: '#E2E8F0' },
-  pillActive: { backgroundColor: NAVY, borderColor: NAVY },
-  pillText: { fontSize: 13, color: NAVY, fontWeight: '500' },
-  pillTextActive: { color: WHITE },
+  cardBottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', zIndex: 10 },
+  dateText: { fontSize: 11, color: TEXT_MUTED, fontWeight: '500' },
+  amountText: { fontSize: 13, fontWeight: '800', color: NAVY },
 
-  card: { backgroundColor: WHITE, borderRadius: 18, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 2, elevation: 1 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  recordId: { fontSize: 14, fontWeight: 'bold', color: NAVY },
-  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  badgeText: { fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase' },
-  
-  cardTitle: { fontSize: 16, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
-  cardProvider: { fontSize: 14, color: GRAY, marginBottom: 12 },
+  primaryActionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: NAVY, height: 36, borderRadius: 10, paddingHorizontal: 14, alignSelf: 'flex-end' },
+  primaryActionText: { fontSize: 13, fontWeight: '700', color: '#fff', marginRight: 4 },
 
-  metaRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  metaLeft: { flexDirection: 'row' },
-  metaText: { fontSize: 13, color: GRAY, fontWeight: '500' },
+  /* Modals */
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(7, 27, 58, 0.6)', justifyContent: 'center', alignItems: 'center', padding: 16 },
+  modalCard: { width: '92%', maxWidth: 540, backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden' },
+  modalHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18, borderBottomWidth: 1, borderBottomColor: BORDER },
+  modalTitle: { fontSize: 18, fontWeight: '900', color: NAVY },
+  modalCloseBtn: { padding: 4, backgroundColor: '#F1F5F9', borderRadius: 14 },
+  modalScroll: { padding: 18, flexShrink: 1 },
 
-  cardFooter: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingLeft: 12 },
-  actionText: { fontSize: 13, fontWeight: 'bold', marginRight: 2 },
+  modalHeaderBox: { marginBottom: 14, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: BORDER },
+  modalIdText: { fontSize: 12, fontWeight: '700', color: TEXT_MUTED, marginBottom: 2 },
+  modalRecordTitle: { fontSize: 18, fontWeight: '900', color: NAVY, marginBottom: 2 },
+  modalVendorText: { fontSize: 13, color: TEXT_MUTED },
 
-  desktopTableHeader: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#E2E8F0', backgroundColor: '#F8FAFC', marginBottom: 12, borderRadius: 8 },
-  th: { fontSize: 12, fontWeight: 'bold', color: GRAY, textTransform: 'uppercase' },
+  modalDetailsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, backgroundColor: '#F8FAFC', borderRadius: 12, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: BORDER },
+  modalCell: { width: '48%' },
+  modalCellLabel: { fontSize: 11, color: TEXT_MUTED, fontWeight: '600', marginBottom: 2 },
+  modalCellValue: { fontSize: 13, fontWeight: '700', color: NAVY },
 
-  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 32 },
-  emptyTitle: { fontSize: 16, fontWeight: 'bold', color: NAVY, marginBottom: 8 },
-  emptyDesc: { fontSize: 14, color: GRAY, textAlign: 'center', lineHeight: 20 },
+  timelineBox: { backgroundColor: '#F8FAFC', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: BORDER },
+  timelineTitle: { fontSize: 13, fontWeight: '800', color: NAVY, marginBottom: 10 },
+  timelineRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 },
+  timelineDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#94A3B8', marginTop: 5, marginRight: 10 },
+  timelineDotActive: { backgroundColor: NAVY },
+  timelineStepText: { fontSize: 12, color: '#475569', flex: 1 },
+  timelineStepTextActive: { color: NAVY, fontWeight: '700' },
 
-  // Modals & Menus
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 16 },
-  modalContainer: { backgroundColor: WHITE, borderRadius: 20, width: '100%', maxWidth: 580, maxHeight: '84%', overflow: 'hidden' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY },
-  modalScroll: { padding: 20 },
-  
-  detailHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
-  detailId: { fontSize: 18, fontWeight: 'bold', color: NAVY },
-  detailTitle: { fontSize: 20, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
-  detailProvider: { fontSize: 16, color: GRAY, marginBottom: 20 },
-
-  infoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, backgroundColor: '#F8FAFC', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 24 },
-  infoGridItem: { width: isMobile ? '100%' : '45%', marginBottom: 8 },
-  infoLabel: { fontSize: 11, color: MUTED, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 4 },
-  infoValue: { fontSize: 14, color: NAVY, fontWeight: '600' },
-
-  sectionHeading: { fontSize: 16, fontWeight: 'bold', color: NAVY, marginBottom: 16 },
-  timelineBox: { paddingLeft: 8, marginBottom: 32 },
-  timelineStep: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 24, position: 'relative' },
-  timelineDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#3B82F6', marginTop: 4, marginRight: 16, zIndex: 2 },
-  timelineLine: { position: 'absolute', top: 16, left: 5, width: 2, height: 32, backgroundColor: '#EFF6FF', zIndex: 1 },
-  timelineText: { fontSize: 14, color: NAVY, fontWeight: '500' },
-
-  menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.1)' },
-  menuContent: { position: 'absolute', top: 80, right: 16, backgroundColor: WHITE, borderRadius: 12, padding: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5, minWidth: 200 },
-  menuItem: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 12 },
-  menuText: { fontSize: 14, fontWeight: '500', color: NAVY },
+  modalFooter: { flexDirection: 'row', padding: 16, borderTopWidth: 1, borderTopColor: BORDER, gap: 10 },
+  modalOutlineBtn: { flex: 1, flexDirection: 'row', height: 42, borderRadius: 10, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' },
+  modalOutlineText: { fontSize: 13, fontWeight: '700', color: NAVY },
+  modalPrimaryBtn: { flex: 1, height: 42, borderRadius: 10, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center' },
+  modalPrimaryText: { fontSize: 13, fontWeight: '700', color: '#fff' }
 });

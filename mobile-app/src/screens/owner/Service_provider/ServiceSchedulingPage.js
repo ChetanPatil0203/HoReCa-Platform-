@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions } from 'react-native';
-import { ArrowLeft, CheckCircle, Calendar, Clock, MapPin, User, FileText, Smartphone, Truck } from 'lucide-react-native';
+import { ArrowLeft, CircleCheck as CheckCircle, Calendar, Clock, MapPin, User, FileText, Smartphone, Truck } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 
 const NAVY = '#0E2042';

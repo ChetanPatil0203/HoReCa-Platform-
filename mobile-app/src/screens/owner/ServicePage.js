@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
-import { 
-  Wrench, FileText, MessageSquare, Clock, CheckCircle, 
-  PlusCircle, Search, ArrowRight, Activity, MapPin, ShieldCheck, Star, Zap, Droplets, Hammer, Wind, Package
-} from 'lucide-react-native';
+import { Wrench, FileText, MessageSquare, Clock, CircleCheck as CheckCircle, CirclePlus as PlusCircle, Search, ArrowRight, Activity, MapPin, ShieldCheck, Star, Zap, Droplets, Hammer, Wind, Package } from 'lucide-react-native';
 import { colors } from '../../theme/colors';
+import { AuthContext } from '../../context/AuthContext';
+import { fetchOwnerRequirements, fetchServiceProviders } from '../../services/api.service';
 import BroadcastRequirementPage from './Service_provider/BroadcastRequirementPage';
 import MyRequestsPage from './Service_provider/MyRequestsPage';
 import ProviderResponsesPage from './Service_provider/ProviderResponsesPage';
@@ -20,21 +19,6 @@ import ServiceComplaintPage from './Service_provider/ServiceComplaintPage';
 const NAVY = '#0E2042';
 const GOLD = '#D4AF37';
 const LIGHT_BG = '#F8FAFC';
-
-// =====================================
-// MOCK DATA
-// =====================================
-const SUMMARY_STATS = {
-  activeRequests: 0,
-  providerResponses: 0,
-  scheduledServices: 0,
-  completedServices: 0
-};
-
-const RECENT_REQUESTS = [];
-
-const TOP_RATED_PROVIDERS = [];
-
 
 // =====================================
 // REUSABLE COMPONENTS
@@ -53,7 +37,10 @@ const SummaryCard = ({ title, value, icon: Icon, bgColor, iconColor, customStyle
 const ServiceRequestCard = ({ request, onView }) => (
   <View style={styles.requestCard}>
     <View style={styles.requestHeader}>
-      <Text style={styles.requestTitle}>{request.title}</Text>
+      <View>
+        <Text style={styles.requestId}>{request.id}</Text>
+        <Text style={styles.requestTitle}>{request.title}</Text>
+      </View>
       <View style={[styles.statusBadge, 
         request.status === 'Completed' ? styles.statusSuccess : 
         request.status === 'Active' ? styles.statusPrimary : styles.statusWarning
@@ -64,9 +51,8 @@ const ServiceRequestCard = ({ request, onView }) => (
         ]}>{request.status}</Text>
       </View>
     </View>
-    <Text style={styles.requestMeta}>{request.category} • {request.date}</Text>
     <View style={styles.requestFooter}>
-      <Text style={styles.requestResponses}>{request.responses} Responses</Text>
+      <Text style={styles.requestMeta}>{request.category} • {request.responseCount || 0} Responses</Text>
       <TouchableOpacity style={styles.viewBtn} onPress={onView}>
         <Text style={styles.viewBtnText}>View</Text>
       </TouchableOpacity>
@@ -104,9 +90,77 @@ const ProviderCard = ({ provider }) => (
 export default function ServicePage() {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
+  const { user } = useContext(AuthContext);
+  const ownerId = user?.id;
+
   const [currentView, setCurrentView] = useState('home');
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [selectedProvider, setSelectedProvider] = useState(null);
+
+  const [stats, setStats] = useState({
+    activeRequests: 0,
+    providerResponses: 0,
+    scheduledServices: 0,
+    completedServices: 0
+  });
+  const [recentRequests, setRecentRequests] = useState([]);
+  const [topProviders, setTopProviders] = useState([]);
+
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      if (!ownerId) return;
+      try {
+        const [reqRes, provRes] = await Promise.all([
+          fetchOwnerRequirements(ownerId),
+          fetchServiceProviders().catch(() => ({ data: [] }))
+        ]);
+
+        const list = reqRes?.data || reqRes || [];
+        if (Array.isArray(list)) {
+          const spList = list.filter(r => r.type === 'serviceProvider');
+          const active = spList.filter(r => r.status === 'pending' || r.status === 'active').length;
+          const responses = spList.filter(r => r.supplierId || r.extraData?.responseCount > 0).length;
+          const scheduled = spList.filter(r => r.status === 'scheduled').length;
+          const completed = spList.filter(r => r.status === 'completed').length;
+
+          setStats({
+            activeRequests: active,
+            providerResponses: responses,
+            scheduledServices: scheduled,
+            completedServices: completed
+          });
+
+          setRecentRequests(spList.slice(0, 5).map(r => ({
+            id: `#${r.id.slice(0, 8).toUpperCase()}`,
+            _rawId: r.id,
+            title: r.title,
+            category: r.extraData?.category || 'Service',
+            responseCount: r.supplierId ? 1 : 0,
+            budget: r.budget || '—',
+            date: new Date(r.createdAt).toLocaleDateString('en-IN'),
+            status: r.status === 'pending' ? 'Active' : r.status
+          })));
+        }
+
+        const providersList = provRes?.data || provRes || [];
+        if (Array.isArray(providersList)) {
+          setTopProviders(providersList.map(p => ({
+            id: p.id,
+            name: p.bizName || p.contactPerson || 'Service Provider',
+            category: p.subCategory || 'General Maintenance',
+            rating: '4.8',
+            jobs: '12+',
+            verified: p.status === 'approved'
+          })));
+        }
+      } catch (err) {
+        console.warn('Error loading owner service page stats:', err);
+      }
+    };
+    loadDashboardData();
+    const interval = setInterval(loadDashboardData, 4000);
+    return () => clearInterval(interval);
+  }, [ownerId]);
 
   if (currentView === 'broadcast') {
     return (
@@ -138,6 +192,10 @@ export default function ServicePage() {
         onAccept={(provider) => {
           setSelectedProvider(provider);
           setCurrentView('serviceScheduling');
+        }}
+        onViewBooking={(provider) => {
+          setSelectedProvider(provider);
+          setCurrentView('trackService');
         }}
       />
     );
@@ -255,10 +313,10 @@ export default function ServicePage() {
 
           {/* ── Top Summary Cards ── */}
           <View style={[styles.summaryGrid, isMobile && { flexWrap: 'wrap' }]}>
-            <SummaryCard customStyle={isMobile && { flexBasis: '46%', flexGrow: 1 }} title="Active Requirements" value={SUMMARY_STATS.activeRequests} icon={FileText} bgColor="#FFFBEB" iconColor={GOLD} />
-            <SummaryCard customStyle={isMobile && { flexBasis: '46%', flexGrow: 1 }} title="Provider Responses" value={SUMMARY_STATS.providerResponses} icon={MessageSquare} bgColor="#EFF6FF" iconColor="#2563EB" />
-            <SummaryCard customStyle={isMobile && { flexBasis: '46%', flexGrow: 1 }} title="Scheduled Services" value={SUMMARY_STATS.scheduledServices} icon={Clock} bgColor="#F3E8FF" iconColor="#9333EA" />
-            <SummaryCard customStyle={isMobile && { flexBasis: '46%', flexGrow: 1 }} title="Completed Services" value={SUMMARY_STATS.completedServices} icon={CheckCircle} bgColor="#DCFCE7" iconColor="#16A34A" />
+            <SummaryCard customStyle={isMobile && { flexBasis: '46%', flexGrow: 1 }} title="Active Requirements" value={stats.activeRequests} icon={FileText} bgColor="#FFFBEB" iconColor={GOLD} />
+            <SummaryCard customStyle={isMobile && { flexBasis: '46%', flexGrow: 1 }} title="Provider Responses" value={stats.providerResponses} icon={MessageSquare} bgColor="#EFF6FF" iconColor="#2563EB" />
+            <SummaryCard customStyle={isMobile && { flexBasis: '46%', flexGrow: 1 }} title="Scheduled Services" value={stats.scheduledServices} icon={Clock} bgColor="#F3E8FF" iconColor="#9333EA" />
+            <SummaryCard customStyle={isMobile && { flexBasis: '46%', flexGrow: 1 }} title="Completed Services" value={stats.completedServices} icon={CheckCircle} bgColor="#DCFCE7" iconColor="#16A34A" />
           </View>
 
           {/* ── Quick Actions ── */}
@@ -300,16 +358,22 @@ export default function ServicePage() {
                 <TouchableOpacity onPress={() => setCurrentView('requests')}><Text style={styles.viewAllText}>View All</Text></TouchableOpacity>
               </View>
               <View style={styles.cardsList}>
-                {RECENT_REQUESTS.map(req => (
-                  <ServiceRequestCard 
-                    key={req.id} 
-                    request={req} 
-                    onView={() => {
-                      setSelectedRequest(req);
-                      setCurrentView('providerResponses');
-                    }}
-                  />
-                ))}
+                {recentRequests.length === 0 ? (
+                  <View style={{ padding: 16, alignItems: 'center' }}>
+                    <Text style={{ fontSize: 13, color: '#94A3B8' }}>No service requirements posted yet.</Text>
+                  </View>
+                ) : (
+                  recentRequests.map(req => (
+                    <ServiceRequestCard 
+                      key={req.id} 
+                      request={req} 
+                      onView={() => {
+                        setSelectedRequest(req);
+                        setCurrentView('providerResponses');
+                      }}
+                    />
+                  ))
+                )}
               </View>
             </View>
 
@@ -320,11 +384,17 @@ export default function ServicePage() {
                 <TouchableOpacity onPress={() => setCurrentView('browseProviders')}><Text style={styles.viewAllText}>View All</Text></TouchableOpacity>
               </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
-                {TOP_RATED_PROVIDERS.map(provider => (
-                  <TouchableOpacity key={provider.id} onPress={() => { setSelectedProvider(provider); setCurrentView('providerProfile'); }}>
-                    <ProviderCard provider={provider} />
-                  </TouchableOpacity>
-                ))}
+                {topProviders.length === 0 ? (
+                  <View style={{ padding: 16, alignItems: 'center' }}>
+                    <Text style={{ fontSize: 13, color: '#94A3B8' }}>No rated providers found.</Text>
+                  </View>
+                ) : (
+                  topProviders.map(provider => (
+                    <TouchableOpacity key={provider.id} onPress={() => { setSelectedProvider(provider); setCurrentView('providerProfile'); }}>
+                      <ProviderCard provider={provider} />
+                    </TouchableOpacity>
+                  ))
+                )}
               </ScrollView>
             </View>
 

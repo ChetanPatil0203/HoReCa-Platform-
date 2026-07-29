@@ -3,11 +3,7 @@ import {
   View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity,
   useWindowDimensions, Modal, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, ActivityIndicator
 } from 'react-native';
-import {
-  Search, SlidersHorizontal, Package, ChevronRight, X, XCircle,
-  CheckCircle, Truck, User, Home, ClipboardList,
-  Plus, MapPin, CalendarDays, UserRound, RefreshCw
-} from 'lucide-react-native';
+import { Search, SlidersHorizontal, Package, ChevronRight, X, CircleX as XCircle, CircleCheck as CheckCircle, Truck, User, Home, ClipboardList, Plus, MapPin, CalendarDays, UserRound, RefreshCw } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
 import { fetchVendorOrders } from '../../../services/api.service';
 

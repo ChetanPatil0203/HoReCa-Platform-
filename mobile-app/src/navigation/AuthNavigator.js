@@ -5,6 +5,8 @@ import RegisterStepOneScreen from '../screens/auth/RegisterStepOneScreen';
 import RegisterStepTwoScreen from '../screens/auth/RegisterStepTwoScreen';
 import RegisterStepThreeScreen from '../screens/auth/RegisterStepThreeScreen';
 import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
+import VerifyResetOtpScreen from '../screens/auth/VerifyResetOtpScreen';
+import ResetPasswordScreen from '../screens/auth/ResetPasswordScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -16,6 +18,8 @@ export default function AuthNavigator() {
       <Stack.Screen name="RegisterStepTwo" component={RegisterStepTwoScreen} />
       <Stack.Screen name="RegisterStepThree" component={RegisterStepThreeScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <Stack.Screen name="VerifyResetOtp" component={VerifyResetOtpScreen} />
+      <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
     </Stack.Navigator>
   );
 }

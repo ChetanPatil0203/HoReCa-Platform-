@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, SafeAreaView, useWindowDimensions, Platform } from 'react-native';
-import { ChevronDown, Check, AlertCircle, X } from 'lucide-react-native';
+import { ChevronDown, Check, CircleAlert as AlertCircle, X } from 'lucide-react-native';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 

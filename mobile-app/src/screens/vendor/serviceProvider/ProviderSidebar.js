@@ -1,10 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform } from 'react-native';
-import { 
-  LayoutDashboard, Activity, Wrench, Briefcase,
-  Users, DollarSign, Bell, HelpCircle, Settings, LogOut,
-  X
-} from 'lucide-react-native';
+import { LayoutDashboard, Activity, Wrench, Briefcase, Users, DollarSign, Bell, CircleHelp as HelpCircle, Settings, LogOut, X } from 'lucide-react-native';
 
 const NAV = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -56,7 +52,7 @@ export default function ProviderSidebar({ activePage, setActivePage, isMobile, m
       {/* Header Logo */}
       <View style={styles.logoContainer}>
         <View style={styles.logoIconBox}>
-          <Image source={require('../../../assets/HoReCa_Logo.png')} style={{ width: 24, height: 24, resizeMode: 'contain' }} />
+          <Image source={require('../../../assets/HRCHUB_Logo.png')} style={{ width: 24, height: 24, resizeMode: 'contain' }} />
         </View>
         <Text style={styles.logoText}>
           HRC<Text style={{ color: '#D4AF37' }}>HUB</Text>

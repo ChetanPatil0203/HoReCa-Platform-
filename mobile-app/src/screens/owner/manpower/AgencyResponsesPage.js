@@ -4,10 +4,7 @@ import {
   Platform, Dimensions, Modal, KeyboardAvoidingView,
   TouchableWithoutFeedback 
 } from 'react-native';
-import { 
-  Building2, UsersRound, ArrowUpDown, ShieldCheck, Star, 
-  ChevronRight, MoreVertical, X, Clock3, AlertCircle 
-} from 'lucide-react-native';
+import { Building2, UsersRound, ArrowUpDown, ShieldCheck, Star, ChevronRight, EllipsisVertical as MoreVertical, X, Clock3, CircleAlert as AlertCircle } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 const isMobile = width < 768;

@@ -1,17 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { 
   View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, 
   ScrollView, TextInput, KeyboardAvoidingView, Platform, Dimensions,
   TouchableWithoutFeedback
 } from 'react-native';
-import { 
-  Search, SlidersHorizontal, ChevronRight, Send, 
-  MoreVertical, X, CheckCircle
-} from 'lucide-react-native';
+import { Search, SlidersHorizontal, ChevronRight, Send, EllipsisVertical as MoreVertical, X, CircleCheck as CheckCircle } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorRequirements } from '../../../services/api.service';
 
 const { height } = Dimensions.get('window');
-
-const DIRECT_REQUESTS = [];
 
 const DECLINE_REASONS = [
   "Budget not suitable",
@@ -25,8 +22,44 @@ const DECLINE_REASONS = [
 const DIRECT_FILTERS = ["All", "New", "Viewed", "Proposal Sent", "Declined", "Closed"];
 
 export default function MarketingRequestsScreen({ setActivePage, handleSendProposal: parentHandleSendProposal }) {
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.registration?.id || user?.id;
+
   const [searchQuery, setSearchQuery] = useState("");
   const [directFilter, setDirectFilter] = useState("All");
+  const [requests, setRequests] = useState([]);
+
+  const loadRequests = async () => {
+    if (!supplierId) return;
+    try {
+      const res = await fetchVendorRequirements(supplierId);
+      const list = res?.data || res || [];
+      if (Array.isArray(list)) {
+        const mapped = list.map(r => ({
+          id: `DIR-${r.id ? r.id.substring(0, 5).toUpperCase() : '101'}`,
+          rawId: r.id,
+          campaign: r.title || 'Marketing Campaign Request',
+          client: r.owner?.bizName || 'HoReCa Partner',
+          category: r.extraData?.category || r.extraData?.businessType || 'Marketing Service',
+          budget: r.budget || 'Custom Quote',
+          location: r.location || 'India',
+          startDate: r.createdAt ? new Date(r.createdAt).toLocaleDateString() : 'As scheduled',
+          duration: r.extraData?.duration || '1 Month',
+          status: r.status === 'pending' ? 'New' : r.status === 'confirmed' ? 'Proposal Sent' : r.status === 'cancelled' ? 'Declined' : r.status.charAt(0).toUpperCase() + r.status.slice(1),
+          description: r.description || 'Direct marketing request from owner.'
+        }));
+        setRequests(mapped);
+      }
+    } catch (err) {
+      console.warn('Error loading marketing vendor direct requests:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadRequests();
+    const interval = setInterval(loadRequests, 4000);
+    return () => clearInterval(interval);
+  }, [supplierId]);
   
   // Modals
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
@@ -207,7 +240,16 @@ export default function MarketingRequestsScreen({ setActivePage, handleSendPropo
   };
 
   const getFilteredDirect = () => {
-    return directFilter === 'All' ? DIRECT_REQUESTS : DIRECT_REQUESTS.filter(r => r.status === directFilter);
+    return requests.filter(r => {
+      const matchesFilter = directFilter === 'All' || r.status === directFilter;
+      const q = searchQuery.toLowerCase();
+      const matchesSearch = !q ||
+        r.id.toLowerCase().includes(q) ||
+        r.campaign.toLowerCase().includes(q) ||
+        r.client.toLowerCase().includes(q) ||
+        r.category.toLowerCase().includes(q);
+      return matchesFilter && matchesSearch;
+    });
   };
 
   return (

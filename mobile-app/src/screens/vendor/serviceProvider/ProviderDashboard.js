@@ -1,9 +1,6 @@
 import React, { useState, useContext, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Platform, useWindowDimensions, TouchableOpacity, Image, Animated, Easing, TouchableWithoutFeedback, Alert } from 'react-native';
-import {
-  Menu, Bell, Search, User, Home, ClipboardList, Wrench, Briefcase, History,
-  HelpCircle, Settings, Plus, PlusCircle, Calendar, Building2
-} from 'lucide-react-native';
+import { Menu, Bell, Search, User, Home, ClipboardList, Wrench, Briefcase, History, CircleHelp as HelpCircle, Settings, Plus, CirclePlus as PlusCircle, Calendar, Building2 } from 'lucide-react-native';
 import RoleBasedMobileDrawer from '../../../components/navigation/RoleBasedMobileDrawer';
 import { AuthContext } from '../../../context/AuthContext';
 import { colors } from '../../../theme/colors';
@@ -19,6 +16,8 @@ import ProviderProfilePage from './ProviderProfilePage';
 import ProviderFeedWallPage from './ProviderFeedWallPage';
 import ProviderHistoryPage from './ProviderHistoryPage';
 import ProviderClientsPage from './ProviderClientsPage';
+import CompliancePage from '../../owner/compliance/CompliancePage';
+import DocumentsKycScreen from '../../common/DocumentsKycScreen';
 
 const PRIMARY = '#081A3A';
 const ACCENT = '#081A3A';
@@ -77,10 +76,13 @@ export default function ProviderDashboard() {
       case "history": return <ProviderHistoryPage />;
       case "notifications": return <ProviderNotificationsPage />;
       case "support": return <ProviderSupportPage />;
-      case "settings": return <ProviderSettingsPage />;
-      case "profile": return <ProviderProfilePage />;
+      case "settings":
+      case "profile": return <ProviderSettingsPage onNavigate={navigateTo} />;
       case "feed": return <ProviderFeedWallPage />;
       case "clients": return <ProviderClientsPage />;
+      case "compliance": return <CompliancePage />;
+      case "documentsKyc":
+      case "documents-kyc": return <DocumentsKycScreen onBack={() => navigateTo('settings')} />;
       default: return <View style={styles.placeholder}><Text style={styles.placeholderText}>{activePage} Under Construction</Text></View>;
     }
   };
@@ -144,7 +146,7 @@ export default function ProviderDashboard() {
             </TouchableOpacity>
             <View style={styles.mobileLogoContainer}>
               <View style={styles.mobileLogoIconBox}>
-                <Image source={require('../../../assets/HoReCa_Logo.png')} style={{ width: 18, height: 18, resizeMode: 'contain' }} />
+                <Image source={require('../../../assets/HRCHUB_Logo.png')} style={{ width: 18, height: 18, resizeMode: 'contain' }} />
               </View>
               <Text style={styles.mobileLogoText}>HRC<Text style={{ color: '#D4AF37' }}>HUB</Text></Text>
             </View>

@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   useWindowDimensions, SafeAreaView, Modal, Platform, Alert
 } from 'react-native';
-import {
-  RadioTower, Inbox, Users, UserCheck, BriefcaseBusiness, UserPlus,
-  ChevronRight, X, User, CheckCircle
-} from 'lucide-react-native';
+import { RadioTower, Inbox, Users, UserCheck, BriefcaseBusiness, UserPlus, ChevronRight, X, User, CircleCheck as CheckCircle } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchPublicRequirements, fetchVendorRequirements } from '../../../services/api.service';
 
 const NAVY = '#071B3A';
 const MUTED = '#64748B';
@@ -23,8 +22,6 @@ const OVERVIEW_STATS = [
   { id: 'staff', label: 'Active Staff', value: '0', icon: UserCheck, color: PURPLE, action: 'StaffRecords' },
 ];
 
-const FEED_REQUIREMENTS = [];
-
 const MOCK_CANDIDATES = [];
 
 export default function ManpowerDashboardHome({ onNavigate }) {
@@ -34,9 +31,74 @@ export default function ManpowerDashboardHome({ onNavigate }) {
   const gridGap = 12;
   const columns = isMobile ? 2 : 4;
   const cardWidth = isMobile ? (width - (pagePadding * 2) - gridGap) / columns : (Math.min(width, 1200) - (pagePadding * 2) - (gridGap * 3)) / columns;
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.registration?.id || user?.id;
 
-  const [opportunities, setOpportunities] = useState(FEED_REQUIREMENTS);
+  const [opportunities, setOpportunities] = useState([]);
   const [selectedReq, setSelectedReq] = useState(null);
+
+  useEffect(() => {
+    const loadOpportunities = async () => {
+      try {
+        const [publicRes, directRes] = await Promise.all([
+          fetchPublicRequirements('manpower'),
+          supplierId ? fetchVendorRequirements(supplierId) : Promise.resolve([])
+        ]);
+
+        const publicList = publicRes?.data || publicRes || [];
+        const directList = directRes?.data || directRes || [];
+
+        const list = [];
+        if (Array.isArray(directList)) {
+          directList.forEach(r => {
+            list.push({
+              id: r.id,
+              reqId: `DIR-${r.id ? r.id.substring(0, 5).toUpperCase() : '101'}`,
+              role: r.title || 'Direct Staffing Request',
+              category: r.extraData?.jobRole || 'Manpower',
+              business: r.owner?.bizName || 'HoReCa Partner',
+              location: r.location || 'India',
+              salary: r.budget || '—',
+              count: Number(r.extraData?.numberOfStaff || 1),
+              urgency: r.extraData?.urgentRequirement ? 'Urgent' : 'Normal',
+              postedTime: r.createdAt ? new Date(r.createdAt).toLocaleDateString() : 'Just now',
+              description: r.description || 'Direct manpower requirement.',
+              status: r.status === 'pending' ? 'Open' : r.status,
+              isDirect: true
+            });
+          });
+        }
+
+        if (Array.isArray(publicList)) {
+          publicList.forEach(r => {
+            list.push({
+              id: r.id,
+              reqId: `REQ-${r.id ? r.id.substring(0, 5).toUpperCase() : '201'}`,
+              role: r.title || 'Manpower Opportunity',
+              category: r.extraData?.jobRole || 'Staffing',
+              business: r.owner?.bizName || 'HoReCa Partner',
+              location: r.location || 'City',
+              salary: r.budget || 'Open Budget',
+              count: Number(r.extraData?.numberOfStaff || 1),
+              urgency: 'Normal',
+              postedTime: r.createdAt ? new Date(r.createdAt).toLocaleDateString() : 'Just now',
+              description: r.description || 'Public manpower broadcast.',
+              status: r.status === 'pending' ? 'Open' : r.status,
+              isDirect: false
+            });
+          });
+        }
+
+        setOpportunities(list);
+      } catch (err) {
+        console.warn('Error loading manpower opportunities:', err);
+      }
+    };
+
+    loadOpportunities();
+    const interval = setInterval(loadOpportunities, 4000);
+    return () => clearInterval(interval);
+  }, [supplierId]);
   
   // Modals
   const [detailsVisible, setDetailsVisible] = useState(false);
@@ -96,16 +158,34 @@ export default function ManpowerDashboardHome({ onNavigate }) {
     else Alert.alert('Declined', 'Opportunity declined.');
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning 🖐️';
+    if (hour < 17) return 'Good Afternoon 🖐️';
+    return 'Good Evening 🖐️';
+  };
+
+  const agencyName = 
+    user?.registration?.bizName || 
+    user?.bizName || 
+    user?.businessName || 
+    user?.contactPerson || 
+    (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : null) || 
+    user?.name || 
+    'Agency Partner';
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={[styles.scrollContent, { paddingHorizontal: pagePadding }]} showsVerticalScrollIndicator={false}>
         
         {/* Premium Welcome Hero */}
         <View style={styles.heroCard}>
-          <Text style={styles.heroGreeting}>Good Morning 👋</Text>
-          <Text style={styles.heroAgencyName}>Elite Manpower</Text>
+          <Text style={styles.heroGreeting}>{getGreeting()}</Text>
+          <Text style={styles.heroAgencyName}>{agencyName}</Text>
           <View style={styles.heroStatusBadge}>
-            <Text style={styles.heroStatusText}>Manpower Agency</Text>
+            <Text style={styles.heroStatusText}>
+              {user?.registration?.vendorType || 'Manpower Agency'}
+            </Text>
           </View>
           <Text style={styles.heroDesc}>Manage opportunities, candidate submissions and active staff from one place.</Text>
         </View>
@@ -298,28 +378,34 @@ export default function ManpowerDashboardHome({ onNavigate }) {
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
               <Text style={styles.sectionTitle}>Available Candidates ({MOCK_CANDIDATES.length})</Text>
               <View style={{marginTop: 12}}>
-                {MOCK_CANDIDATES.map(cand => {
-                  const isSelected = selectedCandidates.includes(cand.id);
-                  return (
-                    <TouchableOpacity 
-                      key={cand.id} 
-                      style={[styles.candidateRow, isSelected && styles.candidateRowSelected]}
-                      onPress={() => toggleCandidate(cand.id)}
-                    >
-                      <View style={styles.candIconBox}>
-                        <User size={20} color={isSelected ? PURPLE : MUTED} />
-                      </View>
-                      <View style={styles.candInfo}>
-                        <Text style={styles.candName}>{cand.name}</Text>
-                        <Text style={styles.candSub}>{cand.role} · {cand.experience}</Text>
-                        <Text style={styles.candMeta}>Exp. Salary: {cand.salary} · {cand.location}</Text>
-                      </View>
-                      <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
-                        {isSelected && <CheckCircle size={14} color={WHITE} />}
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
+                {MOCK_CANDIDATES.length > 0 ? (
+                  MOCK_CANDIDATES.map(cand => {
+                    const isSelected = selectedCandidates.includes(cand.id);
+                    return (
+                      <TouchableOpacity 
+                        key={cand.id} 
+                        style={[styles.candidateRow, isSelected && styles.candidateRowSelected]}
+                        onPress={() => toggleCandidate(cand.id)}
+                      >
+                        <View style={styles.candIconBox}>
+                          <User size={20} color={isSelected ? PURPLE : MUTED} />
+                        </View>
+                        <View style={styles.candInfo}>
+                          <Text style={styles.candName}>{cand.name}</Text>
+                          <Text style={styles.candSub}>{cand.role} · {cand.experience}</Text>
+                          <Text style={styles.candMeta}>Exp. Salary: {cand.salary} · {cand.location}</Text>
+                        </View>
+                        <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+                          {isSelected && <CheckCircle size={14} color={WHITE} />}
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })
+                ) : (
+                  <View style={{ padding: 16, alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                    <Text style={{ fontSize: 13, color: MUTED }}>No candidate profiles available.</Text>
+                  </View>
+                )}
               </View>
               <View style={{height: 40}} />
             </ScrollView>

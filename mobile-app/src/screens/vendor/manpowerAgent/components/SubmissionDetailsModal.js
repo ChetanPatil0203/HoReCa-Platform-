@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Modal, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
-import { X, FileText, Building2, User, Clock, CheckCircle, AlertCircle } from 'lucide-react-native';
+import { X, FileText, Building2, User, Clock, CircleCheck as CheckCircle, CircleAlert as AlertCircle } from 'lucide-react-native';
 
 const NAVY = '#081A3A';
 

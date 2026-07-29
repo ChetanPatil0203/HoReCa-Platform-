@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, Platform, ToastAndroid } from 'react-native';
-import {
-  Bell, Check, Trash2, Megaphone, Send, Eye, ThumbsUp, XCircle,
-  MessageSquare, CheckCircle, Image as ImageIcon, Calendar, Clock, Flag,
-  DollarSign, Star, Info
-} from 'lucide-react-native';
+import { Bell, Check, Trash2, Megaphone, Send, Eye, ThumbsUp, CircleX as XCircle, MessageSquare, CircleCheck as CheckCircle, Image as ImageIcon, Calendar, Clock, Flag, DollarSign, Star, Info } from 'lucide-react-native';
 
 const FILTERS = ["All", "Requirements", "Proposals", "Campaigns", "Approvals", "Payments", "System"];
 

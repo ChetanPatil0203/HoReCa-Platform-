@@ -1,936 +1,1765 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Search, ChevronRight, X, AlertCircle, ShieldAlert, Shield, MoreVertical, Ban,
-  CheckCircle, Clock, Download, FileText, Building, User, Phone, Mail,
-  AlertTriangle, RefreshCw, Info, Calendar, Users, Eye, Flag
-} from 'lucide-react';
+import { ShieldCheck, ShieldAlert, Search, Download, RefreshCw, Clock, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle2, X, Eye, ChevronRight, Phone, Mail, MapPin, Copy, Check, SlidersHorizontal, Building2, Users, SearchX, Calendar, CircleAlert as AlertCircle, Ban, RotateCcw, FileText, Tag, SquareCheck as CheckSquare } from 'lucide-react';
+import { fetchHorecaRegistrations, fetchVendorRegistrations } from '../../services/api.service';
 
-const INITIAL_ACCOUNTS = [];
+const INITIAL_MOCK_ACCOUNTS = [];
+
+const getShortAccountCode = (id) => {
+  if (!id) return 'ACC-1083A';
+  if (id.startsWith('ACC-') || id.startsWith('VEN-') || id.startsWith('BUS-')) return id;
+  const clean = String(id).replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+  return `ACC-${clean.substring(0, 5) || '1083A'}`;
+};
+
+const mapAccountRecord = (a) => {
+  const shortCode = getShortAccountCode(a.id);
+  const isVendor = a.vendorType || a.bizCategory === 'Vendor';
+  const entityType = a.vendorType || a.bizType || a.type || (isVendor ? 'Raw Material Vendor' : 'Hotel');
+  const role = isVendor ? entityType : 'HoReCa Owner';
+  const status = a.status === 'suspended' ? 'Suspended' : a.status === 'blocked' ? 'Blocked' : 'Active';
+
+  return {
+    id: a.id,
+    shortCode,
+    businessName: a.bizName || a.businessName || 'Business Partner',
+    tradeName: a.tradeName || a.bizName || 'Business Partner',
+    entityType,
+    role,
+    ownerName: a.ownerName || a.contactPerson || (a.user ? `${a.user.firstName || ''} ${a.user.lastName || ''}`.trim() : '') || 'Chetan Patil',
+    phone: a.mobile || a.phone || '+91 9856320427',
+    email: a.email || 'partner@hrchub.com',
+    city: a.city || 'Jalgaon',
+    state: a.state || 'Maharashtra',
+    address: a.address || `${a.city || 'Jalgaon'}, Maharashtra`,
+    pincode: a.pincode || '425001',
+    status,
+    restrictionType: status === 'Suspended' ? 'Temporary Suspension' : status === 'Blocked' ? 'Permanent Block' : 'No Restriction',
+    restrictionReason: status === 'Suspended' ? 'Compliance Review Pending' : status === 'Blocked' ? 'Permanent Block Applied' : 'No active restriction',
+    reasonCategory: status === 'Suspended' ? 'Compliance Issue' : status === 'Blocked' ? 'Fraud / Risk' : 'None',
+    duration: status === 'Suspended' ? '7 days' : status === 'Blocked' ? 'No End Date' : '—',
+    startDate: status !== 'Active' ? '2026-07-24' : '—',
+    endDate: status === 'Suspended' ? '2026-07-31' : status === 'Blocked' ? 'Permanent' : '—',
+    updatedBy: a.updatedBy || 'Admin Rahul',
+    lastUpdated: a.lastUpdated || (a.updatedAt ? new Date(a.updatedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '24 Jul 2026'),
+    createdDate: a.createdDate || (a.createdAt ? new Date(a.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '15 Jan 2026'),
+    gstNumber: a.gstin || a.gstNumber || '27AAAAA0000A1Z5',
+    panNumber: a.panNumber || 'ABCDE1234F',
+    regNumber: a.regNumber || 'REG-2026-99',
+    history: a.history || [
+      { action: 'Account Created', date: '15 Jan 2026, 10:00 AM', actor: 'System' },
+      { action: 'Status Verified', date: '15 Jan 2026, 02:00 PM', actor: 'Admin Rahul' },
+    ],
+  };
+};
 
 export default function Limits() {
-  const [statusAccounts, setStatusAccounts] = useState([]);
+  const navigate = useNavigate();
 
-  // Search & Filters
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
-  const [typeFilter, setTypeFilter] = useState("All");
-  const [cityFilter, setCityFilter] = useState("All");
-  const [suspensionTypeFilter, setSuspensionTypeFilter] = useState("All");
-  const [updatedByFilter, setUpdatedByFilter] = useState("All");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [accounts, setAccounts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [errorState, setErrorState] = useState(false);
 
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  // Filter & Search States
+  const [activeTab, setActiveTab] = useState('All'); // 'All' | 'Active' | 'Suspended' | 'Blocked' | 'Temporary'
+  const [searchQuery, setSearchQuery] = useState('');
+  const [entityTypeFilter, setEntityTypeFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [restrictionTypeFilter, setRestrictionTypeFilter] = useState('All');
+  const [reasonCategoryFilter, setReasonCategoryFilter] = useState('All');
+  const [endDateStatusFilter, setEndDateStatusFilter] = useState('All'); // 'All' | 'Ending Soon' | 'Expired' | 'No End Date'
+  const [cityFilter, setCityFilter] = useState('All');
+  const [updatedByFilter, setUpdatedByFilter] = useState('All');
+  const [startDateRange, setStartDateRange] = useState('');
+  const [endDateRange, setEndDateRange] = useState('');
 
-  // Active UI Helpers
-  const [activeMenuId, setActiveMenuId] = useState(null);
+  // UI Drawer & Modal States
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState(null);
+  const [detailsTab, setDetailsTab] = useState('overview'); // 'overview' | 'restriction' | 'history'
+
+  // Action Modals
+  const [suspendingAccount, setSuspendingAccount] = useState(null);
+  const [suspendType, setSuspendType] = useState('Temporary Suspension');
+  const [suspendReasonCategory, setSuspendReasonCategory] = useState('Compliance violation');
+  const [suspendReason, setSuspendReason] = useState('');
+  const [suspendStartDate, setSuspendStartDate] = useState(new Date().toISOString().slice(0, 10));
+  const [suspendEndDate, setSuspendEndDate] = useState('');
+  const [suspendApplicantMsg, setSuspendApplicantMsg] = useState('');
+  const [suspendInternalNote, setSuspendInternalNote] = useState('');
+
+  const [reactivatingAccount, setReactivatingAccount] = useState(null);
+  const [reactivateResolutionNote, setReactivateResolutionNote] = useState('');
+  const [reactivateApplicantMsg, setReactivateApplicantMsg] = useState('');
+
+  const [blockingAccount, setBlockingAccount] = useState(null);
+  const [blockReason, setBlockReason] = useState('');
+  const [blockApplicantMsg, setBlockApplicantMsg] = useState('');
+  const [blockInternalNote, setBlockInternalNote] = useState('');
+  const [blockConfirmCheck, setBlockConfirmCheck] = useState(false);
+
+  const [extendingAccount, setExtendingAccount] = useState(null);
+  const [extendNewEndDate, setExtendNewEndDate] = useState('');
+  const [extendReason, setExtendReason] = useState('');
+  const [extendApplicantMsg, setExtendApplicantMsg] = useState('');
+  const [extendInternalNote, setExtendInternalNote] = useState('');
+
+  const [unblockingAccount, setUnblockingAccount] = useState(null);
+  const [unblockReviewNote, setUnblockReviewNote] = useState('');
+  const [unblockReason, setUnblockReason] = useState('');
+  const [unblockConfirmCheck, setUnblockConfirmCheck] = useState(false);
+
   const [toasts, setToasts] = useState([]);
+  const [copiedId, setCopiedId] = useState(false);
 
-  // Drawer & Tab States
-  const [selectedAccountId, setSelectedAccountId] = useState(null);
-  const [drawerTab, setDrawerTab] = useState("Overview");
-
-  // Interaction Dialog States
-  const [warningModalOpen, setWarningModalOpen] = useState(false);
-  const [suspendModalOpen, setSuspendModalOpen] = useState(false);
-  const [reactivateModalOpen, setReactivateModalOpen] = useState(false);
-  const [blockModalOpen, setBlockModalOpen] = useState(false);
-
-  // Warning Form State
-  const [warnReason, setWarnReason] = useState("Minor Policy Infraction");
-  const [warnNote, setWarnNote] = useState("");
-  const [warnNotify, setWarnNotify] = useState(true);
-
-  // Suspend Form State
-  const [suspendReason, setSuspendReason] = useState("Unresolved SLA Breach");
-  const [suspendType, setSuspendType] = useState("Temporary"); // Temporary, Permanent
-  const [suspendStart, setSuspendStart] = useState("");
-  const [suspendEnd, setSuspendEnd] = useState("");
-  const [suspendNote, setSuspendNote] = useState("");
-  const [suspendNotify, setSuspendNotify] = useState(true);
-
-  // Reactivate Form State
-  const [reactivateReason, setReactivateReason] = useState("Compliance issues resolved");
-  const [reactivateNote, setReactivateNote] = useState("");
-  const [reactivateRestore, setReactivateRestore] = useState(true);
-  const [reactivateNotify, setReactivateNotify] = useState(true);
-
-  // Block Form State
-  const [blockReason, setBlockReason] = useState("Fraudulent Document Submissions");
-  const [blockPasswordConfirm, setBlockPasswordConfirm] = useState("");
-  const [blockConfirmCheckbox, setBlockConfirmCheckbox] = useState(false);
-
-  useEffect(() => {
-    const localAccounts = localStorage.getItem('hrchub_status_accounts_v3');
-    if (localAccounts) {
-      const parsed = JSON.parse(localAccounts);
-      const cleaned = parsed.filter(a => !a.id?.startsWith('ACC-89'));
-      setStatusAccounts(cleaned);
-      localStorage.setItem('hrchub_status_accounts_v3', JSON.stringify(cleaned));
-    } else {
-      saveAccounts([]);
-    }
-    const handleClickOutside = () => setActiveMenuId(null);
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
-
-  const saveAccounts = (updated) => {
-    setStatusAccounts(updated);
-    localStorage.setItem('hrchub_status_accounts_v3', JSON.stringify(updated));
-    window.dispatchEvent(new Event('storage'));
-  };
-
-  const handleStatusToggle = (id) => {
-    const updated = statusAccounts.map(a => {
-      if (a.id === id) {
-        const nextStatus = a.status === 'Active' ? 'Temporarily Suspended' : 'Active';
-        return { ...a, status: nextStatus };
-      }
-      return a;
-    });
-    saveAccounts(updated);
-    const item = updated.find(a => a.id === id);
-    showToast(`Account status is now ${item.status}!`, "info");
-  };
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const showToast = (message, type = 'success') => {
     const id = Math.random().toString(36).substring(2, 9);
     setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3500);
   };
 
+  const loadData = async () => {
+    setLoading(true);
+    setErrorState(false);
+    try {
+      const [horecaData, vendorData] = await Promise.all([fetchHorecaRegistrations(), fetchVendorRegistrations()]);
+      const combinedApi = [...(Array.isArray(horecaData) ? horecaData : []), ...(Array.isArray(vendorData) ? vendorData : [])];
+
+      if (combinedApi.length > 0) {
+        const mapped = combinedApi.map(mapAccountRecord);
+        setAccounts(mapped);
+      } else {
+        setAccounts([]);
+      }
+    } catch (err) {
+      console.warn('API error fetching account registrations:', err);
+      setAccounts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Summary Metrics
+  const activeHoreca = accounts.filter((a) => a.status === 'Active' && (a.role === 'HoReCa Owner' || ['Hotel', 'Restaurant', 'Café'].includes(a.entityType))).length;
+  const activeVendors = accounts.filter((a) => a.status === 'Active' && a.role !== 'HoReCa Owner' && !['Hotel', 'Restaurant', 'Café'].includes(a.entityType)).length;
+  const suspendedCount = accounts.filter((a) => a.status === 'Suspended').length;
+  const blockedCount = accounts.filter((a) => a.status === 'Blocked').length;
+  const temporaryCount = accounts.filter((a) => a.restrictionType === 'Temporary Suspension').length;
+
+  // Options
+  const cities = useMemo(() => ['All', ...new Set(accounts.map((a) => a.city).filter(Boolean))], [accounts]);
+  const admins = useMemo(() => ['All', ...new Set(accounts.map((a) => a.updatedBy).filter(Boolean))], [accounts]);
+
+  // Expiration Check Helper
+  const isExpired = (endDateStr) => {
+    if (!endDateStr || endDateStr === '—' || endDateStr === 'Permanent') return false;
+    const end = new Date(endDateStr);
+    if (isNaN(end.getTime())) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return end < today;
+  };
+
+  const isEndingSoon = (endDateStr) => {
+    if (!endDateStr || endDateStr === '—' || endDateStr === 'Permanent') return false;
+    const end = new Date(endDateStr);
+    if (isNaN(end.getTime())) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffDays = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+    return diffDays >= 0 && diffDays <= 7;
+  };
+
+  // Filter Logic
   const filteredAccounts = useMemo(() => {
-    return statusAccounts.filter((a) => {
-      const query = searchQuery.toLowerCase();
-      const matchSearch =
-        !searchQuery ||
-        (a.businessName && a.businessName.toLowerCase().includes(query)) ||
-        (a.owner && a.owner.toLowerCase().includes(query)) ||
-        (a.id && a.id.toLowerCase().includes(query)) ||
-        (a.phone && a.phone.toLowerCase().includes(query)) ||
-        (a.city && a.city.toLowerCase().includes(query));
+    return accounts.filter((a) => {
+      // Primary Tab Filter
+      let matchTab = true;
+      if (activeTab === 'Active') matchTab = a.status === 'Active';
+      else if (activeTab === 'Suspended') matchTab = a.status === 'Suspended';
+      else if (activeTab === 'Blocked') matchTab = a.status === 'Blocked';
+      else if (activeTab === 'Temporary') matchTab = a.restrictionType === 'Temporary Suspension';
 
-      const matchStatus = statusFilter === "All" || a.status === statusFilter;
-      const matchType = typeFilter === "All" || a.type === typeFilter;
+      // Secondary Filters
+      const matchEntity =
+        entityTypeFilter === 'All' ||
+        a.entityType === entityTypeFilter ||
+        (entityTypeFilter === 'HoReCa Owner' && a.role === 'HoReCa Owner');
+      const matchStatus = statusFilter === 'All' || a.status === statusFilter;
+      const matchRestriction = restrictionTypeFilter === 'All' || a.restrictionType === restrictionTypeFilter;
+      const matchReasonCat = reasonCategoryFilter === 'All' || a.reasonCategory === reasonCategoryFilter;
+      const matchCity = cityFilter === 'All' || a.city === cityFilter;
+      const matchAdmin = updatedByFilter === 'All' || a.updatedBy === updatedByFilter;
 
-      let matchCity = true;
-      if (cityFilter !== "All") {
-        matchCity = a.city === cityFilter;
+      // End Date Status Filter
+      let matchEndDateStatus = true;
+      if (endDateStatusFilter === 'Ending Soon') matchEndDateStatus = isEndingSoon(a.endDate);
+      else if (endDateStatusFilter === 'Expired') matchEndDateStatus = isExpired(a.endDate);
+      else if (endDateStatusFilter === 'No End Date') matchEndDateStatus = a.endDate === 'Permanent' || a.endDate === '—';
+
+      // Date Range Filter
+      let matchDateRange = true;
+      if (startDateRange && a.startDate !== '—') {
+        matchDateRange = matchDateRange && new Date(a.startDate) >= new Date(startDateRange);
+      }
+      if (endDateRange && a.endDate !== '—' && a.endDate !== 'Permanent') {
+        matchDateRange = matchDateRange && new Date(a.endDate) <= new Date(endDateRange);
       }
 
-      let matchSuspensionType = true;
-      if (suspensionTypeFilter !== "All") {
-        matchSuspensionType = a.suspensionType === suspensionTypeFilter;
-      }
+      // Search Query
+      const q = searchQuery.trim().toLowerCase();
+      const matchQuery =
+        !q ||
+        a.businessName.toLowerCase().includes(q) ||
+        a.tradeName.toLowerCase().includes(q) ||
+        a.shortCode.toLowerCase().includes(q) ||
+        a.id.toLowerCase().includes(q) ||
+        a.ownerName.toLowerCase().includes(q) ||
+        a.phone.toLowerCase().includes(q) ||
+        a.email.toLowerCase().includes(q) ||
+        a.city.toLowerCase().includes(q) ||
+        a.gstNumber.toLowerCase().includes(q) ||
+        a.panNumber.toLowerCase().includes(q) ||
+        a.regNumber.toLowerCase().includes(q);
 
-      let matchUpdatedBy = true;
-      if (updatedByFilter !== "All") {
-        matchUpdatedBy = a.updatedBy === updatedByFilter;
-      }
-
-      let matchDate = true;
-      if (startDate || endDate) {
-        const aDate = new Date(a.lastUpdated);
-        if (startDate) {
-          const sDate = new Date(startDate);
-          sDate.setHours(0, 0, 0, 0);
-          if (aDate < sDate) matchDate = false;
-        }
-        if (endDate) {
-          const eDate = new Date(endDate);
-          eDate.setHours(23, 59, 59, 999);
-          if (aDate > eDate) matchDate = false;
-        }
-      }
-
-      return matchSearch && matchStatus && matchType && matchCity && matchSuspensionType && matchUpdatedBy && matchDate;
+      return (
+        matchTab &&
+        matchEntity &&
+        matchStatus &&
+        matchRestriction &&
+        matchReasonCat &&
+        matchCity &&
+        matchAdmin &&
+        matchEndDateStatus &&
+        matchDateRange &&
+        matchQuery
+      );
     });
-  }, [statusAccounts, searchQuery, statusFilter, typeFilter, cityFilter, suspensionTypeFilter, updatedByFilter, startDate, endDate]);
+  }, [
+    accounts,
+    activeTab,
+    entityTypeFilter,
+    statusFilter,
+    restrictionTypeFilter,
+    reasonCategoryFilter,
+    endDateStatusFilter,
+    cityFilter,
+    updatedByFilter,
+    startDateRange,
+    endDateRange,
+    searchQuery,
+  ]);
 
-  const activeAccount = useMemo(() => statusAccounts.find(a => a.id === selectedAccountId), [statusAccounts, selectedAccountId]);
+  const hasActiveFilters =
+    searchQuery !== '' ||
+    activeTab !== 'All' ||
+    entityTypeFilter !== 'All' ||
+    statusFilter !== 'All' ||
+    restrictionTypeFilter !== 'All' ||
+    reasonCategoryFilter !== 'All' ||
+    endDateStatusFilter !== 'All' ||
+    cityFilter !== 'All' ||
+    updatedByFilter !== 'All' ||
+    startDateRange !== '' ||
+    endDateRange !== '';
 
-  const cities = useMemo(() => {
-    const list = statusAccounts.map(a => a.city).filter(Boolean);
-    return Array.from(new Set(list));
-  }, [statusAccounts]);
+  const resetFilters = () => {
+    setActiveTab('All');
+    setSearchQuery('');
+    setEntityTypeFilter('All');
+    setStatusFilter('All');
+    setRestrictionTypeFilter('All');
+    setReasonCategoryFilter('All');
+    setEndDateStatusFilter('All');
+    setCityFilter('All');
+    setUpdatedByFilter('All');
+    setStartDateRange('');
+    setEndDateRange('');
+    setShowMoreFilters(false);
+  };
 
-  const admins = useMemo(() => {
-    const list = statusAccounts.map(a => a.updatedBy).filter(Boolean);
-    return Array.from(new Set(list));
-  }, [statusAccounts]);
-
-  const activeHoreca = statusAccounts.filter(a => a.status === 'Active' && ['Hotel', 'Restaurant', 'Café'].includes(a.type)).length;
-  const suspendedHoreca = statusAccounts.filter(a => a.status === 'Temporarily Suspended' && ['Hotel', 'Restaurant', 'Café'].includes(a.type)).length;
-
-  const activeVendors = statusAccounts.filter(a => a.status === 'Active' && !['Hotel', 'Restaurant', 'Café'].includes(a.type)).length;
-  const suspendedVendors = statusAccounts.filter(a => a.status === 'Temporarily Suspended' && !['Hotel', 'Restaurant', 'Café'].includes(a.type)).length;
-
-  const blockedAccounts = statusAccounts.filter(a => a.status === 'Permanently Blocked').length;
-  const temporarySuspensions = statusAccounts.filter(a => a.status === 'Temporarily Suspended').length;
-
-  const totalPages = Math.ceil(filteredAccounts.length / itemsPerPage);
-  const currentAccounts = useMemo(() => {
-    return filteredAccounts;
-  }, [filteredAccounts]);
+  // Pagination Logic
+  const totalPages = Math.ceil(filteredAccounts.length / rowsPerPage) || 1;
+  const paginatedAccounts = useMemo(() => {
+    const start = (currentPage - 1) * rowsPerPage;
+    return filteredAccounts.slice(start, start + rowsPerPage);
+  }, [filteredAccounts, currentPage, rowsPerPage]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, statusFilter, typeFilter, cityFilter, suspensionTypeFilter, updatedByFilter, startDate, endDate]);
+  }, [
+    searchQuery,
+    activeTab,
+    entityTypeFilter,
+    statusFilter,
+    restrictionTypeFilter,
+    reasonCategoryFilter,
+    endDateStatusFilter,
+    cityFilter,
+    updatedByFilter,
+    startDateRange,
+    endDateRange,
+    rowsPerPage,
+  ]);
 
-  const handleAction = (e, acc, type) => {
-    e.stopPropagation();
-    setActiveMenuId(null);
-
-    if (type === 'view') {
-      setSelectedAccountId(acc.id);
-      setDrawerTab("Overview");
-    } else if (type === 'warning') {
-      setSelectedAccountId(acc.id);
-      setWarnReason("Minor Policy Infraction");
-      setWarnNote("");
-      setWarningModalOpen(true);
-    } else if (type === 'suspend') {
-      setSelectedAccountId(acc.id);
-      setSuspendReason("Unresolved SLA Breach");
-      setSuspendType("Temporary");
-      setSuspendStart("");
-      setSuspendEnd("");
-      setSuspendNote("");
-      setSuspendModalOpen(true);
-    } else if (type === 'reactivate') {
-      setSelectedAccountId(acc.id);
-      setReactivateReason("Compliance issues resolved");
-      setReactivateNote("");
-      setReactivateModalOpen(true);
-    } else if (type === 'block') {
-      setSelectedAccountId(acc.id);
-      setBlockReason("Fraudulent Document Submissions");
-      setBlockPasswordConfirm("");
-      setBlockConfirmCheckbox(false);
-      setBlockModalOpen(true);
-    } else if (type === 'history') {
-      setSelectedAccountId(acc.id);
-      setDrawerTab("History");
-    }
+  // Handlers for View & Actions
+  const handleOpenAccount = (acc) => {
+    setSelectedAccount(acc);
+    setDetailsTab('overview');
   };
 
-  const handleSendWarning = () => {
-    if (!selectedAccountId) return;
-    const updated = statusAccounts.map(a => {
-      if (a.id === selectedAccountId) {
-        const timestamp = new Date().toLocaleString();
-        const timestampShort = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-        const nextHistory = [
-          ...a.history,
-          { status: "Warning Issued", time: timestamp, note: `Warning: ${warnReason}. Notes: ${warnNote}` }
-        ];
-        const nextViolations = [
-          ...a.violations,
-          { date: timestampShort, violation: warnReason, actionTaken: "Warning Issued", admin: "Super Admin" }
-        ];
-        return {
-          ...a,
-          status: "Warning",
-          suspensionType: "Warning",
-          reason: warnReason,
-          notes: warnNote,
-          lastUpdated: timestampShort,
-          updatedBy: "Super Admin",
-          history: nextHistory,
-          violations: nextViolations,
-          violationsSummary: {
-            ...a.violationsSummary,
-            warnings: (a.violationsSummary.warnings || 0) + 1,
-            lastViolationDate: timestampShort
-          }
-        };
-      }
-      return a;
-    });
-    saveAccounts(updated);
-    setWarningModalOpen(false);
-    setWarnNote("");
-    showToast("Warning issued successfully to merchant.", "success");
+  const handleCopyId = (id) => {
+    navigator.clipboard.writeText(id);
+    setCopiedId(true);
+    showToast('Account Code copied to clipboard.', 'info');
+    setTimeout(() => setCopiedId(false), 2000);
   };
 
-  const handleConfirmSuspension = () => {
-    if (!selectedAccountId) return;
-    if (suspendType === "Temporary" && !suspendEnd) {
-      showToast("Please provide suspension end date", "error");
+  // Action Confirmation Handlers
+  const handleConfirmSuspend = () => {
+    if (!suspendReason.trim()) {
+      showToast('Please enter a specific reason for suspension.', 'error');
       return;
     }
-    const updated = statusAccounts.map(a => {
-      if (a.id === selectedAccountId) {
-        const timestamp = new Date().toLocaleString();
-        const timestampShort = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-        const isTemp = suspendType === "Temporary";
-        const statusLabel = isTemp ? "Temporarily Suspended" : "Permanently Blocked";
-        const typeLabel = isTemp ? "Temporary" : "Permanent";
-
-        const nextHistory = [
-          ...a.history,
-          { status: isTemp ? "Suspended" : "Blocked", time: timestamp, note: `Reason: ${suspendReason}. Period: ${suspendStart || 'Now'} to ${isTemp ? suspendEnd : 'Permanent'}` }
-        ];
-        const nextViolations = [
-          ...a.violations,
-          { date: timestampShort, violation: suspendReason, actionTaken: isTemp ? "Temporary Suspension" : "Permanent Block", admin: "Super Admin" }
-        ];
-
-        return {
-          ...a,
-          status: statusLabel,
-          suspensionType: typeLabel,
-          reason: suspendReason,
-          startDate: suspendStart || timestampShort,
-          endDate: isTemp ? suspendEnd : "Permanent",
-          notes: suspendNote,
-          lastUpdated: timestampShort,
-          updatedBy: "Super Admin",
-          history: nextHistory,
-          violations: nextViolations,
-          violationsSummary: {
-            ...a.violationsSummary,
-            suspensions: (a.violationsSummary.suspensions || 0) + 1,
-            lastViolationDate: timestampShort
-          }
-        };
-      }
-      return a;
-    });
-    saveAccounts(updated);
-    setSuspendModalOpen(false);
-    setSuspendNote("");
-    showToast(suspendType === "Temporary" ? "Account suspended temporarily." : "Account blocked permanently.", "error");
-  };
-
-  const handleReactivateAccountSubmit = () => {
-    if (!selectedAccountId) return;
-    const updated = statusAccounts.map(a => {
-      if (a.id === selectedAccountId) {
-        const timestamp = new Date().toLocaleString();
-        const timestampShort = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-        const nextHistory = [
-          ...a.history,
-          { status: "Reactivated", time: timestamp, note: `Reason: ${reactivateReason}. Notes: ${reactivateNote}` }
-        ];
-        return {
-          ...a,
-          status: "Active",
-          suspensionType: "None",
-          reason: "",
-          startDate: "",
-          endDate: "",
-          notes: reactivateNote,
-          lastUpdated: timestampShort,
-          updatedBy: "Super Admin",
-          history: nextHistory
-        };
-      }
-      return a;
-    });
-    saveAccounts(updated);
-    setReactivateModalOpen(false);
-    setReactivateNote("");
-    showToast("Account reactivated successfully. Access restored.", "success");
-  };
-
-  const handleConfirmBlockSubmit = () => {
-    if (!selectedAccountId) return;
-    if (!blockConfirmCheckbox) {
-      showToast("Please check the confirmation checkbox", "error");
+    if (!suspendApplicantMsg.trim()) {
+      showToast('Applicant-facing message is required.', 'error');
       return;
     }
-    if (blockPasswordConfirm.toLowerCase() !== "admin") {
-      showToast("Incorrect admin password confirmation", "error");
+    if (suspendType === 'Temporary Suspension' && !suspendEndDate) {
+      showToast('End date is required for temporary suspension.', 'error');
       return;
     }
-    const updated = statusAccounts.map(a => {
-      if (a.id === selectedAccountId) {
-        const timestamp = new Date().toLocaleString();
-        const timestampShort = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-        const nextHistory = [
-          ...a.history,
-          { status: "Blocked", time: timestamp, note: `Permanently blocked. Reason: ${blockReason}` }
-        ];
-        const nextViolations = [
-          ...a.violations,
-          { date: timestampShort, violation: blockReason, actionTaken: "Permanent Block", admin: "Super Admin" }
+    if (suspendType === 'Temporary Suspension' && suspendEndDate && new Date(suspendEndDate) <= new Date(suspendStartDate)) {
+      showToast('End date must be after the start date.', 'error');
+      return;
+    }
+
+    const targetId = suspendingAccount.id;
+    const isTemp = suspendType === 'Temporary Suspension';
+    const dateFormatted = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    let calculatedDuration = '—';
+    if (isTemp && suspendStartDate && suspendEndDate) {
+      const startObj = new Date(suspendStartDate);
+      const endObj = new Date(suspendEndDate);
+      const diffDays = Math.ceil((endObj - startObj) / (1000 * 60 * 60 * 24));
+      const startFmt = startObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+      const endFmt = endObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+      calculatedDuration = `${startFmt} – ${endFmt} (${diffDays} days)`;
+    } else if (suspendType === 'Permanent Suspension') {
+      calculatedDuration = 'No End Date';
+    } else {
+      calculatedDuration = 'Until Issue Resolved';
+    }
+
+    const updated = accounts.map((a) => {
+      if (a.id === targetId) {
+        const newHistory = [
+          {
+            action: `Account Suspended (${suspendType}) - ${suspendReason}`,
+            date: new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+            actor: 'Super Admin',
+          },
+          ...(a.history || []),
         ];
         return {
           ...a,
-          status: "Permanently Blocked",
-          suspensionType: "Permanent",
-          reason: blockReason,
-          startDate: timestampShort,
-          endDate: "Permanent",
-          lastUpdated: timestampShort,
-          updatedBy: "Super Admin",
-          history: nextHistory,
-          violations: nextViolations,
-          violationsSummary: {
-            ...a.violationsSummary,
-            suspensions: (a.violationsSummary.suspensions || 0) + 1,
-            lastViolationDate: timestampShort
-          }
+          status: 'Suspended',
+          restrictionType: suspendType,
+          restrictionReason: suspendReason,
+          reasonCategory: suspendReasonCategory,
+          duration: calculatedDuration,
+          startDate: suspendStartDate,
+          endDate: isTemp ? suspendEndDate : 'Permanent',
+          updatedBy: 'Super Admin',
+          lastUpdated: dateFormatted,
+          history: newHistory,
         };
       }
       return a;
     });
-    saveAccounts(updated);
-    setBlockModalOpen(false);
-    setBlockPasswordConfirm("");
-    setBlockConfirmCheckbox(false);
-    showToast("Account blocked permanently.", "error");
+
+    setAccounts(updated);
+    if (selectedAccount && selectedAccount.id === targetId) {
+      setSelectedAccount(updated.find((a) => a.id === targetId));
+    }
+    setSuspendingAccount(null);
+    setSuspendReason('');
+    setSuspendEndDate('');
+    setSuspendApplicantMsg('');
+    setSuspendInternalNote('');
+    showToast('Account suspended successfully.', 'success');
   };
 
-  const getStatusBadgeColor = (status) => {
-    switch (status) {
-      case "Active":
-        return "bg-emerald-50 text-emerald-700 border-emerald-200/50";
-      case "Warning":
-        return "bg-amber-50 text-amber-700 border-amber-200/50";
-      case "Temporarily Suspended":
-        return "bg-orange-50 text-orange-700 border-orange-200/50";
-      case "Permanently Blocked":
-        return "bg-rose-50 text-rose-700 border-rose-200/50 font-black";
-      case "Reactivation Pending":
-        return "bg-purple-50 text-purple-700 border-purple-200/50";
-      default:
-        return "bg-slate-50 text-slate-700 border-slate-200/50";
+  const handleConfirmReactivate = () => {
+    if (!reactivateResolutionNote.trim()) {
+      showToast('Resolution note is required for reactivation.', 'error');
+      return;
     }
+    const targetId = reactivatingAccount.id;
+    const dateFormatted = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    const updated = accounts.map((a) => {
+      if (a.id === targetId) {
+        const newHistory = [
+          {
+            action: `Account Reactivated (${reactivateResolutionNote})`,
+            date: new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+            actor: 'Super Admin',
+          },
+          ...(a.history || []),
+        ];
+        return {
+          ...a,
+          status: 'Active',
+          restrictionType: 'No Restriction',
+          restrictionReason: 'No active restriction',
+          reasonCategory: 'None',
+          duration: '—',
+          startDate: '—',
+          endDate: '—',
+          updatedBy: 'Super Admin',
+          lastUpdated: dateFormatted,
+          history: newHistory,
+        };
+      }
+      return a;
+    });
+
+    setAccounts(updated);
+    if (selectedAccount && selectedAccount.id === targetId) {
+      setSelectedAccount(updated.find((a) => a.id === targetId));
+    }
+    setReactivatingAccount(null);
+    setReactivateResolutionNote('');
+    setReactivateApplicantMsg('');
+    showToast('Account reactivated successfully.', 'success');
+  };
+
+  const handleConfirmBlock = () => {
+    if (!blockReason.trim()) {
+      showToast('Please select or enter a reason for blocking.', 'error');
+      return;
+    }
+    if (!blockConfirmCheck) {
+      showToast('Please check the confirmation box.', 'error');
+      return;
+    }
+
+    const targetId = blockingAccount.id;
+    const dateFormatted = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    const updated = accounts.map((a) => {
+      if (a.id === targetId) {
+        const newHistory = [
+          {
+            action: `Account Permanently Blocked (${blockReason})`,
+            date: new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+            actor: 'Super Admin',
+          },
+          ...(a.history || []),
+        ];
+        return {
+          ...a,
+          status: 'Blocked',
+          restrictionType: 'Permanent Block',
+          restrictionReason: blockReason,
+          reasonCategory: 'Fraud / Risk',
+          duration: 'No End Date',
+          startDate: new Date().toISOString().slice(0, 10),
+          endDate: 'Permanent',
+          updatedBy: 'Super Admin',
+          lastUpdated: dateFormatted,
+          history: newHistory,
+        };
+      }
+      return a;
+    });
+
+    setAccounts(updated);
+    if (selectedAccount && selectedAccount.id === targetId) {
+      setSelectedAccount(updated.find((a) => a.id === targetId));
+    }
+    setBlockingAccount(null);
+    setBlockReason('');
+    setBlockApplicantMsg('');
+    setBlockInternalNote('');
+    setBlockConfirmCheck(false);
+    showToast('Account blocked permanently.', 'success');
+  };
+
+  const handleConfirmExtend = () => {
+    if (!extendNewEndDate) {
+      showToast('Please select a new end date.', 'error');
+      return;
+    }
+    if (extendingAccount.endDate && extendingAccount.endDate !== '—' && extendingAccount.endDate !== 'Permanent') {
+      if (new Date(extendNewEndDate) <= new Date(extendingAccount.endDate)) {
+        showToast('New end date must be later than the current end date.', 'error');
+        return;
+      }
+    }
+    if (!extendReason.trim()) {
+      showToast('Extension reason is required.', 'error');
+      return;
+    }
+
+    const targetId = extendingAccount.id;
+    const dateFormatted = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    const startObj = new Date(extendingAccount.startDate !== '—' ? extendingAccount.startDate : new Date());
+    const newEndObj = new Date(extendNewEndDate);
+    const diffDays = Math.ceil((newEndObj - startObj) / (1000 * 60 * 60 * 24));
+    const startFmt = startObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+    const endFmt = newEndObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    const newDuration = `${startFmt} – ${endFmt} (${diffDays} days)`;
+
+    const updated = accounts.map((a) => {
+      if (a.id === targetId) {
+        const newHistory = [
+          {
+            action: `Suspension Extended to ${endFmt} (${extendReason})`,
+            date: new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+            actor: 'Super Admin',
+          },
+          ...(a.history || []),
+        ];
+        return {
+          ...a,
+          duration: newDuration,
+          endDate: extendNewEndDate,
+          updatedBy: 'Super Admin',
+          lastUpdated: dateFormatted,
+          history: newHistory,
+        };
+      }
+      return a;
+    });
+
+    setAccounts(updated);
+    if (selectedAccount && selectedAccount.id === targetId) {
+      setSelectedAccount(updated.find((a) => a.id === targetId));
+    }
+    setExtendingAccount(null);
+    setExtendNewEndDate('');
+    setExtendReason('');
+    setExtendApplicantMsg('');
+    setExtendInternalNote('');
+    showToast('Temporary suspension extended successfully.', 'success');
+  };
+
+  const handleConfirmUnblock = () => {
+    if (!unblockReviewNote.trim()) {
+      showToast('Review note is required to unblock.', 'error');
+      return;
+    }
+    if (!unblockConfirmCheck) {
+      showToast('Please check the confirmation box.', 'error');
+      return;
+    }
+
+    const targetId = unblockingAccount.id;
+    const dateFormatted = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    const updated = accounts.map((a) => {
+      if (a.id === targetId) {
+        const newHistory = [
+          {
+            action: `Block Removed (${unblockReviewNote})`,
+            date: new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+            actor: 'Super Admin',
+          },
+          ...(a.history || []),
+        ];
+        return {
+          ...a,
+          status: 'Active',
+          restrictionType: 'No Restriction',
+          restrictionReason: 'No active restriction',
+          reasonCategory: 'None',
+          duration: '—',
+          startDate: '—',
+          endDate: '—',
+          updatedBy: 'Super Admin',
+          lastUpdated: dateFormatted,
+          history: newHistory,
+        };
+      }
+      return a;
+    });
+
+    setAccounts(updated);
+    if (selectedAccount && selectedAccount.id === targetId) {
+      setSelectedAccount(updated.find((a) => a.id === targetId));
+    }
+    setUnblockingAccount(null);
+    setUnblockReviewNote('');
+    setUnblockReason('');
+    setUnblockConfirmCheck(false);
+    showToast('Account block removed successfully.', 'success');
+  };
+
+  const handleExportCSV = () => {
+    if (filteredAccounts.length === 0) {
+      showToast('No account records available to export.', 'error');
+      return;
+    }
+    const headers = [
+      'Account Code',
+      'Business Name',
+      'Entity Type',
+      'Owner',
+      'Phone',
+      'City',
+      'Status',
+      'Restriction Type',
+      'Reason',
+      'Duration',
+      'Updated By',
+    ];
+    const rows = filteredAccounts.map((a) => [
+      a.shortCode,
+      `"${a.businessName.replace(/"/g, '""')}"`,
+      a.entityType,
+      `"${a.ownerName.replace(/"/g, '""')}"`,
+      a.phone,
+      a.city,
+      a.status,
+      a.restrictionType,
+      `"${a.restrictionReason.replace(/"/g, '""')}"`,
+      a.duration,
+      a.updatedBy,
+    ]);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `Account_Control_Export_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('Exported Account Control records to CSV.', 'success');
   };
 
   return (
-    <div className="flex flex-col gap-6 animate-fadeIn pb-8">
-      {/* Toast Overlay */}
+    <div className="flex flex-col gap-5 animate-fadeIn pb-12 text-slate-800">
+      {/* Toast Notification Container */}
       <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-2 max-w-sm w-full pointer-events-none">
         <AnimatePresence>
-          {toasts.map((toast) => (
+          {toasts.map((t) => (
             <motion.div
-              key={toast.id}
-              initial={{ opacity: 0, y: 25 }}
+              key={t.id}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              className={`flex items-start gap-3 p-4 rounded-xl border shadow-xl bg-white backdrop-blur-md pointer-events-auto ${toast.type === "success" ? "border-emerald-500/20 text-emerald-800" : "border-rose-500/20 text-rose-800"
-                }`}
+              exit={{ opacity: 0, y: -10 }}
+              className={`flex items-center justify-between p-3.5 rounded-xl border shadow-xl bg-white backdrop-blur-md pointer-events-auto text-xs font-semibold ${
+                t.type === 'success'
+                  ? 'border-emerald-500/30 text-emerald-900 bg-emerald-50/95'
+                  : t.type === 'error'
+                  ? 'border-rose-500/30 text-rose-900 bg-rose-50/95'
+                  : 'border-blue-500/30 text-blue-900 bg-blue-50/95'
+              }`}
             >
-              <div className="flex-1 text-xs font-semibold leading-relaxed mt-0.5">{toast.message}</div>
-              <button onClick={() => setToasts((p) => p.filter((t) => t.id !== toast.id))} className="text-slate-400">
-                <X className="w-3.5 h-3.5" />
+              <span>{t.message}</span>
+              <button onClick={() => setToasts((p) => p.filter((x) => x.id !== t.id))} className="text-slate-400 hover:text-slate-600">
+                <X className="w-4 h-4" />
               </button>
             </motion.div>
           ))}
         </AnimatePresence>
       </div>
 
-      {/* Hero Header Card */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-3xl p-6 shadow-xl border border-slate-700/50 relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="absolute right-0 top-0 translate-x-12 -translate-y-8 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="flex items-center gap-4 relative z-10">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30 border border-blue-400/30 shrink-0">
-            <ShieldAlert size={26} />
+      {/* Clean Page Header (No heavy hero banner) */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[#071B3A] text-white flex items-center justify-center font-bold shadow-xs">
+              <ShieldCheck className="w-4.5 h-4.5" />
+            </div>
+            <h1 className="text-xl font-extrabold text-[#071B3A] tracking-tight">Account Control</h1>
+          </div>
+          <p className="text-xs text-slate-500 font-medium mt-1">Manage active, suspended and restricted platform accounts.</p>
+        </div>
+
+        <div className="flex items-center gap-2.5 self-end sm:self-auto">
+          <button
+            onClick={() => {
+              loadData();
+              showToast('Refreshed account control records.', 'info');
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 rounded-xl transition-all cursor-pointer active:scale-95"
+            title="Refresh Records"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-[#071B3A] bg-white hover:bg-slate-50 border border-slate-300 rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
+            title="Export CSV"
+          >
+            <Download className="w-3.5 h-3.5 text-[#071B3A]" />
+            <span>Export CSV</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Compact Summary Strip (Replaces 6 large cards with 1 white container) */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs p-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 gap-y-3 sm:gap-y-0">
+        <div
+          onClick={() => setActiveTab('Active')}
+          className="flex items-center gap-3 px-3 py-1 cursor-pointer hover:bg-slate-50 rounded-xl transition-colors"
+          title="Filter by Active HoReCa"
+        >
+          <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold shrink-0">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
           </div>
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-white">Status & Limits</h1>
-            <p className="text-xs text-slate-300 mt-0.5 font-medium">Manage merchant safety limits, suspensions, and permanent blocks securely.</p>
+            <div className="text-xl font-extrabold text-emerald-700">{activeHoreca}</div>
+            <div className="text-[11px] font-medium text-slate-500">Active HoReCa</div>
+          </div>
+        </div>
+
+        <div
+          onClick={() => setActiveTab('Active')}
+          className="flex items-center gap-3 px-3 py-1 cursor-pointer hover:bg-slate-50 rounded-xl transition-colors"
+          title="Filter by Active Vendors"
+        >
+          <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold shrink-0">
+            <Building2 className="w-4 h-4 text-emerald-600" />
+          </div>
+          <div>
+            <div className="text-xl font-extrabold text-emerald-700">{activeVendors}</div>
+            <div className="text-[11px] font-medium text-slate-500">Active Vendors</div>
+          </div>
+        </div>
+
+        <div
+          onClick={() => setActiveTab('Suspended')}
+          className="flex items-center gap-3 px-3 py-1 cursor-pointer hover:bg-slate-50 rounded-xl transition-colors"
+          title="Filter by Suspended Accounts"
+        >
+          <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold shrink-0">
+            <AlertTriangle className="w-4 h-4 text-amber-600" />
+          </div>
+          <div>
+            <div className="text-xl font-extrabold text-amber-700">{suspendedCount}</div>
+            <div className="text-[11px] font-medium text-slate-500">Suspended</div>
+          </div>
+        </div>
+
+        <div
+          onClick={() => setActiveTab('Blocked')}
+          className="flex items-center gap-3 px-3 py-1 cursor-pointer hover:bg-slate-50 rounded-xl transition-colors"
+          title="Filter by Blocked Accounts"
+        >
+          <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center font-bold shrink-0">
+            <ShieldAlert className="w-4 h-4 text-rose-600" />
+          </div>
+          <div>
+            <div className="text-xl font-extrabold text-rose-700">{blockedCount}</div>
+            <div className="text-[11px] font-medium text-slate-500">Blocked</div>
+          </div>
+        </div>
+
+        <div
+          onClick={() => setActiveTab('Temporary')}
+          className="flex items-center gap-3 px-3 py-1 cursor-pointer hover:bg-slate-50 rounded-xl transition-colors col-span-2 sm:col-span-1"
+          title="Filter by Temporary Restrictions"
+        >
+          <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold shrink-0">
+            <Clock className="w-4 h-4 text-blue-600" />
+          </div>
+          <div>
+            <div className="text-xl font-extrabold text-blue-700">{temporaryCount}</div>
+            <div className="text-[11px] font-medium text-slate-500">Temporary</div>
           </div>
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {[
-          { label: "Active HoReCa", count: activeHoreca, bg: "bg-emerald-50 text-emerald-800 border-emerald-100" },
-          { label: "Suspended HoReCa", count: suspendedHoreca, bg: "bg-amber-50 text-amber-800 border-amber-100" },
-          { label: "Active Vendors", count: activeVendors, bg: "bg-emerald-50 text-emerald-800 border-emerald-100" },
-          { label: "Suspended Vendors", count: suspendedVendors, bg: "bg-amber-50 text-amber-800 border-amber-100" },
-          { label: "Blocked Accounts", count: blockedAccounts, bg: "bg-rose-50 text-rose-800 border-rose-200" },
-          { label: "Temporary Suspensions", count: temporarySuspensions, bg: "bg-slate-50 text-slate-800 border-slate-200" },
-        ].map((ind, i) => (
-          <div key={i} className={`p-4 rounded-xl border border-slate-200/60 shadow-sm ${ind.bg}`}>
-            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block mb-1">{ind.label}</span>
-            <div className="text-lg font-black truncate">{ind.count}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Toolbar & Filters */}
-      <div className="flex flex-col gap-4 bg-white border border-slate-200/60 p-4 rounded-xl shadow-sm">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-100 pb-4">
-          <div className="relative flex-1 w-full md:max-w-md">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search by Business Name, Owner, Phone, City, ID..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 border border-slate-200 bg-slate-50/50 focus:bg-white text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
-            />
-          </div>
-
-          <div className="flex gap-2 items-center">
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold">
-              <span>Date:</span>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="border border-slate-200 bg-slate-50/50 rounded-lg px-2 py-1 focus:outline-none text-[11px]"
-              />
-              <span>to</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="border border-slate-200 bg-slate-50/50 rounded-lg px-2 py-1 focus:outline-none text-[11px]"
-              />
-              {(startDate || endDate) && (
+      {/* Toolbar: Search, Status Tabs & Filters */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 shadow-xs flex flex-col gap-3">
+        <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3">
+          {/* Primary Status Tabs Row (Dark Navy active, soft gray inactive) */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none shrink-0">
+            {[
+              { label: 'All Accounts', key: 'All', count: accounts.length },
+              { label: 'Active', key: 'Active', count: accounts.filter((a) => a.status === 'Active').length },
+              { label: 'Suspended', key: 'Suspended', count: suspendedCount },
+              { label: 'Blocked', key: 'Blocked', count: blockedCount },
+              { label: 'Temporary Restrictions', key: 'Temporary', count: temporaryCount },
+            ].map((t) => {
+              const isActive = activeTab === t.key;
+              return (
                 <button
-                  onClick={() => { setStartDate(""); setEndDate(""); }}
-                  className="text-rose-600 hover:underline text-[10px] ml-1"
+                  key={t.key}
+                  onClick={() => setActiveTab(t.key)}
+                  className={`text-xs font-bold px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                    isActive
+                      ? 'bg-[#071B3A] text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 border border-slate-200/60'
+                  }`}
                 >
-                  Clear
+                  <span>{t.label}</span>
+                  <span
+                    className={`text-[10px] font-extrabold px-1.5 py-0.2 rounded-full ${
+                      isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+                    }`}
+                  >
+                    {t.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Search Bar & Toolbar Controls */}
+          <div className="flex items-center gap-2 flex-1">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search business, owner, phone, city or account ID..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-8 py-2 border border-slate-200 bg-slate-50/50 focus:bg-white text-xs rounded-xl focus:outline-none focus:border-[#071B3A] focus:ring-1 focus:ring-[#071B3A] font-medium transition-all"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
+
+            {/* Quick Entity Type Dropdown */}
+            <select
+              value={entityTypeFilter}
+              onChange={(e) => setEntityTypeFilter(e.target.value)}
+              className="text-xs font-semibold border border-slate-200 bg-slate-50 hover:bg-white rounded-xl px-2.5 py-2 focus:outline-none focus:border-[#071B3A] transition-colors cursor-pointer shrink-0 hidden sm:block"
+            >
+              <option value="All">All Entities</option>
+              <option value="HoReCa Owner">HoReCa Owner</option>
+              <option value="Hotel">Hotel</option>
+              <option value="Restaurant">Restaurant</option>
+              <option value="Café">Café</option>
+              <option value="Raw Material Vendor">Raw Material Vendor</option>
+              <option value="Manpower Agency">Manpower Agency</option>
+              <option value="Service Provider">Service Provider</option>
+              <option value="Marketing Agency">Marketing Agency</option>
+            </select>
+
+            {/* More Filters Toggle */}
+            <button
+              onClick={() => setShowMoreFilters(!showMoreFilters)}
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border transition-colors cursor-pointer shrink-0 ${
+                showMoreFilters || hasActiveFilters
+                  ? 'bg-[#071B3A]/5 border-[#071B3A] text-[#071B3A]'
+                  : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <span>More Filters</span>
+              {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-[#071B3A]" />}
+            </button>
+
+            {hasActiveFilters && (
+              <button onClick={resetFilters} className="text-xs font-bold text-rose-600 hover:text-rose-700 underline px-1 shrink-0 cursor-pointer">
+                Clear Filters
+              </button>
+            )}
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="border border-slate-200 bg-slate-50/50 text-xs rounded-xl px-3 py-1.5 focus:outline-none text-slate-600 font-semibold">
-            <option value="All">Account Status: All</option>
-            <option value="Active">Active</option>
-            <option value="Warning">Warning</option>
-            <option value="Temporarily Suspended">Temporarily Suspended</option>
-            <option value="Permanently Blocked">Permanently Blocked</option>
-            <option value="Reactivation Pending">Reactivation Pending</option>
-          </select>
-          <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="border border-slate-200 bg-slate-50/50 text-xs rounded-xl px-3 py-1.5 focus:outline-none text-slate-600 font-semibold">
-            <option value="All">Entity Type: All</option>
-            <option value="Hotel">Hotel</option>
-            <option value="Restaurant">Restaurant</option>
-            <option value="Café">Café</option>
-            <option value="Raw Material Vendor">Raw Material Vendor</option>
-            <option value="Manpower Agency">Manpower Agency</option>
-            <option value="Service Provider">Service Provider</option>
-            <option value="Marketing Agency">Marketing Agency</option>
-          </select>
-          <select value={cityFilter} onChange={e => setCityFilter(e.target.value)} className="border border-slate-200 bg-slate-50/50 text-xs rounded-xl px-3 py-1.5 focus:outline-none text-slate-600 font-semibold">
-            <option value="All">City: All</option>
-            {cities.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <select value={suspensionTypeFilter} onChange={e => setSuspensionTypeFilter(e.target.value)} className="border border-slate-200 bg-slate-50/50 text-xs rounded-xl px-3 py-1.5 focus:outline-none text-slate-600 font-semibold">
-            <option value="All">Suspension Type: All</option>
-            <option value="Temporary">Temporary</option>
-            <option value="Permanent">Permanent</option>
-            <option value="Warning">Warning</option>
-            <option value="None">None</option>
-          </select>
+        {/* Expandable More Filters Panel */}
+        <AnimatePresence>
+          {showMoreFilters && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden border-t border-slate-100 pt-3 mt-1"
+            >
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Entity Type</label>
+                  <select
+                    value={entityTypeFilter}
+                    onChange={(e) => setEntityTypeFilter(e.target.value)}
+                    className="w-full text-xs font-semibold border border-slate-200 bg-slate-50 rounded-xl p-2 focus:outline-none focus:border-[#071B3A]"
+                  >
+                    <option value="All">All Entities</option>
+                    <option value="HoReCa Owner">HoReCa Owner</option>
+                    <option value="Hotel">Hotel</option>
+                    <option value="Restaurant">Restaurant</option>
+                    <option value="Café">Café</option>
+                    <option value="Raw Material Vendor">Raw Material Vendor</option>
+                    <option value="Manpower Agency">Manpower Agency</option>
+                    <option value="Service Provider">Service Provider</option>
+                    <option value="Marketing Agency">Marketing Agency</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Account Status</label>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="w-full text-xs font-semibold border border-slate-200 bg-slate-50 rounded-xl p-2 focus:outline-none focus:border-[#071B3A]"
+                  >
+                    <option value="All">All Statuses</option>
+                    <option value="Active">Active</option>
+                    <option value="Suspended">Suspended</option>
+                    <option value="Blocked">Blocked</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Restriction Type</label>
+                  <select
+                    value={restrictionTypeFilter}
+                    onChange={(e) => setRestrictionTypeFilter(e.target.value)}
+                    className="w-full text-xs font-semibold border border-slate-200 bg-slate-50 rounded-xl p-2 focus:outline-none focus:border-[#071B3A]"
+                  >
+                    <option value="All">All Restrictions</option>
+                    <option value="No Restriction">No Restriction</option>
+                    <option value="Temporary Suspension">Temporary Suspension</option>
+                    <option value="Permanent Block">Permanent Block</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Reason Category</label>
+                  <select
+                    value={reasonCategoryFilter}
+                    onChange={(e) => setReasonCategoryFilter(e.target.value)}
+                    className="w-full text-xs font-semibold border border-slate-200 bg-slate-50 rounded-xl p-2 focus:outline-none focus:border-[#071B3A]"
+                  >
+                    <option value="All">All Categories</option>
+                    <option value="Compliance Issue">Compliance Issue</option>
+                    <option value="Expired Licence">Expired Licence</option>
+                    <option value="Fraud / Risk">Fraud / Risk</option>
+                    <option value="Multiple Complaints">Multiple Complaints</option>
+                    <option value="Payment Issue">Payment Issue</option>
+                    <option value="Admin Review">Admin Review</option>
+                    <option value="User Request">User Request</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">End Date Status</label>
+                  <select
+                    value={endDateStatusFilter}
+                    onChange={(e) => setEndDateStatusFilter(e.target.value)}
+                    className="w-full text-xs font-semibold border border-slate-200 bg-slate-50 rounded-xl p-2 focus:outline-none focus:border-[#071B3A]"
+                  >
+                    <option value="All">All End Dates</option>
+                    <option value="Ending Soon">Ending Soon (within 7 days)</option>
+                    <option value="Expired">Expired (Overdue)</option>
+                    <option value="No End Date">No End Date / Permanent</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">City</label>
+                  <select
+                    value={cityFilter}
+                    onChange={(e) => setCityFilter(e.target.value)}
+                    className="w-full text-xs font-semibold border border-slate-200 bg-slate-50 rounded-xl p-2 focus:outline-none focus:border-[#071B3A]"
+                  >
+                    {cities.map((c) => (
+                      <option key={c} value={c}>
+                        {c === 'All' ? 'All Cities' : c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Updated By Admin</label>
+                  <select
+                    value={updatedByFilter}
+                    onChange={(e) => setUpdatedByFilter(e.target.value)}
+                    className="w-full text-xs font-semibold border border-slate-200 bg-slate-50 rounded-xl p-2 focus:outline-none focus:border-[#071B3A]"
+                  >
+                    {admins.map((ad) => (
+                      <option key={ad} value={ad}>
+                        {ad === 'All' ? 'All Admins' : ad}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Restriction Start From</label>
+                  <input
+                    type="date"
+                    value={startDateRange}
+                    onChange={(e) => setStartDateRange(e.target.value)}
+                    className="w-full text-xs border border-slate-200 bg-slate-50 rounded-xl p-2 focus:outline-none focus:border-[#071B3A]"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Restriction End Until</label>
+                  <input
+                    type="date"
+                    value={endDateRange}
+                    onChange={(e) => setEndDateRange(e.target.value)}
+                    className="w-full text-xs border border-slate-200 bg-slate-50 rounded-xl p-2 focus:outline-none focus:border-[#071B3A]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 mt-3 pt-2 border-t border-slate-100">
+                <button
+                  onClick={resetFilters}
+                  className="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 border border-slate-200 rounded-xl bg-white cursor-pointer"
+                >
+                  Clear Filters
+                </button>
+                <button
+                  onClick={() => setShowMoreFilters(false)}
+                  className="px-4 py-1.5 text-xs font-bold text-white bg-[#071B3A] rounded-xl hover:bg-[#0c2854] cursor-pointer shadow-xs"
+                >
+                  Apply Filters
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Account Control Main Table Container */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden flex flex-col">
+        {/* Desktop / Tablet View (Strict 9 Columns fitting without horizontal page scrolling) */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[1000px]">
+            <thead>
+              <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <th className="py-3.5 px-4 w-[22%]">Account</th>
+                <th className="py-3.5 px-3 w-[12%]">Entity Type</th>
+                <th className="py-3.5 px-3 w-[15%]">Owner / Contact</th>
+                <th className="py-3.5 px-3 w-[10%]">Status</th>
+                <th className="py-3.5 px-3 w-[16%]">Restriction</th>
+                <th className="py-3.5 px-3 w-[11%]">Duration</th>
+                <th className="py-3.5 px-3 w-[8%]">Updated By</th>
+                <th className="py-3.5 px-3 w-[9%]">Last Updated</th>
+                <th className="py-3.5 px-4 w-[7%] text-center">Action</th>
+              </tr>
+            </thead>
+
+            <tbody className="divide-y divide-slate-100">
+              {loading ? (
+                Array.from({ length: 5 }).map((_, idx) => (
+                  <tr key={idx} className="animate-pulse">
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-slate-200" />
+                        <div className="space-y-1">
+                          <div className="h-3.5 bg-slate-200 rounded w-28" />
+                          <div className="h-2.5 bg-slate-100 rounded w-20" />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <div className="h-5 bg-slate-200 rounded w-24" />
+                    </td>
+                    <td className="p-4">
+                      <div className="h-3.5 bg-slate-200 rounded w-24 mb-1" />
+                      <div className="h-2.5 bg-slate-100 rounded w-20" />
+                    </td>
+                    <td className="p-4">
+                      <div className="h-5 bg-slate-200 rounded w-16" />
+                    </td>
+                    <td className="p-4">
+                      <div className="h-3.5 bg-slate-200 rounded w-28 mb-1" />
+                      <div className="h-2.5 bg-slate-100 rounded w-20" />
+                    </td>
+                    <td className="p-4">
+                      <div className="h-3.5 bg-slate-200 rounded w-20" />
+                    </td>
+                    <td className="p-4">
+                      <div className="h-3.5 bg-slate-200 rounded w-20" />
+                    </td>
+                    <td className="p-4">
+                      <div className="h-3 bg-slate-200 rounded w-20" />
+                    </td>
+                    <td className="p-4 text-center">
+                      <div className="h-8 bg-slate-200 rounded-lg w-24 mx-auto" />
+                    </td>
+                  </tr>
+                ))
+              ) : errorState ? (
+                <tr>
+                  <td colSpan="9" className="py-16 text-center text-slate-400">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                        <AlertCircle className="w-6 h-6" />
+                      </div>
+                      <h3 className="text-sm font-bold text-slate-800">Unable to load account records</h3>
+                      <p className="text-xs text-slate-500">Please verify network connectivity and try again.</p>
+                      <button
+                        onClick={loadData}
+                        className="mt-1 px-4 py-2 text-xs font-bold text-white bg-[#071B3A] hover:bg-[#0c2854] rounded-xl transition-colors cursor-pointer shadow-xs"
+                      >
+                        Retry Loading
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginatedAccounts.length > 0 ? (
+                paginatedAccounts.map((a) => {
+                  const initials = a.businessName.substring(0, 2).toUpperCase();
+                  const expired = a.status === 'Suspended' && isExpired(a.endDate);
+
+                  // Status Badge Styling (No Toggles)
+                  let statusClass = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+                  if (a.status === 'Suspended') statusClass = 'bg-amber-50 text-amber-800 border-amber-200';
+                  else if (a.status === 'Blocked') statusClass = 'bg-rose-50 text-rose-800 border-rose-200 font-extrabold';
+                  else if (a.status === 'Inactive') statusClass = 'bg-slate-100 text-slate-700 border-slate-200';
+
+                  return (
+                    <tr
+                      key={a.id}
+                      onClick={() => handleOpenAccount(a)}
+                      className="hover:bg-slate-50/70 transition-colors cursor-pointer group"
+                    >
+                      {/* Column 1: Account (Initials Avatar, Name, Short Code, City - No raw UUID) */}
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-[#071B3A]/5 border border-[#071B3A]/10 text-[#071B3A] flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-[#071B3A] group-hover:text-white transition-colors">
+                            {initials}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-slate-900 group-hover:text-[#071B3A] transition-colors truncate">
+                              {a.businessName}
+                            </div>
+                            <div className="text-[10px] font-mono font-medium text-slate-500 mt-0.5 truncate">
+                              {a.shortCode} · {a.city}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Column 2: Entity Type (One compact badge) */}
+                      <td className="py-3.5 px-3">
+                        <span className="inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-lg border bg-slate-100 text-slate-700 border-slate-200 whitespace-nowrap">
+                          {a.entityType}
+                        </span>
+                      </td>
+
+                      {/* Column 3: Owner / Contact */}
+                      <td className="py-3.5 px-3">
+                        <div className="text-xs font-bold text-slate-900 truncate">{a.ownerName}</div>
+                        <div className="text-[11px] text-slate-500 font-medium mt-0.5 truncate">{a.phone}</div>
+                      </td>
+
+                      {/* Column 4: Status (Compact badge, no switch) */}
+                      <td className="py-3.5 px-3">
+                        <span className={`inline-block text-[11px] font-extrabold px-2.5 py-0.5 rounded-lg border ${statusClass}`}>
+                          {a.status}
+                        </span>
+                      </td>
+
+                      {/* Column 5: Restriction */}
+                      <td className="py-3.5 px-3">
+                        <div className="flex flex-col gap-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-bold text-slate-900">{a.restrictionType}</span>
+                            {expired && (
+                              <span className="text-[9px] font-extrabold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.2 rounded">
+                                Expired
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[11px] text-slate-500 font-medium truncate max-w-[170px]" title={a.restrictionReason}>
+                            {a.restrictionReason}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Column 6: Duration */}
+                      <td className="py-3.5 px-3">
+                        <span className="text-xs font-semibold text-slate-700 block">{a.duration}</span>
+                      </td>
+
+                      {/* Column 7: Updated By */}
+                      <td className="py-3.5 px-3">
+                        <span className="text-xs font-semibold text-slate-700 block">{a.updatedBy}</span>
+                      </td>
+
+                      {/* Column 8: Last Updated */}
+                      <td className="py-3.5 px-3">
+                        <span className="text-xs font-semibold text-slate-600 block">{a.lastUpdated}</span>
+                      </td>
+
+                      {/* Column 9: Action (View Details button, always visible) */}
+                      <td className="py-3.5 px-4 text-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenAccount(a);
+                          }}
+                          className="inline-flex items-center justify-center gap-1 px-3 py-2 text-xs font-bold text-[#071B3A] bg-slate-100 hover:bg-[#071B3A] hover:text-white rounded-xl transition-all cursor-pointer min-h-[40px] whitespace-nowrap active:scale-95 shadow-2xs"
+                          title="View Account Details"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>View Details</span>
+                          <ChevronRight className="w-3 h-3" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                /* Compact Empty State */
+                <tr>
+                  <td colSpan="9" className="py-14 text-center text-slate-400">
+                    <div className="flex flex-col items-center justify-center gap-2.5">
+                      <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center">
+                        <SearchX className="w-6 h-6 stroke-[1.5]" />
+                      </div>
+                      <h3 className="text-sm font-bold text-slate-700">No accounts found</h3>
+                      <p className="text-xs text-slate-500 max-w-sm">No platform accounts match the selected filters or search query.</p>
+                      {hasActiveFilters && (
+                        <button
+                          onClick={resetFilters}
+                          className="mt-1 px-4 py-2 text-xs font-bold text-white bg-[#071B3A] hover:bg-[#0c2854] rounded-xl transition-colors cursor-pointer shadow-xs"
+                        >
+                          Clear Filters
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile / Narrow View (< 768px Card Layout) */}
+        <div className="block md:hidden divide-y divide-slate-100">
+          {loading ? (
+            <div className="p-6 text-center text-xs font-bold text-slate-400 animate-pulse">Loading accounts...</div>
+          ) : paginatedAccounts.length > 0 ? (
+            paginatedAccounts.map((a) => (
+              <div
+                key={a.id}
+                onClick={() => handleOpenAccount(a)}
+                className="p-4 space-y-3 hover:bg-slate-50 active:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">{a.businessName}</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+                        {a.shortCode}
+                      </span>
+                      <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">{a.entityType}</span>
+                    </div>
+                  </div>
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                      a.status === 'Active'
+                        ? 'bg-emerald-50 text-emerald-800'
+                        : a.status === 'Suspended'
+                        ? 'bg-amber-50 text-amber-800'
+                        : 'bg-rose-50 text-rose-800'
+                    }`}
+                  >
+                    {a.status}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 pt-1">
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold">Owner</span>
+                    <span className="font-bold text-slate-800">{a.ownerName}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold">City</span>
+                    <span className="font-bold text-slate-800">{a.city}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold">Restriction</span>
+                    <span className="font-bold text-slate-800">{a.restrictionType}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold">Duration</span>
+                    <span className="font-bold text-slate-800">{a.duration}</span>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex justify-between items-center border-t border-slate-100">
+                  <span className="text-[11px] text-slate-400">Updated {a.lastUpdated}</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenAccount(a);
+                    }}
+                    className="flex items-center gap-1 text-xs font-bold text-[#071B3A] bg-slate-100 px-3 py-1.5 rounded-xl cursor-pointer min-h-[36px]"
+                  >
+                    <span>View Details</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="p-8 text-center text-xs font-bold text-slate-400">No accounts match the selected filters.</div>
+          )}
+        </div>
+
+        {/* Pagination Footer */}
+        <div className="bg-slate-50/80 border-t border-slate-200/80 px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-slate-600 font-semibold">
+          <div>
+            Showing {filteredAccounts.length === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1}–
+            {Math.min(currentPage * rowsPerPage, filteredAccounts.length)} of {filteredAccounts.length} accounts
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] text-slate-500">Rows per page:</span>
+              <select
+                value={rowsPerPage}
+                onChange={(e) => setRowsPerPage(Number(e.target.value))}
+                className="bg-white border border-slate-200 text-xs font-bold rounded-lg px-2 py-1 focus:outline-none focus:border-[#071B3A]"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                Prev
+              </button>
+              <span className="px-2 font-bold text-[#071B3A]">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                Next
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Main Table */}
-      <div className="bg-white border border-slate-200/60 shadow-sm rounded-2xl overflow-hidden w-full overflow-x-auto min-h-[400px]">
-        <table className="w-full text-left border-collapse min-w-[1250px]">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200/80 text-[10px] uppercase tracking-wider text-slate-500">
-              <th className="p-4 font-bold">Entity & City</th>
-              <th className="p-4 font-bold">Type</th>
-              <th className="p-4 font-bold">Owner / Contact</th>
-              <th className="p-4 font-bold">Status</th>
-              <th className="p-4 font-bold">Reason</th>
-              <th className="p-4 font-bold">Suspension Period</th>
-              <th className="p-4 font-bold">Last Updated By</th>
-              <th className="p-4 font-bold text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentAccounts.length > 0 ? (
-              currentAccounts.map(acc => (
-                <tr key={acc.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-                  <td className="p-4">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-xs font-black text-slate-800">{acc.businessName}</span>
-                      <span className="text-[10px] text-slate-500 font-medium">{acc.city} · {acc.id}</span>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
-                      {acc.type}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-xs font-bold text-slate-700">{acc.owner}</span>
-                      <span className="text-[10px] font-mono text-slate-400">{acc.phone}</span>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStatusToggle(acc.id);
-                        }}
-                        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                          acc.status === 'Active' ? 'bg-emerald-500' : 'bg-rose-500'
-                        }`}
-                        title={acc.status === 'Active' ? 'Account is Active (click to Suspend)' : `Account is ${acc.status} (click to Activate)`}
-                      >
-                        <span
-                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
-                            acc.status === 'Active' ? 'translate-x-4' : 'translate-x-0'
-                          }`}
-                        />
-                      </button>
-                      <span className={`text-[10px] font-black ${acc.status === 'Active' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                        {acc.status === 'Active' ? 'Active' : acc.status}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="p-4 text-xs font-medium text-slate-600 max-w-[200px] truncate" title={acc.reason || "N/A"}>
-                    {acc.reason || <span className="text-slate-300 italic">-</span>}
-                  </td>
-                  <td className="p-4">
-                    {acc.status !== "Active" && acc.startDate ? (
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-[10px] font-bold text-rose-600">Until: {acc.endDate || "N/A"}</span>
-                        <span className="text-[9px] text-slate-400 font-semibold">Started: {acc.startDate}</span>
-                      </div>
-                    ) : (
-                      <span className="text-[10px] text-slate-400 font-medium">-</span>
-                    )}
-                  </td>
-                  <td className="p-4">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-xs font-bold text-slate-700">{acc.updatedBy}</span>
-                      <span className="text-[10px] text-slate-400 font-semibold">{acc.lastUpdated}</span>
-                    </div>
-                  </td>
-                  <td className="p-4 text-center">
-                    <button
-                      onClick={(e) => handleAction(e, acc, 'view')}
-                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all inline-flex items-center gap-1.5 text-xs font-semibold active:scale-95"
-                    >
-                      <Eye size={14} /> View
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="8" className="p-12 text-center text-slate-400">
-                  <div className="flex flex-col items-center justify-center gap-3">
-                    <ShieldAlert size={48} className="text-slate-300 stroke-[1.5]" />
-                    <span className="text-xs font-black text-slate-500">No Records Found</span>
-                    <span className="text-[10px] text-slate-400 max-w-[220px] leading-relaxed">
-                      Try adjusting your search query or filters to find what you are looking for.
-                    </span>
-                  </div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-
-
-      {/* Account Details Modal (Centered) */}
+      {/* Account Details Centered Modal (3 Tabs: Overview | Restriction | History) */}
       <AnimatePresence>
-        {selectedAccountId && activeAccount && (
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+        {selectedAccount && (
+          <div className="fixed inset-0 z-[9000] flex items-center justify-center p-4 sm:p-6">
             {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-              onClick={() => setSelectedAccountId(null)}
+              onClick={() => setSelectedAccount(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
             />
 
+            {/* Centered Modal Container */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              className="relative w-full max-w-xl md:max-w-2xl bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden z-10"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="relative w-full max-w-3xl bg-white rounded-2xl border border-slate-200 shadow-2xl flex flex-col z-10 overflow-hidden max-h-[88vh] my-auto"
             >
-              {/* Header */}
-              <div className="bg-white px-5 py-4 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
-                <div className="flex gap-3 items-center">
-                  <div className={`w-10 h-10 rounded-lg border flex items-center justify-center ${activeAccount.status === 'Permanently Blocked' ? 'bg-rose-50 border-rose-100 text-rose-600' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>
-                    <ShieldAlert size={20} />
+              {/* Account Details Header */}
+              <div className="bg-[#071B3A] text-white p-5 border-b border-slate-800 flex justify-between items-start shrink-0">
+                <div className="flex gap-3.5 items-start">
+                  <div className="w-12 h-12 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center font-extrabold text-base text-white shrink-0">
+                    {selectedAccount.businessName.substring(0, 2).toUpperCase()}
                   </div>
                   <div>
-                    <h2 className="font-black text-slate-800 text-sm">{activeAccount.businessName}</h2>
-                    <span className="text-[10px] text-slate-400 font-bold">{activeAccount.id} • Registered: {activeAccount.regDate}</span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-base font-extrabold text-white">{selectedAccount.businessName}</h2>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white/20 text-white">
+                        {selectedAccount.entityType}
+                      </span>
+                    </div>
+                    <div className="text-xs text-slate-300 font-semibold mt-0.5">Owner: {selectedAccount.ownerName}</div>
+
+                    <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-300 font-medium">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-slate-400" />
+                        {selectedAccount.city}, {selectedAccount.state}
+                      </span>
+                      <span>•</span>
+                      <span>Joined {selectedAccount.createdDate}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-[11px] font-mono text-slate-300 bg-white/10 px-2 py-0.5 rounded">
+                        Account ID: {selectedAccount.shortCode}
+                      </span>
+                      <button
+                        onClick={() => handleCopyId(selectedAccount.id)}
+                        className="text-slate-300 hover:text-white text-[11px] flex items-center gap-1 underline cursor-pointer"
+                      >
+                        {copiedId ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        <span>{copiedId ? 'Copied' : 'Copy ID'}</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <button onClick={() => setSelectedAccountId(null)} className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 transition-colors">
-                  <X size={18} />
+
+                <button
+                  onClick={() => setSelectedAccount(null)}
+                  className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Tab Navigation */}
-              <div className="bg-white px-4 border-b border-slate-100 flex gap-2 flex-shrink-0">
-                {["Overview", "History", "Violations", "Documents"].map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setDrawerTab(tab)}
-                    className={`text-xs font-bold py-3 px-2 border-b-2 transition-all relative ${drawerTab === tab
-                      ? "border-blue-600 text-blue-600"
-                      : "border-transparent text-slate-400 hover:text-slate-600"
-                      }`}
+              {/* Status Header Bar */}
+              <div className="bg-slate-50 px-5 py-3 border-b border-slate-200/80 flex items-center justify-between gap-3 shrink-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-slate-500 font-semibold">Account Status:</span>
+                  <span
+                    className={`text-xs font-extrabold px-2.5 py-0.5 rounded-md border ${
+                      selectedAccount.status === 'Active'
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                        : selectedAccount.status === 'Suspended'
+                        ? 'bg-amber-50 text-amber-800 border-amber-200'
+                        : 'bg-rose-50 text-rose-800 border-rose-200'
+                    }`}
                   >
-                    {tab}
-                  </button>
-                ))}
+                    {selectedAccount.status}
+                  </span>
+
+                  <span className="text-xs text-slate-500 font-semibold ml-2">Restriction:</span>
+                  <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-md border bg-slate-100 text-slate-800 border-slate-200">
+                    {selectedAccount.restrictionType}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {selectedAccount.status === 'Active' ? (
+                    <button
+                      onClick={() => setSuspendingAccount(selectedAccount)}
+                      className="px-3 py-1.5 text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors cursor-pointer"
+                    >
+                      Suspend Account
+                    </button>
+                  ) : selectedAccount.status === 'Suspended' ? (
+                    <button
+                      onClick={() => setReactivatingAccount(selectedAccount)}
+                      className="px-3 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors cursor-pointer"
+                    >
+                      Reactivate Account
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setUnblockingAccount(selectedAccount)}
+                      className="px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg transition-colors cursor-pointer"
+                    >
+                      Unblock Account
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {/* Body Content */}
-              <div className="flex-1 overflow-y-auto p-5 space-y-5" style={{ scrollbarWidth: "thin" }}>
-                {drawerTab === "Overview" && (
-                  <div className="space-y-4">
-                    {/* Entity Information */}
-                    <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs space-y-3">
-                      <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Entity Information</h4>
-                      <div className="flex gap-3 items-center pb-2 border-b border-slate-50">
-                        <div className="w-12 h-12 bg-blue-600 text-white font-black rounded-xl flex items-center justify-center text-sm shadow-sm flex-shrink-0">
-                          {activeAccount.businessName.split(' ').map(n => n[0]).join('').slice(0, 3)}
+              {/* 3 Detail Tabs Navigation */}
+              <div className="flex border-b border-slate-200 px-5 bg-white shrink-0">
+                <button
+                  onClick={() => setDetailsTab('overview')}
+                  className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
+                    detailsTab === 'overview' ? 'border-[#071B3A] text-[#071B3A]' : 'border-transparent text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  1. Account Overview
+                </button>
+                <button
+                  onClick={() => setDetailsTab('restriction')}
+                  className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
+                    detailsTab === 'restriction' ? 'border-[#071B3A] text-[#071B3A]' : 'border-transparent text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  2. Restriction Details
+                </button>
+                <button
+                  onClick={() => setDetailsTab('history')}
+                  className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors cursor-pointer ${
+                    detailsTab === 'history' ? 'border-[#071B3A] text-[#071B3A]' : 'border-transparent text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  3. Status History
+                </button>
+              </div>
+
+              {/* Tab Content Body */}
+              <div className="flex-1 overflow-y-auto p-5 space-y-6">
+                {/* TAB 1: ACCOUNT OVERVIEW */}
+                {detailsTab === 'overview' && (
+                  <div className="space-y-5">
+                    {/* Business Information Card */}
+                    <div className="bg-white border border-slate-200/80 rounded-xl p-4 space-y-3 shadow-2xs">
+                      <h3 className="text-xs font-extrabold text-[#071B3A] uppercase tracking-wider flex items-center gap-1.5">
+                        <Building2 className="w-3.5 h-3.5" />
+                        Business & Registration Information
+                      </h3>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-semibold block">Registered Business Name</span>
+                          <span className="font-bold text-slate-800 block mt-0.5">{selectedAccount.businessName}</span>
                         </div>
                         <div>
-                          <span className="text-sm font-black text-slate-800 block">{activeAccount.businessName}</span>
-                          <span className="text-[10px] text-slate-400 font-bold uppercase">{activeAccount.type}</span>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3 text-xs font-medium text-slate-600">
-                        <div>
-                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Owner Name</span>
-                          <span className="font-bold text-slate-800">{activeAccount.owner}</span>
+                          <span className="text-[10px] text-slate-400 font-semibold block">Trade Name</span>
+                          <span className="font-bold text-slate-800 block mt-0.5">{selectedAccount.tradeName}</span>
                         </div>
                         <div>
-                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Phone Number</span>
-                          <span className="font-bold text-slate-800">{activeAccount.phone}</span>
+                          <span className="text-[10px] text-slate-400 font-semibold block">Business Category</span>
+                          <span className="font-bold text-slate-800 block mt-0.5">{selectedAccount.entityType}</span>
                         </div>
                         <div>
-                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Email Address</span>
-                          <span className="font-bold text-slate-800">{activeAccount.email}</span>
+                          <span className="text-[10px] text-slate-400 font-semibold block">Registration Number</span>
+                          <span className="font-bold text-slate-800 block mt-0.5">{selectedAccount.regNumber}</span>
                         </div>
                         <div>
-                          <span className="text-[9px] text-slate-400 font-bold block uppercase">City Location</span>
-                          <span className="font-bold text-slate-800">{activeAccount.city}</span>
+                          <span className="text-[10px] text-slate-400 font-semibold block">PAN Number</span>
+                          <span className="font-bold text-slate-800 block mt-0.5">{selectedAccount.panNumber}</span>
                         </div>
                         <div>
-                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Account ID</span>
-                          <span className="font-mono font-bold text-indigo-600">{activeAccount.id}</span>
+                          <span className="text-[10px] text-slate-400 font-semibold block">GST Number</span>
+                          <span className="font-bold text-slate-800 block mt-0.5">{selectedAccount.gstNumber}</span>
                         </div>
-                        <div>
-                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Registration Date</span>
-                          <span className="font-bold text-slate-700">{activeAccount.regDate}</span>
+                        <div className="sm:col-span-2">
+                          <span className="text-[10px] text-slate-400 font-semibold block">City & State</span>
+                          <span className="font-bold text-slate-800 block mt-0.5 leading-relaxed">
+                            {selectedAccount.address}
+                          </span>
                         </div>
                       </div>
                     </div>
 
-                    {/* Current Status */}
-                    <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs">
-                      <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Current Status Properties</h4>
-                      <div className="grid grid-cols-2 gap-3 text-xs font-medium text-slate-600">
+                    {/* Owner & Contact Information */}
+                    <div className="bg-white border border-slate-200/80 rounded-xl p-4 space-y-3 shadow-2xs">
+                      <h3 className="text-xs font-extrabold text-[#071B3A] uppercase tracking-wider flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5" />
+                        Owner & Contact Details
+                      </h3>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                         <div>
-                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Account Status</span>
-                          <span className={`inline-block text-[9px] font-extrabold px-2.5 py-0.5 rounded-full border mt-0.5 ${getStatusBadgeColor(activeAccount.status)}`}>{activeAccount.status}</span>
+                          <span className="text-[10px] text-slate-400 font-semibold block">Owner / Contact Person</span>
+                          <span className="font-bold text-slate-800 block mt-0.5">{selectedAccount.ownerName}</span>
                         </div>
                         <div>
-                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Suspension Type</span>
-                          <span className="font-bold text-slate-800 block mt-0.5">{activeAccount.suspensionType || "None"}</span>
-                        </div>
-                        <div className="col-span-2">
-                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Reason</span>
-                          <span className="font-semibold text-slate-750 block bg-slate-50 p-2 border border-slate-100 rounded-lg italic">
-                            "{activeAccount.reason || "No current restriction"}"
+                          <span className="text-[10px] text-slate-400 font-semibold block">Registered Mobile</span>
+                          <span className="font-bold text-slate-800 flex items-center gap-1.5 mt-0.5">
+                            <Phone className="w-3 h-3 text-slate-400" />
+                            {selectedAccount.phone}
                           </span>
                         </div>
                         <div>
-                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Start Date</span>
-                          <span className="font-bold text-slate-700">{activeAccount.startDate || "N/A"}</span>
+                          <span className="text-[10px] text-slate-400 font-semibold block">Registered Email</span>
+                          <span className="font-bold text-slate-800 flex items-center gap-1.5 mt-0.5">
+                            <Mail className="w-3 h-3 text-slate-400" />
+                            {selectedAccount.email}
+                          </span>
                         </div>
                         <div>
-                          <span className="text-[9px] text-slate-400 font-bold block uppercase">End Date</span>
-                          <span className="font-bold text-slate-700">{activeAccount.endDate || "N/A"}</span>
-                        </div>
-                        <div>
-                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Last Updated By</span>
-                          <span className="font-bold text-slate-800">{activeAccount.updatedBy}</span>
-                        </div>
-                        <div className="col-span-2">
-                          <span className="text-[9px] text-slate-400 font-bold block uppercase">Internal Notes</span>
-                          <p className="text-slate-500 font-medium leading-relaxed">{activeAccount.notes || "None recorded."}</p>
+                          <span className="text-[10px] text-slate-400 font-semibold block">Verification Status</span>
+                          <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded mt-0.5">
+                            <CheckCircle2 className="w-3 h-3" />
+                            Verified Account
+                          </span>
                         </div>
                       </div>
                     </div>
 
-                    {/* Violations Summary */}
-                    <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs">
-                      <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3">Violations & Safety Summary</h4>
-                      <div className="grid grid-cols-4 gap-2 text-center">
-                        <div className="p-2 border border-slate-100 rounded-lg bg-slate-50/50">
-                          <span className="text-[8px] text-slate-400 font-bold uppercase block">Complaints</span>
-                          <span className="text-sm font-black text-slate-700">{activeAccount.violationsSummary?.complaints || 0}</span>
+                    {/* Account Governance Meta */}
+                    <div className="bg-white border border-slate-200/80 rounded-xl p-4 space-y-3 shadow-2xs">
+                      <h3 className="text-xs font-extrabold text-[#071B3A] uppercase tracking-wider flex items-center gap-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        Account Status Information
+                      </h3>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-semibold block">Account Created Date</span>
+                          <span className="font-bold text-slate-800 block mt-0.5">{selectedAccount.createdDate}</span>
                         </div>
-                        <div className="p-2 border border-slate-100 rounded-lg bg-slate-50/50">
-                          <span className="text-[8px] text-slate-400 font-bold uppercase block">Warnings</span>
-                          <span className="text-sm font-black text-slate-700">{activeAccount.violationsSummary?.warnings || 0}</span>
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-semibold block">Current Account Status</span>
+                          <span className="font-bold text-slate-800 block mt-0.5">{selectedAccount.status}</span>
                         </div>
-                        <div className="p-2 border border-slate-100 rounded-lg bg-slate-50/50">
-                          <span className="text-[8px] text-slate-400 font-bold uppercase block">Suspensions</span>
-                          <span className="text-sm font-black text-slate-700">{activeAccount.violationsSummary?.suspensions || 0}</span>
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-semibold block">Last Admin Reviewer</span>
+                          <span className="font-bold text-slate-800 block mt-0.5">{selectedAccount.updatedBy}</span>
                         </div>
-                        <div className="p-2 border border-slate-100 rounded-lg bg-slate-50/50">
-                          <span className="text-[8px] text-slate-400 font-bold uppercase block">Last Event</span>
-                          <span className="text-[9px] font-black text-slate-600 block mt-1 truncate" title={activeAccount.violationsSummary?.lastViolationDate}>{activeAccount.violationsSummary?.lastViolationDate || "N/A"}</span>
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-semibold block">Last Updated Date</span>
+                          <span className="font-bold text-slate-800 block mt-0.5">{selectedAccount.lastUpdated}</span>
                         </div>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {drawerTab === "History" && (
+                {/* TAB 2: RESTRICTION DETAILS */}
+                {detailsTab === 'restriction' && (
+                  <div className="space-y-5">
+                    {selectedAccount.status === 'Active' ? (
+                      <div className="bg-emerald-50 border border-emerald-200/80 rounded-xl p-5 text-center space-y-3">
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold mx-auto">
+                          <CheckCircle2 className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-extrabold text-emerald-900">No active restriction</h3>
+                          <p className="text-xs text-emerald-700 font-medium mt-1">
+                            This account is currently allowed to use the platform.
+                          </p>
+                        </div>
+
+                        <div className="pt-2 flex justify-center gap-2">
+                          <button
+                            onClick={() => setSuspendingAccount(selectedAccount)}
+                            className="px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-xl shadow-2xs cursor-pointer"
+                          >
+                            Suspend Account
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-white border border-slate-200/80 rounded-xl p-4 space-y-4 shadow-2xs">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-xs font-extrabold text-[#071B3A] uppercase tracking-wider flex items-center gap-1.5">
+                            <ShieldAlert className="w-3.5 h-3.5 text-rose-600" />
+                            Current Operational Restriction
+                          </h3>
+
+                          {isExpired(selectedAccount.endDate) && (
+                            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded bg-rose-50 border border-rose-200 text-rose-700">
+                              Restriction Expired · Pending Admin Review
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-semibold block">Restriction Type</span>
+                            <span className="font-extrabold text-rose-700 block mt-0.5">{selectedAccount.restrictionType}</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-semibold block">Reason Category</span>
+                            <span className="font-bold text-slate-800 block mt-0.5">{selectedAccount.reasonCategory}</span>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <span className="text-[10px] text-slate-400 font-semibold block">Detailed Reason</span>
+                            <span className="font-bold text-slate-800 block mt-0.5">{selectedAccount.restrictionReason}</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-semibold block">Duration</span>
+                            <span className="font-bold text-slate-800 block mt-0.5">{selectedAccount.duration}</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-semibold block">Applied By Admin</span>
+                            <span className="font-bold text-slate-800 block mt-0.5">{selectedAccount.updatedBy}</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-semibold block">Start Date</span>
+                            <span className="font-bold text-slate-800 block mt-0.5">{selectedAccount.startDate}</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-semibold block">End Date</span>
+                            <span className="font-bold text-slate-800 block mt-0.5">{selectedAccount.endDate}</span>
+                          </div>
+                        </div>
+
+                        {/* Contextual Actions */}
+                        <div className="pt-3 border-t border-slate-100 flex flex-wrap gap-2">
+                          {selectedAccount.status === 'Suspended' && (
+                            <>
+                              <button
+                                onClick={() => setExtendingAccount(selectedAccount)}
+                                className="px-3.5 py-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl cursor-pointer"
+                              >
+                                Extend Suspension
+                              </button>
+                              <button
+                                onClick={() => setReactivatingAccount(selectedAccount)}
+                                className="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl cursor-pointer shadow-xs"
+                              >
+                                Reactivate Account
+                              </button>
+                            </>
+                          )}
+                          {selectedAccount.status === 'Blocked' && (
+                            <button
+                              onClick={() => setUnblockingAccount(selectedAccount)}
+                              className="px-4 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl cursor-pointer"
+                            >
+                              Unblock Account
+                            </button>
+                          )}
+                          {selectedAccount.status !== 'Blocked' && (
+                            <button
+                              onClick={() => setBlockingAccount(selectedAccount)}
+                              className="px-3.5 py-2 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl cursor-pointer ml-auto"
+                            >
+                              Block Account
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* TAB 3: STATUS HISTORY */}
+                {detailsTab === 'history' && (
                   <div className="space-y-4">
-                    <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Account Lifetime Timeline</h4>
-                    <div className="relative border-l border-slate-200 ml-3 flex flex-col gap-5 pt-2 pb-2">
-                      {activeAccount.history && activeAccount.history.map((evt, idx) => (
-                        <div key={idx} className="relative pl-5">
-                          <span className="absolute -left-[4.5px] top-1 w-2 h-2 rounded-full bg-slate-300 ring-4 ring-white" />
-                          <div className="flex flex-col text-xs font-semibold">
-                            <span className="font-black text-slate-800">{evt.status}</span>
-                            <span className="text-[9px] font-bold text-slate-400 mt-0.5">{evt.time}</span>
-                            <p className="text-[10px] font-medium text-slate-500 mt-1 leading-relaxed">{evt.note}</p>
+                    <h3 className="text-xs font-extrabold text-[#071B3A] uppercase tracking-wider">Account Governance Timeline</h3>
+
+                    <div className="relative pl-6 space-y-5 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+                      {selectedAccount.history.map((h, idx) => (
+                        <div key={idx} className="relative">
+                          <div className="absolute -left-6 top-1 w-3 h-3 rounded-full bg-[#071B3A] ring-4 ring-white" />
+                          <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 text-xs space-y-0.5 shadow-2xs">
+                            <div className="font-bold text-slate-900">{h.action}</div>
+                            <div className="flex justify-between text-[10px] text-slate-500 font-medium">
+                              <span>Actor: {h.actor}</span>
+                              <span>{h.date}</span>
+                            </div>
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
-
-                {drawerTab === "Violations" && (
-                  <div className="space-y-4">
-                    <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Violations History</h4>
-                    {activeAccount.violations && activeAccount.violations.length > 0 ? (
-                      <div className="border border-slate-100 rounded-xl overflow-hidden bg-white shadow-xs">
-                        <table className="w-full text-left text-xs border-collapse">
-                          <thead>
-                            <tr className="bg-slate-50 text-[9px] uppercase font-bold text-slate-400 border-b border-slate-100">
-                              <th className="p-3">Date</th>
-                              <th className="p-3">Violation</th>
-                              <th className="p-3">Action</th>
-                              <th className="p-3">Admin</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {activeAccount.violations.map((v, i) => (
-                              <tr key={i} className="border-b border-slate-50 text-slate-600 font-semibold">
-                                <td className="p-3 text-[10px]">{v.date}</td>
-                                <td className="p-3">{v.violation}</td>
-                                <td className="p-3 text-rose-600 font-bold">{v.actionTaken}</td>
-                                <td className="p-3 font-bold text-slate-800">{v.admin}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <div className="p-6 text-center text-xs text-slate-400 italic bg-slate-50 rounded-lg border border-slate-100">
-                        No previous violations registered on file.
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {drawerTab === "Documents" && (
-                  <div className="space-y-4">
-                    <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Compliance Documents</h4>
-                    <div className="space-y-3">
-                      {[
-                        { key: "gst", label: "GST Certificate" },
-                        { key: "pan", label: "PAN Card" },
-                        { key: "fssai", label: "FSSAI License" },
-                        { key: "tradeLicense", label: "Trade License" },
-                        { key: "businessReg", label: "Business Registration Certificate" }
-                      ].map((doc) => {
-                        const docInfo = activeAccount.documents?.[doc.key] || { status: "Not Required", expiry: "N/A" };
-                        return (
-                          <div key={doc.key} className="border border-slate-100 bg-slate-50/50 rounded-xl p-3.5 flex justify-between items-center shadow-xs">
-                            <div className="flex gap-3 items-center">
-                              <div className="w-9 h-9 rounded bg-slate-200/60 flex items-center justify-center text-slate-500 flex-shrink-0">
-                                <FileText size={18} />
-                              </div>
-                              <div>
-                                <span className="text-xs font-bold text-slate-800 block">{doc.label}</span>
-                                <span className="text-[10px] text-slate-400 font-semibold block">Expiry: {docInfo.expiry}</span>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className={`text-[9px] font-bold px-2 py-0.5 border rounded-full ${docInfo.status === "Verified" ? "bg-emerald-50 text-emerald-700 border-emerald-100" :
-                                docInfo.status === "Expiring Soon" ? "bg-amber-50 text-amber-700 border-amber-100" :
-                                  docInfo.status === "Pending Verification" ? "bg-purple-50 text-purple-700 border-purple-100 animate-pulse" :
-                                    docInfo.status === "Rejected" ? "bg-rose-50 text-rose-700 border-rose-100" :
-                                      "bg-slate-100 text-slate-600 border-slate-200"
-                                }`}>
-                                {docInfo.status}
-                              </span>
-                              {docInfo.status !== "Not Required" && docInfo.status !== "Not Provided" && (
-                                <button
-                                  onClick={() => showToast(`Downloading ${doc.label}...`, "success")}
-                                  className="p-1.5 border border-slate-200 hover:bg-slate-100 text-blue-600 rounded bg-white"
-                                  title="Download Document"
-                                >
-                                  <Download size={12} />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
               </div>
 
-              {/* Footer Quick Actions */}
-              <div className="bg-slate-50 border-t border-slate-100 p-4 flex gap-2 flex-shrink-0">
+              {/* Drawer Footer */}
+              <div className="bg-slate-50 border-t border-slate-200/80 p-4 flex justify-between items-center gap-3 shrink-0">
+                <div className="text-xs font-semibold text-slate-600">Updated {selectedAccount.lastUpdated}</div>
                 <button
-                  onClick={() => setWarningModalOpen(true)}
-                  className="flex-1 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-bold rounded-xl transition-colors shadow-xs"
+                  onClick={() => setSelectedAccount(null)}
+                  className="px-4 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-xl cursor-pointer"
                 >
-                  Warning
-                </button>
-                <button
-                  onClick={() => setSuspendModalOpen(true)}
-                  className="flex-1 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-bold rounded-xl transition-colors shadow-xs"
-                >
-                  Suspend
-                </button>
-                <button
-                  onClick={() => setBlockModalOpen(true)}
-                  className="flex-1 py-2 border border-rose-250 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-xl transition-colors shadow-xs"
-                >
-                  Block
-                </button>
-                <button
-                  onClick={() => setReactivateModalOpen(true)}
-                  className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
-                >
-                  Reactivate
-                </button>
-                <button
-                  onClick={() => setDrawerTab("History")}
-                  className="flex-1 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
-                >
-                  History
+                  Close
                 </button>
               </div>
             </motion.div>
@@ -938,266 +1767,143 @@ export default function Limits() {
         )}
       </AnimatePresence>
 
-      {/* Warning Modal Dialogue */}
+      {/* Suspend Account Modal */}
       <AnimatePresence>
-        {warningModalOpen && activeAccount && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setWarningModalOpen(false)} />
+        {suspendingAccount && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm relative z-10 space-y-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSuspendingAccount(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
+            />
+
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-5 space-y-4 z-10"
             >
-              <div>
-                <h3 className="text-base font-black text-slate-800">Issue Warning</h3>
-                <p className="text-[11px] text-slate-400 mt-0.5">Issue caution warning record on merchant account <span className="font-bold text-slate-700">{activeAccount.id}</span>.</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold shrink-0">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900">Suspend this account?</h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    {suspendingAccount.businessName} ({suspendingAccount.ownerName})
+                  </p>
+                </div>
               </div>
 
               <div className="space-y-3">
                 <div>
-                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Warning Reason</label>
-                  <select
-                    value={warnReason}
-                    onChange={(e) => setWarnReason(e.target.value)}
-                    className="w-full border border-slate-200 bg-slate-50/50 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 font-semibold text-slate-700"
-                  >
-                    <option value="Minor Policy Infraction">Minor Policy Infraction</option>
-                    <option value="Frequent Escrow Dispute delays">Frequent Escrow Dispute delays</option>
-                    <option value="Slight Hygiene Guidelines breach">Slight Hygiene Guidelines breach</option>
-                    <option value="Incorrect weight listed on raw supplies">Incorrect weight listed on raw supplies</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Internal Note</label>
-                  <textarea
-                    value={warnNote}
-                    onChange={(e) => setWarnNote(e.target.value)}
-                    placeholder="Provide description text details about violation event..."
-                    className="w-full border border-slate-200 bg-slate-50/50 rounded-xl p-3 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 min-h-[70px] resize-none text-slate-700 font-medium"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-xl">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold text-slate-700">Notify User</span>
-                    <span className="text-[8px] text-slate-400 font-semibold uppercase">Email & In-App Notification alert</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={warnNotify}
-                    onChange={(e) => setWarnNotify(e.target.checked)}
-                    className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-slate-200"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-3 justify-end pt-2">
-                <button
-                  onClick={() => setWarningModalOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors w-full"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSendWarning}
-                  className="px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors w-full shadow-sm"
-                >
-                  Send Warning
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Suspend Modal Dialogue */}
-      <AnimatePresence>
-        {suspendModalOpen && activeAccount && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSuspendModalOpen(false)} />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm relative z-10 space-y-4"
-            >
-              <div>
-                <h3 className="text-base font-black text-slate-800">Suspend Account</h3>
-                <p className="text-[11px] text-slate-400 mt-0.5">Restrict client onboarding or platform capabilities for <span className="font-bold text-slate-700">{activeAccount.id}</span>.</p>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Suspend Reason</label>
-                  <select
-                    value={suspendReason}
-                    onChange={(e) => setSuspendReason(e.target.value)}
-                    className="w-full border border-slate-200 bg-slate-50/50 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 font-semibold text-slate-700"
-                  >
-                    <option value="Unresolved SLA Breach">Unresolved SLA Breach</option>
-                    <option value="Policy Violation">Policy Violation</option>
-                    <option value="Expired compliance licenses">Expired compliance licenses</option>
-                    <option value="Escrow Dispute mediation delay">Escrow Dispute mediation delay</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Suspension Type</label>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Suspension Type *</label>
                   <select
                     value={suspendType}
                     onChange={(e) => setSuspendType(e.target.value)}
-                    className="w-full border border-slate-200 bg-slate-50/50 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 font-semibold text-slate-700"
+                    className="w-full text-xs font-semibold border border-slate-200 bg-slate-50 rounded-xl p-2.5 focus:outline-none focus:border-[#071B3A]"
                   >
-                    <option value="Temporary">Temporary</option>
-                    <option value="Permanent">Permanent</option>
+                    <option value="Temporary Suspension">Temporary Suspension</option>
+                    <option value="Until Issue Is Resolved">Until Issue Is Resolved</option>
+                    <option value="Permanent Suspension">Permanent Suspension</option>
                   </select>
                 </div>
 
-                {suspendType === "Temporary" && (
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Reason Category</label>
+                  <select
+                    value={suspendReasonCategory}
+                    onChange={(e) => setSuspendReasonCategory(e.target.value)}
+                    className="w-full text-xs font-semibold border border-slate-200 bg-slate-50 rounded-xl p-2.5 focus:outline-none focus:border-[#071B3A]"
+                  >
+                    <option value="Expired mandatory licence">Expired mandatory licence</option>
+                    <option value="Compliance violation">Compliance violation</option>
+                    <option value="Fraud or suspicious activity">Fraud or suspicious activity</option>
+                    <option value="Multiple unresolved complaints">Multiple unresolved complaints</option>
+                    <option value="Payment issue">Payment issue</option>
+                    <option value="Business request">Business request</option>
+                    <option value="Manual admin review">Manual admin review</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    Specific Reason <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Expired FSSAI Licence notice"
+                    value={suspendReason}
+                    onChange={(e) => setSuspendReason(e.target.value)}
+                    className="w-full text-xs font-semibold border border-slate-200 bg-slate-50 rounded-xl p-2.5 focus:outline-none focus:border-[#071B3A]"
+                  />
+                </div>
+
+                {suspendType === 'Temporary Suspension' && (
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Start Date</label>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Start Date *</label>
                       <input
                         type="date"
-                        value={suspendStart}
-                        onChange={(e) => setSuspendStart(e.target.value)}
-                        className="w-full border border-slate-200 bg-slate-50/50 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 text-slate-600 font-medium"
+                        value={suspendStartDate}
+                        onChange={(e) => setSuspendStartDate(e.target.value)}
+                        className="w-full text-xs border border-slate-200 bg-slate-50 rounded-xl p-2"
                       />
                     </div>
                     <div>
-                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">End Date</label>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
+                        End Date <span className="text-rose-500">*</span>
+                      </label>
                       <input
                         type="date"
-                        value={suspendEnd}
-                        onChange={(e) => setSuspendEnd(e.target.value)}
-                        className="w-full border border-slate-200 bg-slate-50/50 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 text-slate-600 font-medium"
+                        value={suspendEndDate}
+                        onChange={(e) => setSuspendEndDate(e.target.value)}
+                        className="w-full text-xs border border-slate-200 bg-slate-50 rounded-xl p-2"
                       />
                     </div>
                   </div>
                 )}
 
                 <div>
-                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Internal Note</label>
-                  <textarea
-                    value={suspendNote}
-                    onChange={(e) => setSuspendNote(e.target.value)}
-                    placeholder="Specify internal case tracker codes..."
-                    className="w-full border border-slate-200 bg-slate-50/50 rounded-xl p-3 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500 min-h-[60px] resize-none text-slate-700 font-medium"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-xl">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold text-slate-700">Notify User</span>
-                    <span className="text-[8px] text-slate-400 font-semibold uppercase">Trigger email alert</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={suspendNotify}
-                    onChange={(e) => setSuspendNotify(e.target.checked)}
-                    className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-slate-200"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-3 justify-end pt-2">
-                <button
-                  onClick={() => setSuspendModalOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors w-full"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleConfirmSuspension}
-                  className="px-4 py-2 text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-xl transition-colors w-full shadow-sm"
-                >
-                  Confirm Suspension
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Reactivate Modal Dialogue */}
-      <AnimatePresence>
-        {reactivateModalOpen && activeAccount && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setReactivateModalOpen(false)} />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm relative z-10 space-y-4"
-            >
-              <div>
-                <h3 className="text-base font-black text-slate-800">Reactivate Account</h3>
-                <p className="text-[11px] text-slate-400 mt-0.5">Restore normal trade privileges for client <span className="font-bold text-slate-700">{activeAccount.id}</span>.</p>
-              </div>
-
-              <div className="space-y-3 font-semibold text-xs">
-                <div>
-                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Reactivation Reason</label>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    Applicant-facing Message <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
-                    value={reactivateReason}
-                    onChange={(e) => setReactivateReason(e.target.value)}
-                    placeholder="Explain why client is reactivated..."
-                    className="w-full border border-slate-200 bg-slate-50/50 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 text-slate-700 font-semibold"
+                    placeholder="Message shown to merchant on login..."
+                    value={suspendApplicantMsg}
+                    onChange={(e) => setSuspendApplicantMsg(e.target.value)}
+                    className="w-full text-xs border border-slate-200 bg-slate-50 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Internal Note</label>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Internal Admin Note (Optional)</label>
                   <textarea
-                    value={reactivateNote}
-                    onChange={(e) => setReactivateNote(e.target.value)}
-                    placeholder="Enter support ticket details..."
-                    className="w-full border border-slate-200 bg-slate-50/50 rounded-xl p-3 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 min-h-[60px] resize-none text-slate-700 font-medium"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-xl">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold text-slate-700">Restore Access</span>
-                    <span className="text-[8px] text-slate-400 font-semibold uppercase">Re-enable API & Client portals</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={reactivateRestore}
-                    onChange={(e) => setReactivateRestore(e.target.checked)}
-                    className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-200"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-xl">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold text-slate-700">Notify User</span>
-                    <span className="text-[8px] text-slate-400 font-semibold uppercase">Send confirmation message</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={reactivateNotify}
-                    onChange={(e) => setReactivateNotify(e.target.checked)}
-                    className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-200"
+                    rows={2}
+                    placeholder="Internal reference notes..."
+                    value={suspendInternalNote}
+                    onChange={(e) => setSuspendInternalNote(e.target.value)}
+                    className="w-full text-xs border border-slate-200 bg-slate-50 rounded-xl p-2.5 focus:outline-none focus:border-amber-500"
                   />
                 </div>
               </div>
 
-              <div className="flex gap-3 justify-end pt-2">
+              <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
                 <button
-                  onClick={() => setReactivateModalOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors w-full"
+                  onClick={() => setSuspendingAccount(null)}
+                  className="px-4 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={handleReactivateAccountSubmit}
-                  className="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors w-full shadow-sm"
+                  onClick={handleConfirmSuspend}
+                  className="px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-xl shadow-xs transition-colors cursor-pointer"
                 >
-                  Reactivate
+                  Suspend Account
                 </button>
               </div>
             </motion.div>
@@ -1205,82 +1911,352 @@ export default function Limits() {
         )}
       </AnimatePresence>
 
-      {/* Block Modal Dialogue */}
+      {/* Reactivate Account Modal */}
       <AnimatePresence>
-        {blockModalOpen && activeAccount && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setBlockModalOpen(false)} />
+        {reactivatingAccount && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm relative z-10 space-y-4 border border-rose-100"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setReactivatingAccount(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
+            />
+
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-5 space-y-4 z-10"
             >
-              <div>
-                <h3 className="text-base font-black text-rose-600 flex items-center gap-1.5"><ShieldAlert size={18} /> Block Account</h3>
-                <p className="text-[11px] text-slate-400 mt-0.5">PERMANENTLY ban merchant ID <span className="font-bold text-slate-700">{activeAccount.id}</span>.</p>
-              </div>
-
-              <div className="bg-rose-50 border border-rose-100 rounded-xl p-3 text-rose-800 text-[10px] font-bold leading-relaxed">
-                CAUTION: This action is irreversible. It blocks all trading, escrow payouts, and user log-ins immediately.
-              </div>
-
-              <div className="space-y-3 text-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold shrink-0">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
                 <div>
-                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Block Reason</label>
+                  <h3 className="text-base font-extrabold text-slate-900">Reactivate this account?</h3>
+                  <p className="text-xs text-slate-500 font-medium">{reactivatingAccount.businessName}</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    Resolution Note <span className="text-rose-500">*</span>
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Reason for ending restriction / documents verified..."
+                    value={reactivateResolutionNote}
+                    onChange={(e) => setReactivateResolutionNote(e.target.value)}
+                    className="w-full text-xs border border-slate-200 bg-slate-50 rounded-xl p-2.5 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Applicant-facing Message (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Your account has been reactivated successfully."
+                    value={reactivateApplicantMsg}
+                    onChange={(e) => setReactivateApplicantMsg(e.target.value)}
+                    className="w-full text-xs border border-slate-200 bg-slate-50 rounded-xl p-2.5 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
+                <button
+                  onClick={() => setReactivatingAccount(null)}
+                  className="px-4 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmReactivate}
+                  className="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors cursor-pointer"
+                >
+                  Reactivate Account
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Block Account Modal */}
+      <AnimatePresence>
+        {blockingAccount && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setBlockingAccount(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
+            />
+
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-5 space-y-4 z-10"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold shrink-0">
+                  <ShieldAlert className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900">Block this account?</h3>
+                  <p className="text-xs text-slate-500 font-medium">{blockingAccount.businessName}</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    Block Reason <span className="text-rose-500">*</span>
+                  </label>
                   <select
                     value={blockReason}
                     onChange={(e) => setBlockReason(e.target.value)}
-                    className="w-full border border-slate-200 bg-slate-50/50 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-rose-500 font-semibold text-slate-700"
+                    className="w-full text-xs font-semibold border border-slate-200 bg-slate-50 rounded-xl p-2.5 focus:outline-none focus:border-rose-500"
                   >
-                    <option value="Fraudulent Document Submissions">Fraudulent Document Submissions</option>
-                    <option value="Severe and multiple SLA Breaches">Severe and multiple SLA Breaches</option>
-                    <option value="Illegal Activities on platform">Illegal Activities on platform</option>
-                    <option value="Repeated warnings ignored">Repeated warnings ignored</option>
+                    <option value="">-- Select Block Reason --</option>
+                    <option value="Confirmed fraud">Confirmed fraud</option>
+                    <option value="Identity misuse">Identity misuse</option>
+                    <option value="Repeated serious violations">Repeated serious violations</option>
+                    <option value="Platform abuse">Platform abuse</option>
+                    <option value="Security risk">Security risk</option>
+                    <option value="Legal or compliance directive">Legal or compliance directive</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Confirm Admin Password</label>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Applicant-facing Message</label>
                   <input
-                    type="password"
-                    value={blockPasswordConfirm}
-                    onChange={(e) => setBlockPasswordConfirm(e.target.value)}
-                    placeholder="Type 'admin' to authorize..."
-                    className="w-full border border-slate-200 bg-slate-50/50 rounded-xl px-3 py-2 focus:outline-none focus:ring-1 focus:ring-rose-500 text-slate-700 font-semibold"
+                    type="text"
+                    placeholder="Notice displayed on merchant login..."
+                    value={blockApplicantMsg}
+                    onChange={(e) => setBlockApplicantMsg(e.target.value)}
+                    className="w-full text-xs border border-slate-200 bg-slate-50 rounded-xl p-2.5 focus:outline-none focus:border-rose-500"
                   />
                 </div>
 
-                <div className="flex items-start gap-2.5 p-2.5 bg-slate-50 border border-slate-100 rounded-xl">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Internal Admin Note</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Internal reference details..."
+                    value={blockInternalNote}
+                    onChange={(e) => setBlockInternalNote(e.target.value)}
+                    className="w-full text-xs border border-slate-200 bg-slate-50 rounded-xl p-2.5 focus:outline-none focus:border-rose-500"
+                  />
+                </div>
+
+                <div className="flex items-start gap-2 pt-1">
                   <input
                     type="checkbox"
-                    id="blockConfirmCheck"
-                    checked={blockConfirmCheckbox}
-                    onChange={(e) => setBlockConfirmCheckbox(e.target.checked)}
-                    className="mt-0.5 rounded text-rose-600 focus:ring-rose-500 border-slate-200"
+                    id="blockConfirm"
+                    checked={blockConfirmCheck}
+                    onChange={(e) => setBlockConfirmCheck(e.target.checked)}
+                    className="mt-0.5 rounded text-rose-600 focus:ring-rose-500"
                   />
-                  <label htmlFor="blockConfirmCheck" className="text-[10px] text-slate-500 font-semibold leading-relaxed cursor-pointer select-none">
-                    I confirm that I have verified the evidence and want to permanently block this merchant's access.
+                  <label htmlFor="blockConfirm" className="text-xs text-slate-600 font-medium cursor-pointer">
+                    I understand this action will prevent platform access and revoke trading permissions.
                   </label>
                 </div>
               </div>
 
-              <div className="flex gap-3 justify-end pt-2">
+              <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
                 <button
-                  onClick={() => setBlockModalOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors w-full"
+                  onClick={() => setBlockingAccount(null)}
+                  className="px-4 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={handleConfirmBlockSubmit}
-                  disabled={!blockConfirmCheckbox || blockPasswordConfirm.toLowerCase() !== "admin"}
-                  className={`px-4 py-2 text-xs font-bold text-white rounded-xl transition-colors w-full shadow-sm ${blockConfirmCheckbox && blockPasswordConfirm.toLowerCase() === "admin"
-                    ? "bg-rose-600 hover:bg-rose-700"
-                    : "bg-slate-200 text-slate-400 cursor-not-allowed border-transparent"
-                    }`}
+                  onClick={handleConfirmBlock}
+                  disabled={!blockConfirmCheck || !blockReason}
+                  className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl shadow-xs transition-colors cursor-pointer"
                 >
-                  Block Permanently
+                  Block Account
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Extend Temporary Suspension Modal */}
+      <AnimatePresence>
+        {extendingAccount && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setExtendingAccount(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
+            />
+
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-5 space-y-4 z-10"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold shrink-0">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900">Extend Temporary Suspension</h3>
+                  <p className="text-xs text-slate-500 font-medium">{extendingAccount.businessName}</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    New End Date <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={extendNewEndDate}
+                    onChange={(e) => setExtendNewEndDate(e.target.value)}
+                    className="w-full text-xs border border-slate-200 bg-slate-50 rounded-xl p-2.5 focus:outline-none focus:border-blue-500 font-semibold"
+                  />
+                  {extendingAccount.endDate && extendingAccount.endDate !== '—' && (
+                    <span className="text-[10px] text-slate-400 mt-1 block">Current End Date: {extendingAccount.endDate}</span>
+                  )}
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    Extension Reason <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Additional documentation required..."
+                    value={extendReason}
+                    onChange={(e) => setExtendReason(e.target.value)}
+                    className="w-full text-xs border border-slate-200 bg-slate-50 rounded-xl p-2.5 focus:outline-none focus:border-blue-500 font-semibold"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Applicant-facing Message</label>
+                  <input
+                    type="text"
+                    placeholder="Message displayed to merchant..."
+                    value={extendApplicantMsg}
+                    onChange={(e) => setExtendApplicantMsg(e.target.value)}
+                    className="w-full text-xs border border-slate-200 bg-slate-50 rounded-xl p-2.5 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Internal Note</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Internal reference..."
+                    value={extendInternalNote}
+                    onChange={(e) => setExtendInternalNote(e.target.value)}
+                    className="w-full text-xs border border-slate-200 bg-slate-50 rounded-xl p-2.5 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
+                <button
+                  onClick={() => setExtendingAccount(null)}
+                  className="px-4 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmExtend}
+                  className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-colors cursor-pointer"
+                >
+                  Extend Suspension
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Unblock Account Modal */}
+      <AnimatePresence>
+        {unblockingAccount && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setUnblockingAccount(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
+            />
+
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-5 space-y-4 z-10"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold shrink-0">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900">Unblock Account?</h3>
+                  <p className="text-xs text-slate-500 font-medium">{unblockingAccount.businessName}</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    Review Note <span className="text-rose-500">*</span>
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Justification or audit reference for unblocking..."
+                    value={unblockReviewNote}
+                    onChange={(e) => setUnblockReviewNote(e.target.value)}
+                    className="w-full text-xs border border-slate-200 bg-slate-50 rounded-xl p-2.5 focus:outline-none focus:border-[#071B3A]"
+                  />
+                </div>
+
+                <div className="flex items-start gap-2 pt-1">
+                  <input
+                    type="checkbox"
+                    id="unblockConfirm"
+                    checked={unblockConfirmCheck}
+                    onChange={(e) => setUnblockConfirmCheck(e.target.checked)}
+                    className="mt-0.5 rounded text-[#071B3A] focus:ring-[#071B3A]"
+                  />
+                  <label htmlFor="unblockConfirm" className="text-xs text-slate-600 font-medium cursor-pointer">
+                    I confirm this account has passed review and is approved to return to active platform operations.
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
+                <button
+                  onClick={() => setUnblockingAccount(null)}
+                  className="px-4 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmUnblock}
+                  disabled={!unblockConfirmCheck || !unblockReviewNote}
+                  className="px-4 py-2 text-xs font-bold text-white bg-[#071B3A] hover:bg-[#0c2854] disabled:opacity-40 disabled:cursor-not-allowed rounded-xl shadow-xs transition-colors cursor-pointer"
+                >
+                  Unblock Account
                 </button>
               </div>
             </motion.div>

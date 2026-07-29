@@ -1,875 +1,961 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Search, X, MoreVertical, Plus, Shield, UserX, UserCheck, Key,
-  Eye, Clock, ShieldCheck, Mail, AlertTriangle, Trash2, Check, Lock, Unlock, RefreshCw, Users
-} from 'lucide-react';
+import { Users, UserCheck, UserX, Clock, Plus, Search, X, Eye, RefreshCw, EllipsisVertical as MoreVertical, CircleCheck as CheckCircle2, TriangleAlert as AlertTriangle, Mail, Phone, Building2, Check, SlidersHorizontal, Shield, ShieldCheck, Lock, ChevronRight, Send, Trash2 } from 'lucide-react';
 import { fetchAdminTeam } from '../../services/api.service';
-const INITIAL_ADMINS = [];
+
+const INITIAL_MOCK_ADMINS = [];
+
+const AVAILABLE_MODULES = [
+  'Dashboard',
+  'Verification',
+  'HoReCa Directory',
+  'Vendor Network',
+  'Complaints & Support',
+  'Status & Limits',
+  'Reports',
+  'Settings',
+];
+
+const AVAILABLE_ROLES = [
+  'Super Admin',
+  'Verification Admin',
+  'Support Admin',
+  'Operations Admin',
+  'Finance Admin',
+  'Read-Only Auditor',
+];
 
 export default function Team() {
   const [admins, setAdmins] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Search and Toolbar States
-  const [searchQuery, setSearchQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState("All");
-  const [statusFilter, setStatusFilter] = useState("All");
-  const [moduleFilter, setModuleFilter] = useState("All");
-  const [loginFilter, setLoginFilter] = useState("All");
+  // Search and Filter States
+  const [activeTab, setActiveTab] = useState('All'); // 'All' | 'Active' | 'Disabled' | 'Pending Invite'
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('All');
 
+  // Interactive UI States
   const [activeMenuId, setActiveMenuId] = useState(null);
+  const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [toasts, setToasts] = useState([]);
 
-  // Right Side Drawer State
-  const [selectedAdminId, setSelectedAdminId] = useState(null);
-  const [drawerTab, setDrawerTab] = useState("Overview"); // Overview, Permissions, Activity, Security
-
-  // Modals States
+  // Add Admin Modal State ("Invite New Admin")
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [inviteName, setInviteName] = useState('');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [invitePhone, setInvitePhone] = useState('');
+  const [inviteRole, setInviteRole] = useState('Verification Admin');
+  const [inviteModules, setInviteModules] = useState(['Verification', 'HoReCa Directory', 'Vendor Network']);
+  const [inviteMessage, setInviteMessage] = useState('');
+
+  // Edit Admin Modal State
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [resetModalOpen, setResetModalOpen] = useState(false);
-  const [removeModalOpen, setRemoveModalOpen] = useState(false);
+  const [editingAdmin, setEditingAdmin] = useState(null);
+  const [editRole, setEditRole] = useState('Verification Admin');
+  const [editStatus, setEditStatus] = useState('Active');
+  const [editModules, setEditModules] = useState([]);
 
-  // Form States
-  const [formName, setFormName] = useState("");
-  const [formEmail, setFormEmail] = useState("");
-  const [formPhone, setFormPhone] = useState("");
-  const [formRole, setFormRole] = useState("Verification Admin");
-  const [formDept, setFormDept] = useState("Operations");
-  const [formAccess, setFormAccess] = useState(["Verification"]);
-  const [formTempPassword, setFormTempPassword] = useState("");
-  const [formSendInvite, setFormSendInvite] = useState(true);
+  // Remove Confirmation Modal
+  const [removingAdmin, setRemovingAdmin] = useState(null);
 
-  // Edit State
-  const [editStatus, setEditStatus] = useState("Active");
+  const showToast = (message, type = 'success') => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3500);
+  };
 
-  // Reset State
-  const [resetTempPassword, setResetTempPassword] = useState("");
-  const [resetSendEmail, setResetSendEmail] = useState(true);
-
-  // Pagination State
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
-
-  const availableModules = [
-    "Dashboard",
-    "Verification",
-    "HoReCa Directory",
-    "Vendor Network",
-    "Complaints & Support",
-    "Status & Limits",
-    "Reports",
-    "Settings"
-  ];
-
-  const availableRoles = [
-    "Super Admin",
-    "Verification Admin",
-    "Support Admin",
-    "Operations Admin",
-    "Finance Admin",
-    "Read-Only Auditor"
-  ];
-
-  useEffect(() => {
-    const loadTeam = async () => {
+  const loadData = async () => {
+    setLoading(true);
+    try {
       const data = await fetchAdminTeam();
-      if (data) {
-        const mapped = data.map(u => ({
-          id: u.id,
-          name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Admin User',
-          email: u.email,
-          phone: u.mobile || '-',
+      if (Array.isArray(data) && data.length > 0) {
+        const mapped = data.map((u, idx) => ({
+          id: u.id || `ADM-00${idx + 1}`,
+          name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.name || 'Admin User',
+          email: u.email || 'admin@hrchub.com',
+          phone: u.mobile || u.phone || '+91 9856320427',
           role: u.role === 'superadmin' ? 'Super Admin' : 'Verification Admin',
-          department: 'Operations',
-          status: u.status === 'suspended' ? 'Disabled' : 'Active',
-          lastLogin: 'Never',
-          access: ["Dashboard", "Verification", "HoReCa Directory", "Vendor Network"],
-          joined: new Date(u.createdAt).toLocaleDateString()
+          department: u.department || 'Operations',
+          status: u.status === 'suspended' ? 'Disabled' : u.status === 'pending' ? 'Pending Invite' : 'Active',
+          isOnline: u.isOnline || false,
+          lastLogin: u.lastLogin || 'Today · 08:45 AM',
+          addedOn: u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '24 Jul 2026',
+          access: u.access || ['Dashboard', 'Verification', 'HoReCa Directory', 'Vendor Network'],
+          createdBy: 'Super Admin',
+          security: {
+            twoFactorStatus: 'Enabled',
+            passwordLastChanged: '15 Jun 2026',
+            failedLoginAttempts: 0,
+            lastLoginDevice: 'Chrome Browser',
+            lastLoginIp: '103.22.41.12',
+            activeSessions: 1,
+          },
+          activity: [{ action: 'Account Verified & Synchronized', module: 'System', time: 'Today' }],
         }));
+
         setAdmins(mapped);
       } else {
         setAdmins([]);
       }
-    };
-    loadTeam();
+    } catch (err) {
+      console.warn('API error fetching admin team:', err);
+      setAdmins([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
 
     const handleClickOutside = () => setActiveMenuId(null);
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  const saveAdmins = (updated) => {
-    setAdmins(updated);
-  };
-
-  const handleStatusToggle = (id) => {
-    const updated = admins.map(a => {
-      if (a.id === id) {
-        const nextStatus = a.status === 'Active' || a.status === 'Online' ? 'Disabled' : 'Active';
-        return { ...a, status: nextStatus };
-      }
-      return a;
-    });
-    saveAdmins(updated);
-    const item = updated.find(a => a.id === id);
-    showToast(`Admin account status is now ${item.status}!`, "info");
-  };
-
-  const showToast = (message, type = 'success') => {
-    const id = Math.random().toString(36).substring(2, 9);
-    setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000);
-  };
-
-  const handleGeneratePassword = (isReset = false) => {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%";
-    let pass = "HRC-";
-    for (let i = 0; i < 8; i++) {
-      pass += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    if (isReset) {
-      setResetTempPassword(pass);
-    } else {
-      setFormTempPassword(pass);
-    }
-  };
-
-  // Summaries
+  // Summary Metrics
   const totalCount = admins.length;
-  const activeCount = admins.filter(a => a.status === 'Active' || a.status === 'Online').length;
-  const disabledCount = admins.filter(a => a.status === 'Disabled').length;
-  const onlineCount = admins.filter(a => a.isOnline || a.status === 'Online').length;
-  const pendingCount = admins.filter(a => a.status === 'Pending Invite').length;
+  const activeCount = admins.filter((a) => a.status === 'Active' || a.status === 'Online').length;
+  const disabledCount = admins.filter((a) => a.status === 'Disabled').length;
+  const onlineCount = admins.filter((a) => a.isOnline || a.status === 'Online').length;
+  const pendingCount = admins.filter((a) => a.status === 'Pending Invite').length;
 
+  // Filter Logic
   const filteredAdmins = useMemo(() => {
     return admins.filter((a) => {
-      const query = searchQuery.toLowerCase();
-      const matchSearch =
-        !searchQuery ||
-        (a.name && a.name.toLowerCase().includes(query)) ||
-        (a.email && a.email.toLowerCase().includes(query)) ||
-        (a.phone && a.phone.includes(query));
+      // Primary Tab Filter
+      let matchTab = true;
+      if (activeTab === 'Active') matchTab = a.status === 'Active' || a.status === 'Online';
+      else if (activeTab === 'Disabled') matchTab = a.status === 'Disabled';
+      else if (activeTab === 'Pending Invite') matchTab = a.status === 'Pending Invite';
 
-      const matchRole = roleFilter === "All" || a.role === roleFilter;
-      const matchStatus = statusFilter === "All" || a.status === statusFilter;
+      // Dropdown Filters
+      const matchRole = roleFilter === 'All' || a.role === roleFilter;
+      const matchStatus = statusFilter === 'All' || a.status === statusFilter;
 
-      let matchModule = true;
-      if (moduleFilter !== "All") {
-        matchModule = a.access.includes(moduleFilter);
-      }
+      // Search Query
+      const q = searchQuery.trim().toLowerCase();
+      const matchQuery =
+        !q ||
+        a.name.toLowerCase().includes(q) ||
+        a.email.toLowerCase().includes(q) ||
+        a.phone.toLowerCase().includes(q) ||
+        a.role.toLowerCase().includes(q) ||
+        a.id.toLowerCase().includes(q);
 
-      let matchLogin = true;
-      if (loginFilter !== "All") {
-        if (loginFilter === "Today") {
-          matchLogin = a.lastLogin.includes("17 Jul 2026") || a.lastLogin.includes("Just now") || a.lastLogin.includes("hours") || a.lastLogin.includes("mins");
-        } else if (loginFilter === "Week") {
-          matchLogin = a.lastLogin !== "Never" && !a.lastLogin.includes("May 2026") && !a.lastLogin.includes("Never");
-        } else if (loginFilter === "Never") {
-          matchLogin = a.lastLogin === "Never";
-        }
-      }
-
-      return matchSearch && matchRole && matchStatus && matchModule && matchLogin;
+      return matchTab && matchRole && matchStatus && matchQuery;
     });
-  }, [admins, searchQuery, roleFilter, statusFilter, moduleFilter, loginFilter]);
+  }, [admins, activeTab, roleFilter, statusFilter, searchQuery]);
 
-  const activeAdmin = useMemo(() => admins.find(a => a.id === selectedAdminId), [admins, selectedAdminId]);
+  const hasActiveFilters = searchQuery !== '' || activeTab !== 'All' || roleFilter !== 'All' || statusFilter !== 'All';
 
-  const totalPages = Math.ceil(filteredAdmins.length / itemsPerPage);
-  const currentAdmins = useMemo(() => {
-    return filteredAdmins;
-  }, [filteredAdmins]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, roleFilter, statusFilter, moduleFilter, loginFilter]);
-
-  const handleAction = (e, adm, type) => {
-    e.stopPropagation();
-    setActiveMenuId(null);
-
-    if (type === 'view') {
-      setSelectedAdminId(adm.id);
-      setDrawerTab("Overview");
-    } else if (type === 'edit') {
-      setSelectedAdminId(adm.id);
-      setFormName(adm.name);
-      setFormEmail(adm.email);
-      setFormPhone(adm.phone);
-      setFormRole(adm.role);
-      setFormDept(adm.department || "Operations");
-      setFormAccess(adm.access || []);
-      setEditStatus(adm.status);
-      setEditModalOpen(true);
-    } else if (type === 'permissions') {
-      setSelectedAdminId(adm.id);
-      setDrawerTab("Permissions");
-    } else if (type === 'toggle-status') {
-      if (adm.role === 'Super Admin' && adm.status === 'Active') {
-        showToast("Error: Primary Super Admin cannot be disabled.", "error");
-        return;
-      }
-      const newStatus = adm.status === 'Active' || adm.status === 'Online' ? 'Disabled' : 'Active';
-      const updated = admins.map(a => a.id === adm.id ? { ...a, status: newStatus, isOnline: newStatus === 'Active' ? a.isOnline : false } : a);
-      saveAdmins(updated);
-      showToast(`${adm.name} account status updated to ${newStatus}.`, "success");
-    } else if (type === 'password') {
-      setSelectedAdminId(adm.id);
-      handleGeneratePassword(true);
-      setResetModalOpen(true);
-    } else if (type === 'invite') {
-      showToast(`Invitation email resent to ${adm.email} successfully.`, "success");
-    } else if (type === 'remove') {
-      if (adm.role === 'Super Admin') {
-        showToast("Error: Primary Super Admin cannot be deleted.", "error");
-        return;
-      }
-      setSelectedAdminId(adm.id);
-      setRemoveModalOpen(true);
-    }
+  const resetFilters = () => {
+    setActiveTab('All');
+    setSearchQuery('');
+    setRoleFilter('All');
+    setStatusFilter('All');
   };
 
-  const handleRoleChange = (role) => {
-    setFormRole(role);
-    // Assign modules defaults
-    let def = [];
-    if (role === "Super Admin") def = availableModules;
-    else if (role === "Verification Admin") def = ["Verification", "HoReCa Directory", "Vendor Network"];
-    else if (role === "Support Admin") def = ["Complaints & Support", "HoReCa Directory", "Vendor Network"];
-    else if (role === "Operations Admin") def = ["HoReCa Directory", "Vendor Network", "Reports"];
-    else if (role === "Finance Admin") def = ["Reports", "Settings"];
-    else if (role === "Read-Only Auditor") def = ["Dashboard", "Verification", "HoReCa Directory", "Vendor Network", "Complaints & Support", "Status & Limits", "Reports"];
-    setFormAccess(def);
-  };
-
-  const handleAddAdminSubmit = (e) => {
+  // Add Admin Submission ("Invite New Admin")
+  const handleInviteSubmit = (e) => {
     e.preventDefault();
-    if (!formName.trim() || !formEmail.trim() || !formPhone.trim()) {
-      showToast("Please fill in all basic fields.", "error");
+    if (!inviteName.trim() || !inviteEmail.trim()) {
+      showToast('Please provide Full Name and Email Address.', 'error');
       return;
     }
 
-    // Create new admin
     const newId = `ADM-00${admins.length + 1}`;
-    const timestampShort = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-    const newAdmin = {
+    const timestampShort = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    const newAdminRecord = {
       id: newId,
-      name: formName,
-      email: formEmail,
-      phone: formPhone,
-      role: formRole,
-      department: formDept,
-      access: formAccess,
-      status: formSendInvite ? "Pending Invite" : "Active",
+      name: inviteName.trim(),
+      email: inviteEmail.trim(),
+      phone: invitePhone.trim() || '+91 9800000000',
+      role: inviteRole,
+      department: 'Operations',
+      status: 'Pending Invite',
       isOnline: false,
-      lastLogin: "Never",
-      regDate: timestampShort,
-      createdBy: "Super Admin",
+      lastLogin: 'Never',
+      addedOn: timestampShort,
+      access: inviteModules,
+      createdBy: 'Super Admin',
       security: {
-        twoFactorStatus: "Disabled",
-        passwordLastChanged: "Never",
+        twoFactorStatus: 'Disabled',
+        passwordLastChanged: 'Never',
         failedLoginAttempts: 0,
-        lastLoginDevice: "N/A",
-        lastLoginIp: "N/A",
-        activeSessions: 0
+        lastLoginDevice: 'N/A',
+        lastLoginIp: 'N/A',
+        activeSessions: 0,
       },
-      activity: [
-        { action: "Admin profile created", module: "Settings", time: `${timestampShort}, 03:30 PM` }
-      ],
-      permissionsMatrix: {}
+      activity: [{ action: 'Invitation Link Sent to Email', module: 'Settings', time: `${timestampShort}, Just now` }],
     };
 
-    // Populate permission matrix defaults
-    formAccess.forEach(mod => {
-      newAdmin.permissionsMatrix[mod] = formRole === "Super Admin"
-        ? ["View", "Create", "Edit", "Approve", "Delete", "Export"]
-        : ["View", "Edit"];
-    });
-
-    saveAdmins([...admins, newAdmin]);
-    showToast(`${formName} registered as ${formRole}.`, "success");
+    setAdmins((prev) => [newAdminRecord, ...prev]);
+    showToast(`Admin invitation sent to ${inviteEmail}.`, 'success');
     setAddModalOpen(false);
 
-    // Reset fields
-    setFormName("");
-    setFormEmail("");
-    setFormPhone("");
-    setFormDept("Operations");
-    setFormAccess(["Verification"]);
-    setFormTempPassword("");
+    // Reset Form
+    setInviteName('');
+    setInviteEmail('');
+    setInvitePhone('');
+    setInviteRole('Verification Admin');
+    setInviteModules(['Verification', 'HoReCa Directory', 'Vendor Network']);
+    setInviteMessage('');
   };
 
-  const handleEditAdminSubmit = (e) => {
+  // Edit Admin Submission
+  const handleEditSubmit = (e) => {
     e.preventDefault();
-    if (!selectedAdminId) return;
+    if (!editingAdmin) return;
 
-    const updated = admins.map(a => {
-      if (a.id === selectedAdminId) {
-        const nextMatrix = { ...a.permissionsMatrix };
-        formAccess.forEach(mod => {
-          if (!nextMatrix[mod]) {
-            nextMatrix[mod] = formRole === "Super Admin"
-              ? ["View", "Create", "Edit", "Approve", "Delete", "Export"]
-              : ["View"];
-          }
-        });
+    const updated = admins.map((a) => {
+      if (a.id === editingAdmin.id) {
         return {
           ...a,
-          role: formRole,
-          department: formDept,
-          access: formAccess,
+          role: editRole,
           status: editStatus,
-          isOnline: editStatus === "Online" ? true : (editStatus === "Disabled" ? false : a.isOnline),
-          permissionsMatrix: nextMatrix
+          isOnline: editStatus === 'Online',
+          access: editModules,
         };
       }
       return a;
     });
 
-    saveAdmins(updated);
-    showToast(`Access properties saved for ${formName}.`, "success");
+    setAdmins(updated);
+    if (selectedAdmin && selectedAdmin.id === editingAdmin.id) {
+      setSelectedAdmin(updated.find((x) => x.id === editingAdmin.id));
+    }
     setEditModalOpen(false);
+    showToast(`Updated admin role and permissions for ${editingAdmin.name}.`, 'success');
   };
 
-  const handleResetPasswordSubmit = () => {
-    if (!selectedAdminId) return;
-    const timestampShort = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-    const updated = admins.map(a => {
-      if (a.id === selectedAdminId) {
-        const nextHistory = [
-          ...a.activity,
-          { action: "Password reset authorized", module: "Settings", time: `${timestampShort}, 04:00 PM` }
-        ];
-        return {
-          ...a,
-          security: {
-            ...a.security,
-            passwordLastChanged: timestampShort,
-            failedLoginAttempts: 0
-          },
-          activity: nextHistory
-        };
+  // Toggle Disable / Reactivate Admin
+  const handleToggleDisable = (adminItem) => {
+    if (adminItem.role === 'Super Admin' && (adminItem.status === 'Active' || adminItem.status === 'Online')) {
+      showToast('Super Admin primary account cannot be disabled.', 'error');
+      return;
+    }
+
+    const isCurrentlyDisabled = adminItem.status === 'Disabled';
+    const newStatus = isCurrentlyDisabled ? 'Active' : 'Disabled';
+
+    const updated = admins.map((a) => {
+      if (a.id === adminItem.id) {
+        return { ...a, status: newStatus, isOnline: newStatus === 'Active' ? a.isOnline : false };
       }
       return a;
     });
-    saveAdmins(updated);
-    showToast(`Password successfully reset. Temporary key: ${resetTempPassword}`, "success");
-    setResetModalOpen(false);
-  };
 
-  const handleRemoveAdminSubmit = () => {
-    if (!selectedAdminId) return;
-    const target = admins.find(a => a.id === selectedAdminId);
-    const updated = admins.filter(a => a.id !== selectedAdminId);
-    saveAdmins(updated);
-    showToast(`${target.name} removed from admin credentials directory.`, "error");
-    setRemoveModalOpen(false);
-    setSelectedAdminId(null);
-  };
-
-  const getRoleColor = (role) => {
-    switch (role) {
-      case 'Super Admin': return 'bg-rose-50 text-rose-700 border-rose-200/60';
-      case 'Verification Admin': return 'bg-indigo-50 text-indigo-700 border-indigo-200/60';
-      case 'Support Admin': return 'bg-emerald-50 text-emerald-700 border-emerald-200/60';
-      case 'Operations Admin': return 'bg-amber-50 text-amber-700 border-amber-200/60';
-      case 'Finance Admin': return 'bg-purple-50 text-purple-700 border-purple-200/60';
-      case 'Read-Only Auditor': return 'bg-slate-100 text-slate-700 border-slate-200/60';
-      default: return 'bg-slate-50 text-slate-700 border-slate-200/60';
+    setAdmins(updated);
+    if (selectedAdmin && selectedAdmin.id === adminItem.id) {
+      setSelectedAdmin(updated.find((x) => x.id === adminItem.id));
     }
+    showToast(`${adminItem.name} account is now ${newStatus}.`, 'info');
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Active': return 'bg-emerald-50 text-emerald-700 border-emerald-200/60';
-      case 'Online': return 'bg-blue-50 text-blue-700 border-blue-200/60';
-      case 'Disabled': return 'bg-rose-50 text-rose-700 border-rose-200/60 font-bold';
-      case 'Pending Invite': return 'bg-amber-50 text-amber-700 border-amber-200/60';
-      case 'Locked': return 'bg-purple-50 text-purple-700 border-purple-200/60';
-      default: return 'bg-slate-50 text-slate-700 border-slate-200/60';
+  // Resend Invite
+  const handleResendInvite = (adminItem) => {
+    showToast(`Invitation email resent successfully to ${adminItem.email}.`, 'success');
+  };
+
+  // Remove Admin Confirmation
+  const handleConfirmRemove = () => {
+    if (!removingAdmin) return;
+    if (removingAdmin.role === 'Super Admin') {
+      showToast('Super Admin account cannot be removed.', 'error');
+      setRemovingAdmin(null);
+      return;
     }
+
+    const updated = admins.filter((a) => a.id !== removingAdmin.id);
+    setAdmins(updated);
+    if (selectedAdmin && selectedAdmin.id === removingAdmin.id) {
+      setSelectedAdmin(null);
+    }
+    showToast(`${removingAdmin.name} removed from admin team.`, 'success');
+    setRemovingAdmin(null);
   };
 
   return (
-    <div className="flex flex-col gap-6 animate-fadeIn pb-8">
-      {/* Toast Overlay */}
+    <div className="flex flex-col gap-5 animate-fadeIn pb-12 text-slate-800">
+      {/* Toast Notification Container */}
       <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-2 max-w-sm w-full pointer-events-none">
         <AnimatePresence>
-          {toasts.map((toast) => (
+          {toasts.map((t) => (
             <motion.div
-              key={toast.id}
-              initial={{ opacity: 0, y: 25 }}
+              key={t.id}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              className={`flex items-start gap-3 p-4 rounded-xl border shadow-xl bg-white backdrop-blur-md pointer-events-auto ${toast.type === "success" ? "border-emerald-500/20 text-emerald-800" :
-                  toast.type === "error" ? "border-rose-500/20 text-rose-800" : "border-blue-500/20 text-blue-800"
-                }`}
+              exit={{ opacity: 0, y: -10 }}
+              className={`flex items-center justify-between p-3.5 rounded-xl border shadow-xl bg-white backdrop-blur-md pointer-events-auto text-xs font-semibold ${
+                t.type === 'success'
+                  ? 'border-emerald-500/30 text-emerald-900 bg-emerald-50/95'
+                  : t.type === 'error'
+                  ? 'border-rose-500/30 text-rose-900 bg-rose-50/95'
+                  : 'border-blue-500/30 text-blue-900 bg-blue-50/95'
+              }`}
             >
-              <div className="flex-1 text-xs font-semibold leading-relaxed mt-0.5">{toast.message}</div>
-              <button onClick={() => setToasts((p) => p.filter((t) => t.id !== toast.id))} className="text-slate-400">
-                <X className="w-3.5 h-3.5" />
+              <span>{t.message}</span>
+              <button onClick={() => setToasts((p) => p.filter((x) => x.id !== t.id))} className="text-slate-400 hover:text-slate-600">
+                <X className="w-4 h-4" />
               </button>
             </motion.div>
           ))}
         </AnimatePresence>
       </div>
 
-      {/* Hero Header Card */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-3xl p-6 shadow-xl border border-slate-700/50 relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="absolute right-0 top-0 translate-x-12 -translate-y-8 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="flex items-center gap-4 relative z-10">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30 border border-blue-400/30 shrink-0">
-            <Users size={26} />
+      {/* Final Page Header (Normal background, no dark hero banner) */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[#071B3A] text-white flex items-center justify-center font-bold shadow-xs">
+              <Users className="w-4.5 h-4.5" />
+            </div>
+            <h1 className="text-xl font-extrabold text-[#071B3A] tracking-tight">Admin Team</h1>
+          </div>
+          <p className="text-xs text-slate-500 font-medium mt-1">Manage administrator accounts, roles and module access.</p>
+        </div>
+
+        <div className="flex items-center gap-2.5 self-end sm:self-auto">
+          <button
+            onClick={() => {
+              loadData();
+              showToast('Refreshed admin team records.', 'info');
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 rounded-xl transition-all cursor-pointer active:scale-95"
+            title="Refresh Admin List"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
+          <button
+            onClick={() => {
+              setInviteName('');
+              setInviteEmail('');
+              setInvitePhone('');
+              setInviteRole('Verification Admin');
+              setInviteModules(['Verification', 'HoReCa Directory', 'Vendor Network']);
+              setInviteMessage('');
+              setAddModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-[#071B3A] hover:bg-[#0c2854] rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Admin</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Compact Horizontal Summary Strip (1 White Container, ~72-84px height) */}
+      <div className="bg-white border border-[#E3E9F1] rounded-2xl shadow-xs p-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 gap-y-3 sm:gap-y-0">
+        <div
+          onClick={() => setActiveTab('All')}
+          className="flex items-center gap-3 px-3 py-1 cursor-pointer hover:bg-slate-50 rounded-xl transition-colors"
+          title="View All Admins"
+        >
+          <div className="w-9 h-9 rounded-xl bg-slate-100 text-[#071B3A] flex items-center justify-center font-bold shrink-0">
+            <Users className="w-4 h-4" />
           </div>
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-white">Admin Team Management</h1>
-            <p className="text-xs text-slate-300 mt-0.5 font-medium">Manage super admins, module access rights, and security.</p>
+            <div className="text-xl font-extrabold text-[#071B3A]">{totalCount}</div>
+            <div className="text-[11px] font-medium text-slate-500">Total Admins</div>
           </div>
         </div>
-        <button
-          onClick={() => {
-            setFormName("");
-            setFormEmail("");
-            setFormPhone("");
-            setFormDept("Operations");
-            setFormAccess(["Verification"]);
-            setFormRole("Verification Admin");
-            handleGeneratePassword(false);
-            setAddModalOpen(true);
-          }}
-          className="relative z-10 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-blue-600/30 flex items-center gap-2 border border-blue-400/30 shrink-0"
+
+        <div
+          onClick={() => setActiveTab('Active')}
+          className="flex items-center gap-3 px-3 py-1 cursor-pointer hover:bg-slate-50 rounded-xl transition-colors"
+          title="View Active Admins"
         >
-          <Plus size={16} /> Add Admin
-        </button>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        {[
-          { title: "Total Admins", val: totalCount, col: "text-slate-800", bg: "bg-white" },
-          { title: "Active", val: activeCount, col: "text-emerald-700", bg: "bg-emerald-50" },
-          { title: "Disabled", val: disabledCount, col: "text-rose-700", bg: "bg-rose-50 border-rose-200" },
-          { title: "Online Now", val: onlineCount, col: "text-blue-700", bg: "bg-blue-50" },
-          { title: "Pending Invites", val: pendingCount, col: "text-amber-700", bg: "bg-amber-50" },
-        ].map((s, i) => (
-          <div key={i} className={`p-4 rounded-xl border border-slate-200/60 shadow-sm ${s.bg}`}>
-            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block mb-1">{s.title}</span>
-            <div className={`text-lg font-black truncate ${s.col}`}>{s.val}</div>
+          <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold shrink-0">
+            <UserCheck className="w-4 h-4 text-emerald-600" />
           </div>
-        ))}
-      </div>
+          <div>
+            <div className="text-xl font-extrabold text-emerald-700">{activeCount}</div>
+            <div className="text-[11px] font-medium text-slate-500">Active</div>
+          </div>
+        </div>
 
-      {/* Filters Toolbar */}
-      <div className="flex flex-col gap-4 bg-white border border-slate-200/60 p-4 rounded-xl shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search by Admin Name, Email, Phone Number..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 border border-slate-200 bg-slate-50/50 focus:bg-white text-xs rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
-            />
+        <div
+          onClick={() => setActiveTab('Disabled')}
+          className="flex items-center gap-3 px-3 py-1 cursor-pointer hover:bg-slate-50 rounded-xl transition-colors"
+          title="View Disabled Admins"
+        >
+          <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center font-bold shrink-0">
+            <UserX className="w-4 h-4 text-rose-600" />
+          </div>
+          <div>
+            <div className="text-xl font-extrabold text-rose-700">{disabledCount}</div>
+            <div className="text-[11px] font-medium text-slate-500">Disabled</div>
+          </div>
+        </div>
+
+        <div
+          onClick={() => setActiveTab('Active')}
+          className="flex items-center gap-3 px-3 py-1 cursor-pointer hover:bg-slate-50 rounded-xl transition-colors"
+          title="View Online Admins"
+        >
+          <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold shrink-0">
+            <Clock className="w-4 h-4 text-blue-600" />
+          </div>
+          <div>
+            <div className="text-xl font-extrabold text-blue-700">{onlineCount}</div>
+            <div className="text-[11px] font-medium text-slate-500">Online Now</div>
+          </div>
+        </div>
+
+        <div
+          onClick={() => setActiveTab('Pending Invite')}
+          className="flex items-center gap-3 px-3 py-1 cursor-pointer hover:bg-slate-50 rounded-xl transition-colors col-span-2 sm:col-span-1"
+          title="View Pending Invites"
+        >
+          <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold shrink-0">
+            <Mail className="w-4 h-4 text-amber-600" />
+          </div>
+          <div>
+            <div className="text-xl font-extrabold text-amber-700">{pendingCount}</div>
+            <div className="text-[11px] font-medium text-slate-500">Pending Invites</div>
           </div>
         </div>
       </div>
 
-      {/* Main Table */}
-      <div className="bg-white border border-slate-200/60 shadow-sm rounded-2xl overflow-hidden w-full overflow-x-auto min-h-[400px]">
-        <table className="w-full text-left border-collapse min-w-[1000px]">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200/80 text-[10px] uppercase tracking-wider text-slate-500">
-              <th className="p-4 font-bold">Admin Profile</th>
-              <th className="p-4 font-bold">Role</th>
-              <th className="p-4 font-bold">Module Access</th>
-              <th className="p-4 font-bold">Last Login</th>
-              <th className="p-4 font-bold">Status</th>
-              <th className="p-4 font-bold text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentAdmins.length > 0 ? (
-              currentAdmins.map(a => (
-                <tr key={a.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="relative flex-shrink-0">
-                        <div className="w-9 h-9 rounded-full bg-slate-200 border border-slate-350 flex items-center justify-center font-bold text-xs text-slate-600 uppercase shadow-xs">
-                          {a.name.split(' ').map(n => n[0]).join('')}
+      {/* Toolbar: Status Tabs & Single Compact Search/Filter Row */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 shadow-xs flex flex-col gap-3">
+        <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3">
+          {/* Status Tabs (Navy Active background) */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none shrink-0">
+            {[
+              { label: 'All Admins', key: 'All', count: totalCount },
+              { label: 'Active', key: 'Active', count: activeCount },
+              { label: 'Disabled', key: 'Disabled', count: disabledCount },
+              { label: 'Pending Invites', key: 'Pending Invite', count: pendingCount },
+            ].map((t) => {
+              const isActive = activeTab === t.key;
+              return (
+                <button
+                  key={t.key}
+                  onClick={() => setActiveTab(t.key)}
+                  className={`text-xs font-bold px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                    isActive
+                      ? 'bg-[#071B3A] text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 border border-slate-200/60'
+                  }`}
+                >
+                  <span>{t.label}</span>
+                  <span
+                    className={`text-[10px] font-extrabold px-1.5 py-0.2 rounded-full ${
+                      isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+                    }`}
+                  >
+                    {t.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Compact Search & Dropdowns Toolbar Row */}
+          <div className="flex items-center gap-2 flex-1">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search admin name, email or phone..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-8 py-2 border border-slate-200 bg-slate-50/50 focus:bg-white text-xs rounded-xl focus:outline-none focus:border-[#071B3A] focus:ring-1 focus:ring-[#071B3A] font-medium transition-all"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Role Dropdown */}
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="text-xs font-semibold border border-slate-200 bg-slate-50 hover:bg-white rounded-xl px-2.5 py-2 focus:outline-none focus:border-[#071B3A] transition-colors cursor-pointer shrink-0"
+            >
+              <option value="All">All Roles</option>
+              {AVAILABLE_ROLES.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+
+            {/* Status Dropdown */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="text-xs font-semibold border border-slate-200 bg-slate-50 hover:bg-white rounded-xl px-2.5 py-2 focus:outline-none focus:border-[#071B3A] transition-colors cursor-pointer shrink-0 hidden sm:block"
+            >
+              <option value="All">All Statuses</option>
+              <option value="Active">Active</option>
+              <option value="Online">Online</option>
+              <option value="Disabled">Disabled</option>
+              <option value="Pending Invite">Pending Invite</option>
+            </select>
+
+            {hasActiveFilters && (
+              <button onClick={resetFilters} className="text-xs font-bold text-rose-600 hover:text-rose-700 underline px-1 shrink-0 cursor-pointer">
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Admin Table Container */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden flex flex-col">
+        {/* Desktop View (7 exact columns, fits without horizontal page scrolling) */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[950px]">
+            <thead>
+              <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <th className="py-3.5 px-4 w-[24%]">Admin</th>
+                <th className="py-3.5 px-3 w-[16%]">Role</th>
+                <th className="py-3.5 px-3 w-[22%]">Module Access</th>
+                <th className="py-3.5 px-3 w-[14%]">Last Login</th>
+                <th className="py-3.5 px-3 w-[10%]">Status</th>
+                <th className="py-3.5 px-3 w-[9%]">Added On</th>
+                <th className="py-3.5 px-4 w-[5%] text-center">Action</th>
+              </tr>
+            </thead>
+
+            <tbody className="divide-y divide-slate-100">
+              {loading ? (
+                Array.from({ length: 4 }).map((_, idx) => (
+                  <tr key={idx} className="animate-pulse">
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-slate-200" />
+                        <div className="space-y-1">
+                          <div className="h-3.5 bg-slate-200 rounded w-28" />
+                          <div className="h-2.5 bg-slate-100 rounded w-36" />
                         </div>
-                        {a.isOnline && (
-                          <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
-                        )}
                       </div>
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-xs font-bold text-slate-800">{a.name}</span>
-                        <span className="text-[10px] font-medium text-slate-500">{a.email}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${getRoleColor(a.role)}`}>
-                      {a.role}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex flex-wrap gap-1 max-w-[240px]">
-                      {a.access.slice(0, 3).map(mod => (
-                        <span key={mod} className="text-[9px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200">
-                          {mod}
-                        </span>
-                      ))}
-                      {a.access.length > 3 && (
-                        <span className="text-[9px] font-bold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200">
-                          +{a.access.length - 3}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <span className="text-[11px] font-medium text-slate-600 flex items-center gap-1.5">
-                      <Clock size={12} className="text-slate-400" />
-                      {a.lastLogin}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStatusToggle(a.id);
-                        }}
-                        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                          a.status === 'Active' || a.status === 'Online' ? 'bg-emerald-500' : 'bg-rose-500'
-                        }`}
-                        title={a.status === 'Active' || a.status === 'Online' ? 'Admin is Active (click to Disable)' : `Admin is ${a.status} (click to Activate)`}
-                      >
-                        <span
-                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
-                            a.status === 'Active' || a.status === 'Online' ? 'translate-x-4' : 'translate-x-0'
-                          }`}
-                        />
-                      </button>
-                      <span className={`text-[10px] font-black ${a.status === 'Active' || a.status === 'Online' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                        {a.status}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="p-4 text-center relative" onClick={e => e.stopPropagation()}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedAdminId(a.id);
-                        setDrawerTab("Overview");
-                      }}
-                      className="inline-flex items-center gap-1 px-2 py-1 text-xs font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50/50 rounded-lg transition-all"
-                      title="View Details"
+                    </td>
+                    <td className="p-4">
+                      <div className="h-5 bg-slate-200 rounded w-24" />
+                    </td>
+                    <td className="p-4">
+                      <div className="h-5 bg-slate-200 rounded w-36" />
+                    </td>
+                    <td className="p-4">
+                      <div className="h-3.5 bg-slate-200 rounded w-24" />
+                    </td>
+                    <td className="p-4">
+                      <div className="h-5 bg-slate-200 rounded w-16" />
+                    </td>
+                    <td className="p-4">
+                      <div className="h-3.5 bg-slate-200 rounded w-20" />
+                    </td>
+                    <td className="p-4 text-center">
+                      <div className="h-8 bg-slate-200 rounded-lg w-20 mx-auto" />
+                    </td>
+                  </tr>
+                ))
+              ) : filteredAdmins.length > 0 ? (
+                filteredAdmins.map((a) => {
+                  const initials = a.name
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('')
+                    .toUpperCase();
+
+                  // Status badge styling
+                  let statusClass = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+                  if (a.status === 'Online') statusClass = 'bg-blue-50 text-blue-800 border-blue-200';
+                  else if (a.status === 'Disabled') statusClass = 'bg-rose-50 text-rose-800 border-rose-200 font-extrabold';
+                  else if (a.status === 'Pending Invite') statusClass = 'bg-amber-50 text-amber-800 border-amber-200';
+
+                  return (
+                    <tr
+                      key={a.id}
+                      onClick={() => setSelectedAdmin(a)}
+                      className="hover:bg-slate-50/70 transition-colors cursor-pointer group"
                     >
-                      <Eye size={14} />
-                      <span>View</span>
-                    </button>
+                      {/* Column 1: Admin Profile */}
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="relative shrink-0">
+                            <div className="w-9 h-9 rounded-full bg-[#071B3A] text-white flex items-center justify-center font-bold text-xs uppercase shadow-2xs">
+                              {initials}
+                            </div>
+                            {a.isOnline && (
+                              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-slate-900 group-hover:text-[#071B3A] transition-colors truncate">
+                              {a.name}
+                            </div>
+                            <div className="text-[11px] text-slate-500 font-medium truncate mt-0.5">{a.email}</div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Column 2: Role */}
+                      <td className="py-3.5 px-3">
+                        <span
+                          className={`inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-lg border ${
+                            a.role === 'Super Admin'
+                              ? 'bg-rose-50 text-rose-800 border-rose-200'
+                              : a.role === 'Verification Admin'
+                              ? 'bg-indigo-50 text-indigo-800 border-indigo-200'
+                              : a.role === 'Support Admin'
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                              : 'bg-slate-100 text-slate-700 border-slate-200'
+                          }`}
+                        >
+                          {a.role}
+                        </span>
+                      </td>
+
+                      {/* Column 3: Module Access */}
+                      <td className="py-3.5 px-3">
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <span className="text-[10px] font-extrabold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200">
+                            {a.access.length} Modules
+                          </span>
+                          <span className="text-[11px] text-slate-500 font-medium truncate max-w-[170px]" title={a.access.join(' · ')}>
+                            {a.access.slice(0, 2).join(' · ')}
+                            {a.access.length > 2 ? ` +${a.access.length - 2}` : ''}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Column 4: Last Login */}
+                      <td className="py-3.5 px-3">
+                        <span className="text-xs font-semibold text-slate-700 block truncate">{a.lastLogin}</span>
+                      </td>
+
+                      {/* Column 5: Status */}
+                      <td className="py-3.5 px-3">
+                        <span className={`inline-block text-[11px] font-extrabold px-2.5 py-0.5 rounded-lg border ${statusClass}`}>
+                          {a.status}
+                        </span>
+                      </td>
+
+                      {/* Column 6: Added On */}
+                      <td className="py-3.5 px-3">
+                        <span className="text-xs font-semibold text-slate-600 block">{a.addedOn}</span>
+                      </td>
+
+                      {/* Column 7: Action */}
+                      <td className="py-3.5 px-4 text-center relative" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => setSelectedAdmin(a)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-[#071B3A] bg-slate-100 hover:bg-[#071B3A] hover:text-white rounded-xl transition-all cursor-pointer min-h-[36px]"
+                            title="View Details"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>View</span>
+                          </button>
+
+                          {/* Contextual Dropdown Toggle */}
+                          <div className="relative">
+                            <button
+                              onClick={() => setActiveMenuId(activeMenuId === a.id ? null : a.id)}
+                              className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                              title="More Options"
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </button>
+
+                            {/* Dropdown Menu */}
+                            {activeMenuId === a.id && (
+                              <div className="absolute right-0 top-8 z-50 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1 text-left text-xs font-medium animate-fadeIn">
+                                <button
+                                  onClick={() => {
+                                    setActiveMenuId(null);
+                                    setEditingAdmin(a);
+                                    setEditRole(a.role);
+                                    setEditStatus(a.status);
+                                    setEditModules(a.access);
+                                    setEditModalOpen(true);
+                                  }}
+                                  className="w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-semibold cursor-pointer"
+                                >
+                                  <Shield className="w-3.5 h-3.5 text-slate-500" />
+                                  <span>Edit Role & Access</span>
+                                </button>
+
+                                {a.status === 'Pending Invite' ? (
+                                  <button
+                                    onClick={() => {
+                                      setActiveMenuId(null);
+                                      handleResendInvite(a);
+                                    }}
+                                    className="w-full px-3 py-2 text-left text-amber-700 hover:bg-amber-50 flex items-center gap-2 font-semibold cursor-pointer"
+                                  >
+                                    <Mail className="w-3.5 h-3.5" />
+                                    <span>Resend Invite</span>
+                                  </button>
+                                ) : a.status === 'Disabled' ? (
+                                  <button
+                                    onClick={() => {
+                                      setActiveMenuId(null);
+                                      handleToggleDisable(a);
+                                    }}
+                                    className="w-full px-3 py-2 text-left text-emerald-700 hover:bg-emerald-50 flex items-center gap-2 font-semibold cursor-pointer"
+                                  >
+                                    <UserCheck className="w-3.5 h-3.5" />
+                                    <span>Reactivate Admin</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => {
+                                      setActiveMenuId(null);
+                                      handleToggleDisable(a);
+                                    }}
+                                    className="w-full px-3 py-2 text-left text-rose-700 hover:bg-rose-50 flex items-center gap-2 font-semibold cursor-pointer"
+                                  >
+                                    <UserX className="w-3.5 h-3.5" />
+                                    <span>Disable Admin</span>
+                                  </button>
+                                )}
+
+                                {a.role !== 'Super Admin' && (
+                                  <button
+                                    onClick={() => {
+                                      setActiveMenuId(null);
+                                      setRemovingAdmin(a);
+                                    }}
+                                    className="w-full px-3 py-2 text-left text-rose-700 hover:bg-rose-50 flex items-center gap-2 font-semibold border-t border-slate-100 cursor-pointer"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <span>Remove Admin</span>
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                /* Compact Empty State */
+                <tr>
+                  <td colSpan="7" className="py-12 text-center text-slate-400">
+                    <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
+                      <div className="w-11 h-11 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center">
+                        <Users className="w-5 h-5 stroke-[1.5]" />
+                      </div>
+                      <h3 className="text-sm font-bold text-slate-800">No admins added yet</h3>
+                      <p className="text-xs text-slate-500">Invite an administrator to help manage the platform.</p>
+                      <button
+                        onClick={() => {
+                          setInviteName('');
+                          setInviteEmail('');
+                          setInvitePhone('');
+                          setAddModalOpen(true);
+                        }}
+                        className="mt-1 px-4 py-2 text-xs font-bold text-white bg-[#071B3A] hover:bg-[#0c2854] rounded-xl transition-colors cursor-pointer shadow-xs"
+                      >
+                        Add Admin
+                      </button>
+                    </div>
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="6" className="p-12 text-center text-slate-400">
-                  <div className="flex flex-col items-center justify-center gap-3">
-                    <Shield size={48} className="text-slate-300 stroke-[1.5]" />
-                    <span className="text-xs font-black text-slate-500">No Admins Found</span>
-                    <span className="text-[10px] text-slate-400 max-w-[220px] leading-relaxed">
-                      Try adjusting your search text parameters or filters to find what you are looking for.
-                    </span>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile / Narrow View (< 768px Card View) */}
+        <div className="block md:hidden divide-y divide-slate-100">
+          {loading ? (
+            <div className="p-6 text-center text-xs font-bold text-slate-400 animate-pulse">Loading admin team...</div>
+          ) : filteredAdmins.length > 0 ? (
+            filteredAdmins.map((a) => (
+              <div
+                key={a.id}
+                onClick={() => setSelectedAdmin(a)}
+                className="p-4 space-y-3 hover:bg-slate-50 active:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">{a.name}</h3>
+                    <div className="text-xs text-slate-500 font-medium mt-0.5">{a.email}</div>
                   </div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                      a.status === 'Active' || a.status === 'Online'
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                        : 'bg-rose-50 text-rose-800 border-rose-200'
+                    }`}
+                  >
+                    {a.status}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 pt-1">
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold">Role</span>
+                    <span className="font-bold text-slate-800">{a.role}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold">Module Access</span>
+                    <span className="font-bold text-slate-800">{a.access.length} Modules</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-[10px] text-slate-400 block font-semibold">Last Login</span>
+                    <span className="font-bold text-slate-800">{a.lastLogin}</span>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex justify-between items-center border-t border-slate-100">
+                  <span className="text-[11px] text-slate-400">Added {a.addedOn}</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedAdmin(a);
+                    }}
+                    className="flex items-center gap-1 text-xs font-bold text-[#071B3A] bg-slate-100 px-3 py-1.5 rounded-xl cursor-pointer min-h-[36px]"
+                  >
+                    <span>View Details</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="p-8 text-center text-xs font-bold text-slate-400">No admins found matching current filters.</div>
+          )}
+        </div>
       </div>
 
-
-
-      {/* Admin Details Modal (Centered) */}
+      {/* Admin Details Modal */}
       <AnimatePresence>
-        {selectedAdminId && activeAdmin && (
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
-            {/* Backdrop */}
+        {selectedAdmin && (
+          <div className="fixed inset-0 z-[9000] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-              onClick={() => setSelectedAdminId(null)}
+              onClick={() => setSelectedAdmin(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
             />
 
-            {/* Modal Content Container */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="bg-white border border-slate-200/80 rounded-3xl shadow-2xl flex flex-col w-full max-w-2xl h-[85vh] relative z-10 overflow-hidden"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-xl w-full p-5 space-y-4 z-10 overflow-hidden"
             >
               {/* Header */}
-              <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex justify-between items-center flex-shrink-0">
-                <div className="flex gap-3 items-center">
-                  <div className="w-10 h-10 rounded-xl bg-slate-800 text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0 uppercase">
-                    {activeAdmin.name.split(' ').map(n => n[0]).join('')}
+              <div className="flex justify-between items-start pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#071B3A] text-white flex items-center justify-center font-bold text-sm">
+                    {selectedAdmin.name
+                      .split(' ')
+                      .map((n) => n[0])
+                      .join('')
+                      .toUpperCase()}
                   </div>
                   <div>
-                    <h2 className="font-black text-slate-800 text-sm">{activeAdmin.name}</h2>
-                    <span className="text-[10px] text-slate-400 font-bold">{activeAdmin.id} • Registered: {activeAdmin.regDate}</span>
+                    <h3 className="text-base font-extrabold text-slate-900">{selectedAdmin.name}</h3>
+                    <span className="text-xs text-slate-500 font-medium">{selectedAdmin.email}</span>
                   </div>
                 </div>
-                <button onClick={() => setSelectedAdminId(null)} className="p-1.5 rounded-full hover:bg-slate-200 text-slate-400 transition-colors">
-                  <X size={18} />
+
+                <button
+                  onClick={() => setSelectedAdmin(null)}
+                  className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
-              {/* Body Content */}
-              <div className="flex-1 overflow-y-auto p-5 space-y-6" style={{ scrollbarWidth: "thin" }}>
-                
-                {/* Profile Overview */}
-                <div className="space-y-4">
-                  <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs space-y-3.5">
-                    <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Admin Profile Info</h4>
-                    <div className="grid grid-cols-2 gap-3 text-xs font-semibold text-slate-600">
-                      <div>
-                        <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Email Address</span>
-                        <span className="font-bold text-slate-800">{activeAdmin.email}</span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Phone Number</span>
-                        <span className="font-bold text-slate-800">{activeAdmin.phone}</span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Department</span>
-                        <span className="font-bold text-slate-800">{activeAdmin.department || "Operations"}</span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Account Status</span>
-                        <span className={`inline-block text-[9px] font-extrabold px-2.5 py-0.5 rounded-full border mt-0.5 ${getStatusColor(activeAdmin.status)}`}>
-                          {activeAdmin.status}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Last Login Time</span>
-                        <span className="font-bold text-slate-700">{activeAdmin.lastLogin}</span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Registration Date</span>
-                        <span className="font-bold text-slate-700">{activeAdmin.regDate}</span>
-                      </div>
-                      <div className="col-span-2">
-                        <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Created By Admin</span>
-                        <span className="font-bold text-slate-800">{activeAdmin.createdBy || "Super Admin"}</span>
-                      </div>
-                    </div>
+              {/* Details Body */}
+              <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
+                <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-3.5 rounded-xl border border-slate-200/80">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-semibold block">Administrative Role</span>
+                    <span className="font-bold text-slate-800 block mt-0.5">{selectedAdmin.role}</span>
                   </div>
-
-                  {/* Assigned Modules summary list */}
-                  <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xs">
-                    <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Assigned Modules</h4>
-                    <div className="flex flex-wrap gap-1.5">
-                      {activeAdmin.access.map(mod => (
-                        <span key={mod} className="text-[10px] font-bold bg-slate-50 border border-slate-150 rounded px-2.5 py-0.5 text-slate-700">
-                          {mod}
-                        </span>
-                      ))}
-                    </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-semibold block">Account Status</span>
+                    <span className="font-bold text-slate-800 block mt-0.5">{selectedAdmin.status}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-semibold block">Mobile Number</span>
+                    <span className="font-bold text-slate-800 block mt-0.5">{selectedAdmin.phone}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-semibold block">Department</span>
+                    <span className="font-bold text-slate-800 block mt-0.5">{selectedAdmin.department}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-semibold block">Last Login Time</span>
+                    <span className="font-bold text-slate-800 block mt-0.5">{selectedAdmin.lastLogin}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-semibold block">Added On</span>
+                    <span className="font-bold text-slate-800 block mt-0.5">{selectedAdmin.addedOn}</span>
                   </div>
                 </div>
 
-                {/* Module Permissions Matrix */}
-                <div className="space-y-3 pt-4 border-t border-slate-100">
-                  <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Module Permissions Matrix</h4>
-                  <div className="border border-slate-100 rounded-xl overflow-hidden shadow-xs bg-white">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-slate-50 text-[9px] uppercase font-bold text-slate-400 border-b border-slate-100">
-                          <th className="p-3">Module</th>
-                          <th className="p-2 text-center">View</th>
-                          <th className="p-2 text-center">Create</th>
-                          <th className="p-2 text-center">Edit</th>
-                          <th className="p-2 text-center">Approve</th>
-                          <th className="p-2 text-center">Delete</th>
-                          <th className="p-2 text-center">Export</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {availableModules.map((mod) => {
-                          const hasAccess = activeAdmin.access.includes(mod);
-                          const matrix = activeAdmin.permissionsMatrix?.[mod] || [];
-                          return (
-                            <tr key={mod} className={`border-b border-slate-50 font-semibold text-slate-600 ${!hasAccess ? 'opacity-40 bg-slate-50/20' : ''}`}>
-                              <td className="p-3 text-[11px] font-bold text-slate-800">{mod}</td>
-                              {["View", "Create", "Edit", "Approve", "Delete", "Export"].map((action) => {
-                                const isChecked = hasAccess && (activeAdmin.role === "Super Admin" || matrix.includes(action));
-                                return (
-                                  <td key={action} className="p-2 text-center">
-                                    <div className="flex justify-center">
-                                      {isChecked ? (
-                                        <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />
-                                      ) : (
-                                        <span className="text-slate-300 font-normal">-</span>
-                                      )}
-                                    </div>
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* Activity Timeline */}
-                <div className="space-y-3 pt-4 border-t border-slate-100">
-                  <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Activity Timeline</h4>
-                  <div className="relative border-l border-slate-200 ml-3 flex flex-col gap-5 pt-2 pb-2">
-                    {activeAdmin.activity && activeAdmin.activity.length > 0 ? (
-                      activeAdmin.activity.map((act, idx) => (
-                        <div key={idx} className="relative pl-5">
-                          <span className="absolute -left-[4.5px] top-1 w-2 h-2 rounded-full bg-slate-350 ring-4 ring-white" />
-                          <div className="flex flex-col text-xs font-semibold">
-                            <span className="font-black text-slate-800">{act.action}</span>
-                            <span className="text-[9px] font-bold text-slate-400 mt-0.5">{act.time}</span>
-                            <span className="text-[9px] font-bold text-blue-600 uppercase mt-1 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded w-fit">
-                              {act.module}
-                            </span>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="p-4 text-center text-xs text-slate-400 italic bg-slate-50 border border-slate-100 rounded-xl">
-                        No recent activity logs recorded.
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Security Properties */}
-                <div className="space-y-3 pt-4 border-t border-slate-100">
-                  <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Security Properties</h4>
-
-                  <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-3.5">
-                    <div className="flex justify-between items-center pb-2.5 border-b border-slate-200/60">
-                      <span className="text-xs font-bold text-slate-700">Two Factor Authentication (2FA)</span>
-                      <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${activeAdmin.security?.twoFactorStatus === "Enabled"
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                          : "bg-slate-100 text-slate-650 border-slate-200"
-                        }`}>
-                        {activeAdmin.security?.twoFactorStatus || "Disabled"}
+                {/* Assigned Modules */}
+                <div>
+                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">Assigned Modules</h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedAdmin.access.map((mod) => (
+                      <span key={mod} className="text-xs font-semibold bg-slate-100 text-slate-800 px-2.5 py-1 rounded-lg border border-slate-200">
+                        {mod}
                       </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 text-xs font-semibold text-slate-600">
-                      <div>
-                        <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Password Last Changed</span>
-                        <span className="text-slate-800 font-bold">{activeAdmin.security?.passwordLastChanged || "N/A"}</span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Failed Login Attempts</span>
-                        <span className={`font-bold ${activeAdmin.security?.failedLoginAttempts > 2 ? 'text-rose-600 font-black' : 'text-slate-800'}`}>
-                          {activeAdmin.security?.failedLoginAttempts || 0}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Last Login Device</span>
-                        <span className="text-slate-800">{activeAdmin.security?.lastLoginDevice || "N/A"}</span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] text-slate-400 font-bold block uppercase mb-0.5">Last Login IP</span>
-                        <span className="font-mono text-slate-800">{activeAdmin.security?.lastLoginIp || "N/A"}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border border-slate-100 bg-white rounded-xl p-4 flex justify-between items-center shadow-xs">
-                    <div>
-                      <span className="text-xs font-bold text-slate-800 block">Active Device Sessions</span>
-                      <span className="text-[10px] text-slate-400 font-semibold block">{activeAdmin.security?.activeSessions || 0} session(s) active on this account</span>
-                    </div>
-                    {activeAdmin.security?.activeSessions > 1 && (
-                      <button
-                        onClick={() => {
-                          const updated = admins.map(a =>
-                            a.id === activeAdmin.id
-                              ? { ...a, security: { ...a.security, activeSessions: 1, lastLoginDevice: "This Browser" } }
-                              : a
-                          );
-                          saveAdmins(updated);
-                          showToast("All other active sessions revoked.", "info");
-                        }}
-                        className="px-3 py-1.5 border border-slate-200 hover:bg-slate-100 text-rose-600 text-xs font-bold rounded-lg transition-colors bg-white shadow-xs"
-                      >
-                        Revoke Others
-                      </button>
-                    )}
+                    ))}
                   </div>
                 </div>
 
+                {/* Activity History */}
+                <div>
+                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">Recent Activity Logs</h4>
+                  <div className="space-y-2">
+                    {selectedAdmin.activity.map((act, idx) => (
+                      <div key={idx} className="bg-slate-50 border border-slate-200/60 rounded-xl p-2.5 text-xs">
+                        <div className="font-bold text-slate-900">{act.action}</div>
+                        <div className="flex justify-between text-[10px] text-slate-500 mt-0.5">
+                          <span>Module: {act.module}</span>
+                          <span>{act.time}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              {/* Footer Controls */}
-              <div className="bg-slate-50 border-t border-slate-100 p-4 flex gap-2 flex-shrink-0">
+              {/* Modal Actions */}
+              <div className="flex justify-between items-center pt-3 border-t border-slate-100">
                 <button
                   onClick={() => {
-                    setFormName(activeAdmin.name);
-                    setFormEmail(activeAdmin.email);
-                    setFormPhone(activeAdmin.phone);
-                    setFormRole(activeAdmin.role);
-                    setFormDept(activeAdmin.department || "Operations");
-                    setFormAccess(activeAdmin.access || []);
-                    setEditStatus(activeAdmin.status);
+                    const target = selectedAdmin;
+                    setSelectedAdmin(null);
+                    setEditingAdmin(target);
+                    setEditRole(target.role);
+                    setEditStatus(target.status);
+                    setEditModules(target.access);
                     setEditModalOpen(true);
                   }}
-                  className="flex-1 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-650 text-xs font-bold rounded-xl transition-colors shadow-xs"
+                  className="px-4 py-2 text-xs font-bold text-[#071B3A] bg-slate-100 hover:bg-slate-200 rounded-xl cursor-pointer"
                 >
-                  Edit Details
-                </button>
-                <button
-                  onClick={() => {
-                    handleGeneratePassword(true);
-                    setResetModalOpen(true);
-                  }}
-                  className="flex-1 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-blue-600 text-xs font-bold rounded-xl transition-colors shadow-xs"
-                >
-                  Reset Password
+                  Edit Role & Access
                 </button>
 
-                {(activeAdmin.status === 'Pending Invite' || activeAdmin.status === 'Disabled') && (
-                  <button
-                    onClick={() => {
-                      showToast(`Invitation email resent to ${activeAdmin.email}`, "success");
-                    }}
-                    className="flex-1 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-indigo-600 text-xs font-bold rounded-xl transition-colors shadow-xs"
-                  >
-                    Resend Invite
-                  </button>
-                )}
-
                 <button
-                  onClick={() => {
-                    const newStatus = activeAdmin.status === 'Disabled' ? 'Active' : 'Disabled';
-                    const updated = admins.map(a => a.id === activeAdmin.id ? { ...a, status: newStatus } : a);
-                    saveAdmins(updated);
-                    showToast(`${activeAdmin.name} account set to ${newStatus}.`, "success");
-                  }}
-                  className="flex-1 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-colors shadow-xs"
+                  onClick={() => setSelectedAdmin(null)}
+                  className="px-4 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 rounded-xl cursor-pointer"
                 >
-                  {activeAdmin.status === 'Disabled' ? 'Enable' : 'Disable'}
-                </button>
-                <button
-                  onClick={() => setRemoveModalOpen(true)}
-                  className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
-                >
-                  Remove
+                  Close
                 </button>
               </div>
             </motion.div>
@@ -877,167 +963,146 @@ export default function Team() {
         )}
       </AnimatePresence>
 
-      {/* Add Admin Modal */}
+      {/* Add Admin Modal ("Invite New Admin" - NO password creation field) */}
       <AnimatePresence>
         {addModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setAddModalOpen(false)} />
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg relative z-10 overflow-hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setAddModalOpen(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
+            />
+
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-5 space-y-4 z-10"
             >
-              <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+              <div className="flex justify-between items-center border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2.5">
-                  <ShieldCheck className="text-slate-800 w-5 h-5" />
-                  <h3 className="text-sm font-black text-slate-800">Add New Admin Profile</h3>
+                  <div className="w-8 h-8 rounded-lg bg-[#071B3A] text-white flex items-center justify-center font-bold">
+                    <Plus className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-900">Invite New Admin</h3>
+                    <p className="text-xs text-slate-500 font-medium">Send an email invitation link to setup access.</p>
+                  </div>
                 </div>
-                <button onClick={() => setAddModalOpen(false)} className="p-1.5 rounded-full hover:bg-slate-200 text-slate-400">
-                  <X size={18} />
+
+                <button onClick={() => setAddModalOpen(false)} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400">
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <form onSubmit={handleAddAdminSubmit} className="p-6 flex flex-col gap-4 max-h-[85vh] overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
-                <div className="grid grid-cols-2 gap-3 text-xs font-semibold text-slate-650">
-                  <div className="col-span-2">
-                    <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider block mb-1">Full Name</label>
-                    <input
-                      type="text"
-                      required
-                      value={formName}
-                      onChange={(e) => setFormName(e.target.value)}
-                      placeholder="e.g. Jane Connor"
-                      className="w-full border border-slate-200 bg-slate-50/50 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 font-bold"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider block mb-1">Email Address</label>
-                    <input
-                      type="email"
-                      required
-                      value={formEmail}
-                      onChange={(e) => setFormEmail(e.target.value)}
-                      placeholder="jane@hrchub.com"
-                      className="w-full border border-slate-200 bg-slate-50/50 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 font-bold"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider block mb-1">Phone Number</label>
-                    <input
-                      type="text"
-                      required
-                      value={formPhone}
-                      onChange={(e) => setFormPhone(e.target.value)}
-                      placeholder="+91 99999 xxxxx"
-                      className="w-full border border-slate-200 bg-slate-50/50 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 font-bold"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider block mb-1">Assigned Role</label>
-                    <select
-                      value={formRole}
-                      onChange={(e) => handleRoleChange(e.target.value)}
-                      className="w-full border border-slate-200 bg-slate-50/50 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 font-bold text-slate-700"
-                    >
-                      {availableRoles.map(r => <option key={r} value={r}>{r}</option>)}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider block mb-1">Department</label>
-                    <input
-                      type="text"
-                      required
-                      value={formDept}
-                      onChange={(e) => setFormDept(e.target.value)}
-                      placeholder="e.g. Risk Audit"
-                      className="w-full border border-slate-200 bg-slate-50/50 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 font-bold"
-                    />
-                  </div>
+              <form onSubmit={handleInviteSubmit} className="space-y-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    Full Name <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Rahul Sharma"
+                    value={inviteName}
+                    onChange={(e) => setInviteName(e.target.value)}
+                    className="w-full text-xs font-semibold border border-slate-200 bg-slate-50/50 rounded-xl p-2.5 focus:outline-none focus:border-[#071B3A]"
+                  />
                 </div>
 
-                {/* Modules checkbox */}
                 <div>
-                  <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Assign Access Modules</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {availableModules.map(mod => {
-                      const isSuper = formRole === "Super Admin";
-                      const isChecked = formAccess.includes(mod) || isSuper;
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    Email Address <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="rahul@hrchub.com"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    className="w-full text-xs font-semibold border border-slate-200 bg-slate-50/50 rounded-xl p-2.5 focus:outline-none focus:border-[#071B3A]"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Mobile Number</label>
+                  <input
+                    type="text"
+                    placeholder="+91 98563XXXXX"
+                    value={invitePhone}
+                    onChange={(e) => setInvitePhone(e.target.value)}
+                    className="w-full text-xs font-semibold border border-slate-200 bg-slate-50/50 rounded-xl p-2.5 focus:outline-none focus:border-[#071B3A]"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    Admin Role <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={inviteRole}
+                    onChange={(e) => setInviteRole(e.target.value)}
+                    className="w-full text-xs font-semibold border border-slate-200 bg-slate-50/50 rounded-xl p-2.5 focus:outline-none focus:border-[#071B3A]"
+                  >
+                    {AVAILABLE_ROLES.map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                    Module Access Permissions <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="grid grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200 max-h-32 overflow-y-auto">
+                    {AVAILABLE_MODULES.map((mod) => {
+                      const isChecked = inviteModules.includes(mod);
                       return (
-                        <div key={mod} className={`flex items-center gap-2 p-2 rounded-lg border ${isChecked ? 'border-blue-200 bg-blue-50/50' : 'border-slate-100 bg-slate-50/50'}`}>
+                        <label key={mod} className="flex items-center gap-2 text-xs font-medium cursor-pointer">
                           <input
                             type="checkbox"
-                            id={`add-mod-${mod}`}
                             checked={isChecked}
-                            disabled={isSuper}
-                            onChange={() => {
-                              const next = formAccess.includes(mod)
-                                ? formAccess.filter(m => m !== mod)
-                                : [...formAccess, mod];
-                              setFormAccess(next);
+                            onChange={(e) => {
+                              if (e.target.checked) setInviteModules((prev) => [...prev, mod]);
+                              else setInviteModules((prev) => prev.filter((m) => m !== mod));
                             }}
-                            className="rounded text-blue-600 focus:ring-blue-500 border-slate-200 cursor-pointer"
+                            className="rounded text-[#071B3A] focus:ring-[#071B3A]"
                           />
-                          <label htmlFor={`add-mod-${mod}`} className={`text-[10px] font-bold cursor-pointer ${isChecked ? 'text-blue-700' : 'text-slate-500'}`}>
-                            {mod}
-                          </label>
-                        </div>
+                          <span className="text-slate-700 text-[11px] font-semibold">{mod}</span>
+                        </label>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* Temp Password */}
-                <div className="space-y-2 border-t border-slate-100 pt-3">
-                  <div className="flex justify-between items-center">
-                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Temporary Password</label>
-                    <button
-                      type="button"
-                      onClick={() => handleGeneratePassword(false)}
-                      className="text-xs text-blue-600 hover:underline font-bold flex items-center gap-1"
-                    >
-                      <RefreshCw size={11} /> Re-Generate
-                    </button>
-                  </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Invitation Message (Optional)</label>
                   <input
                     type="text"
-                    required
-                    value={formTempPassword}
-                    onChange={(e) => setFormTempPassword(e.target.value)}
-                    className="w-full border border-slate-200 bg-slate-50 font-mono text-center rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-blue-500 font-bold"
+                    placeholder="Welcome message for team onboarding..."
+                    value={inviteMessage}
+                    onChange={(e) => setInviteMessage(e.target.value)}
+                    className="w-full text-xs border border-slate-200 bg-slate-50/50 rounded-xl p-2.5 focus:outline-none focus:border-[#071B3A]"
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-2.5 bg-indigo-50 border border-indigo-100 rounded-xl mt-1">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold text-indigo-900">Send Invitation Checkbox</span>
-                    <span className="text-[8px] text-indigo-400 font-bold uppercase">Send password setup link to email</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={formSendInvite}
-                    onChange={(e) => setFormSendInvite(e.target.checked)}
-                    className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-slate-200 rounded"
-                  />
-                </div>
-
-                <div className="flex gap-3 justify-end pt-3 border-t border-slate-100 mt-2">
+                <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() => setAddModalOpen(false)}
-                    className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors w-full animate-fadeIn"
+                    className="px-4 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 text-xs font-bold text-white bg-slate-800 hover:bg-slate-900 rounded-xl transition-colors w-full shadow-sm animate-fadeIn"
+                    className="px-4 py-2 text-xs font-bold text-white bg-[#071B3A] hover:bg-[#0c2854] rounded-xl shadow-xs cursor-pointer"
                   >
-                    Create Admin
+                    Send Invitation
                   </button>
                 </div>
               </form>
@@ -1048,107 +1113,96 @@ export default function Team() {
 
       {/* Edit Admin Modal */}
       <AnimatePresence>
-        {editModalOpen && activeAdmin && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setEditModalOpen(false)} />
+        {editModalOpen && editingAdmin && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg relative z-10 overflow-hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setEditModalOpen(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
+            />
+
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-5 space-y-4 z-10"
             >
-              <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                <div className="flex items-center gap-2.5">
-                  <ShieldCheck className="text-slate-800 w-5 h-5" />
-                  <h3 className="text-sm font-black text-slate-800">Edit Admin Permissions: {activeAdmin.name}</h3>
+              <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900">Edit Admin Permissions</h3>
+                  <p className="text-xs text-slate-500 font-medium">{editingAdmin.name} ({editingAdmin.email})</p>
                 </div>
-                <button onClick={() => setEditModalOpen(false)} className="p-1.5 rounded-full hover:bg-slate-200 text-slate-400">
-                  <X size={18} />
+                <button onClick={() => setEditModalOpen(false)} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400">
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <form onSubmit={handleEditAdminSubmit} className="p-6 flex flex-col gap-4 max-h-[85vh] overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider block mb-1">Administrative Role</label>
-                    <select
-                      value={formRole}
-                      onChange={(e) => handleRoleChange(e.target.value)}
-                      className="w-full border border-slate-200 bg-slate-50/50 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 font-bold text-slate-700"
-                    >
-                      {availableRoles.map(r => <option key={r} value={r}>{r}</option>)}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider block mb-1">Department</label>
-                    <input
-                      type="text"
-                      required
-                      value={formDept}
-                      onChange={(e) => setFormDept(e.target.value)}
-                      className="w-full border border-slate-200 bg-slate-50/50 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 font-bold"
-                    />
-                  </div>
-
-                  <div className="col-span-2">
-                    <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider block mb-1">Account Status</label>
-                    <select
-                      value={editStatus}
-                      onChange={(e) => setEditStatus(e.target.value)}
-                      className="w-full border border-slate-200 bg-slate-50/50 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 font-bold text-slate-700"
-                    >
-                      <option value="Active">Active</option>
-                      <option value="Online">Online</option>
-                      <option value="Disabled">Disabled</option>
-                      <option value="Pending Invite">Pending Invite</option>
-                      <option value="Locked">Locked</option>
-                    </select>
-                  </div>
+              <form onSubmit={handleEditSubmit} className="space-y-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Administrative Role</label>
+                  <select
+                    value={editRole}
+                    onChange={(e) => setEditRole(e.target.value)}
+                    className="w-full text-xs font-semibold border border-slate-200 bg-slate-50 rounded-xl p-2.5 focus:outline-none focus:border-[#071B3A]"
+                  >
+                    {AVAILABLE_ROLES.map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
-                {/* Modules access */}
                 <div>
-                  <label className="text-[9px] font-bold text-slate-450 uppercase tracking-wider block mb-2">Module Access Permissions</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {availableModules.map(mod => {
-                      const isSuper = formRole === "Super Admin";
-                      const isChecked = formAccess.includes(mod) || isSuper;
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Account Status</label>
+                  <select
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value)}
+                    className="w-full text-xs font-semibold border border-slate-200 bg-slate-50 rounded-xl p-2.5 focus:outline-none focus:border-[#071B3A]"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Online">Online</option>
+                    <option value="Disabled">Disabled</option>
+                    <option value="Pending Invite">Pending Invite</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1.5">Module Access Permissions</label>
+                  <div className="grid grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200 max-h-36 overflow-y-auto">
+                    {AVAILABLE_MODULES.map((mod) => {
+                      const isChecked = editModules.includes(mod);
                       return (
-                        <div key={mod} className={`flex items-center gap-2 p-2 rounded-lg border ${isChecked ? 'border-blue-200 bg-blue-50/50' : 'border-slate-100 bg-slate-50/50'}`}>
+                        <label key={mod} className="flex items-center gap-2 text-xs font-medium cursor-pointer">
                           <input
                             type="checkbox"
-                            id={`edit-mod-${mod}`}
                             checked={isChecked}
-                            disabled={isSuper}
-                            onChange={() => {
-                              const next = formAccess.includes(mod)
-                                ? formAccess.filter(m => m !== mod)
-                                : [...formAccess, mod];
-                              setFormAccess(next);
+                            onChange={(e) => {
+                              if (e.target.checked) setEditModules((prev) => [...prev, mod]);
+                              else setEditModules((prev) => prev.filter((m) => m !== mod));
                             }}
-                            className="rounded text-blue-600 focus:ring-blue-500 border-slate-200 cursor-pointer"
+                            className="rounded text-[#071B3A] focus:ring-[#071B3A]"
                           />
-                          <label htmlFor={`edit-mod-${mod}`} className={`text-[10px] font-bold cursor-pointer ${isChecked ? 'text-blue-700' : 'text-slate-500'}`}>
-                            {mod}
-                          </label>
-                        </div>
+                          <span className="text-slate-700 text-[11px] font-semibold">{mod}</span>
+                        </label>
                       );
                     })}
                   </div>
                 </div>
 
-                <div className="flex gap-3 justify-end pt-3 border-t border-slate-100 mt-2">
+                <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() => setEditModalOpen(false)}
-                    className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors w-full"
+                    className="px-4 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors w-full shadow-sm"
+                    className="px-4 py-2 text-xs font-bold text-white bg-[#071B3A] hover:bg-[#0c2854] rounded-xl shadow-xs cursor-pointer"
                   >
                     Save Changes
                   </button>
@@ -1159,100 +1213,50 @@ export default function Team() {
         )}
       </AnimatePresence>
 
-      {/* Reset Password Modal */}
+      {/* Remove Confirmation Modal */}
       <AnimatePresence>
-        {resetModalOpen && activeAdmin && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setResetModalOpen(false)} />
+        {removingAdmin && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm relative z-10 space-y-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setRemovingAdmin(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
+            />
+
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-5 space-y-4 z-10"
             >
-              <div>
-                <h3 className="text-base font-black text-slate-800">Reset Admin Password</h3>
-                <p className="text-[11px] text-slate-400 mt-0.5">Generate a secure login passcode token for <span className="font-bold text-slate-700">{activeAdmin.name}</span>.</p>
-              </div>
-
-              <div className="space-y-3.5 text-xs font-semibold text-slate-650">
-                <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl text-center space-y-2">
-                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider block">Generated Temporary Password</span>
-                  <span className="text-sm font-mono font-black text-indigo-700 select-all block bg-white border border-indigo-100 py-1.5 px-3 rounded-lg shadow-xs">{resetTempPassword}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleGeneratePassword(true)}
-                    className="text-[10px] text-blue-600 hover:underline inline-flex items-center gap-1 font-bold pt-1"
-                  >
-                    <RefreshCw size={10} /> Generate New Code
-                  </button>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold shrink-0">
+                  <AlertTriangle className="w-5 h-5" />
                 </div>
-
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-xl">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold text-slate-750">Send Email Checkbox</span>
-                    <span className="text-[8px] text-slate-400 font-semibold uppercase">Email generated password immediately</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={resetSendEmail}
-                    onChange={(e) => setResetSendEmail(e.target.checked)}
-                    className="w-4 h-4 text-blue-650 focus:ring-blue-500 border-slate-200 rounded"
-                  />
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900">Remove Admin Profile?</h3>
+                  <p className="text-xs text-slate-500 font-medium">{removingAdmin.name} ({removingAdmin.email})</p>
                 </div>
               </div>
 
-              <div className="flex gap-3 justify-end pt-2">
+              <p className="text-xs text-slate-600 font-medium leading-relaxed bg-rose-50 border border-rose-100 p-3 rounded-xl">
+                This action will revoke administrative access for this user. You can re-invite them at any time.
+              </p>
+
+              <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
                 <button
-                  onClick={() => setResetModalOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors w-full"
+                  onClick={() => setRemovingAdmin(null)}
+                  className="px-4 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={handleResetPasswordSubmit}
-                  className="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors w-full shadow-sm"
+                  onClick={handleConfirmRemove}
+                  className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-xs cursor-pointer"
                 >
-                  Confirm Reset
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Remove Admin Modal */}
-      <AnimatePresence>
-        {removeModalOpen && activeAdmin && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setRemoveModalOpen(false)} />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm relative z-10 space-y-4 border border-rose-100"
-            >
-              <div>
-                <h3 className="text-base font-black text-rose-600 flex items-center gap-1.5"><AlertTriangle size={18} /> Remove Admin Profile</h3>
-                <p className="text-[11px] text-slate-400 mt-0.5">Are you sure you want to delete <span className="font-bold text-slate-700">{activeAdmin.name}</span> from the organization?</p>
-              </div>
-
-              <div className="bg-rose-50 border border-rose-100 rounded-xl p-3 text-rose-800 text-[10px] font-bold leading-relaxed">
-                CAUTION: This action is irreversible. All administrative credentials, assigned privileges, and logging connections will be immediately terminated.
-              </div>
-
-              <div className="flex gap-3 justify-end pt-2">
-                <button
-                  onClick={() => setRemoveModalOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors w-full"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleRemoveAdminSubmit}
-                  className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition-colors w-full shadow-sm"
-                >
-                  Delete Admin Profile
+                  Remove Admin
                 </button>
               </div>
             </motion.div>

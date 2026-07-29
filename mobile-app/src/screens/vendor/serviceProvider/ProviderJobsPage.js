@@ -4,11 +4,7 @@ import {
   SafeAreaView, useWindowDimensions, Modal, TextInput,
   ScrollView, KeyboardAvoidingView, Platform, Pressable, Alert
 } from 'react-native';
-import {
-  Search, SlidersHorizontal, ChevronRight, MoreVertical,
-  UserRound, Users, XCircle, CheckCircle, MapPin,
-  CircleCheck, BadgeCheck, Wrench, FileText
-} from 'lucide-react-native';
+import { Search, SlidersHorizontal, ChevronRight, EllipsisVertical as MoreVertical, UserRound, Users, CircleX as XCircle, CircleCheck as CheckCircle, MapPin, CircleCheck, BadgeCheck, Wrench, FileText } from 'lucide-react-native';
 
 const NAVY = '#071B3A';
 const GOLD = '#F6B800';
@@ -17,7 +13,7 @@ const BG = '#F8FAFC';
 const WHITE = '#FFFFFF';
 
 const INITIAL_JOBS = [];
-
+const TABS = ['Scheduled', 'In Progress', 'Completed', 'On Hold', 'Cancelled'];
 const MOCK_TEAM_MEMBERS = [];
 
 const REQUIRED_SKILLS = ['AC Deep Cleaning', 'Equipment Handling', 'Safety Compliance'];

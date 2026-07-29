@@ -1,12 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  X, Download, Calendar, Activity, AlertTriangle, ShieldCheck,
-  TrendingUp, Users, Store, Package, UserPlus, FileText, Ban,
-  MessageSquare, RefreshCw, ChevronRight, CheckCircle, Info,
-  Wrench, Megaphone, Eye
-} from 'lucide-react';
+import { X, Download, Calendar, Activity, TriangleAlert as AlertTriangle, ShieldCheck, TrendingUp, Users, Store, Package, UserPlus, FileText, Ban, MessageSquare, RefreshCw, ChevronRight, CircleCheck as CheckCircle, Info, Wrench, Megaphone, Eye } from 'lucide-react';
 import { fetchDashboardStats } from '../../services/api.service';
 
 const COMMON_WALL_VENDORS = {};

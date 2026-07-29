@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions, Image , Alert} from 'react-native';
-import { ArrowLeft, Star, ShieldCheck, MapPin, Briefcase, Award, CheckCircle, Image as ImageIcon, Send } from 'lucide-react-native';
+import { ArrowLeft, Star, ShieldCheck, MapPin, Briefcase, Award, CircleCheck as CheckCircle, Image as ImageIcon, Send } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 
 const NAVY = '#0E2042';

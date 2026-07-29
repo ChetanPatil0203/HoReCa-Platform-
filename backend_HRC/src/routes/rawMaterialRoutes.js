@@ -32,7 +32,16 @@ router.patch('/orders/:orderId/status', rawMaterialController.updateOrderStatus)
 // PATCH vendor responds to an order (accept or reject)
 router.patch('/orders/:orderId/vendor-respond', rawMaterialController.vendorRespondOrder);
 
-// PATCH cancel an order
-router.patch('/orders/:orderId/cancel', rawMaterialController.cancelOrder);
+// PUT update product details
+router.put('/products/:productId', rawMaterialController.updateProduct);
+
+// DELETE product
+router.delete('/products/:productId', rawMaterialController.deleteProduct);
+
+// PATCH quick stock update
+router.patch('/products/:productId/stock', rawMaterialController.updateStock);
+
+// GET vendor analytics summary
+router.get('/analytics/vendor/:supplierId', rawMaterialController.getVendorAnalytics);
 
 module.exports = router;

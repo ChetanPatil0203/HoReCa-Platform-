@@ -1,25 +1,76 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { 
   View, Text, StyleSheet, FlatList, TouchableOpacity, 
   SafeAreaView, useWindowDimensions, ScrollView, Alert
 } from 'react-native';
-import { 
-  Bell, CheckCircle, Clock, FileText, IndianRupee, 
-  Star, Settings, Volume2, Briefcase, RefreshCcw, BellOff
-} from 'lucide-react-native';
+import { Bell, CircleCheck as CheckCircle, Clock, FileText, IndianRupee, Star, Settings, Volume2, Briefcase, RefreshCcw, BellOff } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorRequirements, fetchPublicRequirements } from '../../../services/api.service';
 
 const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
 
 const FILTERS = ['All', 'Requests', 'Jobs', 'Payments', 'Reviews'];
 
-const MOCK_NOTIFICATIONS = [];
-
 export default function ProviderNotificationsPage() {
   const { width } = useWindowDimensions();
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.registration?.id || user?.id;
   
   const [activeFilter, setActiveFilter] = useState('All');
-  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    const loadNotifications = async () => {
+      if (!supplierId) return;
+      try {
+        const [directRes, publicRes] = await Promise.all([
+          fetchVendorRequirements(supplierId),
+          fetchPublicRequirements('serviceProvider')
+        ]);
+
+        const list = [];
+        const directList = directRes?.data || directRes || [];
+        const publicList = publicRes?.data || publicRes || [];
+
+        if (Array.isArray(directList)) {
+          directList.forEach((req, idx) => {
+            const ownerName = req.owner?.bizName || 'HoReCa Owner';
+            list.push({
+              id: `direct-${req.id || idx}`,
+              type: 'Direct Request',
+              category: 'Requests',
+              title: `New Direct Request: ${req.title || 'Service Requirement'}`,
+              message: `${ownerName} posted a direct requirement to your business. Location: ${req.location || 'N/A'}. Budget: ${req.budget || 'Open'}.`,
+              time: req.createdAt ? new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
+              isRead: false,
+            });
+          });
+        }
+
+        if (Array.isArray(publicList)) {
+          publicList.slice(0, 5).forEach((req, idx) => {
+            const ownerName = req.owner?.bizName || 'HoReCa Owner';
+            list.push({
+              id: `public-${req.id || idx}`,
+              type: 'Broadcast Request',
+              category: 'Requests',
+              title: `Open Opportunity: ${req.title || 'Public Service Request'}`,
+              message: `${ownerName} broadcasted a new opportunity: "${req.description || req.title}". Location: ${req.location || 'N/A'}.`,
+              time: req.createdAt ? new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
+              isRead: true,
+            });
+          });
+        }
+
+        setNotifications(list);
+      } catch (err) {
+        console.warn('Error loading notifications:', err);
+      }
+    };
+
+    loadNotifications();
+  }, [supplierId]);
 
   const getIconData = (type) => {
     switch(type) {

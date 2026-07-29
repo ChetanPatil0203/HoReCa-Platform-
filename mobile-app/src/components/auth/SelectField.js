@@ -1,24 +1,53 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, TextInput, SafeAreaView } from 'react-native';
-import { ChevronDown, X, CheckCircle2, Search } from 'lucide-react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, TextInput } from 'react-native';
+import { ChevronDown, X, CircleCheck as CheckCircle2, Search } from 'lucide-react-native';
 import { AUTH_COLORS } from './AuthTheme';
 
 export default function SelectField({ 
-  label, value, options, onSelect, placeholder, error, containerStyle, searchable, icon: Icon 
+  label, value, options = [], onSelect, placeholder, error, containerStyle, searchable, icon: Icon, isMultiSelect = false 
 }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredOptions = searchable 
-    ? options.filter(opt => opt.toLowerCase().includes(searchQuery.toLowerCase()))
-    : options;
+  const safeOptions = Array.isArray(options) ? options : [];
 
-  let displayLabel = label;
+  const filteredOptions = searchable 
+    ? safeOptions.filter(opt => opt && typeof opt === 'string' && opt.toLowerCase().includes((searchQuery || '').toLowerCase()))
+    : safeOptions;
+
+  let displayLabel = label || '';
   let isRequired = false;
-  if (label && label.endsWith('*')) {
+  if (displayLabel && displayLabel.endsWith('*')) {
     isRequired = true;
-    displayLabel = label.slice(0, -1).trim();
+    displayLabel = displayLabel.slice(0, -1).trim();
   }
+
+  // Parse comma-separated value into array for multi-select checks
+  const getSelectedList = () => {
+    if (!value || typeof value !== 'string') return [];
+    return value.split(',').map(s => s.trim()).filter(Boolean);
+  };
+
+  const selectedList = getSelectedList();
+
+  const handleOptionPress = (opt) => {
+    if (isMultiSelect) {
+      let nextList;
+      if (selectedList.includes(opt)) {
+        nextList = selectedList.filter(item => item !== opt);
+      } else {
+        nextList = [...selectedList, opt];
+      }
+      onSelect(nextList.join(', '));
+    } else {
+      onSelect(opt);
+      setModalVisible(false);
+    }
+  };
+
+  const handleClearAll = () => {
+    onSelect('');
+  };
 
   return (
     <View style={[styles.fieldBlock, containerStyle]}>
@@ -41,7 +70,7 @@ export default function SelectField({
       >
         <View style={styles.leftContent}>
           {Icon && <Icon size={20} color={modalVisible ? AUTH_COLORS.accent : AUTH_COLORS.muted} style={styles.icon} />}
-          <Text style={[styles.inputText, !value && { color: AUTH_COLORS.muted }]}>
+          <Text style={[styles.inputText, !value && { color: AUTH_COLORS.muted }]} numberOfLines={1}>
             {value || placeholder || `Select ${displayLabel.toLowerCase()}`}
           </Text>
         </View>
@@ -50,13 +79,33 @@ export default function SelectField({
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
       <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => setModalVisible(false)}>
-        <SafeAreaView style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setModalVisible(false)}
+        >
+          <TouchableOpacity 
+            activeOpacity={1} 
+            style={styles.modalContent} 
+            onPress={(e) => e.stopPropagation()}
+          >
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{displayLabel}</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeBtn}>
-                <X size={24} color={AUTH_COLORS.primary} />
-              </TouchableOpacity>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.modalTitle}>{displayLabel}</Text>
+                {isMultiSelect && selectedList.length > 0 && (
+                  <Text style={styles.modalSubtitle}>{selectedList.length} selected</Text>
+                )}
+              </View>
+              <View style={styles.modalHeaderActions}>
+                {isMultiSelect && selectedList.length > 0 && (
+                  <TouchableOpacity onPress={handleClearAll} style={styles.clearAllBtn} accessibilityRole="button">
+                    <Text style={styles.clearAllText}>Clear All</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeBtn} accessibilityRole="button">
+                  <X size={24} color={AUTH_COLORS.primary} />
+                </TouchableOpacity>
+              </View>
             </View>
 
             {searchable && (
@@ -77,23 +126,38 @@ export default function SelectField({
               {filteredOptions.length === 0 ? (
                 <Text style={styles.noResults}>No options found.</Text>
               ) : (
-                filteredOptions.map((opt, idx) => (
-                  <TouchableOpacity 
-                    key={idx} 
-                    style={styles.optionItem}
-                    onPress={() => {
-                      onSelect(opt);
-                      setModalVisible(false);
-                    }}
-                  >
-                    <Text style={[styles.optionText, value === opt && styles.optionTextActive]}>{opt}</Text>
-                    {value === opt && <CheckCircle2 size={20} color={AUTH_COLORS.success} />}
-                  </TouchableOpacity>
-                ))
+                filteredOptions.map((opt, idx) => {
+                  const isOptSelected = selectedList.includes(opt);
+                  return (
+                    <TouchableOpacity 
+                      key={idx} 
+                      style={[styles.optionItem, isOptSelected && styles.optionItemActive]}
+                      onPress={() => handleOptionPress(opt)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.optionText, isOptSelected && styles.optionTextActive]}>{opt}</Text>
+                      {isOptSelected && (
+                        <CheckCircle2 size={20} color={AUTH_COLORS.success} />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })
               )}
             </ScrollView>
-          </View>
-        </SafeAreaView>
+
+            {isMultiSelect && (
+              <View style={styles.modalFooter}>
+                <TouchableOpacity 
+                  style={styles.applyBtn} 
+                  onPress={() => setModalVisible(false)}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.applyBtnText}>Done</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
     </View>
   );
@@ -131,19 +195,46 @@ const styles = StyleSheet.create({
   inputError: { borderColor: AUTH_COLORS.error, backgroundColor: '#FEF2F2' },
   errorText: { color: AUTH_COLORS.error, fontSize: 12, marginTop: 6, fontWeight: '500' },
   
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(7,27,58,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: AUTH_COLORS.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '85%' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: AUTH_COLORS.border },
+  modalOverlay: { 
+    flex: 1, 
+    backgroundColor: 'rgba(7, 27, 58, 0.5)', 
+    justifyContent: 'flex-end' 
+  },
+  modalContent: { 
+    backgroundColor: AUTH_COLORS.card, 
+    borderTopLeftRadius: 24, 
+    borderTopRightRadius: 24, 
+    maxHeight: '80%',
+    width: '100%'
+  },
+  modalHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    padding: 20, 
+    paddingBottom: 16, 
+    borderBottomWidth: 1, 
+    borderBottomColor: AUTH_COLORS.border 
+  },
   modalTitle: { fontSize: 18, fontWeight: 'bold', color: AUTH_COLORS.primary },
+  modalSubtitle: { fontSize: 12, color: AUTH_COLORS.muted, marginTop: 2 },
+  modalHeaderActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  clearAllBtn: { padding: 4 },
+  clearAllText: { fontSize: 13, fontWeight: '700', color: AUTH_COLORS.error },
   closeBtn: { padding: 4 },
   
   searchWrap: { padding: 16, borderBottomWidth: 1, borderBottomColor: AUTH_COLORS.border, position: 'relative', justifyContent: 'center' },
   searchIcon: { position: 'absolute', left: 28, zIndex: 1 },
   searchInput: { backgroundColor: AUTH_COLORS.input, borderWidth: 1, borderColor: AUTH_COLORS.border, borderRadius: 12, height: 48, paddingLeft: 40, paddingRight: 16, fontSize: 15, color: AUTH_COLORS.text },
   
-  optionsList: { paddingHorizontal: 8, paddingBottom: 32 },
+  optionsList: { paddingHorizontal: 8, paddingBottom: 16 },
   optionItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: AUTH_COLORS.border },
+  optionItemActive: { backgroundColor: '#F0F9FF' },
   optionText: { fontSize: 16, color: AUTH_COLORS.text },
   optionTextActive: { fontWeight: 'bold', color: AUTH_COLORS.primary },
-  noResults: { padding: 30, textAlign: 'center', color: AUTH_COLORS.muted, fontSize: 15 }
+  noResults: { padding: 30, textAlign: 'center', color: AUTH_COLORS.muted, fontSize: 15 },
+
+  modalFooter: { padding: 16, borderTopWidth: 1, borderTopColor: AUTH_COLORS.border, backgroundColor: '#FFFFFF' },
+  applyBtn: { backgroundColor: AUTH_COLORS.primary, height: 50, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  applyBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' }
 });

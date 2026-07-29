@@ -1,28 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  LayoutDashboard,
-  ShieldCheck,
-  Building2,
-  Network,
-  Inbox,
-  BarChart3,
-  ToggleRight,
-  UserCheck,
-  Search,
-  Bell,
-  X,
-  LogOut,
-  ChevronRight,
-  Menu,
-  ShieldAlert,
-  ShoppingCart,
-  ClipboardCheck,
-  Tags,
-  Users,
-  Shield
-} from 'lucide-react';
+import { LayoutDashboard, ShieldCheck, Building2, Network, Inbox, ChartBar as BarChart3, ToggleRight, UserCheck, Search, Bell, X, LogOut, ChevronRight, Menu, ShieldAlert, ShoppingCart, ClipboardCheck, Tags, Users, Shield } from 'lucide-react';
 import HrcHubLogo from '../assets/HoReCa_Logo.png';
 
 export default function AdminLayout({ children }) {

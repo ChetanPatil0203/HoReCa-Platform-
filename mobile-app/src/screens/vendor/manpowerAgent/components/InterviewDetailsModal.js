@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, SafeAreaView, TouchableOpacity, ScrollView, TextInput } from 'react-native';
-import { X, Calendar, Clock, Video, MapPin, User, Briefcase, CheckCircle, AlertTriangle } from 'lucide-react-native';
+import { X, Calendar, Clock, Video, MapPin, User, Briefcase, CircleCheck as CheckCircle, TriangleAlert as AlertTriangle } from 'lucide-react-native';
 
 import CreateDeploymentModal from './CreateDeploymentModal';
 

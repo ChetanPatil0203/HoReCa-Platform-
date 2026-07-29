@@ -4,11 +4,7 @@ import {
   Modal, TextInput, KeyboardAvoidingView, Platform, Dimensions, 
   TouchableWithoutFeedback 
 } from 'react-native';
-import { 
-  UsersRound, UserRoundCheck, BriefcaseBusiness, UserPlus, Search, 
-  SlidersHorizontal, ChevronRight, MoreVertical, Pencil, CalendarClock, 
-  UserRoundX, X, UploadCloud 
-} from 'lucide-react-native';
+import { UsersRound, UserRoundCheck, BriefcaseBusiness, UserPlus, Search, SlidersHorizontal, ChevronRight, EllipsisVertical as MoreVertical, Pencil, CalendarClock, UserRoundX, X, CloudUpload as UploadCloud } from 'lucide-react-native';
 
 const { width, height } = Dimensions.get('window');
 const isMobile = width < 768;

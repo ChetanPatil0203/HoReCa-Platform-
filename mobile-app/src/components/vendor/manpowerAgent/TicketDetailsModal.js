@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, SafeAreaView, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
-import { X, Send, Clock, User, AlertCircle } from 'lucide-react-native';
+import { X, Send, Clock, User, CircleAlert as AlertCircle } from 'lucide-react-native';
 
 const NAVY = '#081A3A';
 
 export default function TicketDetailsModal({ visible, onClose, ticket }) {
   const [replyText, setReplyText] = useState("");
-  const [messages, setMessages] = useState([
-    { id: 1, sender: 'Support Team', time: '10:00 AM', text: 'Hello, we have received your request and our technical team is looking into the billing discrepancy.' },
-    { id: 2, sender: 'You', time: '10:15 AM', text: 'Thank you. Please let me know if you need the invoice copy.' }
-  ]);
+  const [messages, setMessages] = useState(
+    ticket?.messages || [
+      { id: 1, sender: 'You', time: ticket?.createdAt || 'Just now', text: ticket?.description || 'Ticket created.' }
+    ]
+  );
   
   if (!ticket) return null;
 
@@ -53,7 +54,7 @@ export default function TicketDetailsModal({ visible, onClose, ticket }) {
               
               <View style={styles.descBox}>
                 <Text style={styles.descTitle}>Description</Text>
-                <Text style={styles.descText}>I generated an invoice (INV-1002) for Starbucks but the system calculated the GST incorrectly based on the discount provided.</Text>
+                <Text style={styles.descText}>{ticket.description || 'No description provided.'}</Text>
               </View>
             </View>
 

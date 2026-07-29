@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity, SafeAreaView
 } from 'react-native';
-import { Bell, Package, AlertTriangle, FileText, Check } from 'lucide-react-native';
+import { Bell, Package, TriangleAlert as AlertTriangle, FileText, Check } from 'lucide-react-native';
 
 const NAVY = '#081A3A';
 const GOLD = '#D4AF37';

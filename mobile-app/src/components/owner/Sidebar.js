@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Image } from 'react-native';
-import { LayoutDashboard, Package, Users, Wrench, Megaphone, BarChart2, Clock, User, Settings, LogOut, HelpCircle, ShoppingCart, Truck, ShieldCheck } from 'lucide-react-native';
+import { LayoutDashboard, Package, Users, Wrench, Megaphone, BarChart2, Clock, User, Settings, LogOut, CircleHelp as HelpCircle, ShoppingCart, Truck, ShieldCheck } from 'lucide-react-native';
 import { typography } from '../../theme/typography';
 
 const NAV_PRIMARY = [
@@ -52,7 +52,7 @@ export default function Sidebar({ activePage, onNavigate, onLogout, user }) {
       {/* Brand Header */}
       <View style={styles.brandHeader}>
         <View style={styles.brandIconBox}>
-          <Image source={require('../../assets/HoReCa_Logo.png')} style={{width: 32, height: 32, resizeMode: 'contain'}} />
+          <Image source={require('../../assets/HRCHUB_Logo.png')} style={{width: 32, height: 32, resizeMode: 'contain'}} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.brandTitle}>

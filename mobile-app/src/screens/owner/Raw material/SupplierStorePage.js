@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, useWindowDimensions, Platform, TextInput } from 'react-native';
-import { ArrowLeft, Star, MapPin, Clock, ShieldCheck, ShoppingCart, Plus, Minus, Search, BadgeCheck, CheckCircle2, Heart, ChevronRight } from 'lucide-react-native';
+import { ArrowLeft, Star, MapPin, Clock, ShieldCheck, ShoppingCart, Plus, Minus, Search, BadgeCheck, CircleCheck as CheckCircle2, Heart, ChevronRight } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 import { fetchRawMaterialProducts } from '../../../services/api.service';
 

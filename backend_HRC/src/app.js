@@ -9,6 +9,9 @@ const adminRoutes = require('./routes/adminRoutes');
 const rawMaterialRoutes = require('./routes/rawMaterialRoutes');
 const vendorRoutes = require('./routes/vendorRoutes');
 const requirementRoutes = require('./routes/requirementRoutes');
+const manpowerRequirementRoutes = require('./routes/manpowerRequirementRoutes');
+const marketingRequirementRoutes = require('./routes/marketingRequirementRoutes');
+const serviceProviderRequirementRoutes = require('./routes/serviceProviderRequirementRoutes');
 
 const app = express();
 
@@ -26,10 +29,13 @@ app.use('/api/users', userRoutes); // Handles /api/users/profile, etc.
 app.use('/api/admin', adminRoutes);
 app.use('/api/raw-materials', rawMaterialRoutes);
 app.use('/api/vendors', vendorRoutes);
+app.use('/api/requirements/manpower', manpowerRequirementRoutes);
+app.use('/api/requirements/marketing', marketingRequirementRoutes);
+app.use('/api/requirements/service-provider', serviceProviderRequirementRoutes);
 app.use('/api/requirements', requirementRoutes);
 
-// Root Health Check Route
-app.get('/', (req, res) => {
+// Root & API Health Check Route
+app.get(['/', '/api', '/api/health'], (req, res) => {
   res.status(200).json({
     status: 'success',
     message: 'HRC HUB API is running successfully',

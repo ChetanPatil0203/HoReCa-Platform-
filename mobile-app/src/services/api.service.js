@@ -8,6 +8,39 @@ const api = axios.create({
   },
 });
 
+// Auto-recovery interceptor for Network Errors across restarts/IP changes
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    if (
+      (error.message === 'Network Error' || error.code === 'ERR_NETWORK' || !error.response) &&
+      !originalRequest._retry
+    ) {
+      originalRequest._retry = true;
+      const candidates = ['localhost', '127.0.0.1', '192.168.0.111', '10.0.2.2'];
+      
+      for (const host of candidates) {
+        const testBase = `http://${host}:5000/api`;
+        if (testBase === api.defaults.baseURL) continue;
+        
+        try {
+          const res = await fetch(`http://${host}:5000/`, { method: 'GET' });
+          if (res.ok) {
+            console.log(`[API Auto-Recovery] Switched base URL to ${testBase}`);
+            api.defaults.baseURL = testBase;
+            originalRequest.baseURL = testBase;
+            return api(originalRequest);
+          }
+        } catch (pingErr) {
+          // ignore candidate failure silently
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const fetchComplaintsApi = async () => {
   const response = await api.get('/vendor/complaints');
   return response.data;
@@ -86,19 +119,43 @@ export const vendorRespondOrder = async (orderId, supplierId, action) => {
   return response.data;
 };
 
-// Vendor: Update status of an order
 export const updateOrderStatusApi = async (orderId, status) => {
-  const response = await api.patch(`/raw-materials/orders/${orderId}/status`, { status });
+  try {
+    const response = await api.patch(`/raw-materials/orders/${orderId}/status`, { status });
+    return response.data;
+  } catch (error) {
+    console.warn('Failed to update order status via API:', error?.message);
+    return { success: false, message: error?.message };
+  }
+};
+
+export const updateRawMaterialProduct = async (productId, productData) => {
+  const response = await api.put(`/raw-materials/products/${productId}`, productData);
+  return response.data;
+};
+
+export const deleteRawMaterialProduct = async (productId) => {
+  const response = await api.delete(`/raw-materials/products/${productId}`);
+  return response.data;
+};
+
+export const updateProductStockApi = async (productId, stock) => {
+  const response = await api.patch(`/raw-materials/products/${productId}/stock`, { stock });
+  return response.data;
+};
+
+export const fetchVendorAnalyticsApi = async (supplierId) => {
+  const response = await api.get(`/raw-materials/analytics/vendor/${supplierId}`);
   return response.data;
 };
 
 export const checkBackendHealth = async () => {
   try {
-    const response = await api.get('/');
+    const response = await api.get('/health');
     return response.data;
   } catch (error) {
-    console.error('Backend health check failed:', error);
-    throw error;
+    console.warn('Backend health check note:', error?.message || error);
+    return { status: 'offline' };
   }
 };
 
@@ -125,7 +182,8 @@ export const uploadDocumentApi = async (file, docKey, token) => {
   formData.append('docName', file.name || docKey);
 
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/upload-document`, {
+    const currentBaseUrl = api.defaults.baseURL || API_BASE_URL;
+    const response = await fetch(`${currentBaseUrl}/auth/upload-document`, {
       method: 'POST',
       body: formData,
       headers: {
@@ -221,6 +279,41 @@ export const fetchPublicRequirements = async (type) => {
 
 export const updateRequirementStatusApi = async (requirementId, status) => {
   const response = await api.patch(`/requirements/${requirementId}/status`, { status });
+  return response.data;
+};
+
+export const fetchOwnerActivityHistoryApi = async (ownerId) => {
+  try {
+    const response = await api.get(`/requirements/history/owner/${ownerId}`);
+    return response.data;
+  } catch (error) {
+    console.warn('Failed to fetch activity history from API:', error?.message);
+    return { success: false, data: null };
+  }
+};
+
+export const fetchOwnerTrackingApi = async (ownerId) => {
+  try {
+    const response = await api.get(`/requirements/tracking/owner/${ownerId}`);
+    return response.data;
+  } catch (error) {
+    console.warn('Failed to fetch tracking from API:', error?.message);
+    return { success: false, data: null };
+  }
+};
+
+export const forgotPasswordApi = async (email) => {
+  const response = await api.post('/auth/forgot-password', { email });
+  return response.data;
+};
+
+export const verifyResetOtpApi = async (email, otp) => {
+  const response = await api.post('/auth/verify-reset-otp', { email, otp });
+  return response.data;
+};
+
+export const resetPasswordApi = async (email, password) => {
+  const response = await api.post('/auth/reset-password', { email, password });
   return response.data;
 };
 

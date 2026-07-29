@@ -3,10 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, 
   Platform, useWindowDimensions, Modal, TextInput, KeyboardAvoidingView, SafeAreaView
 } from 'react-native';
-import { 
-  ArrowLeft, Bookmark, Star, Briefcase, CalendarCheck, 
-  Send, ShieldCheck, MapPin, Wrench, ChevronRight, X, Paperclip, BadgeCheck, CheckCircle, Eye
-} from 'lucide-react-native';
+import { ArrowLeft, Bookmark, Star, Briefcase, CalendarCheck, Send, ShieldCheck, MapPin, Wrench, ChevronRight, X, Paperclip, BadgeCheck, CircleCheck as CheckCircle, Eye } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 
 const NAVY = '#0E2042';

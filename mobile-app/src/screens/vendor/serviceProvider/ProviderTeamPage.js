@@ -4,11 +4,7 @@ import {
   SafeAreaView, useWindowDimensions, Modal, TextInput,
   ScrollView, KeyboardAvoidingView, Platform, Switch
 } from 'react-native';
-import {
-  Users, CheckCircle, Clock, XCircle, Briefcase,
-  Search, Filter, Plus, Edit, User, MapPin, AlertCircle,
-  Phone, Mail, Camera, Eye, Upload
-} from 'lucide-react-native';
+import { Users, CircleCheck as CheckCircle, Clock, CircleX as XCircle, Briefcase, Search, Filter, Plus, Pencil as Edit, User, MapPin, CircleAlert as AlertCircle, Phone, Mail, Camera, Eye, Upload } from 'lucide-react-native';
 
 const NAVY = '#081A3A';
 const GOLD = '#D4AF37';

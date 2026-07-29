@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
-import { ArrowLeft, Star, Briefcase, DollarSign, FileText, CheckCircle, Calendar, MessageSquare, ShieldCheck } from 'lucide-react-native';
+import { ArrowLeft, Star, Briefcase, DollarSign, FileText, CircleCheck as CheckCircle, Calendar, MessageSquare, ShieldCheck } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 
 const GOLD = '#D97706';
@@ -90,7 +90,7 @@ export default function CandidateProfilePage({ candidate, onBack }) {
 
             <Text style={styles.subTitle}>Skills</Text>
             <View style={styles.tagsRow}>
-              {candidate.skills.map(s => (
+              {( candidate?.skills || [] ).map(s => (
                 <View key={s} style={styles.tagBadge}>
                   <Text style={styles.tagText}>{s}</Text>
                 </View>

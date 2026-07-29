@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, FileText, CheckCircle2, Shield, Download, ZoomIn, ZoomOut, QrCode, Award, Upload } from 'lucide-react';
+import { X, FileText, CircleCheck as CheckCircle2, Shield, Download, ZoomIn, ZoomOut, QrCode, Award, Upload } from 'lucide-react';
 
 export default function DocumentPreviewModal({
   isOpen,
@@ -12,8 +12,11 @@ export default function DocumentPreviewModal({
 }) {
   const [confirmCheckbox, setConfirmCheckbox] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
-
   const [imageError, setImageError] = useState(false);
+
+  React.useEffect(() => {
+    setImageError(false);
+  }, [doc?.id, doc?.fileUrl, doc?.url]);
 
   if (!isOpen || !doc) return null;
 
@@ -102,18 +105,18 @@ export default function DocumentPreviewModal({
                   title={doc.name}
                   className="w-full h-[550px] rounded-xl border border-gray-700 bg-white"
                 />
-              ) : hasSvg ? (
-                <div
-                  className="w-full rounded-xl shadow-xl border border-gray-300 bg-white overflow-auto"
-                  style={{ minHeight: '500px', padding: '8px' }}
-                  dangerouslySetInnerHTML={{ __html: doc.svgContent }}
-                />
               ) : isWebImage ? (
                 <img
                   src={effectiveUrl}
                   alt={doc.name}
                   onError={() => setImageError(true)}
-                  className="w-full rounded-xl shadow-2xl border border-gray-700 max-h-[600px] object-contain"
+                  className="w-full rounded-xl shadow-2xl border border-gray-700 max-h-[600px] object-contain bg-white"
+                />
+              ) : hasSvg ? (
+                <div
+                  className="w-full rounded-xl shadow-xl border border-gray-300 bg-white overflow-auto"
+                  style={{ minHeight: '500px', padding: '8px' }}
+                  dangerouslySetInnerHTML={{ __html: doc.svgContent }}
                 />
               ) : (
                 /* High Fidelity Realistic Document Preview Certificate Frame */

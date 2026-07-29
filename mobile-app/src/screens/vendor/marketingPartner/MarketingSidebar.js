@@ -1,10 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform } from 'react-native';
-import {
-  LayoutDashboard, Mail, Megaphone, Briefcase,
-  DollarSign, Bell, Settings, LogOut,
-  HelpCircle, X, FolderOpen, FileText
-} from 'lucide-react-native';
+import { LayoutDashboard, Mail, Megaphone, Briefcase, DollarSign, Bell, Settings, LogOut, CircleHelp as HelpCircle, X, FolderOpen, FileText } from 'lucide-react-native';
 
 const NAV = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -50,7 +46,7 @@ export default function MarketingSidebar({ activePage, setActivePage, isMobile, 
       <View style={styles.topSection}>
         {/* Brand Header */}
         <View style={styles.brandHeader}>
-          <Image source={require('../../../assets/HoReCa_Logo.png')} style={styles.logo} resizeMode="cover" />
+          <Image source={require('../../../assets/HRCHUB_Logo.png')} style={styles.logo} resizeMode="cover" />
           <View style={styles.brandTextCol}>
             <Text style={styles.brandTitle}><Text style={{ color: '#D4AF37' }}>HRC</Text> HUB</Text>
             <Text style={styles.brandSubtitle}>VENDOR OPERATIONS</Text>

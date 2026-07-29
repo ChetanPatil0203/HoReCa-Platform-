@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Image, Linking, Alert } from 'react-native';
-import { FileText, Upload, Trash2, CheckCircle2, FileUp, Eye, X } from 'lucide-react-native';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { FileText, Upload, Trash2, CheckCircle2, FileUp } from 'lucide-react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { AUTH_COLORS } from './AuthTheme';
 
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 export default function DocumentUploadRow({ document, selectedFile, onFileSelect, onFileRemove }) {
   const { name, helperText, requirement } = document;
-  const [isPreviewVisible, setIsPreviewVisible] = useState(false);
 
   const handlePickDocument = async () => {
     try {
@@ -27,64 +30,78 @@ export default function DocumentUploadRow({ document, selectedFile, onFileSelect
     }
   };
 
+  const toggleInfo = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setShowInfo(!showInfo);
+  };
+
   const isRequired = requirement === 'Required';
   const isSelected = !!selectedFile;
 
-  let badgeStyle = styles.badgeOptional;
-  let badgeTextStyle = styles.badgeTextOptional;
-  
-  if (isRequired) {
-    badgeStyle = styles.badgeRequired;
-    badgeTextStyle = styles.badgeTextRequired;
-  } else if (requirement === 'Required if applicable') {
-    badgeStyle = styles.badgeApplicable;
-    badgeTextStyle = styles.badgeTextApplicable;
-  }
-
   return (
-    <View style={styles.container}>
-      <View style={styles.contentWrap}>
+    <View style={styles.outerContainer}>
+      <View style={[styles.container, isSelected && styles.containerSelected]}>
         <View style={styles.iconBox}>
-          {isSelected ? <CheckCircle2 size={24} color={AUTH_COLORS.success} /> : <FileText size={24} color={AUTH_COLORS.primary} />}
-        </View>
-        
-        <View style={styles.infoArea}>
-          <View style={styles.titleRow}>
-            <Text style={styles.name} numberOfLines={1}>{name}</Text>
-            {!isSelected && (
-              <View style={[styles.badge, badgeStyle]}>
-                <Text style={[styles.badgeText, badgeTextStyle]}>{requirement}</Text>
-              </View>
-            )}
-          </View>
-          
-          {!isSelected ? (
-            <Text style={styles.helperText} numberOfLines={2}>{helperText}</Text>
+          {isSelected ? (
+            <CheckCircle2 size={20} color={AUTH_COLORS.success} />
           ) : (
-            <View>
-              <Text style={styles.fileName} numberOfLines={1}>{selectedFile.name}</Text>
-              <View style={styles.fileMetaRow}>
-                <Text style={styles.fileSize}>{(selectedFile.size / (1024 * 1024)).toFixed(2)} MB</Text>
-                <Text style={styles.dot}>•</Text>
-                <Text style={styles.readyText}>Ready for Submission</Text>
-              </View>
-            </View>
+            <FileText size={20} color={AUTH_COLORS.primary} />
           )}
         </View>
 
-        {!isSelected && (
-          <TouchableOpacity style={styles.uploadAction} onPress={handlePickDocument}>
-            <Upload size={18} color={AUTH_COLORS.primary} />
-          </TouchableOpacity>
-        )}
+        <View style={styles.infoArea}>
+          <View style={styles.titleRow}>
+            <Text style={styles.name} numberOfLines={1}>
+              {name}
+            </Text>
+            {isRequired && !isSelected && (
+              <View style={styles.badgeRequired}>
+                <Text style={styles.badgeTextRequired}>Required</Text>
+              </View>
+            )}
+            {helperText && !isSelected && (
+              <TouchableOpacity onPress={toggleInfo} style={styles.infoIconBtn} accessibilityRole="button">
+                <HelpCircle size={15} color={showInfo ? AUTH_COLORS.accent : AUTH_COLORS.muted} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {isSelected ? (
+            <View style={styles.fileDetails}>
+              <Text style={styles.fileName} numberOfLines={1}>
+                {selectedFile.name}
+              </Text>
+              <Text style={styles.fileSize}>
+                {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.statusText} numberOfLines={1}>
+              Not uploaded
+            </Text>
+          )}
+        </View>
+
+        <View style={styles.actionColumn}>
+          {isSelected ? (
+            <View style={styles.activeActions}>
+              <TouchableOpacity onPress={handlePickDocument} style={styles.actionIconBtn} accessibilityRole="button">
+                <FileUp size={16} color={AUTH_COLORS.primary} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={onFileRemove} style={[styles.actionIconBtn, styles.removeBtn]} accessibilityRole="button">
+                <Trash2 size={16} color={AUTH_COLORS.error} />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.uploadBtn} onPress={handlePickDocument} accessibilityRole="button">
+              <Upload size={16} color={AUTH_COLORS.primary} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {isSelected && (
         <View style={styles.actionsFooter}>
-          <TouchableOpacity style={styles.previewBtn} onPress={() => setIsPreviewVisible(true)}>
-            <Eye size={14} color={AUTH_COLORS.primary} style={{ marginRight: 6 }} />
-            <Text style={styles.previewText}>Preview</Text>
-          </TouchableOpacity>
           <TouchableOpacity style={styles.replaceBtn} onPress={handlePickDocument}>
             <FileUp size={14} color={AUTH_COLORS.muted} style={{ marginRight: 6 }} />
             <Text style={styles.replaceText}>Replace</Text>
@@ -151,218 +168,137 @@ export default function DocumentUploadRow({ document, selectedFile, onFileSelect
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    backgroundColor: AUTH_COLORS.card, 
-    borderWidth: 1, 
-    borderColor: AUTH_COLORS.border, 
-    borderRadius: 16, 
-    padding: 14, 
-    marginBottom: 10 
+  outerContainer: {
+    marginBottom: 10,
+    width: '100%',
   },
-  contentWrap: {
+  container: {
     flexDirection: 'row',
-    alignItems: 'center'
+    alignItems: 'center',
+    backgroundColor: AUTH_COLORS.input,
+    borderWidth: 1,
+    borderColor: AUTH_COLORS.border,
+    borderRadius: 14,
+    height: 68,
+    paddingHorizontal: 12,
+  },
+  containerSelected: {
+    borderColor: AUTH_COLORS.success + '40', // light border for success
+    backgroundColor: '#FFFFFF',
   },
   iconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: AUTH_COLORS.input,
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
     borderWidth: 1,
-    borderColor: AUTH_COLORS.border
+    borderColor: AUTH_COLORS.border,
   },
   infoArea: {
     flex: 1,
-    justifyContent: 'center'
+    marginLeft: 12,
+    justifyContent: 'center',
+    paddingRight: 6,
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
-    flexWrap: 'wrap',
-    gap: 6
+    marginBottom: 2,
   },
-  name: { 
-    fontSize: 14, 
-    fontWeight: 'bold', 
-    color: AUTH_COLORS.text
+  name: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: AUTH_COLORS.text,
+    marginRight: 6,
+    flexShrink: 1,
   },
-  badge: { 
-    paddingHorizontal: 6, 
-    paddingVertical: 2, 
-    borderRadius: 6 
+  infoIconBtn: {
+    padding: 2,
   },
-  badgeRequired: { backgroundColor: '#FEE2E2' },
-  badgeTextRequired: { color: AUTH_COLORS.error, fontSize: 10, fontWeight: 'bold' },
-  badgeApplicable: { backgroundColor: '#FFEDD5' },
-  badgeTextApplicable: { color: AUTH_COLORS.warning, fontSize: 10, fontWeight: 'bold' },
-  badgeOptional: { backgroundColor: AUTH_COLORS.input },
-  badgeTextOptional: { color: AUTH_COLORS.muted, fontSize: 10, fontWeight: 'bold' },
-  
-  helperText: { 
-    fontSize: 12, 
-    color: AUTH_COLORS.muted, 
-    lineHeight: 16 
+  badgeRequired: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FCA5A5',
+    borderWidth: 0.5,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 6,
+    marginRight: 4,
   },
-  
-  uploadAction: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: '#F0F4F8',
+  badgeTextRequired: {
+    color: AUTH_COLORS.error,
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  statusText: {
+    fontSize: 11,
+    color: AUTH_COLORS.muted,
+  },
+  fileDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  fileName: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: AUTH_COLORS.text,
+    maxWidth: '70%',
+  },
+  fileSize: {
+    fontSize: 10,
+    color: AUTH_COLORS.muted,
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  actionColumn: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 12
   },
-
-  fileName: { 
-    fontSize: 13, 
-    fontWeight: '600', 
-    color: AUTH_COLORS.text, 
-    marginBottom: 2 
+  uploadBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: AUTH_COLORS.border,
   },
-  fileMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
-  fileSize: { 
-    fontSize: 11, 
-    color: AUTH_COLORS.muted 
-  },
-  dot: {
-    color: AUTH_COLORS.border,
-    marginHorizontal: 6
-  },
-  readyText: {
-    fontSize: 11,
-    color: AUTH_COLORS.success,
-    fontWeight: '600'
-  },
-
-  actionsFooter: {
+  activeActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: AUTH_COLORS.border,
-    gap: 12
+    gap: 8,
   },
-  replaceBtn: {
-    flexDirection: 'row',
+  actionIconBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#F1F5F9',
     alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    backgroundColor: AUTH_COLORS.input,
-    borderRadius: 8
-  },
-  replaceText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: AUTH_COLORS.text
+    justifyContent: 'center',
   },
   removeBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
     backgroundColor: '#FEF2F2',
-    borderRadius: 8
+  },
+  infoBox: {
+    backgroundColor: '#F0F5FA',
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10,
+    borderWidth: 1,
+    borderTopWidth: 0,
+    borderColor: AUTH_COLORS.border,
+    padding: 10,
+    marginTop: -4,
+    marginHorizontal: 8,
+    zIndex: -1,
   },
   removeText: {
     fontSize: 12,
     fontWeight: '600',
     color: AUTH_COLORS.error
-  },
-  previewBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    backgroundColor: '#F0F4F8',
-    borderRadius: 8
-  },
-  previewText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: AUTH_COLORS.primary
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    backgroundColor: AUTH_COLORS.card,
-    borderRadius: 20,
-    width: '100%',
-    maxHeight: '80%',
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: AUTH_COLORS.border,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: AUTH_COLORS.border,
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: AUTH_COLORS.primary,
-    flex: 1,
-    marginRight: 10,
-  },
-  closeBtn: {
-    padding: 4,
-  },
-  modalBody: {
-    padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 300,
-  },
-  previewImage: {
-    width: '100%',
-    height: 350,
-    borderRadius: 10,
-  },
-  pdfPreviewContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 20,
-  },
-  pdfName: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: AUTH_COLORS.text,
-    textAlign: 'center',
-    marginBottom: 6,
-    paddingHorizontal: 20,
-  },
-  pdfSize: {
-    fontSize: 12,
-    color: AUTH_COLORS.muted,
-    marginBottom: 20,
-  },
-  openSystemBtn: {
-    backgroundColor: AUTH_COLORS.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-  },
-  openSystemBtnText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-    fontSize: 14,
   }
 });

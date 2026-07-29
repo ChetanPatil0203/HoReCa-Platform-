@@ -1,15 +1,5 @@
 import React, { useState } from 'react';
-import {
-  CheckCircle2,
-  Clock,
-  AlertTriangle,
-  FileText,
-  ShieldCheck,
-  History,
-  MessageSquare,
-  ChevronDown,
-  ChevronUp,
-} from 'lucide-react';
+import { CircleCheck as CheckCircle2, Clock, TriangleAlert as AlertTriangle, FileText, ShieldCheck, History, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function ReviewDecisionTab({
   application,

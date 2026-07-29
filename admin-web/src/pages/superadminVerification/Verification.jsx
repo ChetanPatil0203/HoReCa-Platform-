@@ -83,6 +83,21 @@ export default function Verification() {
     const findUploadedDoc = (key) => {
       const k = key.toLowerCase();
 
+      // Determine search keywords for this document slot
+      let keywords = [k];
+      if (k.includes('fssai')) keywords = ['fssai', 'food'];
+      else if (k.includes('gst')) keywords = ['gst', 'gstin'];
+      else if (k.includes('pan')) keywords = ['pan'];
+      else if (k.includes('reg')) keywords = ['reg', 'licence', 'license', 'trade', 'shop', 'business'];
+      else if (k.includes('fire')) keywords = ['fire', 'noc'];
+      else if (k.includes('addr')) keywords = ['addr', 'address', 'warehouse', 'establishment', 'local'];
+
+      const matchesKeyword = (str) => {
+        if (!str) return false;
+        const lower = String(str).toLowerCase();
+        return keywords.some(kw => lower.includes(kw));
+      };
+
       // 1. Direct fields on registration record
       if (k.includes('fssai') && (record?.fssaiUrl || record?.fssaiDoc || record?.fssaiFile || record?.fssai)) {
         const val = record.fssaiUrl || record.fssaiDoc || record.fssaiFile || record.fssai;
@@ -116,7 +131,7 @@ export default function Verification() {
           if (!d) return false;
           const dk = (d.docKey || d.key || d.name || '').toLowerCase();
           const dn = (d.docName || d.filename || '').toLowerCase();
-          return dk.includes(k) || dn.includes(k);
+          return matchesKeyword(dk) || matchesKeyword(dn);
         });
         if (found) {
           return {
@@ -131,11 +146,12 @@ export default function Verification() {
       if (userUploadedDocs && typeof userUploadedDocs === 'object') {
         const entries = Object.entries(userUploadedDocs);
         for (const [docKey, docVal] of entries) {
-          if (docKey.toLowerCase().includes(k) || (docVal?.name && docVal.name.toLowerCase().includes(k))) {
+          const name = typeof docVal === 'object' ? (docVal?.name || docVal?.filename) : '';
+          if (matchesKeyword(docKey) || matchesKeyword(name)) {
             const url = typeof docVal === 'string' ? docVal : (docVal?.uri || docVal?.url || docVal?.fileUrl);
-            const name = typeof docVal === 'object' ? (docVal?.name || docVal?.filename) : docKey;
+            const fileName = typeof docVal === 'object' ? (docVal?.name || docVal?.filename) : docKey;
             if (url) {
-              return { fileUrl: url, filename: name || `${key}.jpg`, status: docVal?.status };
+              return { fileUrl: url, filename: fileName || `${key}.jpg`, status: docVal?.status };
             }
           }
         }
@@ -144,21 +160,42 @@ export default function Verification() {
       return null;
     };
 
-    const BACKEND_URL = 'http://10.121.229.11:5000';
+    const getBackendBaseUrl = () => {
+      if (import.meta.env?.VITE_API_URL) {
+        return import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '');
+      }
+      const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+      return `http://${hostname}:5000`;
+    };
+
+    const BACKEND_URL = getBackendBaseUrl();
 
     const resolveDoc = (candidateUrl, docName, docNumber) => {
       if (typeof candidateUrl === 'string' && candidateUrl.trim()) {
-        // Relative path from server (e.g. /uploads/fssai-123.pdf)
-        if (candidateUrl.startsWith('/uploads/')) {
-          return { fileUrl: `${BACKEND_URL}${candidateUrl}`, svgContent: null };
+        let cleanUrl = candidateUrl.trim().replace(/\\/g, '/');
+
+        // Handle full HTTP / HTTPS URLs (including legacy IP URLs)
+        if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')) {
+          if (cleanUrl.includes('/uploads/')) {
+            const uploadPath = cleanUrl.substring(cleanUrl.indexOf('/uploads/'));
+            return { fileUrl: `${BACKEND_URL}${uploadPath}`, svgContent: null };
+          }
+          return { fileUrl: cleanUrl, svgContent: null };
         }
-        // Already a full URL
-        if (
-          candidateUrl.startsWith('http://') ||
-          candidateUrl.startsWith('https://') ||
-          candidateUrl.startsWith('blob:')
-        ) {
-          return { fileUrl: candidateUrl, svgContent: null };
+
+        if (cleanUrl.startsWith('blob:')) {
+          return { fileUrl: cleanUrl, svgContent: null };
+        }
+
+        // Relative uploads path
+        if (cleanUrl.includes('uploads/')) {
+          const uploadPath = cleanUrl.substring(cleanUrl.indexOf('uploads/'));
+          return { fileUrl: `${BACKEND_URL}/${uploadPath}`, svgContent: null };
+        }
+
+        if (cleanUrl.length > 0) {
+          const path = cleanUrl.startsWith('/') ? cleanUrl : `/${cleanUrl}`;
+          return { fileUrl: `${BACKEND_URL}${path}`, svgContent: null };
         }
       }
       // No valid URL — generate SVG preview placeholder

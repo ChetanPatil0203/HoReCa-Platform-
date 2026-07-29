@@ -1,10 +1,6 @@
 import React, { useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform } from 'react-native';
-import { 
-  LayoutDashboard, Activity, Truck, Briefcase,
-  DollarSign, BarChart2, Settings, LogOut,
-  HelpCircle, Package, X
-} from 'lucide-react-native';
+import { LayoutDashboard, Activity, Truck, Briefcase, DollarSign, BarChart2, Settings, LogOut, CircleHelp as HelpCircle, Package, X } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
 
 const NAV = [
@@ -64,7 +60,7 @@ export default function RawMaterialSidebar({ activePage, setActivePage, isMobile
       <View style={styles.topSection}>
         {/* Brand Header */}
         <View style={styles.brandHeader}>
-          <Image source={require('../../../assets/HoReCa_Logo.png')} style={styles.logo} resizeMode="cover" />
+          <Image source={require('../../../assets/HRCHUB_Logo.png')} style={styles.logo} resizeMode="cover" />
           <View style={styles.brandTextCol}>
             <Text style={styles.brandTitle}><Text style={{color: '#D4AF37'}}>HRC</Text> HUB</Text>
             <Text style={styles.brandSubtitle}>VENDOR OPERATIONS</Text>

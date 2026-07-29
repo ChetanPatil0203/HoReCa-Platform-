@@ -1,44 +1,84 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
 import { Package, Users, Wrench, Megaphone, ShoppingCart, MessageSquare, CalendarDays, TriangleAlert, ChevronRight, Star } from 'lucide-react-native';
+import { fetchOwnerRequirements } from '../../services/api.service';
 
 const NAVY = '#071B3A';
 const MUTED = '#64748B';
-
-const QUICK_ACTIONS = [
-  { id: 'raw-material', title: 'Raw Material', status: '0 Active Orders', action: 'Browse Products →', icon: Package, color: '#F97316' },
-  { id: 'manpower', title: 'Manpower', status: '0 Open Requirements', action: 'Hire Staff →', icon: Users, color: '#3B82F6' },
-  { id: 'service', title: 'Service Providers', status: '0 Services Scheduled', action: 'Find Providers →', icon: Wrench, color: '#10B981' },
-  { id: 'marketing', title: 'Marketing', status: '0 Active Campaigns', action: 'Explore Agencies →', icon: Megaphone, color: '#8B5CF6' },
-];
-
-const OVERVIEW_STATS = [
-  { id: 'active', label: 'Orders in Progress', value: '0', icon: ShoppingCart, color: '#3B82F6' },
-  { id: 'pending', label: 'Responses Pending', value: '0', icon: MessageSquare, color: '#F97316' },
-  { id: 'scheduled', label: 'Scheduled Today', value: '0', icon: CalendarDays, color: '#10B981' },
-  { id: 'urgent', label: 'Attention Needed', value: '0', icon: TriangleAlert, color: '#EF4444' },
-];
-
-const RECENT_ACTIVITY = [];
-
-const TOP_PARTNERS = [];
 
 export default function DashboardHome({ user, onNavigate }) {
   const { width } = useWindowDimensions();
   const pagePadding = width < 340 ? 12 : 16;
   const gridGap = 12;
   const columns = 2;
-  
+  const ownerId = user?.id;
+
+  const [reqCounts, setReqCounts] = useState({
+    manpower: 0,
+    service: 0,
+    marketing: 0,
+    pendingResponses: 0
+  });
+
+  useEffect(() => {
+    const loadOwnerDashboard = async () => {
+      if (!ownerId) return;
+      try {
+        const res = await fetchOwnerRequirements(ownerId);
+        const list = res?.data || res || [];
+        if (Array.isArray(list)) {
+          const mp = list.filter(r => r.type === 'manpower').length;
+          const sp = list.filter(r => r.type === 'serviceProvider').length;
+          const mk = list.filter(r => r.type === 'marketing').length;
+          const pending = list.filter(r => r.supplierId || (r.extraData && r.extraData.responseCount > 0)).length;
+
+          setReqCounts({
+            manpower: mp,
+            service: sp,
+            marketing: mk,
+            pendingResponses: pending
+          });
+        }
+      } catch (err) {
+        console.warn('Error fetching owner dashboard requirements:', err);
+      }
+    };
+    loadOwnerDashboard();
+    const interval = setInterval(loadOwnerDashboard, 4000);
+    return () => clearInterval(interval);
+  }, [ownerId]);
+
+  const quickActions = [
+    { id: 'raw-material', title: 'Raw Material', status: '0 Active Orders', action: 'Browse Products →', icon: Package, color: '#F97316' },
+    { id: 'manpower', title: 'Manpower', status: `${reqCounts.manpower} Open Requirements`, action: 'Hire Staff →', icon: Users, color: '#3B82F6' },
+    { id: 'service', title: 'Service Providers', status: `${reqCounts.service} Services Scheduled`, action: 'Find Providers →', icon: Wrench, color: '#10B981' },
+    { id: 'marketing', title: 'Marketing', status: `${reqCounts.marketing} Active Campaigns`, action: 'Explore Agencies →', icon: Megaphone, color: '#8B5CF6' },
+  ];
+
+  const overviewStats = [
+    { id: 'active', label: 'Orders in Progress', value: '0', icon: ShoppingCart, color: '#3B82F6' },
+    { id: 'pending', label: 'Responses Pending', value: reqCounts.pendingResponses.toString(), icon: MessageSquare, color: '#F97316' },
+    { id: 'scheduled', label: 'Scheduled Today', value: reqCounts.service.toString(), icon: CalendarDays, color: '#10B981' },
+    { id: 'urgent', label: 'Attention Needed', value: '0', icon: TriangleAlert, color: '#EF4444' },
+  ];
+
   // Exact card width calculation
   const cardWidth = (width - (pagePadding * 2) - gridGap) / columns;
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  };
 
   return (
     <View style={[styles.container, { paddingHorizontal: pagePadding }]}>
       {/* 2. Welcome Hero Card */}
       <View style={styles.heroCard}>
         <View style={styles.heroContent}>
-          <Text style={styles.heroGreeting}>Good Morning{user?.name ? `, ${user.name.split(" ")[0]}` : ''} 👋</Text>
-          <Text style={styles.heroBusiness}>{user?.businessName || 'Business Owner'}</Text>
+          <Text style={styles.heroGreeting}>{getGreeting()}{user?.name ? `, ${user.name.split(" ")[0]}` : ''} 👋</Text>
+          <Text style={styles.heroBusiness}>{user?.registration?.bizName || user?.businessName || 'Business Owner'}</Text>
           <Text style={styles.heroDesc}>Manage all your HoReCa business operations from one place.</Text>
         </View>
       </View>
@@ -50,7 +90,7 @@ export default function DashboardHome({ user, onNavigate }) {
           <TouchableOpacity><Text style={styles.viewAllText}>View All {'>'}</Text></TouchableOpacity>
         </View>
         <View style={[styles.gridContainer, { gap: gridGap }]}>
-          {QUICK_ACTIONS.map(action => (
+          {quickActions.map(action => (
             <TouchableOpacity 
               key={action.id} 
               style={[styles.quickCard, { width: cardWidth }]}
@@ -78,7 +118,7 @@ export default function DashboardHome({ user, onNavigate }) {
           <TouchableOpacity><Text style={styles.viewAllText}>View All {'>'}</Text></TouchableOpacity>
         </View>
         <View style={[styles.gridContainer, { gap: gridGap }]}>
-          {OVERVIEW_STATS.map((stat, idx) => (
+          {overviewStats.map((stat, idx) => (
             <TouchableOpacity 
               key={idx} 
               style={[styles.statCard, { width: cardWidth }]}
@@ -102,18 +142,9 @@ export default function DashboardHome({ user, onNavigate }) {
             <TouchableOpacity><Text style={styles.viewAllText}>View All {'>'}</Text></TouchableOpacity>
           </View>
           <View style={styles.listCardBody}>
-            {RECENT_ACTIVITY.map((activity, idx) => (
-              <TouchableOpacity key={idx} style={[styles.listRow, idx === RECENT_ACTIVITY.length - 1 && styles.noBorder]}>
-                <View style={[styles.listIconBox, { backgroundColor: `${activity.color}15` }]}>
-                  <activity.icon size={16} color={activity.color} />
-                </View>
-                <View style={styles.listInfo}>
-                  <Text style={styles.listTitle} numberOfLines={1}>{activity.title}</Text>
-                  <Text style={styles.listSub} numberOfLines={1}>{activity.sub}</Text>
-                </View>
-                <Text style={styles.listTime}>{activity.time}</Text>
-              </TouchableOpacity>
-            ))}
+            <View style={{ padding: 16, alignItems: 'center' }}>
+              <Text style={{ fontSize: 13, color: MUTED }}>No recent activity.</Text>
+            </View>
           </View>
         </View>
       </View>
@@ -125,33 +156,11 @@ export default function DashboardHome({ user, onNavigate }) {
           <TouchableOpacity><Text style={styles.viewAllText}>View All {'>'}</Text></TouchableOpacity>
         </View>
       </View>
-      {/* Moved ScrollView out of sectionContainer padding so cards bleed to edge slightly, 
-          but added left padding to match align */}
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingLeft: pagePadding, paddingRight: pagePadding, gap: 12, paddingBottom: 24 }}
-        style={{ marginHorizontal: -pagePadding, marginBottom: 24 }}
-      >
-        {TOP_PARTNERS.map((partner, idx) => (
-          <TouchableOpacity key={idx} style={styles.partnerCard}>
-            <View style={styles.partnerAvatar}>
-              <Text style={styles.partnerAvatarText}>{partner.initials}</Text>
-            </View>
-            <View style={styles.partnerInfo}>
-              <Text style={styles.partnerName} numberOfLines={1}>{partner.name}</Text>
-              <Text style={styles.partnerCat} numberOfLines={1}>{partner.category}</Text>
-            </View>
-            <View style={styles.partnerRight}>
-              <View style={styles.ratingBadge}>
-                <Star size={11} color="#F6B800" fill="#F6B800" />
-                <Text style={styles.ratingText}>{partner.rating}</Text>
-              </View>
-              <ChevronRight size={14} color="#CBD5E1" />
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <View style={{ paddingHorizontal: pagePadding, paddingBottom: 24 }}>
+        <View style={{ padding: 16, backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center' }}>
+          <Text style={{ fontSize: 13, color: MUTED }}>No partners found.</Text>
+        </View>
+      </View>
 
     </View>
   );

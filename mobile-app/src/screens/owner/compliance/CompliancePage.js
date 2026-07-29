@@ -9,426 +9,575 @@ import {
   TextInput,
   Platform,
   useWindowDimensions,
-  SafeAreaView
+  SafeAreaView,
+  Alert
 } from 'react-native';
-import {
-  ShieldCheck,
-  FilePlus2,
-  MoreVertical,
-  CircleCheck,
-  Clock3,
-  CircleX,
-  FileWarning,
-  TriangleAlert,
-  ChevronRight,
-  Search,
-  FileText,
-  X,
-  UploadCloud,
-  SlidersHorizontal,
-  BellRing,
-  History,
-  Download
+import { 
+  ShieldCheck, FilePlus2, EllipsisVertical as MoreVertical, CircleCheck, Clock3, 
+  CircleAlert, FileQuestion, TriangleAlert, ChevronRight, Search, FileText, X, 
+  CloudUpload as UploadCloud, Download, RotateCcw, Check, Sparkles
 } from 'lucide-react-native';
+import * as DocumentPicker from 'expo-document-picker';
 
-const NAVY = '#0E2042';
-const GOLD = '#D4AF37';
-const BG_COLOR = '#F8FAFC';
+const NAVY = '#071B3A';
+const SECONDARY_NAVY = '#102A4C';
+const GOLD = '#F2C230';
+const BG_COLOR = '#F5F7FA';
+const BORDER = '#E3E9F1';
+const TEXT_PRIMARY = '#091B3A';
+const TEXT_MUTED = '#71829B';
 
-// =====================================
-// UTILS & DATE CALCULATION
-// =====================================
+// Default Sample Documents for HoReCa Owners (Empty by default, populated upon user upload)
+const INITIAL_DOCUMENTS = [];
 
-const WARNING_DAYS = 30;
-
-const calculateValidity = (expiryDateStr, verification) => {
-  if (verification === 'Not Uploaded') return 'Missing';
-  if (!expiryDateStr) return 'Valid';
-
-  const today = new Date();
-  const expiry = new Date(expiryDateStr);
-  const diffTime = expiry - today;
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-  if (diffDays < 0) return 'Expired';
-  if (diffDays <= WARNING_DAYS) return 'Expiring Soon';
-  return 'Valid';
-};
-
-const getDaysRemaining = (expiryDateStr) => {
-  if (!expiryDateStr) return null;
-  const today = new Date();
-  const expiry = new Date(expiryDateStr);
-  const diffTime = expiry - today;
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays;
-};
-
-// =====================================
-// MOCK DATA
-// =====================================
-
-const MOCK_DOCUMENTS = [];
+const DOCUMENT_TYPES = [
+  'FSSAI Licence',
+  'GST Registration',
+  'Business Registration',
+  'Shop & Establishment Licence',
+  'Fire Safety Certificate / NOC',
+  'Trade Licence',
+  'Liquor Licence',
+  'Pollution Certificate',
+  'Address Proof',
+  'Other'
+];
 
 export default function CompliancePage() {
   const { width } = useWindowDimensions();
-  const isMobile = width < 768 || Platform.OS !== 'web';
-  const twoColumns = width >= 768 && width <= 1150;
+  const isMobile = width < 768;
+  const isTinyScreen = width < 340;
 
-  const [documents, setDocuments] = useState(MOCK_DOCUMENTS);
+  const [documents, setDocuments] = useState(INITIAL_DOCUMENTS);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState('All'); // All, Valid, Needs Attention, Missing
+  const [activeFilter, setActiveFilter] = useState('All'); // All, Valid, Expiring, Expired, Missing
+
+  // Dropdown More Menu State
+  const [activeMenuId, setActiveMenuId] = useState(null);
 
   // Modals
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
-  const [uploadModalVisible, setUploadModalVisible] = useState(false);
-  const [renewModalVisible, setRenewModalVisible] = useState(false);
-  const [replaceModalVisible, setReplaceModalVisible] = useState(false);
-  const [filterModalVisible, setFilterModalVisible] = useState(false);
-  const [moreMenuVisible, setMoreMenuVisible] = useState(false);
-  
+  const [addModalVisible, setAddModalVisible] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
 
-  // Derived state
-  const docsWithValidity = useMemo(() => {
-    return documents.map(doc => ({
-      ...doc,
-      validity: calculateValidity(doc.expiryDate, doc.verification)
-    }));
-  }, [documents]);
+  // Toast
+  const [toastMessage, setToastMessage] = useState('');
 
-  const filteredDocs = useMemo(() => {
-    return docsWithValidity.filter(doc => {
-      // Search
-      if (searchQuery && !doc.name.toLowerCase().includes(searchQuery.toLowerCase()) && 
-          !doc.licenseNumber.toLowerCase().includes(searchQuery.toLowerCase()) &&
-          !doc.uploadedFile.toLowerCase().includes(searchQuery.toLowerCase())) {
-        return false;
-      }
-      
-      // Quick filter
-      if (activeFilter !== 'All') {
-        if (activeFilter === 'Valid' && doc.validity !== 'Valid') return false;
-        if (activeFilter === 'Missing' && doc.validity !== 'Missing') return false;
-        if (activeFilter === 'Needs Attention') {
-          const needsAtt = doc.validity === 'Expired' || doc.validity === 'Expiring Soon' || doc.verification === 'Pending Verification' || doc.verification === 'Rejected';
-          if (!needsAtt) return false;
+  // Add Document Form State
+  const [addForm, setAddForm] = useState({
+    docType: 'FSSAI Licence',
+    docNumber: '',
+    issueDate: '',
+    expiryDate: '',
+    notes: '',
+    fileName: ''
+  });
+  const [showTypeDropdown, setShowTypeDropdown] = useState(false);
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3000);
+  };
+
+  const handlePickDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'],
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const file = result.assets[0];
+        if (file.size && file.size > 5 * 1024 * 1024) {
+          if (Platform.OS === 'web') alert('File size must be 5MB or smaller.');
+          else Alert.alert('File Too Large', 'File size must be 5MB or smaller.');
+          return;
         }
+        setAddForm(prev => ({
+          ...prev,
+          fileName: file.name,
+          fileUri: file.uri,
+          fileSize: file.size ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : '1.5 MB'
+        }));
+        showToast(`Selected file: ${file.name}`);
       }
-      return true;
-    });
-  }, [docsWithValidity, searchQuery, activeFilter]);
+    } catch (err) {
+      console.log('Error picking document:', err);
+      const mockName = `${addForm.docType.toLowerCase().replace(/\s+/g, '_')}_file.pdf`;
+      setAddForm(prev => ({ ...prev, fileName: mockName }));
+      showToast(`Selected file: ${mockName}`);
+    }
+  };
 
-  // Overview Counts
+  // Derived counts
   const counts = useMemo(() => {
     return {
-      valid: docsWithValidity.filter(d => d.validity === 'Valid').length,
-      expiring: docsWithValidity.filter(d => d.validity === 'Expiring Soon').length,
-      expired: docsWithValidity.filter(d => d.validity === 'Expired').length,
-      missing: docsWithValidity.filter(d => d.validity === 'Missing').length,
+      valid: documents.filter(d => d.status === 'Valid').length,
+      expiring: documents.filter(d => d.status === 'Expiring Soon').length,
+      expired: documents.filter(d => d.status === 'Expired').length,
+      missing: documents.filter(d => d.status === 'Missing').length,
+      total: documents.length
     };
-  }, [docsWithValidity]);
+  }, [documents]);
 
-  const hasIssues = counts.expired > 0 || counts.missing > 0 || counts.expiring > 0 || docsWithValidity.some(d => d.verification === 'Rejected');
+  // Compliance Health Percentage
+  const healthPercent = useMemo(() => {
+    if (counts.total === 0) return 0;
+    return Math.round((counts.valid / counts.total) * 100);
+  }, [counts]);
 
-  // =====================================
-  // HELPERS
-  // =====================================
+  // Documents requiring attention (Expiring, Expired, Missing)
+  const attentionDocs = useMemo(() => {
+    return documents.filter(d => d.status === 'Expiring Soon' || d.status === 'Expired' || d.status === 'Missing');
+  }, [documents]);
 
-  const openDetails = (doc) => {
+  // Filtered documents list
+  const filteredDocs = useMemo(() => {
+    return documents.filter(doc => {
+      const q = searchQuery.toLowerCase().trim();
+      const matchesSearch = !q || 
+        doc.name.toLowerCase().includes(q) || 
+        (doc.licenseNumber && doc.licenseNumber.toLowerCase().includes(q)) ||
+        (doc.uploadedFile && doc.uploadedFile.toLowerCase().includes(q));
+
+      let matchesFilter = true;
+      if (activeFilter === 'Valid') matchesFilter = doc.status === 'Valid';
+      else if (activeFilter === 'Expiring') matchesFilter = doc.status === 'Expiring Soon';
+      else if (activeFilter === 'Expired') matchesFilter = doc.status === 'Expired';
+      else if (activeFilter === 'Missing') matchesFilter = doc.status === 'Missing';
+
+      return matchesSearch && matchesFilter;
+    });
+  }, [documents, searchQuery, activeFilter]);
+
+  // Open Details Modal
+  const handleOpenDetails = (doc) => {
+    setActiveMenuId(null);
     setSelectedDoc(doc);
     setDetailsModalVisible(true);
   };
 
-  const showToast = (msg) => {
-    if (Platform.OS === 'web') alert(msg);
-  };
-
-  const handleUploadSubmit = () => {
-    setUploadModalVisible(false);
-    showToast("Document submitted for verification.");
-  };
-
-  const handleRenewSubmit = () => {
-    setRenewModalVisible(false);
-    showToast("Renewed document submitted for verification.");
-  };
-
-  const handleReplaceSubmit = () => {
-    setReplaceModalVisible(false);
-    showToast("Corrected document submitted for verification.");
-  };
-
-  const handleActionPress = (doc) => {
+  // Primary Action Click per document status
+  const handlePrimaryAction = (doc) => {
+    setActiveMenuId(null);
     setSelectedDoc(doc);
-    if (doc.validity === 'Valid') openDetails(doc);
-    else if (doc.validity === 'Expiring Soon' || doc.validity === 'Expired') setRenewModalVisible(true);
-    else if (doc.validity === 'Missing') setUploadModalVisible(true);
-    else if (doc.verification === 'Pending Verification' || doc.verification === 'Uploaded') openDetails(doc);
-    else if (doc.verification === 'Rejected') setReplaceModalVisible(true);
-    else openDetails(doc);
+    if (doc.status === 'Valid') {
+      setDetailsModalVisible(true);
+    } else if (doc.status === 'Expiring Soon' || doc.status === 'Expired') {
+      // Trigger Add / Renew Modal with prefilled doc
+      setAddForm({
+        docType: doc.type || 'FSSAI Licence',
+        docNumber: doc.licenseNumber || '',
+        issueDate: '',
+        expiryDate: '',
+        notes: '',
+        fileName: ''
+      });
+      setAddModalVisible(true);
+    } else if (doc.status === 'Missing') {
+      setAddForm({
+        docType: doc.type || 'Business Registration',
+        docNumber: '',
+        issueDate: '',
+        expiryDate: '',
+        notes: '',
+        fileName: ''
+      });
+      setAddModalVisible(true);
+    } else {
+      setDetailsModalVisible(true);
+    }
   };
 
-  // =====================================
-  // COMPONENTS
-  // =====================================
+  // Submit New / Renewed Document
+  const handleAddSubmit = () => {
+    if (!addForm.docNumber.trim()) {
+      if (Platform.OS === 'web') alert('Please enter a document / licence number.');
+      return;
+    }
 
-  const renderOverview = () => (
-    <View style={styles.overviewContainer}>
-      <View style={styles.overviewRow}>
-        <View style={styles.overviewSegment}>
-          <CircleCheck size={16} color="#10B981" />
-          <Text style={styles.overviewCount}>{counts.valid}</Text>
-          <Text style={styles.overviewLabel}>Valid</Text>
-        </View>
-        <View style={styles.divider} />
-        <View style={styles.overviewSegment}>
-          <Clock3 size={16} color="#EA580C" />
-          <Text style={styles.overviewCount}>{counts.expiring}</Text>
-          <Text style={styles.overviewLabel}>Expiring</Text>
-        </View>
-        <View style={styles.divider} />
-        <View style={styles.overviewSegment}>
-          <CircleX size={16} color="#EF4444" />
-          <Text style={styles.overviewCount}>{counts.expired}</Text>
-          <Text style={styles.overviewLabel}>Expired</Text>
-        </View>
-        <View style={styles.divider} />
-        <View style={styles.overviewSegment}>
-          <FileWarning size={16} color="#64748B" />
-          <Text style={styles.overviewCount}>{counts.missing}</Text>
-          <Text style={styles.overviewLabel}>Missing</Text>
-        </View>
-      </View>
-    </View>
-  );
+    const newDoc = {
+      id: `doc-${Date.now()}`,
+      name: addForm.docType,
+      type: addForm.docType,
+      licenseNumber: addForm.docNumber,
+      status: 'Valid',
+      issueDate: addForm.issueDate || '2026-07-28',
+      expiryDate: addForm.expiryDate || '2028-07-28',
+      uploadedFile: addForm.fileName || `${addForm.docType.toLowerCase().replace(/\s+/g, '_')}.pdf`,
+      fileType: 'PDF',
+      fileSize: '2.1 MB',
+      uploadedDate: '2026-07-28',
+      verification: 'Pending Verification',
+      history: [
+        { event: 'Submitted for Verification', date: '28 Jul 2026' }
+      ]
+    };
 
-  const renderHealthBanner = () => {
-    if (hasIssues) {
-      return (
-        <View style={[styles.healthBanner, styles.healthBannerDanger]}>
-          <View style={styles.healthBannerLeft}>
-            <TriangleAlert size={20} color="#EA580C" style={{ marginRight: 12, marginTop: 2 }} />
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.healthBannerTitle, { color: '#9A3412' }]}>Action Required</Text>
-              <Text style={[styles.healthBannerSub, { color: '#C2410C' }]}>
-                {counts.expired > 0 || counts.missing > 0 || counts.expiring > 0 ? (
-                  `${counts.expiring > 0 ? `${counts.expiring} Expiring · ` : ''}${counts.expired > 0 ? `${counts.expired} Expired · ` : ''}${counts.missing > 0 ? `${counts.missing} Missing` : ''}`.replace(/· $/, '')
-                ) : 'Documents need attention'}
-              </Text>
-            </View>
-          </View>
-          <TouchableOpacity onPress={() => setActiveFilter('Needs Attention')}>
-            <Text style={[styles.healthBannerAction, { color: '#9A3412' }]}>Review Documents →</Text>
-          </TouchableOpacity>
-        </View>
-      );
-    }
-    return (
-      <View style={[styles.healthBanner, styles.healthBannerSafe]}>
-        <View style={styles.healthBannerLeft}>
-          <ShieldCheck size={20} color="#16A34A" style={{ marginRight: 12 }} />
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.healthBannerTitle, { color: '#166534' }]}>Compliance Up to Date</Text>
-            <Text style={[styles.healthBannerSub, { color: '#15803D' }]} numberOfLines={1}>All mandatory documents are valid and verified.</Text>
-          </View>
-        </View>
-      </View>
-    );
-  };
+    setDocuments(prev => {
+      // Replace existing doc with same name if missing/expired or prepend
+      const existingIdx = prev.findIndex(d => d.name === addForm.docType);
+      if (existingIdx >= 0) {
+        const copy = [...prev];
+        copy[existingIdx] = newDoc;
+        return copy;
+      }
+      return [newDoc, ...prev];
+    });
 
-  const renderDocumentCard = (doc) => {
-    let actionText = 'View Details';
-    let validityText = '';
-    const days = getDaysRemaining(doc.expiryDate);
-
-    if (doc.validity === 'Valid' && doc.expiryDate) validityText = `Valid until ${doc.expiryDate}`;
-    else if (doc.validity === 'Valid') validityText = 'Valid document';
-    
-    if (doc.validity === 'Expiring Soon') {
-      actionText = 'Start Renewal';
-      validityText = `Expires in ${days} days`;
-    }
-    if (doc.validity === 'Expired') {
-      actionText = 'Renew Now';
-      validityText = `Expired ${Math.abs(days)} days ago`;
-    }
-    if (doc.validity === 'Missing') {
-      actionText = 'Upload Document';
-      validityText = 'Document missing';
-    }
-    if (doc.verification === 'Rejected') {
-      actionText = 'Fix Document';
-      validityText = 'Correction required';
-    }
-    if (doc.verification === 'Pending Verification') {
-      actionText = 'View Status';
-      validityText = 'Submitted recently'; // Could calculate from uploadDate if needed
-    }
-    if (doc.verification === 'Uploaded') {
-      actionText = 'View Submission';
-      validityText = 'Uploaded successfully';
-    }
-    
-    return (
-      <TouchableOpacity key={doc.id} style={[styles.docCard, twoColumns && styles.docCardHalf]} onPress={() => openDetails(doc)}>
-        <View style={styles.docCardMain}>
-          <View style={styles.docIconContainer}>
-            <FileText size={20} color={NAVY} />
-          </View>
-          <View style={styles.docCardContent}>
-            <Text style={styles.docCardName} numberOfLines={1}>{doc.name}</Text>
-            <Text style={styles.docRequirement}>{doc.requirement} · {doc.verification}</Text>
-            <Text style={styles.docValidity}>{validityText}</Text>
-            
-            <TouchableOpacity style={styles.cardActionRow} onPress={(e) => { e.stopPropagation(); handleActionPress(doc); }}>
-              <Text style={styles.cardActionText}>{actionText}</Text>
-              <ChevronRight size={14} color={NAVY} />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
+    setAddModalVisible(false);
+    showToast(`${addForm.docType} submitted successfully for verification.`);
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
-        <View style={styles.mainLayoutDesktop}>
-          
-          {/* Page Header */}
+      
+      {/* Toast Notification */}
+      {toastMessage ? (
+        <View style={styles.toastContainer}>
+          <Check size={16} color="#fff" style={{ marginRight: 6 }} />
+          <Text style={styles.toastText}>{toastMessage}</Text>
+        </View>
+      ) : null}
+
+      <ScrollView 
+        style={styles.container} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={[styles.mainLayout, !isMobile && styles.mainLayoutWeb]}>
+
+          {/* ── Compact Page Header ── */}
           <View style={styles.pageHeader}>
-            <View style={{ flex: 1, paddingRight: 12 }}>
+            <View style={{ flex: 1 }}>
               <Text style={styles.pageTitle}>Compliance</Text>
-              <Text style={styles.pageSubtitle}>Manage licences, renewals and document verification</Text>
+              <Text style={styles.pageSubtitle}>
+                Manage licences, renewals and business documents.
+              </Text>
             </View>
-            <View style={styles.pageHeaderActions}>
-              <TouchableOpacity style={styles.addBtn} onPress={() => setUploadModalVisible(true)}>
-                <FilePlus2 size={16} color="#fff" />
-                <Text style={styles.addBtnText}>Add Document</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
 
-          <Text style={styles.sectionTitleSmall}>Compliance Status</Text>
-          {renderOverview()}
-
-          <View style={styles.searchRow}>
-            <View style={styles.searchBox}>
-              <Search size={18} color="#94A3B8" />
-              <TextInput 
-                style={styles.searchInput} 
-                placeholder="Search documents..." 
-                placeholderTextColor="#94A3B8"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-            </View>
-            <TouchableOpacity style={styles.filterBtn} onPress={() => setFilterModalVisible(true)}>
-              <SlidersHorizontal size={18} color={NAVY} />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersScroll} contentContainerStyle={styles.filtersContainer}>
-            {['All', 'Valid', 'Needs Attention', 'Missing'].map(filter => (
+            {!isTinyScreen && (
               <TouchableOpacity 
-                key={filter}
-                style={[styles.quickFilter, activeFilter === filter && styles.quickFilterActive]}
-                onPress={() => setActiveFilter(filter)}
+                style={styles.addDocHeaderBtn} 
+                onPress={() => {
+                  setAddForm({ docType: 'FSSAI Licence', docNumber: '', issueDate: '', expiryDate: '', notes: '', fileName: '' });
+                  setAddModalVisible(true);
+                }}
+                activeOpacity={0.85}
               >
-                <Text style={[styles.quickFilterText, activeFilter === filter && styles.quickFilterTextActive]}>{filter}</Text>
+                <FilePlus2 size={16} color="#fff" style={{ marginRight: 6 }} />
+                <Text style={styles.addDocHeaderBtnText}>Add Document</Text>
               </TouchableOpacity>
-            ))}
-          </ScrollView>
-
-          <View style={styles.sectionHeaderFlex}>
-            <Text style={styles.sectionTitle}>My Documents</Text>
-            <Text style={styles.sectionSubtitle}>Business licences and verification documents</Text>
-          </View>
-
-          <View style={[styles.documentsList, twoColumns && styles.documentsListDesktop]}>
-            {filteredDocs.length > 0 ? (
-              filteredDocs.map(doc => renderDocumentCard(doc))
-            ) : (
-              <View style={styles.emptyState}>
-                <ShieldCheck size={40} color="#CBD5E1" style={{ marginBottom: 16 }} />
-                <Text style={styles.emptyTitle}>No matching documents found</Text>
-                <Text style={styles.emptySub}>Try changing your search or filters.</Text>
-                <TouchableOpacity style={styles.emptyAction} onPress={() => { setSearchQuery(''); setActiveFilter('All'); }}>
-                  <Text style={styles.emptyActionText}>Clear Filters</Text>
-                </TouchableOpacity>
-              </View>
             )}
           </View>
 
-        </View>
+          {/* Tiny screen fallback for Add Document button */}
+          {isTinyScreen && (
+            <TouchableOpacity 
+              style={[styles.addDocHeaderBtn, { width: '100%', marginBottom: 16, justifyContent: 'center' }]} 
+              onPress={() => setAddModalVisible(true)}
+            >
+              <FilePlus2 size={16} color="#fff" style={{ marginRight: 6 }} />
+              <Text style={styles.addDocHeaderBtnText}>Add Document</Text>
+            </TouchableOpacity>
+          )}
 
+          {/* ── Compliance Overview 4 Separate Action Cards ── */}
+          <View style={styles.statsGrid}>
+            {/* Valid Card */}
+            <TouchableOpacity 
+              style={styles.statCard} 
+              onPress={() => setActiveFilter('Valid')}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.statIconBox, { backgroundColor: '#FFFBEB' }]}>
+                <FileText size={20} color="#D97706" />
+              </View>
+              <Text style={styles.statNumber}>{counts.valid}</Text>
+              <Text style={styles.statLabel}>Valid Documents</Text>
+            </TouchableOpacity>
+
+            {/* Expiring Soon Card */}
+            <TouchableOpacity 
+              style={styles.statCard} 
+              onPress={() => setActiveFilter('Expiring')}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.statIconBox, { backgroundColor: '#EFF6FF' }]}>
+                <Clock3 size={20} color="#2563EB" />
+              </View>
+              <Text style={styles.statNumber}>{counts.expiring}</Text>
+              <Text style={styles.statLabel}>Expiring Soon</Text>
+            </TouchableOpacity>
+
+            {/* Expired Card */}
+            <TouchableOpacity 
+              style={styles.statCard} 
+              onPress={() => setActiveFilter('Expired')}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.statIconBox, { backgroundColor: '#F3E8FF' }]}>
+                <CircleAlert size={20} color="#9333EA" />
+              </View>
+              <Text style={styles.statNumber}>{counts.expired}</Text>
+              <Text style={styles.statLabel}>Expired Documents</Text>
+            </TouchableOpacity>
+
+            {/* Missing Card */}
+            <TouchableOpacity 
+              style={styles.statCard} 
+              onPress={() => setActiveFilter('Missing')}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.statIconBox, { backgroundColor: '#DCFCE7' }]}>
+                <FileQuestion size={20} color="#16A34A" />
+              </View>
+              <Text style={styles.statNumber}>{counts.missing}</Text>
+              <Text style={styles.statLabel}>Missing Documents</Text>
+            </TouchableOpacity>
+          </View>
+
+
+
+          {/* ── Search Bar & Filter Pills ── */}
+          <View style={styles.searchContainer}>
+            <Search size={18} color="#94A3B8" style={{ marginRight: 8 }} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search documents..."
+              placeholderTextColor="#94A3B8"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery ? (
+              <TouchableOpacity onPress={() => setSearchQuery('')} style={{ padding: 4 }}>
+                <X size={16} color="#64748B" />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false} 
+            style={styles.filterScroll}
+            contentContainerStyle={styles.filterTabsContainer}
+          >
+            {[
+              { label: 'All', key: 'All', count: counts.total },
+              { label: 'Valid', key: 'Valid', count: counts.valid },
+              { label: 'Expiring', key: 'Expiring', count: counts.expiring },
+              { label: 'Expired', key: 'Expired', count: counts.expired },
+              { label: 'Missing', key: 'Missing', count: counts.missing },
+            ].map(tab => {
+              const isActive = activeFilter === tab.key;
+              return (
+                <TouchableOpacity
+                  key={tab.key}
+                  style={[styles.filterPill, isActive && styles.filterPillActive]}
+                  onPress={() => setActiveFilter(tab.key)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.filterPillText, isActive && styles.filterPillTextActive]}>
+                    {tab.label} {tab.count > 0 ? `(${tab.count})` : ''}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
+          {/* ── My Documents Section Header ── */}
+          <View style={styles.myDocsHeader}>
+            <Text style={styles.myDocsTitle}>My Documents</Text>
+            <Text style={styles.myDocsSubtitle}>
+              Business licences and verification documents
+            </Text>
+          </View>
+
+          {/* ── Document Cards List ── */}
+          {filteredDocs.length === 0 ? (
+            <View style={styles.emptyCardContainer}>
+              {documents.length === 0 ? (
+                <>
+                  <ShieldCheck size={40} color="#94A3B8" style={{ marginBottom: 12 }} />
+                  <Text style={styles.emptyCardTitle}>No compliance documents yet</Text>
+                  <Text style={styles.emptyCardSub}>
+                    Add your business licences and certificates to track verification and renewals.
+                  </Text>
+                  <TouchableOpacity 
+                    style={styles.emptyAddBtn}
+                    onPress={() => setAddModalVisible(true)}
+                  >
+                    <FilePlus2 size={16} color="#fff" style={{ marginRight: 6 }} />
+                    <Text style={styles.emptyAddBtnText}>Add First Document</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  <FileText size={40} color="#94A3B8" style={{ marginBottom: 12 }} />
+                  <Text style={styles.emptyCardTitle}>No matching documents</Text>
+                  <Text style={styles.emptyCardSub}>
+                    Try another search term or document status.
+                  </Text>
+                  <TouchableOpacity 
+                    style={styles.clearFiltersBtn}
+                    onPress={() => { setSearchQuery(''); setActiveFilter('All'); }}
+                  >
+                    <RotateCcw size={14} color={NAVY} style={{ marginRight: 6 }} />
+                    <Text style={styles.clearFiltersText}>Clear Filters</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          ) : (
+            filteredDocs.map(doc => {
+              const isMenuOpen = activeMenuId === doc.id;
+
+              // Status badge styling
+              let badgeBg = '#DCFCE7';
+              let badgeText = '#15803D';
+              let badgeLabel = 'VALID';
+              let primaryBtnText = 'View Document';
+
+              if (doc.status === 'Expiring Soon') {
+                badgeBg = '#FFEDD5';
+                badgeText = '#C2410C';
+                badgeLabel = 'EXPIRING SOON';
+                primaryBtnText = 'Renew Document';
+              } else if (doc.status === 'Expired') {
+                badgeBg = '#FEE2E2';
+                badgeText = '#DC2626';
+                badgeLabel = 'EXPIRED';
+                primaryBtnText = 'Replace Document';
+              } else if (doc.status === 'Missing') {
+                badgeBg = '#F1F5F9';
+                badgeText = '#475569';
+                badgeLabel = 'MISSING';
+                primaryBtnText = 'Upload Document';
+              } else if (doc.verification === 'Pending Verification') {
+                badgeBg = '#EFF6FF';
+                badgeText = '#2563EB';
+                badgeLabel = 'PENDING';
+                primaryBtnText = 'View Status';
+              }
+
+              // Sub-text line
+              let validitySubText = doc.expiryDate ? `Valid Until ${doc.expiryDate}` : 'Valid Document';
+              if (doc.status === 'Expiring Soon') validitySubText = `Expires ${doc.expiryDate || 'soon'}`;
+              else if (doc.status === 'Expired') validitySubText = `Expired on ${doc.expiryDate || 'N/A'}`;
+              else if (doc.status === 'Missing') validitySubText = 'Required for business verification';
+
+              return (
+                <View key={doc.id} style={styles.docCard}>
+                  
+                  {/* Top Row: Icon + Name + Badge */}
+                  <View style={styles.docCardTop}>
+                    <View style={styles.docIconBox}>
+                      <FileText size={20} color={NAVY} />
+                    </View>
+                    
+                    <View style={styles.docTitleBlock}>
+                      <Text style={styles.docNameText} numberOfLines={1}>{doc.name}</Text>
+                      {doc.licenseNumber ? (
+                        <Text style={styles.docNumberText}>
+                          Licence No. {doc.licenseNumber}
+                        </Text>
+                      ) : (
+                        <Text style={styles.docNumberText}>Not Uploaded</Text>
+                      )}
+                    </View>
+
+                    <View style={[styles.statusBadge, { backgroundColor: badgeBg }]}>
+                      <Text style={[styles.statusBadgeText, { color: badgeText }]}>
+                        {badgeLabel}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Middle Row: Validity & File Info */}
+                  <View style={styles.docCardMid}>
+                    <Text style={styles.validityText}>{validitySubText}</Text>
+                    {doc.uploadedFile ? (
+                      <Text style={styles.fileNameText} numberOfLines={1}>
+                        {doc.uploadedFile}
+                      </Text>
+                    ) : null}
+                  </View>
+
+                  {/* Bottom Row: Compact Primary Action Button */}
+                  <View style={styles.docCardBottom}>
+                    <TouchableOpacity 
+                      style={styles.primaryActionBtn} 
+                      onPress={() => handlePrimaryAction(doc)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.primaryActionText}>{primaryBtnText}</Text>
+                      <ChevronRight size={15} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
+
+                </View>
+              );
+            })
+          )}
+
+        </View>
       </ScrollView>
 
-      {/* ==============================================
-          MODALS 
-          ============================================== */}
-
-      {/* 1. Document Details Modal */}
-      <Modal visible={detailsModalVisible} transparent={true} animationType="fade">
+      {/* ── Document Details Modal ── */}
+      <Modal visible={detailsModalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContentCentered, { maxWidth: 500 }]}>
-            <View style={styles.modalHeader}>
+          <View style={[styles.modalCard, { maxHeight: '84%', display: 'flex', flexDirection: 'column' }]}>
+            <View style={styles.modalHeaderRow}>
               <Text style={styles.modalTitle}>Document Details</Text>
-              <TouchableOpacity onPress={() => setDetailsModalVisible(false)}><X size={24} color="#64748B" /></TouchableOpacity>
+              <TouchableOpacity onPress={() => setDetailsModalVisible(false)} style={styles.modalCloseBtn}>
+                <X size={18} color="#64748B" />
+              </TouchableOpacity>
             </View>
-            
+
             {selectedDoc && (
-              <ScrollView style={styles.modalBody}>
-                
-                <Text style={styles.modalDocName}>{selectedDoc.name}</Text>
+              <ScrollView style={styles.modalScroll} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={true}>
+                <Text style={styles.detailDocName}>{selectedDoc.name}</Text>
 
                 <View style={styles.detailsGrid}>
                   <View style={styles.detailsCell}>
-                    <Text style={styles.modalLabelSmall}>Requirement</Text>
-                    <Text style={styles.modalValueStandard}>{selectedDoc.requirement}</Text>
+                    <Text style={styles.detailsLabel}>Licence / Ref Number</Text>
+                    <Text style={styles.detailsValue}>{selectedDoc.licenseNumber || 'N/A'}</Text>
                   </View>
+
                   <View style={styles.detailsCell}>
-                    <Text style={styles.modalLabelSmall}>Verification</Text>
-                    <Text style={styles.modalValueStandard}>{selectedDoc.verification}</Text>
+                    <Text style={styles.detailsLabel}>Status</Text>
+                    <Text style={styles.detailsValue}>{selectedDoc.status}</Text>
                   </View>
+
                   <View style={styles.detailsCell}>
-                    <Text style={styles.modalLabelSmall}>Validity</Text>
-                    <Text style={styles.modalValueStandard}>{selectedDoc.validity}</Text>
+                    <Text style={styles.detailsLabel}>Issue Date</Text>
+                    <Text style={styles.detailsValue}>{selectedDoc.issueDate || 'N/A'}</Text>
                   </View>
+
                   <View style={styles.detailsCell}>
-                    <Text style={styles.modalLabelSmall}>Licence Number</Text>
-                    <Text style={styles.modalValueStandard}>{selectedDoc.licenseNumber || 'N/A'}</Text>
+                    <Text style={styles.detailsLabel}>Expiry Date</Text>
+                    <Text style={styles.detailsValue}>{selectedDoc.expiryDate || 'N/A'}</Text>
                   </View>
-                  <View style={styles.detailsCell}>
-                    <Text style={styles.modalLabelSmall}>Issued On</Text>
-                    <Text style={styles.modalValueStandard}>{selectedDoc.issueDate || 'N/A'}</Text>
-                  </View>
-                  <View style={styles.detailsCell}>
-                    <Text style={styles.modalLabelSmall}>Valid Until</Text>
-                    <Text style={styles.modalValueStandard}>{selectedDoc.expiryDate || 'N/A'}</Text>
-                  </View>
+
                   <View style={styles.detailsCellFull}>
-                    <Text style={styles.modalLabelSmall}>Uploaded File</Text>
-                    <Text style={styles.modalValueStandard}>{selectedDoc.uploadedFile || 'Not uploaded'}</Text>
+                    <Text style={styles.detailsLabel}>Uploaded File</Text>
+                    <Text style={styles.detailsValue}>{selectedDoc.uploadedFile || 'Not uploaded'}</Text>
+                  </View>
+
+                  <View style={styles.detailsCellFull}>
+                    <Text style={styles.detailsLabel}>Verification Status</Text>
+                    <Text style={styles.detailsValue}>{selectedDoc.verification}</Text>
                   </View>
                 </View>
 
-                {selectedDoc.verification === 'Rejected' && selectedDoc.rejectionReason && (
-                  <View style={styles.rejectionBox}>
-                    <Text style={styles.rejectionTitle}>Rejection Reason</Text>
-                    <Text style={styles.rejectionText}>{selectedDoc.rejectionReason}</Text>
-                  </View>
-                )}
-
-                {selectedDoc.history.length > 0 && (
-                  <View style={styles.historySection}>
-                    <Text style={styles.sectionTitleSmall}>Timeline</Text>
+                {/* History Timeline */}
+                {selectedDoc.history && selectedDoc.history.length > 0 && (
+                  <View style={styles.historyBox}>
+                    <Text style={styles.historyTitle}>Renewal & Activity Timeline</Text>
                     {selectedDoc.history.map((hist, idx) => (
-                      <View key={idx} style={styles.historyItem}>
+                      <View key={idx} style={styles.historyRow}>
                         <View style={styles.historyDot} />
-                        <View style={styles.historyContent}>
+                        <View style={{ flex: 1 }}>
                           <Text style={styles.historyEvent}>{hist.event}</Text>
                           <Text style={styles.historyDate}>{hist.date}</Text>
                         </View>
@@ -436,238 +585,165 @@ export default function CompliancePage() {
                     ))}
                   </View>
                 )}
-
-                <View style={styles.modalActionsFlex}>
-                  {selectedDoc.validity === 'Missing' ? (
-                    <TouchableOpacity style={styles.primaryModalBtn} onPress={() => { setDetailsModalVisible(false); setUploadModalVisible(true); }}>
-                      <Text style={styles.primaryModalBtnText}>Upload Document</Text>
-                    </TouchableOpacity>
-                  ) : null}
-
-                  {selectedDoc.validity === 'Expiring Soon' || selectedDoc.validity === 'Expired' ? (
-                    <TouchableOpacity style={styles.primaryModalBtn} onPress={() => { setDetailsModalVisible(false); setRenewModalVisible(true); }}>
-                      <Text style={styles.primaryModalBtnText}>Start Renewal</Text>
-                    </TouchableOpacity>
-                  ) : null}
-
-                  {selectedDoc.verification === 'Rejected' ? (
-                    <TouchableOpacity style={styles.primaryModalBtn} onPress={() => { setDetailsModalVisible(false); setReplaceModalVisible(true); }}>
-                      <Text style={styles.primaryModalBtnText}>Upload New Document</Text>
-                    </TouchableOpacity>
-                  ) : null}
-
-                  {selectedDoc.uploadedFile ? (
-                    <TouchableOpacity style={styles.outlineModalBtn}>
-                      <Text style={styles.outlineModalBtnText}>Preview Document</Text>
-                    </TouchableOpacity>
-                  ) : null}
-                  
-                  {selectedDoc.validity === 'Valid' ? (
-                    <TouchableOpacity style={styles.secondaryModalBtn} onPress={() => { setDetailsModalVisible(false); setReplaceModalVisible(true); }}>
-                      <Text style={styles.secondaryModalBtnText}>Replace Document</Text>
-                    </TouchableOpacity>
-                  ) : null}
-                </View>
-
               </ScrollView>
             )}
+
+            <View style={styles.modalFooter}>
+              {selectedDoc?.uploadedFile ? (
+                <TouchableOpacity 
+                  style={styles.modalOutlineBtn}
+                  onPress={() => showToast(`Downloading ${selectedDoc.uploadedFile}...`)}
+                >
+                  <Download size={15} color={NAVY} style={{ marginRight: 6 }} />
+                  <Text style={styles.modalOutlineText}>Download</Text>
+                </TouchableOpacity>
+              ) : null}
+
+              <TouchableOpacity 
+                style={styles.modalPrimaryBtn}
+                onPress={() => {
+                  setDetailsModalVisible(false);
+                  handlePrimaryAction(selectedDoc);
+                }}
+              >
+                <Text style={styles.modalPrimaryText}>
+                  {selectedDoc?.status === 'Missing' ? 'Upload Document' : selectedDoc?.status === 'Expiring Soon' ? 'Renew Document' : 'Replace Document'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
 
-      {/* 2. Upload / Add Document Modal */}
-      <Modal visible={uploadModalVisible} transparent={true} animationType="fade">
+      {/* ── Add / Upload Document Modal ── */}
+      <Modal visible={addModalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContentCentered, { maxWidth: 500 }]}>
-            <View style={styles.modalHeader}>
+          <View style={[styles.modalCard, { maxHeight: '85%', display: 'flex', flexDirection: 'column' }]}>
+            <View style={styles.modalHeaderRow}>
               <Text style={styles.modalTitle}>Add Document</Text>
-              <TouchableOpacity onPress={() => setUploadModalVisible(false)}><X size={24} color="#64748B" /></TouchableOpacity>
+              <TouchableOpacity onPress={() => setAddModalVisible(false)} style={styles.modalCloseBtn}>
+                <X size={18} color="#64748B" />
+              </TouchableOpacity>
             </View>
-            <ScrollView style={styles.modalBody}>
-              
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Document Type</Text>
-                <TextInput style={styles.input} placeholder="e.g. FSSAI Licence" placeholderTextColor="#94A3B8" />
+
+            <ScrollView style={styles.modalScroll} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={true}>
+              {/* Document Type Dropdown */}
+              <View style={styles.formGroup}>
+                <Text style={styles.inputLabel}>Document Type *</Text>
+                <TouchableOpacity 
+                  style={styles.dropdownPicker}
+                  onPress={() => setShowTypeDropdown(!showTypeDropdown)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.dropdownPickerText}>{addForm.docType}</Text>
+                  <ChevronRight size={16} color="#64748B" style={{ transform: [{ rotate: showTypeDropdown ? '90deg' : '0deg' }] }} />
+                </TouchableOpacity>
+
+                {showTypeDropdown && (
+                  <View style={styles.dropdownListContainer}>
+                    {DOCUMENT_TYPES.map(type => (
+                      <TouchableOpacity
+                        key={type}
+                        style={styles.dropdownListItem}
+                        onPress={() => {
+                          setAddForm({ ...addForm, docType: type });
+                          setShowTypeDropdown(false);
+                        }}
+                      >
+                        <Text style={[styles.dropdownListItemText, addForm.docType === type && { color: NAVY, fontWeight: '800' }]}>
+                          {type}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
               </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Requirement Type</Text>
-                <TextInput style={[styles.input, { backgroundColor: '#F1F5F9', color: '#64748B' }]} value="Required" editable={false} />
+              {/* Document Number */}
+              <View style={styles.formGroup}>
+                <Text style={styles.inputLabel}>Licence / Reference Number *</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="e.g. 14161949674918"
+                  placeholderTextColor="#94A3B8"
+                  value={addForm.docNumber}
+                  onChangeText={t => setAddForm({ ...addForm, docNumber: t })}
+                />
               </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Licence / Reference Number</Text>
-                <TextInput style={styles.input} placeholder="Enter number" placeholderTextColor="#94A3B8" />
-              </View>
-
-              <View style={{ flexDirection: 'row', gap: 12 }}>
-                <View style={[styles.inputGroup, { flex: 1 }]}>
+              {/* Issue Date & Expiry Date */}
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <View style={[styles.formGroup, { flex: 1 }]}>
                   <Text style={styles.inputLabel}>Issue Date</Text>
-                  <TextInput style={styles.input} placeholder="YYYY-MM-DD" placeholderTextColor="#94A3B8" />
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor="#94A3B8"
+                    value={addForm.issueDate}
+                    onChangeText={t => setAddForm({ ...addForm, issueDate: t })}
+                  />
                 </View>
-                <View style={[styles.inputGroup, { flex: 1 }]}>
+
+                <View style={[styles.formGroup, { flex: 1 }]}>
                   <Text style={styles.inputLabel}>Expiry Date</Text>
-                  <TextInput style={styles.input} placeholder="YYYY-MM-DD" placeholderTextColor="#94A3B8" />
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor="#94A3B8"
+                    value={addForm.expiryDate}
+                    onChangeText={t => setAddForm({ ...addForm, expiryDate: t })}
+                  />
                 </View>
               </View>
 
-              <TouchableOpacity style={styles.uploadArea}>
-                <UploadCloud size={28} color={NAVY} style={{ marginBottom: 8 }} />
-                <Text style={styles.uploadAreaTitle}>Upload File</Text>
-                <Text style={styles.uploadAreaSub}>PDF, JPG or PNG (Max 5MB)</Text>
+              {/* File Upload Dropzone */}
+              <TouchableOpacity 
+                style={[styles.uploadDropzone, addForm.fileName ? styles.uploadDropzoneSelected : null]}
+                onPress={handlePickDocument}
+                activeOpacity={0.8}
+              >
+                {addForm.fileName ? (
+                  <>
+                    <Check size={28} color="#15803D" style={{ marginBottom: 6 }} />
+                    <Text style={[styles.uploadTitle, { color: '#15803D' }]}>{addForm.fileName}</Text>
+                    <Text style={styles.uploadSub}>Tap to change selected file</Text>
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud size={28} color={NAVY} style={{ marginBottom: 6 }} />
+                    <Text style={styles.uploadTitle}>Tap to Upload File *</Text>
+                    <Text style={styles.uploadSub}>PDF, JPG or PNG (Max 5MB)</Text>
+                  </>
+                )}
               </TouchableOpacity>
 
-              <View style={styles.inputGroup}>
+              {/* Notes Optional */}
+              <View style={styles.formGroup}>
                 <Text style={styles.inputLabel}>Notes (Optional)</Text>
-                <TextInput style={[styles.input, { height: 80, textAlignVertical: 'top' }]} multiline placeholder="Add notes..." placeholderTextColor="#94A3B8" />
-              </View>
-
-              <View style={styles.modalActionsFlexRow}>
-                <TouchableOpacity style={styles.secondaryModalBtnFlex} onPress={() => setUploadModalVisible(false)}>
-                  <Text style={styles.secondaryModalBtnText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.primaryModalBtnFlex} onPress={handleUploadSubmit}>
-                  <Text style={styles.primaryModalBtnText}>Submit for Verification</Text>
-                </TouchableOpacity>
-              </View>
-
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-
-      {/* 3. Renew Document Modal */}
-      <Modal visible={renewModalVisible} transparent={true} animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContentCentered, { maxWidth: 500 }]}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Renew Document</Text>
-              <TouchableOpacity onPress={() => setRenewModalVisible(false)}><X size={24} color="#64748B" /></TouchableOpacity>
-            </View>
-            <ScrollView style={styles.modalBody}>
-              {selectedDoc && (
-                <View style={styles.renewContextBox}>
-                  <Text style={styles.renewContextTitle}>{selectedDoc.name}</Text>
-                  <Text style={styles.renewContextSub}>Current: {selectedDoc.licenseNumber || 'N/A'}</Text>
-                  <Text style={styles.renewContextSub}>Expired/Expires on: {selectedDoc.expiryDate}</Text>
-                </View>
-              )}
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>New Licence / Reference Number</Text>
-                <TextInput style={styles.input} placeholder="Enter new number" placeholderTextColor="#94A3B8" />
-              </View>
-
-              <View style={{ flexDirection: 'row', gap: 12 }}>
-                <View style={[styles.inputGroup, { flex: 1 }]}>
-                  <Text style={styles.inputLabel}>New Issue Date</Text>
-                  <TextInput style={styles.input} placeholder="YYYY-MM-DD" placeholderTextColor="#94A3B8" />
-                </View>
-                <View style={[styles.inputGroup, { flex: 1 }]}>
-                  <Text style={styles.inputLabel}>New Expiry Date</Text>
-                  <TextInput style={styles.input} placeholder="YYYY-MM-DD" placeholderTextColor="#94A3B8" />
-                </View>
-              </View>
-
-              <TouchableOpacity style={styles.uploadArea}>
-                <UploadCloud size={28} color={NAVY} style={{ marginBottom: 8 }} />
-                <Text style={styles.uploadAreaTitle}>Upload Renewed File</Text>
-                <Text style={styles.uploadAreaSub}>PDF, JPG or PNG (Max 5MB)</Text>
-              </TouchableOpacity>
-
-              <View style={styles.modalActionsFlexRow}>
-                <TouchableOpacity style={styles.secondaryModalBtnFlex} onPress={() => setRenewModalVisible(false)}>
-                  <Text style={styles.secondaryModalBtnText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.primaryModalBtnFlex} onPress={handleRenewSubmit}>
-                  <Text style={styles.primaryModalBtnText}>Submit Renewal</Text>
-                </TouchableOpacity>
+                <TextInput
+                  style={[styles.textInput, { height: 70, textAlignVertical: 'top' }]}
+                  multiline
+                  placeholder="Additional notes for verification..."
+                  placeholderTextColor="#94A3B8"
+                  value={addForm.notes}
+                  onChangeText={t => setAddForm({ ...addForm, notes: t })}
+                />
               </View>
             </ScrollView>
-          </View>
-        </View>
-      </Modal>
 
-      {/* 4. Replace/Fix Document Modal */}
-      <Modal visible={replaceModalVisible} transparent={true} animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContentCentered, { maxWidth: 500 }]}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{selectedDoc?.verification === 'Rejected' ? 'Document Rejected' : 'Replace Document'}</Text>
-              <TouchableOpacity onPress={() => setReplaceModalVisible(false)}><X size={24} color="#64748B" /></TouchableOpacity>
-            </View>
-            <View style={styles.modalBody}>
-              {selectedDoc?.verification === 'Rejected' && (
-                <View style={styles.rejectionBox}>
-                  <Text style={styles.rejectionTitle}>Rejection Reason</Text>
-                  <Text style={styles.rejectionText}>{selectedDoc.rejectionReason}</Text>
-                </View>
-              )}
-
-              <TouchableOpacity style={styles.uploadArea}>
-                <UploadCloud size={28} color={NAVY} style={{ marginBottom: 8 }} />
-                <Text style={styles.uploadAreaTitle}>Upload New Document</Text>
-                <Text style={styles.uploadAreaSub}>PDF, JPG or PNG (Max 5MB)</Text>
+            <View style={styles.modalFooter}>
+              <TouchableOpacity 
+                style={styles.modalOutlineBtn} 
+                onPress={() => setAddModalVisible(false)}
+              >
+                <Text style={styles.modalOutlineText}>Cancel</Text>
               </TouchableOpacity>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Correction Note (Optional)</Text>
-                <TextInput style={[styles.input, { height: 60, textAlignVertical: 'top' }]} multiline placeholder="Add note..." placeholderTextColor="#94A3B8" />
-              </View>
-
-              <View style={styles.modalActionsFlexRow}>
-                <TouchableOpacity style={styles.secondaryModalBtnFlex} onPress={() => setReplaceModalVisible(false)}>
-                  <Text style={styles.secondaryModalBtnText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.primaryModalBtnFlex} onPress={handleReplaceSubmit}>
-                  <Text style={styles.primaryModalBtnText}>Submit Corrected Document</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* 5. Mobile Filter Bottom Sheet */}
-      <Modal visible={filterModalVisible} transparent={true} animationType="slide">
-        <View style={[styles.modalOverlay, { justifyContent: 'flex-end' }]}>
-          <View style={styles.bottomSheet}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Advanced Filters</Text>
-              <TouchableOpacity onPress={() => setFilterModalVisible(false)}><X size={24} color="#64748B" /></TouchableOpacity>
-            </View>
-            <ScrollView style={styles.modalBody}>
-              <Text style={styles.inputLabel}>Validity Status</Text>
-              <View style={styles.filtersContainerBox}>
-                {['Valid', 'Expiring Soon', 'Expired', 'Missing'].map(cat => (
-                  <TouchableOpacity key={cat} style={styles.quickFilter}><Text style={styles.quickFilterText}>{cat}</Text></TouchableOpacity>
-                ))}
-              </View>
-              <Text style={[styles.inputLabel, { marginTop: 16 }]}>Verification Status</Text>
-              <View style={styles.filtersContainerBox}>
-                {['Verified', 'Pending Verification', 'Uploaded', 'Rejected', 'Not Uploaded'].map(cat => (
-                  <TouchableOpacity key={cat} style={styles.quickFilter}><Text style={styles.quickFilterText}>{cat}</Text></TouchableOpacity>
-                ))}
-              </View>
-              <Text style={[styles.inputLabel, { marginTop: 16 }]}>Document Category</Text>
-              <View style={styles.filtersContainerBox}>
-                {['Business Registration', 'Food Safety', 'Fire & Safety', 'Tax', 'Local Authority', 'Banking', 'Other'].map(cat => (
-                  <TouchableOpacity key={cat} style={styles.quickFilter}><Text style={styles.quickFilterText}>{cat}</Text></TouchableOpacity>
-                ))}
-              </View>
-              <Text style={[styles.inputLabel, { marginTop: 16 }]}>Requirement</Text>
-              <View style={styles.filtersContainerBox}>
-                {['Required', 'Optional', 'Required if applicable'].map(req => (
-                  <TouchableOpacity key={req} style={styles.quickFilter}><Text style={styles.quickFilterText}>{req}</Text></TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
-            <View style={[styles.modalActionsFlexRow, { padding: 20, borderTopWidth: 1, borderColor: '#E2E8F0', marginTop: 0 }]}>
-              <TouchableOpacity style={styles.secondaryModalBtnFlex} onPress={() => setFilterModalVisible(false)}>
-                <Text style={styles.secondaryModalBtnText}>Clear All</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.primaryModalBtnFlex} onPress={() => setFilterModalVisible(false)}>
-                <Text style={styles.primaryModalBtnText}>Apply Filters</Text>
+              <TouchableOpacity 
+                style={styles.modalPrimaryBtn} 
+                onPress={handleAddSubmit}
+              >
+                <Text style={styles.modalPrimaryText}>Submit for Verification</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -678,135 +754,137 @@ export default function CompliancePage() {
   );
 }
 
-// =====================================
-// STYLES
-// =====================================
-
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#fff' },
+  safeArea: { flex: 1, backgroundColor: BG_COLOR },
   container: { flex: 1, backgroundColor: BG_COLOR },
-  scrollContent: { paddingBottom: 100 },
+  scrollContent: { paddingBottom: 115 },
+
+  mainLayout: { padding: 14 },
+  mainLayoutWeb: { maxWidth: 900, alignSelf: 'center', width: '100%', padding: 24 },
+
+  /* Toast Notification */
+  toastContainer: { position: 'absolute', top: 50, left: 20, right: 20, backgroundColor: '#059669', paddingVertical: 12, paddingHorizontal: 16, borderRadius: 10, flexDirection: 'row', alignItems: 'center', zIndex: 100, ...Platform.select({ web: { boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }, ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8 }, android: { elevation: 6 } }) },
+  toastText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+
+  /* Page Header */
+  pageHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
+  pageTitle: { fontSize: 24, fontWeight: '900', color: NAVY, marginBottom: 2 },
+  pageSubtitle: { fontSize: 13, color: TEXT_MUTED },
+  addDocHeaderBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: NAVY, height: 42, paddingHorizontal: 16, borderRadius: 10, marginLeft: 12 },
+  addDocHeaderBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+
+  /* 4 Separate Stat Cards Grid */
+  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 18 },
+  statCard: { width: '48%', backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: BORDER, padding: 16, ...Platform.select({ web: { boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }, ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 6 }, android: { elevation: 2 } }) },
+  statIconBox: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  statNumber: { fontSize: 24, fontWeight: '900', color: NAVY, marginBottom: 2 },
+  statLabel: { fontSize: 13, fontWeight: '600', color: TEXT_MUTED },
+  progressBarFill: { height: '100%', backgroundColor: '#16B77A', borderRadius: 4 },
+  healthSubText: { fontSize: 12, color: TEXT_MUTED },
+
+  /* Needs Your Attention Card */
+  attentionCard: { backgroundColor: '#FFF7ED', borderRadius: 16, borderWidth: 1, borderColor: '#FFEDD5', padding: 14, marginBottom: 16 },
+  attentionCardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  attentionCardTitle: { fontSize: 14, fontWeight: '800', color: '#9A3412' },
+  attentionItemRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8, borderTopWidth: 1, borderTopColor: '#FED7AA' },
+  attentionItemLeft: { flex: 1, paddingRight: 8 },
+  attentionItemName: { fontSize: 13, fontWeight: '700', color: '#7C2D12' },
+  attentionItemReason: { fontSize: 11, color: '#C2410C' },
+  attentionActionBtn: { backgroundColor: '#EA580C', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  attentionActionText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+
+  /* Search & Filter Toolbar */
+  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: BORDER, borderRadius: 12, paddingHorizontal: 12, height: 44, marginBottom: 12 },
+  searchInput: { flex: 1, fontSize: 14, color: NAVY, ...Platform.select({ web: { outlineStyle: 'none' } }) },
+
+  filterScroll: { flexGrow: 0, marginBottom: 16 },
+  filterTabsContainer: { flexDirection: 'row', gap: 8, paddingRight: 16 },
+  filterPill: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: BORDER },
+  filterPillActive: { backgroundColor: NAVY, borderColor: NAVY },
+  filterPillText: { fontSize: 13, fontWeight: '600', color: '#475569' },
+  filterPillTextActive: { color: '#fff' },
+
+  /* My Documents Section Header */
+  myDocsHeader: { marginBottom: 12 },
+  myDocsTitle: { fontSize: 18, fontWeight: '900', color: NAVY, marginBottom: 2 },
+  myDocsSubtitle: { fontSize: 12, color: TEXT_MUTED },
+
+  /* Empty State Card */
+  emptyCardContainer: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: BORDER, padding: 30, alignItems: 'center', justifyContent: 'center' },
+  emptyCardTitle: { fontSize: 16, fontWeight: '800', color: NAVY, marginBottom: 4 },
+  emptyCardSub: { fontSize: 13, color: TEXT_MUTED, textAlign: 'center', maxWidth: 280 },
+  emptyAddBtn: { marginTop: 14, flexDirection: 'row', alignItems: 'center', backgroundColor: NAVY, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10 },
+  emptyAddBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  clearFiltersBtn: { marginTop: 14, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: '#F1F5F9' },
+  clearFiltersText: { fontSize: 13, fontWeight: '700', color: NAVY },
+
+  /* Document Card */
+  docCard: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: BORDER, padding: 14, marginBottom: 12, position: 'relative', ...Platform.select({ web: { boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }, ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 6 }, android: { elevation: 2 } }) },
   
-  mainLayoutDesktop: { paddingHorizontal: 24, paddingVertical: 20, maxWidth: 1050, alignSelf: 'center', width: '100%' },
+  docCardTop: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 },
+  docIconBox: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginRight: 10 },
+  docTitleBlock: { flex: 1, paddingRight: 8 },
+  docNameText: { fontSize: 15, fontWeight: '800', color: NAVY, marginBottom: 2 },
+  docNumberText: { fontSize: 12, color: TEXT_MUTED, fontWeight: '500' },
 
-  // Page Header
-  pageHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, gap: 16 },
-  pageTitle: { fontSize: 24, fontWeight: '900', color: NAVY, marginBottom: 4 },
-  pageSubtitle: { fontSize: 14, color: '#64748B' },
-  pageHeaderActions: { flexDirection: 'row', alignItems: 'center', gap: 12, marginLeft: 'auto' },
-  addBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: NAVY, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, gap: 8, height: 42 },
-  addBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
-  moreBtn: { width: 42, height: 42, borderRadius: 10, backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' },
-  moreMenuDropdown: { position: 'absolute', top: 48, right: 0, backgroundColor: '#fff', borderRadius: 12, padding: 8, minWidth: 200, borderWidth: 1, borderColor: '#E2E8F0', elevation: 4, shadowColor: '#000', shadowOffset: {width: 0, height: 4}, shadowOpacity: 0.1, shadowRadius: 12, zIndex: 100 },
-  menuItem: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 8 },
-  menuItemText: { fontSize: 14, color: NAVY, fontWeight: '600' },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  statusBadgeText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
 
-  // Overview Strip
-  sectionTitleSmall: { fontSize: 13, fontWeight: '700', color: '#64748B', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
-  overviewContainer: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 16, padding: 12, elevation: 1, shadowColor: '#000', shadowOffset: {width: 0, height: 1}, shadowOpacity: 0.05, shadowRadius: 4 },
-  overviewRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' },
-  overviewSegment: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minWidth: '40%', paddingVertical: 8 },
-  divider: { width: 1, height: 24, backgroundColor: '#E2E8F0' },
-  overviewCount: { fontSize: 16, fontWeight: '800', color: NAVY },
-  overviewLabel: { fontSize: 14, fontWeight: '600', color: '#64748B' },
+  docCardMid: { backgroundColor: '#F8FAFC', borderRadius: 10, padding: 10, marginBottom: 12 },
+  validityText: { fontSize: 12, fontWeight: '700', color: NAVY, marginBottom: 2 },
+  fileNameText: { fontSize: 11, color: TEXT_MUTED },
 
-  // Health Banner
-  healthBanner: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderRadius: 14, marginBottom: 24, gap: 12 },
-  healthBannerSafe: { backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#BBF7D0' },
-  healthBannerDanger: { backgroundColor: '#FFF7ED', borderWidth: 1, borderColor: '#FFEDD5' },
-  healthBannerLeft: { flexDirection: 'row', alignItems: 'flex-start', flex: 1 },
-  healthBannerTitle: { fontSize: 15, fontWeight: '800', marginBottom: 4 },
-  healthBannerSub: { fontSize: 13, lineHeight: 20 },
-  healthBannerAction: { fontSize: 14, fontWeight: '800' },
+  docCardBottom: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', width: '100%', zIndex: 10 },
+  primaryActionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: NAVY, height: 36, borderRadius: 10, paddingHorizontal: 14, alignSelf: 'flex-end' },
+  primaryActionText: { fontSize: 13, fontWeight: '700', color: '#fff', marginRight: 4 },
+  moreMenuBtn: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' },
 
-  // Section Headers
-  sectionHeaderFlex: { marginBottom: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: '900', color: NAVY, marginBottom: 4 },
-  sectionSubtitle: { fontSize: 14, color: '#64748B' },
+  /* Dropdown Menu */
+  dropdownMenu: { position: 'absolute', bottom: 46, right: 0, width: 170, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: BORDER, zIndex: 50, ...Platform.select({ web: { boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }, ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 12 }, android: { elevation: 5 } }) },
+  dropdownItem: { paddingHorizontal: 14, paddingVertical: 11 },
+  dropdownText: { fontSize: 13, fontWeight: '600', color: NAVY },
 
-  // Search & Filters
-  searchRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
-  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, paddingHorizontal: 16, height: 44, borderWidth: 1, borderColor: '#E2E8F0' },
-  searchInput: { flex: 1, marginLeft: 8, fontSize: 14, color: NAVY, outlineStyle: 'none' },
-  filterBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' },
-  
-  filtersScroll: { marginBottom: 24 },
-  filtersContainer: { flexDirection: 'row', gap: 8, paddingRight: 24 },
-  filtersContainerBox: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  quickFilter: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0' },
-  quickFilterActive: { backgroundColor: NAVY, borderColor: NAVY },
-  quickFilterText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
-  quickFilterTextActive: { color: '#fff' },
-
-  // Document Cards
-  documentsList: { gap: 12 },
-  documentsListDesktop: { flexDirection: 'row', flexWrap: 'wrap' },
-  docCard: { backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#E2E8F0', elevation: 1, shadowColor: '#000', shadowOffset: {width: 0, height: 1}, shadowOpacity: 0.05, shadowRadius: 4, overflow: 'hidden' },
-  docCardHalf: { width: '48.5%' },
-  docCardMain: { padding: 14, flexDirection: 'row', alignItems: 'flex-start' },
-  docIconContainer: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginRight: 14 },
-  docCardContent: { flex: 1 },
-  docCardName: { fontSize: 15, fontWeight: '800', color: NAVY, marginBottom: 2 },
-  docRequirement: { fontSize: 13, color: '#64748B', fontWeight: '500', marginBottom: 4 },
-  docValidity: { fontSize: 13, color: '#475569', fontWeight: '600', marginBottom: 12 },
-  
-  cardActionRow: { flexDirection: 'row', alignItems: 'center' },
-  cardActionText: { fontSize: 14, fontWeight: '800', color: NAVY, marginRight: 4 },
-
-  // Empty State
-  emptyState: { alignItems: 'center', padding: 40, backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', width: '100%' },
-  emptyTitle: { fontSize: 16, fontWeight: '800', color: NAVY, marginBottom: 8 },
-  emptySub: { fontSize: 14, color: '#64748B', marginBottom: 20 },
-  emptyAction: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: '#E2E8F0' },
-  emptyActionText: { fontSize: 14, fontWeight: '700', color: NAVY },
-
-  // Modals
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.6)', justifyContent: 'center', alignItems: 'center' },
-  modalContentCentered: { width: '90%', maxHeight: '85%', backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden' },
-  bottomSheet: { width: '100%', maxHeight: '80%', backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, overflow: 'hidden' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  /* Modals */
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(7, 27, 58, 0.6)', justifyContent: 'center', alignItems: 'center', padding: 16 },
+  modalCard: { width: '92%', maxWidth: 520, backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden' },
+  modalHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18, borderBottomWidth: 1, borderBottomColor: BORDER },
   modalTitle: { fontSize: 18, fontWeight: '900', color: NAVY },
-  modalBody: { padding: 20 },
-  
-  modalDocName: { fontSize: 20, fontWeight: '900', color: NAVY, marginBottom: 24 },
-  
-  detailsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginBottom: 24 },
-  detailsCell: { width: '45%' },
+  modalCloseBtn: { padding: 4, backgroundColor: '#F1F5F9', borderRadius: 14 },
+  modalScroll: { padding: 18, flexShrink: 1 },
+
+  detailDocName: { fontSize: 18, fontWeight: '900', color: NAVY, marginBottom: 16 },
+  detailsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20 },
+  detailsCell: { width: '48%' },
   detailsCellFull: { width: '100%' },
-  modalLabelSmall: { fontSize: 12, color: '#94A3B8', fontWeight: '600', marginBottom: 4 },
-  modalValueStandard: { fontSize: 14, fontWeight: '600', color: NAVY },
+  detailsLabel: { fontSize: 11, color: TEXT_MUTED, fontWeight: '600', marginBottom: 2 },
+  detailsValue: { fontSize: 13, fontWeight: '700', color: NAVY },
 
-  rejectionBox: { backgroundColor: '#FEF2F2', padding: 16, borderRadius: 12, marginBottom: 24, borderWidth: 1, borderColor: '#FECACA' },
-  rejectionTitle: { fontSize: 14, fontWeight: '800', color: '#991B1B', marginBottom: 4 },
-  rejectionText: { fontSize: 13, color: '#7F1D1D', lineHeight: 20 },
+  historyBox: { backgroundColor: '#F8FAFC', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: BORDER, marginTop: 10 },
+  historyTitle: { fontSize: 13, fontWeight: '800', color: NAVY, marginBottom: 10 },
+  historyRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 },
+  historyDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#3B82F6', marginTop: 5, marginRight: 10 },
+  historyEvent: { fontSize: 12, fontWeight: '700', color: NAVY },
+  historyDate: { fontSize: 11, color: TEXT_MUTED },
 
-  historySection: { marginBottom: 24, paddingTop: 24, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
-  historyItem: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 16 },
-  historyDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#CBD5E1', marginTop: 4, marginRight: 12 },
-  historyContent: { flex: 1 },
-  historyEvent: { fontSize: 14, fontWeight: '700', color: NAVY, marginBottom: 2 },
-  historyDate: { fontSize: 12, color: '#64748B' },
+  /* Forms for Add Document Modal */
+  formGroup: { marginBottom: 14, position: 'relative', zIndex: 1 },
+  inputLabel: { fontSize: 13, fontWeight: '700', color: NAVY, marginBottom: 6 },
+  textInput: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: BORDER, borderRadius: 10, paddingHorizontal: 12, height: 44, fontSize: 14, color: NAVY, ...Platform.select({ web: { outlineStyle: 'none' } }) },
 
-  modalActionsFlex: { gap: 12, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
-  modalActionsFlexRow: { flexDirection: 'row', gap: 12, marginTop: 24 },
-  primaryModalBtn: { backgroundColor: NAVY, paddingVertical: 14, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  primaryModalBtnFlex: { flex: 1.5, backgroundColor: NAVY, paddingVertical: 14, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  primaryModalBtnText: { color: '#fff', fontSize: 14, fontWeight: '800', textAlign: 'center' },
-  secondaryModalBtn: { backgroundColor: '#F1F5F9', paddingVertical: 14, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  secondaryModalBtnFlex: { flex: 1, backgroundColor: '#F1F5F9', paddingVertical: 14, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  secondaryModalBtnText: { color: NAVY, fontSize: 14, fontWeight: '800', textAlign: 'center' },
-  outlineModalBtn: { borderWidth: 1, borderColor: '#E2E8F0', paddingVertical: 14, borderRadius: 10, alignItems: 'center' },
-  outlineModalBtnText: { color: NAVY, fontSize: 15, fontWeight: '700' },
+  dropdownPicker: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: BORDER, borderRadius: 10, paddingHorizontal: 12, height: 44 },
+  dropdownPickerText: { fontSize: 14, fontWeight: '700', color: NAVY },
+  dropdownListContainer: { backgroundColor: '#fff', borderWidth: 1, borderColor: BORDER, borderRadius: 10, marginTop: 4, maxHeight: 180, overflow: 'hidden', ...Platform.select({ web: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }, ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8 }, android: { elevation: 4 } }) },
+  dropdownListItem: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  dropdownListItemText: { fontSize: 13, color: '#475569' },
 
-  // Forms
-  inputGroup: { marginBottom: 16 },
-  inputLabel: { fontSize: 13, fontWeight: '700', color: NAVY, marginBottom: 8 },
-  input: { height: 48, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 16, fontSize: 15, color: NAVY },
-  uploadArea: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderStyle: 'dashed', borderRadius: 12, padding: 24, alignItems: 'center', marginBottom: 16 },
-  uploadAreaTitle: { fontSize: 15, fontWeight: '700', color: NAVY, marginBottom: 4 },
-  uploadAreaSub: { fontSize: 13, color: '#64748B' },
+  uploadDropzone: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: BORDER, borderStyle: 'dashed', borderRadius: 12, padding: 20, alignItems: 'center', marginBottom: 14 },
+  uploadDropzoneSelected: { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0', borderStyle: 'solid' },
+  uploadTitle: { fontSize: 13, fontWeight: '700', color: NAVY },
+  uploadSub: { fontSize: 11, color: TEXT_MUTED, marginTop: 2 },
 
-  renewContextBox: { backgroundColor: '#F8FAFC', padding: 16, borderRadius: 10, marginBottom: 20, borderWidth: 1, borderColor: '#E2E8F0' },
-  renewContextTitle: { fontSize: 15, fontWeight: '800', color: NAVY, marginBottom: 4 },
-  renewContextSub: { fontSize: 13, color: '#64748B', marginBottom: 2 }
+  modalFooter: { flexDirection: 'row', padding: 16, borderTopWidth: 1, borderTopColor: BORDER, gap: 10 },
+  modalOutlineBtn: { flex: 1, flexDirection: 'row', height: 42, borderRadius: 10, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' },
+  modalOutlineText: { fontSize: 13, fontWeight: '700', color: NAVY },
+  modalPrimaryBtn: { flex: 1.5, height: 42, borderRadius: 10, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center' },
+  modalPrimaryText: { fontSize: 13, fontWeight: '700', color: '#fff' }
 });

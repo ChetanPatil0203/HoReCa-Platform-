@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, Platform, useWindowDimensions } from 'react-native';
-import { ArrowLeft, Search, ShoppingCart, Plus, Minus, Zap, Clock, Star, Filter, Check, CheckCircle } from 'lucide-react-native';
+import { ArrowLeft, Search, ShoppingCart, Plus, Minus, Zap, Clock, Star, Filter, Check, CircleCheck as CheckCircle } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 
 

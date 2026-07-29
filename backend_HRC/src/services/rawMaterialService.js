@@ -313,3 +313,126 @@ exports.cancelOrderService = async (orderId, reason) => {
 
   return order;
 };
+
+// ── New: Update existing product ──
+exports.updateProductService = async (productId, updateData) => {
+  const product = await Product.findByPk(productId);
+  if (!product) throw new Error('Product not found');
+
+  if (updateData.category) {
+    const [productCategory] = await ProductCategory.findOrCreate({
+      where: { name: updateData.category },
+      defaults: { name: updateData.category, description: updateData.category }
+    });
+    product.categoryId = productCategory.id;
+  }
+
+  if (updateData.name !== undefined) product.name = updateData.name;
+  if (updateData.price !== undefined) product.price = updateData.price;
+  if (updateData.unit !== undefined) product.unit = updateData.unit;
+  if (updateData.stock !== undefined) product.stock = updateData.stock;
+  if (updateData.description !== undefined) product.description = updateData.description;
+  if (updateData.sku !== undefined) product.sku = updateData.sku;
+  if (updateData.moq !== undefined) product.moq = updateData.moq;
+  if (updateData.expiry !== undefined) product.expiry = updateData.expiry;
+
+  await product.save();
+
+  return await Product.findByPk(product.id, {
+    include: [
+      { model: ProductCategory, as: 'category', attributes: ['id', 'name'] },
+      { model: VendorRegistration, as: 'supplier', attributes: ['id', 'bizName'] }
+    ]
+  });
+};
+
+// ── New: Delete product ──
+exports.deleteProductService = async (productId) => {
+  const product = await Product.findByPk(productId);
+  if (!product) throw new Error('Product not found');
+  await product.destroy();
+  return { success: true, message: 'Product deleted successfully' };
+};
+
+// ── New: Quick stock update ──
+exports.updateStockService = async (productId, newStock) => {
+  const product = await Product.findByPk(productId);
+  if (!product) throw new Error('Product not found');
+  product.stock = Math.max(0, parseInt(newStock, 10) || 0);
+  await product.save();
+  return product;
+};
+
+// ── New: Vendor Analytics Service ──
+exports.getVendorAnalyticsService = async (supplierId) => {
+  const orders = await Order.findAll({
+    where: { supplierId },
+    include: [
+      { model: HorecaRegistration, as: 'owner', attributes: ['id', 'bizName', 'city', 'ownerName', 'mobile'] },
+      {
+        model: OrderItem,
+        as: 'items',
+        include: [{ model: Product, as: 'product', attributes: ['id', 'name', 'unit', 'price'] }]
+      }
+    ]
+  });
+
+  const products = await Product.findAll({ where: { supplierId } });
+
+  let totalRevenue = 0;
+  let pendingOrdersCount = 0;
+  let confirmedOrdersCount = 0;
+  let deliveredOrdersCount = 0;
+  let cancelledOrdersCount = 0;
+
+  const clientMap = {};
+
+  orders.forEach(order => {
+    const amount = parseFloat(order.totalAmount || 0);
+    if (['confirmed', 'processing', 'packed', 'shipped', 'delivered'].includes(order.status)) {
+      totalRevenue += amount;
+    }
+
+    if (order.status === 'pending') pendingOrdersCount++;
+    else if (['confirmed', 'processing', 'packed', 'shipped'].includes(order.status)) confirmedOrdersCount++;
+    else if (order.status === 'delivered') deliveredOrdersCount++;
+    else if (order.status === 'cancelled') cancelledOrdersCount++;
+
+    if (order.owner) {
+      const ownerId = order.owner.id;
+      if (!clientMap[ownerId]) {
+        clientMap[ownerId] = {
+          id: ownerId,
+          bizName: order.owner.bizName || 'Restaurant Client',
+          ownerName: order.owner.ownerName || 'Owner',
+          city: order.owner.city || 'Local City',
+          mobile: order.owner.mobile || '',
+          totalOrders: 0,
+          totalSpent: 0,
+          lastOrderDate: order.createdAt
+        };
+      }
+      clientMap[ownerId].totalOrders += 1;
+      clientMap[ownerId].totalSpent += amount;
+      if (new Date(order.createdAt) > new Date(clientMap[ownerId].lastOrderDate)) {
+        clientMap[ownerId].lastOrderDate = order.createdAt;
+      }
+    }
+  });
+
+  const clients = Object.values(clientMap);
+
+  return {
+    totalRevenue,
+    totalOrders: orders.length,
+    pendingOrdersCount,
+    confirmedOrdersCount,
+    deliveredOrdersCount,
+    cancelledOrdersCount,
+    totalProducts: products.length,
+    inStockProducts: products.filter(p => p.stock > 0).length,
+    outOfStockProducts: products.filter(p => p.stock <= 0).length,
+    activeClientsCount: clients.length,
+    clients
+  };
+};

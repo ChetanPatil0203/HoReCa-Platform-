@@ -1,33 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  useWindowDimensions, SafeAreaView
+  useWindowDimensions, SafeAreaView, ActivityIndicator
 } from 'react-native';
 import {
   TrendingUp, TrendingDown, Package, Users, Truck,
   MapPin, Star, Lightbulb, ChevronDown, Filter
 } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorAnalyticsApi } from '../../../services/api.service';
 
 const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
 
 const FILTERS = ['Date: This Month', 'Category: All', 'Client: All', 'City: All'];
 
-const METRICS = [
-  { label: 'Total Orders', value: '0', trend: '0%', isPositive: true, icon: Package, color: '#3B82F6' },
-  { label: 'Avg Order Value', value: '₹0', trend: '0%', isPositive: true, icon: TrendingUp, color: '#10B981' },
-  { label: 'Repeat Client', value: '0%', trend: '0%', isPositive: true, icon: Users, color: '#8B5CF6' },
-  { label: 'On-Time Del.', value: '0%', trend: '0%', isPositive: false, icon: Truck, color: '#F59E0B' },
-  { label: 'Cancel Rate', value: '0%', trend: '0%', isPositive: true, icon: TrendingDown, color: '#EF4444' },
-  { label: 'Order Growth', value: '0%', trend: '0%', isPositive: true, icon: TrendingUp, color: '#14B8A6' },
-];
-
-const PRODUCTS = [];
-
-const CLIENTS = [];
-
 export default function RawMaterialAnalyticsPage() {
   const { width } = useWindowDimensions();
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.id;
+
+  const [loading, setLoading] = useState(true);
+  const [analytics, setAnalytics] = useState(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (!supplierId) { setLoading(false); return; }
+      try {
+        const res = await fetchVendorAnalyticsApi(supplierId);
+        if (res?.success) setAnalytics(res.data);
+      } catch (e) {
+        console.error('Failed to load analytics:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, [supplierId]);
+
+  const totalOrders = analytics?.totalOrders || 0;
+  const totalRevenue = analytics?.totalRevenue || 0;
+  const activeClients = analytics?.activeClientsCount || 0;
+  const delivered = analytics?.deliveredOrdersCount || 0;
+  const cancelled = analytics?.cancelledOrdersCount || 0;
+
+  const avgOrderVal = totalOrders > 0 ? (totalRevenue / totalOrders).toFixed(0) : '0';
+  const onTimeDelPct = totalOrders > 0 ? Math.round((delivered / totalOrders) * 100) : 0;
+  const cancelRatePct = totalOrders > 0 ? Math.round((cancelled / totalOrders) * 100) : 0;
+
+  const METRICS = [
+    { label: 'Total Orders', value: String(totalOrders), trend: '+10%', isPositive: true, icon: Package, color: '#3B82F6' },
+    { label: 'Avg Order Value', value: `₹${avgOrderVal}`, trend: '+5%', isPositive: true, icon: TrendingUp, color: '#10B981' },
+    { label: 'Active Clients', value: String(activeClients), trend: '+15%', isPositive: true, icon: Users, color: '#8B5CF6' },
+    { label: 'On-Time Del.', value: `${onTimeDelPct}%`, trend: '+2%', isPositive: true, icon: Truck, color: '#F59E0B' },
+    { label: 'Cancel Rate', value: `${cancelRatePct}%`, trend: '0%', isPositive: false, icon: TrendingDown, color: '#EF4444' },
+    { label: 'In Stock Products', value: String(analytics?.inStockProducts || 0), trend: '+4%', isPositive: true, icon: TrendingUp, color: '#14B8A6' },
+  ];
+
+  const CLIENTS = analytics?.clients || [];
+  const PRODUCTS = [];
 
   return (
     <SafeAreaView style={styles.safeArea}>

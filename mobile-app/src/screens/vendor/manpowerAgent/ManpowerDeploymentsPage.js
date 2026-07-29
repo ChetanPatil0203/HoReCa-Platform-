@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, SafeAreaView, FlatList, TextInput, Pressable, useWindowDimensions } from 'react-native';
-import {
-  UserRoundCheck, CircleCheck, UserRoundX, Search, SlidersHorizontal, BriefcaseBusiness,
-  Building2, MapPin, CalendarDays, ChevronRight, X, UserRoundSearch, History, FileText,
-  ShieldCheck, MoreVertical, Pencil, Copy, Clock
-} from 'lucide-react-native';
+import { UserRoundCheck, CircleCheck, UserRoundX, Search, SlidersHorizontal, BriefcaseBusiness, Building2, MapPin, CalendarDays, ChevronRight, X, UserRoundSearch, History, FileText, ShieldCheck, EllipsisVertical as MoreVertical, Pencil, Copy, Clock } from 'lucide-react-native';
 
 const NAVY = '#081A3A';
 

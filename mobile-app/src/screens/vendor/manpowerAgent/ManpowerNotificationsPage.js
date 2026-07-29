@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, RefreshControl } from 'react-native';
-import { Bell, Briefcase, User, Calendar, CheckCircle, DollarSign, AlertTriangle, ChevronRight, Check } from 'lucide-react-native';
+import { Bell, Briefcase, User, Calendar, CircleCheck as CheckCircle, DollarSign, TriangleAlert as AlertTriangle, ChevronRight, Check } from 'lucide-react-native';
 
 const NAVY = '#081A3A';
 

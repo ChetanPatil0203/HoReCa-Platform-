@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions, ActivityIndicator, Alert } from 'react-native';
-import { ArrowLeft, MapPin, Store, ChevronRight, XCircle } from 'lucide-react-native';
+import { ArrowLeft, MapPin, Store, ChevronRight, CircleX as XCircle } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 import { fetchOrderById, cancelRawMaterialOrder } from '../../../services/api.service';
 
@@ -201,7 +201,7 @@ export default function RawMaterialOrderDetailsPage({ order, user, onBack, onReo
           {/* Ordered Items */}
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Ordered Items</Text>
-            {displayOrder.items.map((item, index) => (
+            {( displayOrder?.items || [] ).map((item, index) => (
               <View key={item.id || index} style={styles.itemRow}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.itemName}>{item.name}</Text>

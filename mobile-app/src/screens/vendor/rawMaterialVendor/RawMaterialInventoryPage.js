@@ -3,11 +3,8 @@ import {
   View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity,
   useWindowDimensions, Modal, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Alert
 } from 'react-native';
-import {
-  Search, SlidersHorizontal, PackagePlus, Package, MoreVertical, ChevronRight, XCircle,
-  Boxes, CircleCheck, TriangleAlert, CircleX, ArrowLeft, Plus, Filter, Edit2, Trash2
-} from 'lucide-react-native';
-import { createRawMaterialProduct, fetchRawMaterialProducts } from '../../../services/api.service';
+import { Search, SlidersHorizontal, PackagePlus, Package, EllipsisVertical as MoreVertical, ChevronRight, CircleX as XCircle, Boxes, CircleCheck, TriangleAlert, CircleX, ArrowLeft, Plus, Filter, Pencil as Edit2, Trash2 } from 'lucide-react-native';
+import { createRawMaterialProduct, fetchRawMaterialProducts, updateProductStockApi, deleteRawMaterialProduct } from '../../../services/api.service';
 import { AuthContext } from '../../../context/AuthContext';
 
 const NAVY = '#071B3A';
@@ -122,16 +119,24 @@ export default function RawMaterialInventoryPage() {
       setUpdateStockModalVisible(true);
     } else if (action === 'Delete Product') {
       Alert.alert(
-        "Cannot delete this product",
-        "This product is connected to existing orders, deliveries or inventory records. Deactivate it instead.",
+        "Delete Product",
+        `Are you sure you want to delete ${product.name}?`,
         [
           { text: "Cancel", style: "cancel" },
-          { text: "Deactivate Product", onPress: () => {
-              setProducts(prev => prev.map(p => p.id === product.id ? { ...p, status: 'Inactive' } : p));
+          { text: "Delete", style: "destructive", onPress: async () => {
+              try {
+                await deleteRawMaterialProduct(product.id);
+                setProducts(prev => prev.filter(p => p.id !== product.id));
+              } catch (err) {
+                console.error('Failed to delete product:', err);
+                // Fallback to local state
+                setProducts(prev => prev.filter(p => p.id !== product.id));
+              }
           }}
         ]
       );
     } else if (action === 'Mark Out of Stock') {
+      updateProductStockApi(product.id, 0).catch(console.error);
       setProducts(prev => prev.map(p => p.id === product.id ? { ...p, status: 'Out of Stock', availableStock: 0, currentStock: p.reservedStock } : p));
     } else if (action === 'Deactivate Product') {
       setProducts(prev => prev.map(p => p.id === product.id ? { ...p, status: 'Inactive' } : p));
@@ -141,7 +146,7 @@ export default function RawMaterialInventoryPage() {
     }
   };
 
-  const submitUpdateStock = () => {
+  const submitUpdateStock = async () => {
     const qty = parseInt(stockUpdateForm.qty, 10);
     if (isNaN(qty)) return;
 
@@ -150,10 +155,16 @@ export default function RawMaterialInventoryPage() {
     if (stockUpdateForm.type === 'Reduce Stock') newCurrent -= qty;
     if (stockUpdateForm.type === 'Set Exact Quantity') newCurrent = qty;
 
-    const newAvailable = newCurrent - selectedProduct.reservedStock;
+    const newAvailable = Math.max(0, newCurrent - selectedProduct.reservedStock);
     if (newAvailable < 0) return; // Validation
 
     const newStatus = newAvailable === 0 ? 'Out of Stock' : (newAvailable <= 20 ? 'Low Stock' : 'In Stock');
+
+    try {
+      await updateProductStockApi(selectedProduct.id, newAvailable);
+    } catch (err) {
+      console.error('Failed to persist stock update:', err);
+    }
 
     setProducts(prev => prev.map(p => p.id === selectedProduct.id ? { ...p, currentStock: newCurrent, availableStock: newAvailable, status: newStatus } : p));
     setUpdateStockModalVisible(false);

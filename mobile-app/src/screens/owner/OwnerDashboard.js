@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { View, StyleSheet, SafeAreaView, useWindowDimensions, ScrollView, TouchableOpacity, Text, Platform, Image, Modal, TouchableWithoutFeedback, Alert } from 'react-native';
-import { Menu, ArrowLeft, Bell, ChefHat, LayoutDashboard, Package, Users, Wrench, Megaphone, BarChart2, Clock, Truck, Settings, HelpCircle, ChevronDown, LogOut, User, ShieldCheck } from 'lucide-react-native';
+import { Menu, ArrowLeft, Bell, ChefHat, LayoutDashboard, Package, Users, Wrench, Megaphone, BarChart2, Clock, Truck, Settings, CircleHelp as HelpCircle, ChevronDown, LogOut, User, ShieldCheck } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors } from '../../theme/colors';
 
@@ -21,6 +21,8 @@ import SupplierMarketplace from './Raw material/SupplierMarketplace';
 import MarketplacePillarsPage from './Raw material/MarketplacePillarsPage';
 import ProfileSettingsPage from './ProfileSettingsPage';
 import CompliancePage from './compliance/CompliancePage';
+import HelpAndSupportScreen from '../../components/common/HelpAndSupportScreen';
+import DocumentsKycScreen from '../common/DocumentsKycScreen';
 
 // Placeholder for missing pages
 const PlaceholderPage = ({ title }) => (
@@ -71,6 +73,9 @@ export default function OwnerDashboard() {
         return <MarketingPage />;
       case "compliance":
         return <CompliancePage />;
+      case "documentsKyc":
+      case "documents-kyc":
+        return <DocumentsKycScreen onBack={() => setActivePage('settings')} />;
       case "order-tracking":
         return <OrderTrackingPage />;
       case "history":
@@ -79,7 +84,9 @@ export default function OwnerDashboard() {
         return <AnalyticsPage />;
       case "profile":
       case "settings":
-        return <ProfileSettingsPage user={user} />;
+        return <ProfileSettingsPage user={user} onNavigate={setActivePage} />;
+      case "support":
+        return <HelpAndSupportScreen />;
       default:
         return <PlaceholderPage title={PAGE_TITLES[activePage] || activePage} />;
     }
@@ -149,7 +156,7 @@ export default function OwnerDashboard() {
                   <Menu size={22} color="#fff" />
                 </TouchableOpacity>
                 <Image 
-                  source={require('../../assets/HoReCa_Logo.png')} 
+                  source={require('../../assets/HRCHUB_Logo.png')} 
                   style={{ width: 24, height: 24, resizeMode: 'contain', marginRight: 8 }} 
                 />
                 <View style={styles.headerLogoBox}>

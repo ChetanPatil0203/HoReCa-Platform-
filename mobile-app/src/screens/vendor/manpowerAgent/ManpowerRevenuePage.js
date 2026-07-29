@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions, SafeAreaView, FlatList } from 'react-native';
-import { DollarSign, FileText, CheckCircle, Clock, AlertCircle, Plus, Download, Send } from 'lucide-react-native';
+import { DollarSign, FileText, CircleCheck as CheckCircle, Clock, CircleAlert as AlertCircle, Plus, Download, Send } from 'lucide-react-native';
 import CreateInvoiceModal from '../../../components/vendor/manpowerAgent/CreateInvoiceModal';
 
 const NAVY = '#081A3A';

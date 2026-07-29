@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Platform, ActivityIndicator } from 'react-native';
-import { Bell, Zap, MapPin, Calendar, Building2, Send, Eye, EyeOff, Tag, CheckCircle, XCircle } from 'lucide-react-native';
+import { Bell, Zap, MapPin, Calendar, Building2, Send, Eye, EyeOff, Tag, CircleCheck as CheckCircle, CircleX as XCircle } from 'lucide-react-native';
 import { colors } from '../../theme/colors';
 import { AuthContext } from '../../context/AuthContext';
 import { fetchPublicRequirements, updateRequirementStatusApi } from '../../services/api.service';

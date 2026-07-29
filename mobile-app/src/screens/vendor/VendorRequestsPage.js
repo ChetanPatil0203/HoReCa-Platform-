@@ -3,10 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform,
   TextInput, ActivityIndicator, Alert
 } from 'react-native';
-import {
-  Activity, Clock, Search, CheckCircle, XCircle, MapPin,
-  Calendar, Hash, User, AlertCircle, RefreshCw, Package, Phone
-} from 'lucide-react-native';
+import { Activity, Clock, Search, CircleCheck as CheckCircle, CircleX as XCircle, MapPin, Calendar, Hash, User, CircleAlert as AlertCircle, RefreshCw, Package, Phone } from 'lucide-react-native';
 import { colors } from '../../theme/colors';
 import { AuthContext } from '../../context/AuthContext';
 import { fetchVendorOrders, vendorRespondOrder } from '../../services/api.service';
@@ -317,7 +314,7 @@ export default function VendorRequestsPage() {
                     {req.items && req.items.length > 0 && (
                       <View style={styles.noteBox}>
                         <Text style={styles.noteLabel}>Items Ordered:</Text>
-                        {req.items.map((item, idx) => (
+                        {( req?.items || [] ).map((item, idx) => (
                           <Text key={idx} style={styles.noteText}>
                             • {item.product?.name || 'Product'} × {item.quantity} {item.product?.unit || 'units'} @ ₹{parseFloat(item.priceAtPurchase || 0).toFixed(0)}/unit
                           </Text>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { CheckCircle2 } from 'lucide-react-native';
+import { CircleCheck as CheckCircle2 } from 'lucide-react-native';
 import { AUTH_COLORS } from './AuthTheme';
 
 export default function RegistrationStepIndicator({ currentStep }) {
@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     alignItems: 'center', 
     justifyContent: 'center', 
-    marginBottom: 32,
+    marginBottom: 16,
     paddingHorizontal: 16
   },
   stepBlock: { 
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     backgroundColor: AUTH_COLORS.input, 
     alignItems: 'center', 
     justifyContent: 'center', 
-    marginBottom: 8,
+    marginBottom: 4,
     borderWidth: 1,
     borderColor: AUTH_COLORS.border
   },
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     height: 2, 
     backgroundColor: AUTH_COLORS.border, 
     marginHorizontal: -10, 
-    marginBottom: 18,
+    marginBottom: 12,
     zIndex: 1
   },
   stepLineCompleted: { 

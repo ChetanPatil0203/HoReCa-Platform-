@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Switch, KeyboardAvoidingView, Platform, ToastAndroid } from 'react-native';
-import { ArrowLeft, Save, Send, AlertCircle, Calculator, ChevronDown } from 'lucide-react-native';
+import { ArrowLeft, Save, Send, CircleAlert as AlertCircle, Calculator, ChevronDown } from 'lucide-react-native';
 
 export default function MarketingProposalForm({ setActivePage, requirement }) {
   const req = requirement || { type: 'Online', id: 'REQ-000', client: 'Unknown' };

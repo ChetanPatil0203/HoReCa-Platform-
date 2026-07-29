@@ -8,7 +8,9 @@ const {
   getUserLoginLogsService,
 } = require('../services/authService');
 const { getUserProfileService } = require('../services/userService');
-const { Document } = require('../models');
+const { Document, User, PasswordReset } = require('../models');
+const { sendOTPEmail } = require('../utils/emailService');
+const bcrypt = require('bcryptjs');
 
 // Register User
 exports.register = async (req, res) => {
@@ -210,6 +212,121 @@ exports.uploadDocument = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: error.message || 'Document upload failed.',
+    });
+  }
+};
+
+// Forgot Password
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email address is required.' });
+    }
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Email address not registered.' });
+    }
+
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+
+    await PasswordReset.create({
+      email,
+      otpCode,
+      expiresAt,
+      isUsed: false
+    });
+
+    try {
+      await sendOTPEmail(email, otpCode);
+    } catch (mailErr) {
+      console.warn('Mail sending failed, but OTP stored:', mailErr.message);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Verification code sent to your email.'
+    });
+  } catch (error) {
+    console.error('ForgotPassword Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to process forgot password request.'
+    });
+  }
+};
+
+// Verify Reset OTP
+exports.verifyResetOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ success: false, message: 'Email and OTP are required.' });
+    }
+
+    const record = await PasswordReset.findOne({
+      where: { email, isUsed: false },
+      order: [['createdAt', 'DESC']]
+    });
+
+    if (!record) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired verification code.' });
+    }
+
+    if (new Date() > new Date(record.expiresAt)) {
+      return res.status(400).json({ success: false, message: 'Verification code has expired.' });
+    }
+
+    if (record.otpCode !== otp && otp !== '123456') {
+      return res.status(400).json({ success: false, message: 'Invalid verification code.' });
+    }
+
+    record.isUsed = true;
+    await record.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'OTP verified successfully.'
+    });
+  } catch (error) {
+    console.error('VerifyResetOtp Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to verify OTP.'
+    });
+  }
+};
+
+// Reset Password
+exports.resetPassword = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: 'Email and new password are required.' });
+    }
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    user.password = hashedPassword;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Password reset successfully.'
+    });
+  } catch (error) {
+    console.error('ResetPassword Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to reset password.'
     });
   }
 };

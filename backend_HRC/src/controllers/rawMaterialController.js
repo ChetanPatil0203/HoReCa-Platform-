@@ -2,6 +2,10 @@ const {
   getCategoriesService,
   getProductsService,
   createProductService,
+  updateProductService,
+  deleteProductService,
+  updateStockService,
+  getVendorAnalyticsService,
   getSuppliersService,
   createOrderService,
   getOwnerOrdersService,
@@ -182,6 +186,51 @@ exports.cancelOrder = async (req, res) => {
     if (error.message.includes('Cannot cancel')) {
       return res.status(400).json({ success: false, message: error.message });
     }
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ── New: Update product ──
+exports.updateProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const product = await updateProductService(productId, req.body);
+    res.status(200).json({ success: true, message: 'Product updated successfully', data: product });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ── New: Delete product ──
+exports.deleteProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const result = await deleteProductService(productId);
+    res.status(200).json({ success: true, message: 'Product deleted successfully', data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ── New: Update stock ──
+exports.updateStock = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { stock } = req.body;
+    const product = await updateStockService(productId, stock);
+    res.status(200).json({ success: true, message: 'Stock updated successfully', data: product });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ── New: Get vendor analytics ──
+exports.getVendorAnalytics = async (req, res) => {
+  try {
+    const { supplierId } = req.params;
+    const analytics = await getVendorAnalyticsService(supplierId);
+    res.status(200).json({ success: true, data: analytics });
+  } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };

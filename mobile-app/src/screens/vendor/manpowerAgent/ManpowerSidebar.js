@@ -1,10 +1,7 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform } from 'react-native';
-import { 
-  LayoutDashboard, Activity, Truck, Users,
-  DollarSign, Settings, LogOut,
-  HelpCircle, X
-} from 'lucide-react-native';
+import { LayoutDashboard, Activity, Truck, Users, DollarSign, Settings, LogOut, CircleHelp as HelpCircle, X } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
 
 const NAV = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -20,6 +17,10 @@ const NAV_BOTTOM = [
 ];
 
 export default function ManpowerSidebar({ activePage, setActivePage, isMobile, mobileMenuOpen, setMobileMenuOpen, onLogout }) {
+  const { user } = useContext(AuthContext);
+  const agencyName = user?.registration?.bizName || user?.bizName || user?.contactPerson || (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Agency Partner');
+  const initials = agencyName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+  const vendorType = user?.registration?.vendorType || 'Manpower Agency';
   const handleSelect = (id) => {
     setActivePage(id);
     if (isMobile) setMobileMenuOpen(false);
@@ -54,7 +55,7 @@ export default function ManpowerSidebar({ activePage, setActivePage, isMobile, m
       <View style={styles.topSection}>
         {/* Brand Header */}
         <View style={styles.brandHeader}>
-          <Image source={require('../../../assets/HoReCa_Logo.png')} style={styles.logo} resizeMode="cover" />
+          <Image source={require('../../../assets/HRCHUB_Logo.png')} style={styles.logo} resizeMode="cover" />
           <View style={styles.brandTextCol}>
             <Text style={styles.brandTitle}><Text style={{color: '#D4AF37'}}>HRC</Text> HUB</Text>
             <Text style={styles.brandSubtitle}>VENDOR OPERATIONS</Text>
@@ -74,12 +75,12 @@ export default function ManpowerSidebar({ activePage, setActivePage, isMobile, m
         {/* Luxury Profile Card */}
         <View style={styles.profileCard}>
           <View style={styles.avatarBox}>
-            <Text style={styles.avatarInitials}>EM</Text>
+            <Text style={styles.avatarInitials}>{initials}</Text>
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.profileThe}>The</Text>
-            <Text style={styles.profileName} numberOfLines={1}>Elite Manpower</Text>
-            <Text style={styles.profileRole} numberOfLines={1}>Manpower Agency</Text>
+            <Text style={styles.profileName} numberOfLines={1}>{agencyName}</Text>
+            <Text style={styles.profileRole} numberOfLines={1}>{vendorType}</Text>
           </View>
           <View style={styles.vendorBadge}>
             <Text style={styles.vendorBadgeText}>VENDOR</Text>

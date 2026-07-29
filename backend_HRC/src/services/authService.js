@@ -21,7 +21,16 @@ exports.registerService = async (registrationData) => {
     bizCategory,
     specialized,
     subCategory,
+    panNo,
+    brn,
     mobile,
+    state,
+    pincode,
+    address,
+    gst,
+    gstin,
+    fssai,
+    fssaiNo,
     documents = {},
 
     // Step 2: Executive Details & Compliance
@@ -30,11 +39,6 @@ exports.registerService = async (registrationData) => {
     email,
     password,
     city,
-    address,
-    gst,
-    gstin,
-    fssai,
-    fssaiNo,
   } = registrationData;
 
   const emailLower = email.toLowerCase();
@@ -71,6 +75,9 @@ exports.registerService = async (registrationData) => {
       password: hashedPassword,
       mobile,
       city,
+      state: state || null,
+      pincode: pincode || null,
+      address: address || null,
       role,
       vendorType: specialized || null,
       isVerified: false,
@@ -82,6 +89,8 @@ exports.registerService = async (registrationData) => {
 
     const finalGstin = gstin || gst || null;
     const finalFssai = fssaiNo || fssai || null;
+    const finalPanNo = panNo || null;
+    const finalBrn = brn || null;
 
     let registrationRecord;
     if (isVendor) {
@@ -95,8 +104,13 @@ exports.registerService = async (registrationData) => {
         email: emailLower,
         mobile,
         city: city || 'Unknown',
+        state: state || null,
+        pincode: pincode || null,
         address: address || null,
+        panNo: finalPanNo,
         gstin: finalGstin,
+        brn: finalBrn,
+        fssaiNo: finalFssai,
         status: 'registered',
       }, { transaction });
     } else {
@@ -109,8 +123,12 @@ exports.registerService = async (registrationData) => {
         email: emailLower,
         mobile,
         city: city || 'Unknown',
+        state: state || null,
+        pincode: pincode || null,
         address: address || null,
+        panNo: finalPanNo,
         gstin: finalGstin,
+        brn: finalBrn,
         fssaiNo: finalFssai,
         status: 'registered',
       }, { transaction });

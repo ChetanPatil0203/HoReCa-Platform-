@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
-import { ArrowLeft, Star, Briefcase, DollarSign, Clock, CheckCircle } from 'lucide-react-native';
+import { ArrowLeft, Star, Briefcase, DollarSign, Clock, CircleCheck as CheckCircle } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 import { CANDIDATES } from '../../../constants/manpowerData';
 
@@ -63,7 +63,7 @@ export default function AvailableStaffPage({ onBack, onViewCandidate }) {
               <View style={styles.skillsSection}>
                 <Text style={styles.skillsLabel}>Skills:</Text>
                 <View style={styles.skillsRow}>
-                  {cand.skills.map(s => (
+                  {( cand?.skills || [] ).map(s => (
                     <View key={s} style={styles.skillBadge}>
                       <Text style={styles.skillText}>{s}</Text>
                     </View>

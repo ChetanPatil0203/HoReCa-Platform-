@@ -1,6 +1,6 @@
 import React, { useState, useContext, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Platform, useWindowDimensions, TouchableOpacity, Image, Animated, Easing, TouchableWithoutFeedback, Alert } from 'react-native';
-import { Menu, Bell, Search, User, LayoutDashboard, Activity, Truck, Users, DollarSign, HelpCircle, Settings, Home, ClipboardList, Plus, UserPlus, Send, History, UserCheck, LogOut, Building2 } from 'lucide-react-native';
+import { Menu, Bell, Search, User, LayoutDashboard, Activity, Truck, Users, DollarSign, CircleHelp as HelpCircle, Settings, Home, ClipboardList, Plus, UserPlus, Send, History, UserCheck, LogOut, Building2 } from 'lucide-react-native';
 import RoleBasedMobileDrawer from '../../../components/navigation/RoleBasedMobileDrawer';
 import { AuthContext } from '../../../context/AuthContext';
 import { colors } from '../../../theme/colors';
@@ -15,6 +15,8 @@ import ManpowerSupportPage from './ManpowerSupportPage';
 import ManpowerHistoryPage from './ManpowerHistoryPage';
 import ManpowerProfilePage from './ManpowerProfilePage';
 import ManpowerClientsPage from './ManpowerClientsPage';
+import CompliancePage from '../../owner/compliance/CompliancePage';
+import DocumentsKycScreen from '../../common/DocumentsKycScreen';
 
 const PRIMARY = '#081A3A';
 const ACCENT = '#081A3A';
@@ -83,11 +85,15 @@ export default function ManpowerDashboard() {
       case "support":
         return <ManpowerSupportPage />;
       case "settings":
-        return <ManpowerSettingsPage />;
       case "profile":
-        return <ManpowerProfilePage onNavigate={navigateTo} />;
+        return <ManpowerSettingsPage onNavigate={navigateTo} />;
       case "clients":
         return <ManpowerClientsPage />;
+      case "compliance":
+        return <CompliancePage />;
+      case "documentsKyc":
+      case "documents-kyc":
+        return <DocumentsKycScreen onBack={() => navigateTo('settings')} />;
       default: return <View style={styles.placeholder}><Text style={styles.placeholderText}>{activePage} Under Construction</Text></View>;
     }
   };
@@ -107,10 +113,14 @@ export default function ManpowerDashboard() {
     { key: "settings", label: "Settings", icon: Settings },
   ];
 
+  const agencyName = user?.registration?.bizName || user?.bizName || user?.contactPerson || (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Agency Partner');
+  const initials = agencyName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+  const vendorType = user?.registration?.vendorType || 'Manpower Agency';
+
   const profileData = {
-    initials: "EM",
-    name: "Elite Manpower",
-    role: "Manpower Agency",
+    initials: initials,
+    name: agencyName,
+    role: vendorType,
     badge: "AGENCY"
   };
 
@@ -167,7 +177,7 @@ export default function ManpowerDashboard() {
 
             <View style={styles.mobileLogoContainer}>
               <View style={styles.mobileLogoIconBox}>
-                <Image source={require('../../../assets/HoReCa_Logo.png')} style={{ width: 18, height: 18, resizeMode: 'contain' }} />
+                <Image source={require('../../../assets/HRCHUB_Logo.png')} style={{ width: 18, height: 18, resizeMode: 'contain' }} />
               </View>
               <Text style={styles.mobileLogoText}>
                 HRC<Text style={{ color: '#D4AF37' }}>HUB</Text>

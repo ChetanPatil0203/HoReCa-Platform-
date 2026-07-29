@@ -1,9 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { View, Text, StyleSheet, Platform, useWindowDimensions, TouchableOpacity, Image, TouchableWithoutFeedback } from 'react-native';
-import {
-  Menu, Bell, Search, LayoutDashboard, ClipboardList, Megaphone, FolderOpen, Users, DollarSign, HelpCircle, Settings, LogOut,
-  Home, Inbox, User, Plus, ImagePlus, UserPlus, FileText, Building2
-} from 'lucide-react-native';
+import { Menu, Bell, Search, LayoutDashboard, ClipboardList, Megaphone, FolderOpen, Users, DollarSign, CircleHelp as HelpCircle, Settings, LogOut, Home, Inbox, User, Plus, ImagePlus, UserPlus, FileText, Building2 } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
 import { colors } from '../../../theme/colors';
 
@@ -22,6 +19,8 @@ import MarketingSettingsScreen from './MarketingSettingsScreen';
 import MarketingSupportScreen from './MarketingSupportScreen';
 import MarketingFeedWallScreen from './MarketingFeedWallScreen';
 import MarketingClientsScreen from './MarketingClientsScreen';
+import CompliancePage from '../../owner/compliance/CompliancePage';
+import DocumentsKycScreen from '../../common/DocumentsKycScreen';
 
 const NAVY = '#071B3A';
 const PURPLE = '#071B3A';
@@ -59,11 +58,13 @@ export default function MarketingDashboard() {
       case "team": return <MarketingTeamScreen setActivePage={setActivePage} />;
       case "revenue": return <MarketingRevenueScreen setActivePage={setActivePage} />;
       case "notifications": return <MarketingNotificationsScreen setActivePage={setActivePage} />;
-      case "settings": return <MarketingSettingsScreen setActivePage={setActivePage} />;
-      case "support": return <MarketingSupportScreen setActivePage={setActivePage} />;
-      case "profile": return <MarketingProfileScreen setActivePage={setActivePage} />;
+      case "settings":
+      case "profile": return <MarketingSettingsScreen onNavigate={setActivePage} />;
       case "feed": return <MarketingFeedWallScreen setActivePage={setActivePage} />;
       case "clients": return <MarketingClientsScreen setActivePage={setActivePage} />;
+      case "compliance": return <CompliancePage />;
+      case "documentsKyc":
+      case "documents-kyc": return <DocumentsKycScreen onBack={() => setActivePage('settings')} />;
       default: return <View style={styles.placeholder}><Text style={styles.placeholderText}>{activePage} Under Construction</Text></View>;
     }
   };
@@ -121,7 +122,7 @@ export default function MarketingDashboard() {
 
               <View style={styles.mobileLogoContainer}>
                 <View style={styles.mobileLogoIconBox}>
-                  <Image source={require('../../../assets/HoReCa_Logo.png')} style={{ width: 18, height: 18, resizeMode: 'contain' }} />
+                  <Image source={require('../../../assets/HRCHUB_Logo.png')} style={{ width: 18, height: 18, resizeMode: 'contain' }} />
                 </View>
                 <Text style={styles.mobileLogoText}>HRC<Text style={{ color: '#D4AF37' }}>HUB</Text></Text>
               </View>

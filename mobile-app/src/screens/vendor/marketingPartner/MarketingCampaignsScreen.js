@@ -4,10 +4,7 @@ import {
   ScrollView, TextInput, KeyboardAvoidingView, Platform, Dimensions,
   TouchableWithoutFeedback, Switch
 } from 'react-native';
-import { 
-  Search, SlidersHorizontal, ChevronRight, MoreVertical, 
-  X, CheckCircle, UploadCloud, CalendarDays, IndianRupee 
-} from 'lucide-react-native';
+import { Search, SlidersHorizontal, ChevronRight, EllipsisVertical as MoreVertical, X, CircleCheck as CheckCircle, CloudUpload as UploadCloud, CalendarDays, IndianRupee } from 'lucide-react-native';
 
 const { width, height } = Dimensions.get('window');
 

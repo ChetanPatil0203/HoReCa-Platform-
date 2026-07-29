@@ -1,22 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, LayoutAnimation, UIManager, Platform, useWindowDimensions } from 'react-native';
-import { Building2, Phone, ArrowRight, Briefcase, FileText, ChevronDown, ChevronUp, AlertCircle, MapPin, ShieldCheck } from 'lucide-react-native';
+import { View, Text, StyleSheet, TouchableOpacity, LayoutAnimation, UIManager, Platform, useWindowDimensions, ScrollView, SafeAreaView, KeyboardAvoidingView } from 'react-native';
+import { Building2, Phone, ArrowRight, Briefcase, FileText, ChevronDown, ChevronUp, CircleAlert as AlertCircle, MapPin, ShieldCheck, CreditCard, CircleCheck as CheckCircle, Check } from 'lucide-react-native';
 
-import AuthScreenWrapper from '../../components/auth/AuthScreenWrapper';
 import AuthCard from '../../components/auth/AuthCard';
 import AuthTabs from '../../components/auth/AuthTabs';
 import RegistrationStepIndicator from '../../components/auth/RegistrationStepIndicator';
 import FormField from '../../components/auth/FormField';
 import SelectField from '../../components/auth/SelectField';
-import PrimaryButton from '../../components/auth/PrimaryButton';
 import DocumentUploadRow from '../../components/auth/DocumentUploadRow';
 import { getDocumentRequirements } from '../../config/authDocumentRequirements';
 import { AUTH_COLORS } from '../../components/auth/AuthTheme';
 
-if (Platform.OS === 'android') {
-  if (UIManager.setLayoutAnimationEnabledExperimental) {
-    UIManager.setLayoutAnimationEnabledExperimental(true);
-  }
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
 const BIZ_CATEGORIES = ['Hotel', 'Restaurant', 'Cafe', 'Vendor / Supplier'];
@@ -28,35 +24,61 @@ const SUB_CATEGORIES = {
   'Marketing Agency': ['Social Media Marketing', 'SEO', 'Performance Marketing', 'Branding', 'Graphic Design', 'Content Creation', 'Website Development', 'Photography / Videography']
 };
 
+const CITIES = ['Mumbai', 'Delhi', 'Bengaluru', 'Pune', 'Hyderabad', 'Chennai', 'Kolkata', 'Ahmedabad', 'Noida', 'Gurugram', 'Jaipur', 'Lucknow', 'Indore', 'Amritsar', 'Chandigarh'];
+const STATES = ['Maharashtra', 'Delhi', 'Karnataka', 'Telangana', 'Tamil Nadu', 'West Bengal', 'Gujarat', 'Uttar Pradesh', 'Rajasthan', 'Madhya Pradesh', 'Punjab', 'Haryana'];
+
 export default function RegisterStepOneScreen({ navigation, route }) {
   const existingState = route.params?.registrationData || {};
   const { width } = useWindowDimensions();
-  const isSmallScreen = width < 360;
+  
+  const isWeb = Platform.OS === 'web';
+  const contentWidth = isWeb ? Math.min(width * 0.92, 540) : width * 0.92;
+  const showTwoColumns = width >= 360;
 
+  // Form State
   const [bizName, setBizName] = useState(existingState.bizName || '');
   const [bizCategory, setBizCategory] = useState(existingState.bizCategory || '');
   const [specialized, setSpecialized] = useState(existingState.specialized || '');
   const [subCategory, setSubCategory] = useState(existingState.subCategory || '');
+  const [panNo, setPanNo] = useState(existingState.panNo || '');
+  const [gstin, setGstin] = useState(existingState.gstin || '');
+  const [brn, setBrn] = useState(existingState.brn || '');
+  const [fssaiNo, setFssaiNo] = useState(existingState.fssaiNo || '');
   const [mobile, setMobile] = useState(existingState.mobile || '');
   const [address, setAddress] = useState(existingState.address || '');
-  const [gstin, setGstin] = useState(existingState.gstin || '');
-  const [fssaiNo, setFssaiNo] = useState(existingState.fssaiNo || '');
+  const [city, setCity] = useState(existingState.city || '');
+  const [state, setState] = useState(existingState.state || '');
+  const [pincode, setPincode] = useState(existingState.pincode || '');
   const [documents, setDocuments] = useState(existingState.documents || {});
 
+  // Documents Config
   const [requiredDocs, setRequiredDocs] = useState([]);
-  
-  const [reqExpanded, setReqExpanded] = useState(true);
-  const [appExpanded, setAppExpanded] = useState(false);
-  const [optExpanded, setOptExpanded] = useState(false);
+  const [additionalExpanded, setAdditionalExpanded] = useState(false);
+
+  // Validation State
+  const [showValidationSummary, setShowValidationSummary] = useState(false);
+  const [validationErrors, setValidationErrors] = useState([]);
+
+  // Auto determine FSSAI requirement
+  const isFssaiRequired = 
+    bizCategory === 'Hotel' ||
+    bizCategory === 'Restaurant' ||
+    bizCategory === 'Cafe' ||
+    (bizCategory === 'Vendor / Supplier' && specialized === 'Raw Material' && 
+     (subCategory ? subCategory.split(',').map(s => s.trim()).some(sub => ['Dairy', 'Vegetables', 'Fruits', 'Grocery', 'Meat', 'Bakery', 'Beverages', 'Spices'].includes(sub)) : false));
 
   useEffect(() => {
     if (bizCategory) {
       const docs = getDocumentRequirements(bizCategory, specialized, subCategory);
       setRequiredDocs(docs);
+      
+      // Clean up documents that are no longer part of requirements when category changes
       setDocuments(prev => {
         const next = { ...prev };
         Object.keys(next).forEach(key => {
-          if (!docs.find(d => d.id === key)) delete next[key];
+          if (!docs.find(d => d.id === key)) {
+            delete next[key];
+          }
         });
         return next;
       });
@@ -74,15 +96,30 @@ export default function RegisterStepOneScreen({ navigation, route }) {
     } else {
       setFssaiNo('');
     }
+    clearValidationState();
   };
 
   const handleSpecializedChange = (val) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setSpecialized(val);
     setSubCategory('');
+    clearValidationState();
   };
 
-  const handleFileSelect = (docId, file) => setDocuments(prev => ({ ...prev, [docId]: file }));
+  const handlePanChange = (val) => {
+    setPanNo(val.toUpperCase().replace(/\s/g, ''));
+    clearValidationState();
+  };
+
+  const handleGstinChange = (val) => {
+    setGstin(val.toUpperCase().replace(/\s/g, ''));
+    clearValidationState();
+  };
+
+  const handleFileSelect = (docId, file) => {
+    setDocuments(prev => ({ ...prev, [docId]: file }));
+  };
+
   const handleFileRemove = (docId) => {
     setDocuments(prev => {
       const next = { ...prev };
@@ -91,63 +128,124 @@ export default function RegisterStepOneScreen({ navigation, route }) {
     });
   };
 
-  const toggleGroup = (setter, val) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setter(!val);
+  const clearValidationState = () => {
+    if (showValidationSummary) {
+      setValidationErrors([]);
+      setShowValidationSummary(false);
+    }
   };
 
   const reqList = requiredDocs.filter(d => d.requirement === 'Required');
-  const appList = requiredDocs.filter(d => d.requirement === 'Required if applicable');
   const optList = requiredDocs.filter(d => d.requirement === 'Optional');
-
   const reqUploaded = reqList.filter(d => documents[d.id]).length;
-  const appUploaded = appList.filter(d => documents[d.id]).length;
-  const optUploaded = optList.filter(d => documents[d.id]).length;
-
   const totalReq = reqList.length;
-  const totalUploaded = reqUploaded + appUploaded + optUploaded;
-  const totalDocs = requiredDocs.length;
-
-  const isFormComplete = () => {
-    if (!bizName.trim() || !bizCategory || mobile.replace(/[^0-9]/g, '').length !== 10) return false;
-    if (!address.trim()) return false;
-    if (bizCategory === 'Vendor / Supplier') {
-      if (!specialized || !subCategory) return false;
-    } else {
-      if (!fssaiNo.trim()) return false;
-    }
-    if (reqUploaded < totalReq) return false;
-    return true;
-  };
-
-  const missingReqDocs = reqList.filter(d => !documents[d.id]);
 
   const handleNext = () => {
-    if (!isFormComplete()) return;
+    const errorsList = [];
+    
+    if (!bizName.trim()) errorsList.push('Enter Business Name');
+    if (!bizCategory) errorsList.push('Select Business Category');
+    if (!panNo.trim()) {
+      errorsList.push('Enter PAN Number');
+    } else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(panNo.toUpperCase())) {
+      errorsList.push('Enter valid 10-character PAN (e.g. ABCDE1234F)');
+    }
+    
+    if (gstin.trim() && gstin.trim().length !== 15) {
+      errorsList.push('GST Number must be 15 characters');
+    }
+    
+    if (isFssaiRequired) {
+      if (!fssaiNo.trim()) {
+        errorsList.push('Enter FSSAI License Number');
+      } else if (fssaiNo.replace(/[^0-9]/g, '').length !== 14) {
+        errorsList.push('FSSAI License must be 14 digits');
+      }
+    }
+    
+    if (bizCategory === 'Vendor / Supplier') {
+      if (!specialized) errorsList.push('Select Specialized Category');
+      if (specialized && !subCategory) errorsList.push('Select Subcategory');
+    }
+    
+    if (!mobile.trim()) {
+      errorsList.push('Enter Mobile Number');
+    } else if (mobile.replace(/[^0-9]/g, '').length !== 10) {
+      errorsList.push('Enter valid 10-digit Mobile Number');
+    }
+    
+    if (!address.trim()) errorsList.push('Enter Business Address');
+    if (!city) errorsList.push('Select City');
+    if (!state) errorsList.push('Select State');
+    
+    if (!pincode.trim()) {
+      errorsList.push('Enter Pincode');
+    } else if (pincode.replace(/[^0-9]/g, '').length !== 6) {
+      errorsList.push('Pincode must be 6 digits');
+    }
+
+    // Check required documents
+    const missingDocs = reqList.filter(d => !documents[d.id]);
+    if (missingDocs.length > 0) {
+      missingDocs.forEach(d => {
+        errorsList.push(`Upload ${d.name}`);
+      });
+    }
+
+    if (errorsList.length > 0) {
+      setValidationErrors(errorsList);
+      setShowValidationSummary(true);
+      return;
+    }
+
+    setShowValidationSummary(false);
     const registrationData = {
       ...existingState,
-      bizName,
+      bizName: bizName.trim(),
       bizCategory,
       specialized,
       subCategory,
-      mobile,
-      address,
-      gstin,
-      fssaiNo,
+      panNo: panNo.toUpperCase().trim(),
+      gstin: gstin.toUpperCase().trim(),
+      brn: brn.trim(),
+      fssaiNo: isFssaiRequired ? fssaiNo.trim() : '',
+      mobile: mobile.replace(/[^0-9]/g, ''),
+      address: address.trim(),
+      city,
+      state,
+      pincode: pincode.replace(/[^0-9]/g, ''),
       documents
     };
     navigation.navigate('RegisterStepTwo', { registrationData });
   };
 
   return (
-    <AuthScreenWrapper>
-      <AuthCard>
-        <AuthTabs activeTab="register" onTabChange={(tab) => tab === 'login' && navigation.navigate('Login')} />
-        <RegistrationStepIndicator currentStep={1} />
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+        style={styles.keyboardView}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <ScrollView 
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={[styles.contentWrapper, { width: contentWidth }]}>
+            <AuthCard>
+              <AuthTabs activeTab="register" onTabChange={(tab) => tab === 'login' && navigation.navigate('Login')} />
+              <RegistrationStepIndicator currentStep={1} />
 
         <View style={styles.headerBlock}>
           <Text style={styles.stepHeader}>STEP 1 OF 3</Text>
           <Text style={styles.heading}>Business Verification</Text>
+          <Text style={styles.subtitle}>Establish your business identity and upload verification documents.</Text>
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <Building2 size={16} color={AUTH_COLORS.primary} style={{ marginRight: 8 }} />
+          <Text style={styles.sectionTitle}>Business Identity</Text>
         </View>
 
         <FormField 
@@ -158,60 +256,94 @@ export default function RegisterStepOneScreen({ navigation, route }) {
           onChangeText={setBizName}
         />
 
-        <SelectField 
-          label="BUSINESS OPERATION CATEGORY *"
-          icon={Briefcase}
-          options={BIZ_CATEGORIES}
-          value={bizCategory}
-          onSelect={handleCategoryChange}
-        />
+                <SelectField 
+                  label="Business Operation Category *"
+                  icon={Briefcase}
+                  options={BIZ_CATEGORIES}
+                  value={bizCategory}
+                  onSelect={handleCategoryChange}
+                />
 
-        {bizCategory && bizCategory !== 'Vendor / Supplier' && (
-          <View style={styles.categoryPreview}>
-            <Building2 size={16} color={AUTH_COLORS.primary} style={{ marginRight: 8 }} />
-            <Text style={styles.categoryPreviewText}>
-              <Text style={{ fontWeight: 'bold' }}>{bizCategory}</Text> selected. Verification documents will be required below.
-            </Text>
-          </View>
-        )}
+                <FormField 
+                  label="PAN Number *" 
+                  icon={CreditCard} 
+                  placeholder="ABCDE1234F"
+                  maxLength={10}
+                  autoCapitalize="characters"
+                  value={panNo}
+                  onChangeText={(val) => handlePanChange(val)}
+                />
 
-        {bizCategory === 'Vendor / Supplier' && (
-          <View style={styles.vendorSection}>
-            <View style={styles.sectionHeader}>
-              <Briefcase size={16} color={AUTH_COLORS.primary} style={{ marginRight: 8 }} />
-              <View>
-                <Text style={styles.sectionTitle}>Vendor Specialization</Text>
-                <Text style={styles.sectionSub}>Select the type of service your business provides.</Text>
+                <FormField 
+                  label="GST Number" 
+                  icon={FileText} 
+                  placeholder="27AAAAA0000A1Z5"
+                  maxLength={15}
+                  autoCapitalize="characters"
+                  value={gstin}
+                  onChangeText={(val) => handleGstinChange(val)}
+                  helperText="Optional if your business is not GST registered."
+                />
+
+                {isFssaiRequired && (
+                  <FormField 
+                    label="FSSAI License Number *" 
+                    icon={ShieldCheck} 
+                    placeholder="14-digit FSSAI License No."
+                    keyboardType="numeric"
+                    maxLength={14}
+                    value={fssaiNo}
+                    onChangeText={(val) => { setFssaiNo(val.replace(/[^0-9]/g, '')); clearValidationState(); }}
+                  />
+                )}
+
+                <FormField 
+                  label="Business Registration Number" 
+                  icon={ShieldCheck} 
+                  placeholder="BRN-27-00012345"
+                  value={brn}
+                  onChangeText={setBrn}
+                />
               </View>
-            </View>
 
-            <SelectField 
-              label="SPECIALIZED CATEGORY *"
-              options={SPECIALIZED_CATEGORIES}
-              value={specialized}
-              onSelect={handleSpecializedChange}
-            />
+              {/* Section 2: Vendor Specialization (conditional) */}
+              {bizCategory === 'Vendor / Supplier' && (
+                <View style={styles.sectionCard}>
+                  <Text style={styles.sectionCardTitle}>Vendor Specialization</Text>
+                  
+                  <SelectField 
+                    label="Specialized Category *"
+                    options={SPECIALIZED_CATEGORIES}
+                    value={specialized}
+                    onSelect={handleSpecializedChange}
+                  />
 
-            {specialized ? (
-              <SelectField 
-                label="SUB CATEGORY *"
-                searchable
-                options={SUB_CATEGORIES[specialized] || []}
-                value={subCategory}
-                onSelect={setSubCategory}
-              />
-            ) : null}
+                  {specialized ? (
+                    <SelectField 
+                      label="Subcategory *"
+                      searchable
+                      options={SUB_CATEGORIES[specialized] || []}
+                      value={subCategory}
+                      onSelect={(val) => { setSubCategory(val); clearValidationState(); }}
+                      isMultiSelect={true}
+                    />
+                  ) : null}
 
-            {specialized && subCategory && (
-              <View style={styles.vendorSummary}>
-                <Text style={styles.vendorSummaryLabel}>Selected specialization summary:</Text>
-                <Text style={styles.vendorSummaryValue}>{specialized} • {subCategory}</Text>
-              </View>
-            )}
-          </View>
-        )}
+                  {specialized && subCategory ? (
+                    <View style={styles.specializationSummary}>
+                      <Check size={14} color={AUTH_COLORS.success} style={{ marginRight: 6 }} />
+                      <Text style={styles.specializationSummaryText}>
+                        Selected: <Text style={{ fontWeight: 'bold' }}>{`${specialized} • ${subCategory}`}</Text>
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              )}
 
-
+        <View style={styles.sectionHeader}>
+          <MapPin size={16} color={AUTH_COLORS.primary} style={{ marginRight: 8 }} />
+          <Text style={styles.sectionTitle}>Location & Compliance Details</Text>
+        </View>
 
         <FormField 
           label="REGISTERED BUSINESS ADDRESS *" 
@@ -242,7 +374,10 @@ export default function RegisterStepOneScreen({ navigation, route }) {
           />
         )}
 
-
+        <View style={styles.sectionHeader}>
+          <Phone size={16} color={AUTH_COLORS.primary} style={{ marginRight: 8 }} />
+          <Text style={styles.sectionTitle}>Contact Information</Text>
+        </View>
 
         <View style={styles.phoneFieldContainer}>
           <Text style={styles.phoneLabel}>CONTACT MOBILE *</Text>
@@ -269,148 +404,248 @@ export default function RegisterStepOneScreen({ navigation, route }) {
               <FileText size={16} color={AUTH_COLORS.primary} style={{ marginRight: 8 }} />
               <View>
                 <Text style={styles.sectionTitle}>Verification Documents</Text>
+                <Text style={styles.sectionSub}>Upload the documents required for your selected business profile.</Text>
               </View>
             </View>
 
-            <View style={styles.progressContainer}>
-              <Text style={styles.progressText}>{totalUploaded} of {totalDocs} total documents uploaded</Text>
-              <View style={styles.progressBarBg}>
-                <View style={[styles.progressBarFill, { width: `${(totalUploaded / totalDocs) * 100}%`, backgroundColor: reqUploaded === totalReq ? AUTH_COLORS.success : AUTH_COLORS.primary }]} />
-              </View>
-            </View>
-
-            {reqList.length > 0 && (
-              <View style={styles.docGroup}>
-                <TouchableOpacity style={styles.docGroupHeader} onPress={() => toggleGroup(setReqExpanded, reqExpanded)} activeOpacity={0.7}>
-                  <Text style={styles.docGroupTitle}>Required Documents</Text>
-                  <View style={styles.docGroupRight}>
-                    <Text style={styles.docGroupCount}>{reqUploaded} of {totalReq} uploaded</Text>
-                    {reqExpanded ? <ChevronUp size={20} color={AUTH_COLORS.muted} /> : <ChevronDown size={20} color={AUTH_COLORS.muted} />}
+                  <View style={styles.progressContainer}>
+                    <Text style={styles.progressText}>
+                      {reqUploaded} of {totalReq} required documents uploaded
+                    </Text>
+                    <View style={styles.progressBarBg}>
+                      <View 
+                        style={{
+                          height: '100%',
+                          backgroundColor: reqUploaded === totalReq ? AUTH_COLORS.success : AUTH_COLORS.primary,
+                          borderRadius: 3,
+                          width: `${totalReq > 0 ? (reqUploaded / totalReq) * 100 : 0}%`
+                        }} 
+                      />
+                    </View>
                   </View>
-                </TouchableOpacity>
-                {reqExpanded && (
-                  <View style={styles.docGroupBody}>
+
+                  <View style={styles.docsList}>
                     {reqList.map(doc => (
-                      <DocumentUploadRow key={doc.id} document={doc} selectedFile={documents[doc.id]} onFileSelect={(f) => handleFileSelect(doc.id, f)} onFileRemove={() => handleFileRemove(doc.id)} />
+                      <DocumentUploadRow 
+                        key={doc.id} 
+                        document={doc} 
+                        selectedFile={documents[doc.id]} 
+                        onFileSelect={(f) => handleFileSelect(doc.id, f)} 
+                        onFileRemove={() => handleFileRemove(doc.id)} 
+                      />
                     ))}
                   </View>
-                )}
-              </View>
-            )}
 
-            {appList.length > 0 && (
-              <View style={styles.docGroup}>
-                <TouchableOpacity style={styles.docGroupHeader} onPress={() => toggleGroup(setAppExpanded, appExpanded)} activeOpacity={0.7}>
-                  <Text style={styles.docGroupTitle}>Required if Applicable</Text>
-                  <View style={styles.docGroupRight}>
-                    <Text style={styles.docGroupCount}>{appUploaded} of {appList.length} uploaded</Text>
-                    {appExpanded ? <ChevronUp size={20} color={AUTH_COLORS.muted} /> : <ChevronDown size={20} color={AUTH_COLORS.muted} />}
-                  </View>
-                </TouchableOpacity>
-                {appExpanded && (
-                  <View style={styles.docGroupBody}>
-                    {appList.map(doc => (
-                      <DocumentUploadRow key={doc.id} document={doc} selectedFile={documents[doc.id]} onFileSelect={(f) => handleFileSelect(doc.id, f)} onFileRemove={() => handleFileRemove(doc.id)} />
-                    ))}
-                  </View>
-                )}
-              </View>
-            )}
+                  {/* Collapsible Additional Documents */}
+                  {optList.length > 0 && (
+                    <View style={styles.additionalDocsSection}>
+                      <TouchableOpacity 
+                        style={styles.additionalHeader} 
+                        onPress={() => {
+                          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                          setAdditionalExpanded(!additionalExpanded);
+                        }}
+                        activeOpacity={0.7}
+                        accessibilityRole="button"
+                      >
+                        <Text style={styles.additionalTitle}>Additional Documents</Text>
+                        <View style={styles.additionalRight}>
+                          <Text style={styles.additionalBadge}>Optional</Text>
+                          {additionalExpanded ? <ChevronUp size={16} color={AUTH_COLORS.muted} /> : <ChevronDown size={16} color={AUTH_COLORS.muted} />}
+                        </View>
+                      </TouchableOpacity>
 
-            {optList.length > 0 && (
-              <View style={styles.docGroup}>
-                <TouchableOpacity style={styles.docGroupHeader} onPress={() => toggleGroup(setOptExpanded, optExpanded)} activeOpacity={0.7}>
-                  <Text style={styles.docGroupTitle}>Optional Documents</Text>
-                  <View style={styles.docGroupRight}>
-                    <Text style={styles.docGroupCount}>{optUploaded} uploaded</Text>
-                    {optExpanded ? <ChevronUp size={20} color={AUTH_COLORS.muted} /> : <ChevronDown size={20} color={AUTH_COLORS.muted} />}
+                      {additionalExpanded && (
+                        <View style={styles.additionalBody}>
+                          {optList.map(doc => (
+                            <DocumentUploadRow 
+                              key={doc.id} 
+                              document={doc} 
+                              selectedFile={documents[doc.id]} 
+                              onFileSelect={(f) => handleFileSelect(doc.id, f)} 
+                              onFileRemove={() => handleFileRemove(doc.id)} 
+                            />
+                          ))}
+                        </View>
+                      )}
+                    </View>
+                  )}
+                </View>
+              ) : null}
+
+              {/* Compact Validation Summary */}
+              {showValidationSummary && validationErrors.length > 0 && (
+                <View style={styles.validationBox}>
+                  <View style={styles.valHeader}>
+                    <AlertCircle size={16} color="#B45309" style={{ marginRight: 6 }} />
+                    <Text style={styles.valTitle}>{validationErrors.length} items need attention</Text>
                   </View>
-                </TouchableOpacity>
-                {optExpanded && (
-                  <View style={styles.docGroupBody}>
-                    {optList.map(doc => (
-                      <DocumentUploadRow key={doc.id} document={doc} selectedFile={documents[doc.id]} onFileSelect={(f) => handleFileSelect(doc.id, f)} onFileRemove={() => handleFileRemove(doc.id)} />
+                  <View style={styles.valList}>
+                    {validationErrors.slice(0, 4).map((err, idx) => (
+                      <Text key={idx} style={styles.valItem}>• {err}</Text>
                     ))}
+                    {validationErrors.length > 4 && (
+                      <Text style={styles.valMoreText}>+ {validationErrors.length - 4} more items</Text>
+                    )}
                   </View>
-                )}
-              </View>
-            )}
+                </View>
+              )}
+            </AuthCard>
           </View>
-        )}
+        </ScrollView>
 
-        {missingReqDocs.length > 0 && bizCategory && (
-          <View style={styles.validationSummary}>
-            <View style={styles.valHeader}>
-              <AlertCircle size={16} color="#C2410C" style={{ marginRight: 8 }} />
-              <Text style={styles.valTitle}>Complete the following before continuing:</Text>
-            </View>
-            {missingReqDocs.slice(0, 3).map(doc => (
-              <Text key={doc.id} style={styles.valItem}>• Upload {doc.name}</Text>
-            ))}
-            {missingReqDocs.length > 3 && (
-              <Text style={styles.valItem}>• +{missingReqDocs.length - 3} more required documents</Text>
-            )}
-            {!bizName.trim() && <Text style={styles.valItem}>• Enter Business Name</Text>}
-            {mobile.replace(/[^0-9]/g, '').length !== 10 && <Text style={styles.valItem}>• Enter valid 10-digit Mobile Number</Text>}
-          </View>
-        )}
-
-        <View style={styles.footerAction}>
-          <PrimaryButton 
-            title="NEXT: EXECUTIVE INFO" 
-            icon={ArrowRight} 
-            onPress={handleNext} 
-            disabled={!isFormComplete()} 
-          />
+        <View style={styles.footerSticky}>
+          <TouchableOpacity 
+            style={styles.nextBtn} 
+            onPress={handleNext}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+          >
+            <Text style={styles.nextBtnText}>Next: Owner Details</Text>
+            <ArrowRight size={18} color="#FFFFFF" />
+          </TouchableOpacity>
         </View>
-
-      </AuthCard>
-    </AuthScreenWrapper>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  headerBlock: { marginBottom: 26 },
-  stepHeader: { fontSize: 11, fontWeight: '700', color: AUTH_COLORS.primary, letterSpacing: 1, marginBottom: 8 },
-  heading: { fontSize: 26, fontWeight: 'bold', color: AUTH_COLORS.primary, marginBottom: 6, lineHeight: 30 },
-  subtitle: { fontSize: 14, color: AUTH_COLORS.muted, lineHeight: 20 },
-  
-  sectionHeader: { flexDirection: 'row', alignItems: 'flex-start', marginTop: 8, marginBottom: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: AUTH_COLORS.primary },
-  sectionSub: { fontSize: 13, color: AUTH_COLORS.muted, marginTop: 2, flexShrink: 1 },
+  safeArea: { flex: 1, backgroundColor: AUTH_COLORS.background },
+  keyboardView: { flex: 1 },
+  scrollView: { flex: 1 },
+  scrollContent: { 
+    flexGrow: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    paddingVertical: 16 
+  },
+  contentWrapper: {
+    alignSelf: 'center',
+    justifyContent: 'center',
+    alignItems: 'stretch',
+  },
+  headerBlock: { marginBottom: 16 },
+  stepHeader: { fontSize: 10, fontWeight: '700', color: AUTH_COLORS.primary, letterSpacing: 1, marginBottom: 4 },
+  heading: { fontSize: 22, fontWeight: '800', color: AUTH_COLORS.primary, marginBottom: 4 },
+  subtitle: { fontSize: 13, color: AUTH_COLORS.muted, lineHeight: 18 },
 
-  categoryPreview: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0F4F8', padding: 12, borderRadius: 12, marginBottom: 16 },
-  categoryPreviewText: { fontSize: 13, color: AUTH_COLORS.primary, flex: 1 },
+  sectionCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: AUTH_COLORS.border,
+    shadowColor: '#071B3A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 6,
+    elevation: 1
+  },
+  sectionCardTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: AUTH_COLORS.primary,
+    marginBottom: 14
+  },
+  sectionCardHeader: {
+    marginBottom: 14
+  },
+  sectionCardSubtitle: {
+    fontSize: 11,
+    color: AUTH_COLORS.muted,
+    marginTop: 2
+  },
 
-  vendorSection: { backgroundColor: AUTH_COLORS.input, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: AUTH_COLORS.border, marginBottom: 24, marginTop: 8 },
-  vendorSummary: { backgroundColor: '#F0F4F8', padding: 12, borderRadius: 10, marginTop: 4 },
-  vendorSummaryLabel: { fontSize: 11, color: AUTH_COLORS.primary, fontWeight: '600', marginBottom: 2, textTransform: 'uppercase' },
-  vendorSummaryValue: { fontSize: 14, color: AUTH_COLORS.text, fontWeight: 'bold' },
+  specializationSummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EFF6FF',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: '#DBEAFE'
+  },
+  specializationSummaryText: {
+    fontSize: 12,
+    color: AUTH_COLORS.primary,
+  },
 
-  phoneFieldContainer: { marginBottom: 20 },
-  phoneLabel: { fontSize: 11, fontWeight: '600', color: AUTH_COLORS.primary, marginBottom: 7, textTransform: 'uppercase', letterSpacing: 0.5 },
-  phoneInputRow: { flexDirection: 'row', alignItems: 'center' },
-  phonePrefix: { backgroundColor: AUTH_COLORS.border, borderWidth: 1, borderColor: AUTH_COLORS.border, borderRightWidth: 0, borderTopLeftRadius: 14, borderBottomLeftRadius: 14, height: 52, paddingHorizontal: 16, justifyContent: 'center' },
-  phonePrefixText: { fontSize: 15, fontWeight: 'bold', color: AUTH_COLORS.primary },
-  phoneHelper: { fontSize: 12, color: AUTH_COLORS.muted, marginTop: 6 },
+  mobileFieldContainer: { marginBottom: 16 },
+  mobileLabel: { fontSize: 11, fontWeight: '600', color: AUTH_COLORS.primary, marginBottom: 7, textTransform: 'uppercase', letterSpacing: 0.5 },
+  mobileInputRow: { flexDirection: 'row', alignItems: 'center' },
+  mobilePrefix: { backgroundColor: AUTH_COLORS.border, borderWidth: 1, borderColor: AUTH_COLORS.border, borderRightWidth: 0, borderTopLeftRadius: 14, borderBottomLeftRadius: 14, height: 52, paddingHorizontal: 14, justifyContent: 'center' },
+  mobilePrefixText: { fontSize: 14, fontWeight: '700', color: AUTH_COLORS.primary },
+  mobileHelperText: { fontSize: 11, color: AUTH_COLORS.muted, marginTop: 4 },
 
-  docSectionContainer: { marginTop: 8 },
-  progressContainer: { marginBottom: 20 },
-  progressText: { fontSize: 12, fontWeight: '600', color: AUTH_COLORS.primary, marginBottom: 6 },
+  rowFields: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
+  colFields: { flexDirection: 'column', marginBottom: 0 },
+
+  progressContainer: { marginBottom: 16 },
+  progressText: { fontSize: 11, fontWeight: '700', color: AUTH_COLORS.primary, marginBottom: 6 },
   progressBarBg: { height: 6, backgroundColor: AUTH_COLORS.border, borderRadius: 3, overflow: 'hidden' },
-  progressBarFill: { height: '100%', borderRadius: 3 },
 
-  docGroup: { marginBottom: 12, backgroundColor: AUTH_COLORS.input, borderRadius: 14, borderWidth: 1, borderColor: AUTH_COLORS.border, overflow: 'hidden' },
-  docGroupHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 },
-  docGroupTitle: { fontSize: 14, fontWeight: 'bold', color: AUTH_COLORS.primary },
-  docGroupRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  docGroupCount: { fontSize: 12, fontWeight: '600', color: AUTH_COLORS.muted },
-  docGroupBody: { paddingHorizontal: 12, paddingBottom: 12 },
+  docsList: { marginBottom: 8 },
 
-  validationSummary: { backgroundColor: '#FFF7ED', padding: 16, borderRadius: 14, borderWidth: 1, borderColor: '#FFEDD5', marginTop: 16, marginBottom: 8 },
-  valHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  valTitle: { fontSize: 13, fontWeight: 'bold', color: '#9A3412' },
-  valItem: { fontSize: 13, color: '#C2410C', marginBottom: 4, marginLeft: 24 },
+  additionalDocsSection: {
+    marginTop: 6,
+    borderWidth: 1,
+    borderColor: AUTH_COLORS.border,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFD',
+    overflow: 'hidden'
+  },
+  additionalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12
+  },
+  additionalTitle: { fontSize: 13, fontWeight: '700', color: AUTH_COLORS.primary },
+  additionalRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  additionalBadge: { fontSize: 10, fontWeight: '700', color: AUTH_COLORS.muted, backgroundColor: '#E2E8F0', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  additionalBody: { padding: 12, borderTopWidth: 1, borderTopColor: AUTH_COLORS.border, backgroundColor: '#FFFFFF' },
 
-  footerAction: { marginTop: 24 }
+  validationBox: {
+    backgroundColor: '#FFFBEB',
+    borderColor: '#FDE68A',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 8,
+    marginBottom: 16
+  },
+  valHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  valTitle: { fontSize: 13, fontWeight: '800', color: '#92400E' },
+  valList: { paddingLeft: 6 },
+  valItem: { fontSize: 12, color: '#B45309', marginBottom: 3 },
+  valMoreText: { fontSize: 11, color: '#B45309', fontStyle: 'italic', marginTop: 2 },
+
+  footerSticky: {
+    borderTopWidth: 1,
+    borderTopColor: AUTH_COLORS.border,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+  },
+  nextBtn: {
+    backgroundColor: AUTH_COLORS.primary,
+    height: 52,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    width: '100%'
+  },
+  nextBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.2
+  }
 });

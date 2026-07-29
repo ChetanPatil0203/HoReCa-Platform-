@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { 
   View, Text, StyleSheet, FlatList, TouchableOpacity, 
   Alert, Platform, SafeAreaView, useWindowDimensions 
@@ -6,12 +6,12 @@ import {
 import { 
   Building2, ChevronRight, TriangleAlert, Send
 } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchPublicRequirements, fetchVendorRequirements } from '../../../services/api.service';
 
 const NAVY = '#071B3A';
 const BG = '#F8FAFC';
 const PURPLE = '#071B3A';
-
-const INITIAL_FEED = [];
 
 const CATEGORIES = ["All", "Social Media Marketing", "Content Creation", "SEO", "Performance Marketing", "Influencer Marketing"];
 
@@ -25,15 +25,78 @@ const formatCategory = (cat) => {
 
 // Helper to format budget strictly for compact space
 const formatBudget = (budgetStr) => {
-  return budgetStr.replace(/,000/g, 'K').replace(/ /g, '');
+  return (budgetStr || '').replace(/,000/g, 'K').replace(/ /g, '');
 };
 
 export default function MarketingFeedWallScreen({ setActivePage }) {
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 360;
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.registration?.id || user?.id;
 
-  const [feedItems, setFeedItems] = useState(INITIAL_FEED);
+  const [feedItems, setFeedItems] = useState([]);
   const [activeCategory, setActiveCategory] = useState('All');
+
+  useEffect(() => {
+    const loadFeed = async () => {
+      try {
+        const [publicRes, directRes] = await Promise.all([
+          fetchPublicRequirements('marketing'),
+          supplierId ? fetchVendorRequirements(supplierId) : Promise.resolve([])
+        ]);
+
+        const publicList = publicRes?.data || publicRes || [];
+        const directList = directRes?.data || directRes || [];
+
+        const items = [];
+        if (Array.isArray(directList)) {
+          directList.forEach(r => {
+            items.push({
+              id: r.id,
+              reqId: `DIR-${r.id ? r.id.substring(0, 5).toUpperCase() : '101'}`,
+              campaign: r.title || 'Direct Marketing Campaign',
+              category: r.extraData?.category || 'Marketing',
+              location: r.location || 'Location Specified',
+              business: r.owner?.bizName || 'HoReCa Partner',
+              postedTime: r.createdAt ? new Date(r.createdAt).toLocaleDateString() : 'Just now',
+              description: r.description || 'Direct marketing request from owner.',
+              budget: r.budget || 'Custom Quote',
+              priority: 'High Priority',
+              status: r.status === 'pending' ? 'Open' : r.status,
+              isDirect: true,
+            });
+          });
+        }
+
+        if (Array.isArray(publicList)) {
+          publicList.forEach(r => {
+            items.push({
+              id: r.id,
+              reqId: `REQ-${r.id ? r.id.substring(0, 5).toUpperCase() : '201'}`,
+              campaign: r.title || 'Marketing Opportunity',
+              category: r.extraData?.category || 'Marketing',
+              location: r.location || 'City',
+              business: r.owner?.bizName || 'HoReCa Establishment',
+              postedTime: r.createdAt ? new Date(r.createdAt).toLocaleDateString() : 'Just now',
+              description: r.description || 'Public marketing requirement broadcast.',
+              budget: r.budget || 'Open Budget',
+              priority: 'New',
+              status: r.status === 'pending' ? 'Open' : r.status,
+              isDirect: false,
+            });
+          });
+        }
+
+        setFeedItems(items);
+      } catch (err) {
+        console.warn('Error loading marketing feed wall items:', err);
+      }
+    };
+
+    loadFeed();
+    const interval = setInterval(loadFeed, 4000);
+    return () => clearInterval(interval);
+  }, [supplierId]);
 
   const showToast = (msg) => {
     if (Platform.OS === 'web') { window.alert(msg); }

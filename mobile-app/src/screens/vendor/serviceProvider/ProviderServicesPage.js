@@ -4,10 +4,7 @@ import {
   SafeAreaView, useWindowDimensions, Modal, TextInput, 
   ScrollView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Alert
 } from 'react-native';
-import { 
-  Search, SlidersHorizontal, Plus, Wrench, CircleCheck, CirclePause, 
-  MoreVertical, Edit, ChevronRight, Clock, CalendarClock, Trash2, Copy, FileText, CheckCircle2
-} from 'lucide-react-native';
+import { Search, SlidersHorizontal, Plus, Wrench, CircleCheck, CirclePause, EllipsisVertical as MoreVertical, Pencil as Edit, ChevronRight, Clock, CalendarClock, Trash2, Copy, FileText, CircleCheck as CheckCircle2 } from 'lucide-react-native';
 
 const NAVY = '#071B3A';
 const GOLD = '#F6B800';
