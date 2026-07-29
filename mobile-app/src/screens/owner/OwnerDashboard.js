@@ -156,7 +156,7 @@ export default function OwnerDashboard() {
                   <Menu size={22} color="#fff" />
                 </TouchableOpacity>
                 <Image 
-                  source={require('../../assets/HRCHUB_Logo.png')} 
+                  source={require('../../../assets/HRCHUB_Logo.png')} 
                   style={{ width: 24, height: 24, resizeMode: 'contain', marginRight: 8 }} 
                 />
                 <View style={styles.headerLogoBox}>

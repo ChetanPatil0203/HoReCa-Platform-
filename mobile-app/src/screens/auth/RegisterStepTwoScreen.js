@@ -12,7 +12,7 @@ import { AUTH_COLORS } from '../../components/auth/AuthTheme';
 import { registerApi } from '../../services/api.service';
 import { getDocumentRequirements } from '../../config/authDocumentRequirements';
 
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+if (typeof Platform !== 'undefined' && Platform?.OS === 'android' && UIManager?.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 

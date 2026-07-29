@@ -2,6 +2,9 @@ import React, { useState, useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Modal, ScrollView, SafeAreaView, Image } from 'react-native';
 import { Mail, ArrowRight, AlertCircle, Zap, ChevronRight, X } from 'lucide-react-native';
 
+import FormField from '../../components/auth/FormField';
+import PasswordField from '../../components/auth/PasswordField';
+import PrimaryButton from '../../components/auth/PrimaryButton';
 import AuthScreenWrapper from '../../components/auth/AuthScreenWrapper';
 import AuthCard from '../../components/auth/AuthCard';
 import AuthTabs from '../../components/auth/AuthTabs';
@@ -13,6 +16,8 @@ import { AUTH_COLORS } from '../../components/auth/AuthTheme';
 import { loginApi } from '../../services/api.service';
 
 export default function LoginScreen({ navigation }) {
+  const { width } = useWindowDimensions();
+  const isNarrow = width < 360;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -93,7 +98,7 @@ export default function LoginScreen({ navigation }) {
       <View style={styles.brandContainer}>
         <View style={styles.brandIconBox}>
           <Image 
-            source={require('../../assets/HoReCa_Logo.png')} 
+            source={require('../../../assets/HoReCa_Logo.png')} 
             style={{ width: 32, height: 32, resizeMode: 'contain' }} 
           />
         </View>

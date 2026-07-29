@@ -15,7 +15,7 @@ export default function LandingScreen({ navigation }) {
         {/* ── Logo mark ── */}
         <View style={styles.logoContainer}>
           <Image 
-            source={require('../../assets/HRCHUB_Logo.png')} 
+            source={require('../../../assets/HRCHUB_Logo.png')} 
             style={styles.logoImage} 
             resizeMode="contain"
           />

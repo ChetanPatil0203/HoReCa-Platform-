@@ -1,14 +1,16 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { FileText, Upload, Trash2, CheckCircle2, FileUp } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, UIManager, LayoutAnimation, Modal, Image, Linking, Alert } from 'react-native';
+import { FileText, Upload, Trash2, CheckCircle2, FileUp, CircleHelp as HelpCircle, X } from 'lucide-react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { AUTH_COLORS } from './AuthTheme';
 
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+if (typeof Platform !== 'undefined' && Platform?.OS === 'android' && UIManager?.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
 export default function DocumentUploadRow({ document, selectedFile, onFileSelect, onFileRemove }) {
+  const [showInfo, setShowInfo] = useState(false);
+  const [isPreviewVisible, setIsPreviewVisible] = useState(false);
   const { name, helperText, requirement } = document;
 
   const handlePickDocument = async () => {

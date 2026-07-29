@@ -17,7 +17,7 @@ export default function BrandHeader() {
     <View style={styles.container}>
       <View style={styles.logoContainer}>
         <Image
-          source={require('../../assets/HRCHUB_Logo.png')}
+          source={require('../../../assets/HRCHUB_Logo.png')}
           style={{ width: logoSize, height: logoSize, resizeMode: 'contain' }}
         />
       </View>

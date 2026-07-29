@@ -78,7 +78,7 @@ export default function VendorSidebar({ activePage, setActivePage, isMobile, mob
       <View style={styles.topSection}>
         {/* Brand Header */}
         <View style={styles.brandHeader}>
-          <Image source={require('../../assets/HRCHUB_Logo.png')} style={styles.logo} resizeMode="cover" />
+          <Image source={require('../../../assets/HRCHUB_Logo.png')} style={styles.logo} resizeMode="cover" />
           <View style={styles.brandTextCol}>
             <Text style={styles.brandTitle}><Text style={{ color: '#D4AF37' }}>HRC</Text> HUB</Text>
             <Text style={styles.brandSubtitle}>VENDOR OPERATIONS</Text>

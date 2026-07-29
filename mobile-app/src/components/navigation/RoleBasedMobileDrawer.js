@@ -66,7 +66,7 @@ export default function RoleBasedMobileDrawer({
       <View style={styles.topSection}>
         {/* Brand Header */}
         <View style={[styles.brandHeader, isShortScreen && { paddingBottom: 8, gap: 8 }]}>
-          <Image source={require('../../assets/HRCHUB_Logo.png')} style={[styles.logo, isShortScreen && { width: 28, height: 28 }]} resizeMode="cover" />
+          <Image source={require('../../../assets/HRCHUB_Logo.png')} style={[styles.logo, isShortScreen && { width: 28, height: 28 }]} resizeMode="cover" />
           <View style={styles.brandTextCol}>
             <Text style={[styles.brandTitle, isShortScreen && { fontSize: 14 }]}><Text style={{ color: '#D4AF37' }}>HRC</Text> HUB</Text>
             <Text style={styles.brandSubtitle}>{panelTitle}</Text>

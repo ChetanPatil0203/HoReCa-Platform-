@@ -11,7 +11,7 @@ import DocumentUploadRow from '../../components/auth/DocumentUploadRow';
 import { getDocumentRequirements } from '../../config/authDocumentRequirements';
 import { AUTH_COLORS } from '../../components/auth/AuthTheme';
 
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+if (typeof Platform !== 'undefined' && Platform?.OS === 'android' && UIManager?.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
@@ -243,160 +243,103 @@ export default function RegisterStepOneScreen({ navigation, route }) {
           <Text style={styles.subtitle}>Establish your business identity and upload verification documents.</Text>
         </View>
 
-        <View style={styles.sectionHeader}>
-          <Building2 size={16} color={AUTH_COLORS.primary} style={{ marginRight: 8 }} />
-          <Text style={styles.sectionTitle}>Business Identity</Text>
-        </View>
-
-        <FormField 
-          label="CORPORATE BUSINESS NAME *" 
-          icon={Building2} 
-          placeholder="e.g. The Meridian Hotel"
-          value={bizName}
-          onChangeText={setBizName}
-        />
-
-                <SelectField 
-                  label="Business Operation Category *"
-                  icon={Briefcase}
-                  options={BIZ_CATEGORIES}
-                  value={bizCategory}
-                  onSelect={handleCategoryChange}
-                />
-
-                <FormField 
-                  label="PAN Number *" 
-                  icon={CreditCard} 
-                  placeholder="ABCDE1234F"
-                  maxLength={10}
-                  autoCapitalize="characters"
-                  value={panNo}
-                  onChangeText={(val) => handlePanChange(val)}
-                />
-
-                <FormField 
-                  label="GST Number" 
-                  icon={FileText} 
-                  placeholder="27AAAAA0000A1Z5"
-                  maxLength={15}
-                  autoCapitalize="characters"
-                  value={gstin}
-                  onChangeText={(val) => handleGstinChange(val)}
-                  helperText="Optional if your business is not GST registered."
-                />
-
-                {isFssaiRequired && (
-                  <FormField 
-                    label="FSSAI License Number *" 
-                    icon={ShieldCheck} 
-                    placeholder="14-digit FSSAI License No."
-                    keyboardType="numeric"
-                    maxLength={14}
-                    value={fssaiNo}
-                    onChangeText={(val) => { setFssaiNo(val.replace(/[^0-9]/g, '')); clearValidationState(); }}
-                  />
-                )}
-
-                <FormField 
-                  label="Business Registration Number" 
-                  icon={ShieldCheck} 
-                  placeholder="BRN-27-00012345"
-                  value={brn}
-                  onChangeText={setBrn}
-                />
-              </View>
-
-              {/* Section 2: Vendor Specialization (conditional) */}
-              {bizCategory === 'Vendor / Supplier' && (
-                <View style={styles.sectionCard}>
-                  <Text style={styles.sectionCardTitle}>Vendor Specialization</Text>
-                  
-                  <SelectField 
-                    label="Specialized Category *"
-                    options={SPECIALIZED_CATEGORIES}
-                    value={specialized}
-                    onSelect={handleSpecializedChange}
-                  />
-
-                  {specialized ? (
-                    <SelectField 
-                      label="Subcategory *"
-                      searchable
-                      options={SUB_CATEGORIES[specialized] || []}
-                      value={subCategory}
-                      onSelect={(val) => { setSubCategory(val); clearValidationState(); }}
-                      isMultiSelect={true}
-                    />
-                  ) : null}
-
-                  {specialized && subCategory ? (
-                    <View style={styles.specializationSummary}>
-                      <Check size={14} color={AUTH_COLORS.success} style={{ marginRight: 6 }} />
-                      <Text style={styles.specializationSummaryText}>
-                        Selected: <Text style={{ fontWeight: 'bold' }}>{`${specialized} • ${subCategory}`}</Text>
-                      </Text>
-                    </View>
-                  ) : null}
-                </View>
-              )}
-
-        <View style={styles.sectionHeader}>
-          <MapPin size={16} color={AUTH_COLORS.primary} style={{ marginRight: 8 }} />
-          <Text style={styles.sectionTitle}>Location & Compliance Details</Text>
-        </View>
-
-        <FormField 
-          label="REGISTERED BUSINESS ADDRESS *" 
-          icon={MapPin} 
-          placeholder="e.g. 123 MG Road, Bandra West"
-          value={address}
-          onChangeText={setAddress}
-        />
-
-        <FormField 
-          label="GSTIN NUMBER (OPTIONAL)" 
-          icon={FileText} 
-          placeholder="15-character GSTIN (e.g. 27AAAAA0000A1Z5)"
-          value={gstin}
-          onChangeText={setGstin}
-          autoCapitalize="characters"
-        />
-
-        {bizCategory && bizCategory !== 'Vendor / Supplier' && (
-          <FormField 
-            label="FSSAI LICENSE NUMBER *" 
-            icon={ShieldCheck} 
-            placeholder="14-digit FSSAI License No."
-            keyboardType="numeric"
-            maxLength={14}
-            value={fssaiNo}
-            onChangeText={setFssaiNo}
-          />
-        )}
-
-        <View style={styles.sectionHeader}>
-          <Phone size={16} color={AUTH_COLORS.primary} style={{ marginRight: 8 }} />
-          <Text style={styles.sectionTitle}>Contact Information</Text>
-        </View>
-
-        <View style={styles.phoneFieldContainer}>
-          <Text style={styles.phoneLabel}>CONTACT MOBILE *</Text>
-          <View style={styles.phoneInputRow}>
-            <View style={styles.phonePrefix}>
-              <Text style={styles.phonePrefixText}>+91</Text>
-            </View>
-            <FormField 
-              containerStyle={{ flex: 1, marginBottom: 0 }}
-              icon={Phone} 
-              placeholder="10-digit mobile number"
-              keyboardType="phone-pad"
-              maxLength={10}
-              value={mobile}
-              onChangeText={setMobile}
-            />
+        <View style={styles.sectionCard}>
+          <View style={styles.sectionHeader}>
+            <Building2 size={16} color={AUTH_COLORS.primary} style={{ marginRight: 8 }} />
+            <Text style={styles.sectionTitle}>Business Identity</Text>
           </View>
-          <Text style={styles.phoneHelper}>We will send the security OTP to this mobile number.</Text>
+
+          <FormField 
+            label="CORPORATE BUSINESS NAME *" 
+            icon={Building2} 
+            placeholder="e.g. The Meridian Hotel"
+            value={bizName}
+            onChangeText={setBizName}
+          />
+
+          <SelectField 
+            label="Business Operation Category *"
+            icon={Briefcase}
+            options={BIZ_CATEGORIES}
+            value={bizCategory}
+            onSelect={handleCategoryChange}
+          />
+
+          <FormField 
+            label="PAN Number *" 
+            icon={CreditCard} 
+            placeholder="ABCDE1234F"
+            maxLength={10}
+            autoCapitalize="characters"
+            value={panNo}
+            onChangeText={(val) => handlePanChange(val)}
+          />
+
+          <FormField 
+            label="GST Number" 
+            icon={FileText} 
+            placeholder="27AAAAA0000A1Z5"
+            maxLength={15}
+            autoCapitalize="characters"
+            value={gstin}
+            onChangeText={(val) => handleGstinChange(val)}
+            helperText="Optional if your business is not GST registered."
+          />
+
+          {isFssaiRequired && (
+            <FormField 
+              label="FSSAI License Number *" 
+              icon={ShieldCheck} 
+              placeholder="14-digit FSSAI License No."
+              keyboardType="numeric"
+              maxLength={14}
+              value={fssaiNo}
+              onChangeText={(val) => { setFssaiNo(val.replace(/[^0-9]/g, '')); clearValidationState(); }}
+            />
+          )}
+
+          <FormField 
+            label="Business Registration Number" 
+            icon={ShieldCheck} 
+            placeholder="BRN-27-00012345"
+            value={brn}
+            onChangeText={setBrn}
+          />
         </View>
+
+        {/* Section 2: Vendor Specialization (conditional) */}
+        {bizCategory === 'Vendor / Supplier' && (
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionCardTitle}>Vendor Specialization</Text>
+            
+            <SelectField 
+              label="Specialized Category *"
+              options={SPECIALIZED_CATEGORIES}
+              value={specialized}
+              onSelect={handleSpecializedChange}
+            />
+
+            {specialized ? (
+              <SelectField 
+                label="Subcategory *"
+                searchable
+                options={SUB_CATEGORIES[specialized] || []}
+                value={subCategory}
+                onSelect={(val) => { setSubCategory(val); clearValidationState(); }}
+                isMultiSelect={true}
+              />
+            ) : null}
+
+            {specialized && subCategory ? (
+              <View style={styles.specializationSummary}>
+                <Check size={14} color={AUTH_COLORS.success} style={{ marginRight: 6 }} />
+                <Text style={styles.specializationSummaryText}>
+                  Selected: <Text style={{ fontWeight: 'bold' }}>{`${specialized} • ${subCategory}`}</Text>
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        )}
 
         {requiredDocs.length > 0 && (
           <View style={styles.docSectionContainer}>
@@ -471,7 +414,7 @@ export default function RegisterStepOneScreen({ navigation, route }) {
                     </View>
                   )}
                 </View>
-              ) : null}
+              )}
 
               {/* Compact Validation Summary */}
               {showValidationSummary && validationErrors.length > 0 && (
