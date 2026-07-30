@@ -72,8 +72,8 @@ export default function ApplicationsTable({
 
   return (
     <div className="bg-white border border-[#E3E9F1] rounded-2xl shadow-xs overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+      <div className="overflow-x-auto w-full">
+        <table className="w-full min-w-[1050px] text-left border-collapse">
           <thead>
             <tr className="bg-[#F5F7FA] border-b border-[#E3E9F1] text-xs font-semibold text-[#71829B] uppercase tracking-wider">
               <th className="py-3.5 px-4">Application</th>

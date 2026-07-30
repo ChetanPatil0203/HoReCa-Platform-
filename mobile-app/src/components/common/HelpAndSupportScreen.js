@@ -1,4 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useContext } from 'react';
+import { fetchOwnerSupportTicketsApi } from '../../services/api.service';
+import { AuthContext } from '../../context/AuthContext';
 import {
   View,
   Text,
@@ -111,6 +113,8 @@ const INITIAL_FAQS = [
 
 export default function HelpAndSupportScreen() {
   const { width } = useWindowDimensions();
+  const auth = useContext(AuthContext);
+  const user = auth?.userData;
 
   // Screen Tabs
   const [activeTab, setActiveTab] = useState('My Tickets');
@@ -119,6 +123,32 @@ export default function HelpAndSupportScreen() {
   const [tickets, setTickets] = useState(INITIAL_TICKETS);
   const [statusFilter, setStatusFilter] = useState('All');
   const [selectedTicket, setSelectedTicket] = useState(null);
+
+  const loadTickets = async () => {
+    try {
+      const res = await fetchOwnerSupportTicketsApi(user?.id, auth?.userRole || 'owner');
+      if (res && res.success && res.data) {
+        const mapped = res.data.map(t => ({
+          id: t.ticketId || t.id,
+          category: t.category,
+          subject: t.subject,
+          description: t.message,
+          relatedRecord: t.relatedTo,
+          priority: t.priority,
+          status: t.status,
+          createdAt: new Date(t.createdAt).toLocaleDateString(),
+          lastUpdated: new Date(t.updatedAt).toLocaleDateString()
+        }));
+        setTickets(mapped);
+      }
+    } catch (err) {
+      console.warn('Fetch owner support tickets note:', err?.message);
+    }
+  };
+
+  useEffect(() => {
+    loadTickets();
+  }, [user?.id]);
 
   // FAQ State & Search & Category
   const [faqs, setFaqs] = useState(INITIAL_FAQS);
@@ -424,7 +454,10 @@ export default function HelpAndSupportScreen() {
         <SubmitSupportTicketModal
           visible={submitModalVisible}
           onClose={() => setSubmitModalVisible(false)}
-          onSubmitSuccess={handleTicketSubmitted}
+          onSubmitSuccess={(newTicket) => {
+            setTickets(prev => [newTicket, ...prev]);
+            loadTickets();
+          }}
           onViewTicket={(tkt) => setSelectedTicket(tkt)}
         />
 

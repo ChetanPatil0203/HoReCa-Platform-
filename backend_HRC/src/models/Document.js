@@ -16,19 +16,39 @@ const Document = sequelize.define('Document', {
     },
   },
   docKey: {
-    type: DataTypes.STRING, // e.g. 'gst_cert', 'fssai_license', etc.
+    type: DataTypes.STRING,
     allowNull: false,
   },
   docName: {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  docNumber: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   fileUrl: {
     type: DataTypes.TEXT,
-    allowNull: false,
+    allowNull: true,
+  },
+  issueDate: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  expiryDate: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  notes: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  verification: {
+    type: DataTypes.STRING,
+    defaultValue: 'Pending Verification',
   },
   status: {
-    type: DataTypes.ENUM('pending', 'approved', 'rejected'),
+    type: DataTypes.STRING,
     defaultValue: 'pending',
   },
 }, {

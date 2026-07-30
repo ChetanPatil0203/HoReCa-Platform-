@@ -8,7 +8,7 @@ import { createRequirementApi } from '../../../services/api.service';
 const GOLD = '#D97706';
 const BLUE = '#2563EB';
 
-export default function PostRequirementPage({ onBack, onViewRequirements }) {
+export default function PostRequirementPage({ onBack, onViewRequirements, initialRole }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
   const { user } = useContext(AuthContext);
@@ -18,7 +18,7 @@ export default function PostRequirementPage({ onBack, onViewRequirements }) {
   const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState({
-    jobRole: '',
+    jobRole: initialRole || '',
     numberOfStaff: '',
     experience: '',
     salaryRange: '',

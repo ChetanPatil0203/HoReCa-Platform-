@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useContext } from 'react';
 import { 
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, 
   Platform, useWindowDimensions, Modal, SafeAreaView 
@@ -6,9 +6,10 @@ import {
 import { 
   History, Search, SlidersHorizontal, Package, UsersRound, Wrench, Megaphone, 
   ChevronRight, ListChecks, Clock3, CircleCheck, CircleAlert, EllipsisVertical as MoreVertical, 
-  Download, X, RotateCcw, Star, Calendar, FileText, Check
+  Download, X, RotateCcw, Star, Calendar, FileText, Check, Activity
 } from 'lucide-react-native';
 import { fetchOwnerActivityHistoryApi } from '../../services/api.service';
+import { AuthContext } from '../../context/AuthContext';
 
 const NAVY = '#071B3A';
 const SECONDARY_NAVY = '#102A4C';
@@ -19,7 +20,7 @@ const TEXT_MUTED = '#71829B';
 
 // Pillar Definitions & Color Accents
 const PILLARS = [
-  { id: 'all', label: 'All', icon: History, color: NAVY },
+  { id: 'all', label: 'All', icon: Activity, color: NAVY },
   { id: 'raw-material', label: 'Raw Material', icon: Package, color: '#D97706' },
   { id: 'manpower', label: 'Manpower', icon: UsersRound, color: '#9333EA' },
   { id: 'service', label: 'Services', icon: Wrench, color: '#2563EB' },
@@ -58,11 +59,15 @@ const INITIAL_HISTORY = [];
 export default function HistoryPage() {
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
+  const auth = useContext(AuthContext);
+  const user = auth?.user || {};
 
   const [historyData, setHistoryData] = useState([]);
   const [selectedPillar, setSelectedPillar] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showStatusFilters, setShowStatusFilters] = useState(true);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
 
   // Modals
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
@@ -81,7 +86,7 @@ export default function HistoryPage() {
     let isMounted = true;
     const loadBackendHistory = async () => {
       try {
-        const ownerId = 'OWNER-DEMO-001';
+        const ownerId = user?.id || user?.registrationId || 'OWNER-DEMO-001';
         const res = await fetchOwnerActivityHistoryApi(ownerId);
         if (res && res.success && res.data) {
           const { orders = [], requirements = [] } = res.data;
@@ -95,7 +100,7 @@ export default function HistoryPage() {
               qty: ord.items ? `${ord.items.length} items` : '1 Item',
               amount: `₹${parseFloat(ord.totalAmount || 0).toLocaleString('en-IN')}`,
               date: new Date(ord.createdAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
-              status: ord.status === 'confirmed' ? 'Delivered' : ord.status.charAt(0).toUpperCase() + ord.status.slice(1),
+              status: ord.status === 'confirmed' ? 'Delivered' : ord.status ? (ord.status.charAt(0).toUpperCase() + ord.status.slice(1)) : 'In Progress',
               actionText: 'View Order Summary',
               timeline: [
                 `Order Status: ${(ord.status || 'pending').toUpperCase()}`,
@@ -145,7 +150,7 @@ export default function HistoryPage() {
 
     loadBackendHistory();
     return () => { isMounted = false; };
-  }, []);
+  }, [user?.id, user?.registrationId]);
 
   // Overview Counts
   const overviewCounts = useMemo(() => {
@@ -297,61 +302,45 @@ export default function HistoryPage() {
               onChangeText={setSearchQuery}
             />
             {searchQuery ? (
-              <TouchableOpacity onPress={() => setSearchQuery('')} style={{ padding: 4 }}>
+              <TouchableOpacity onPress={() => setSearchQuery('')} style={{ padding: 4, marginRight: 4 }}>
                 <X size={16} color="#64748B" />
               </TouchableOpacity>
             ) : null}
+            <TouchableOpacity 
+              style={[styles.filterIconButton, selectedPillar !== 'all' && styles.filterIconButtonActive]}
+              onPress={() => setFilterModalVisible(true)}
+              activeOpacity={0.7}
+              accessibilityLabel="Filter categories"
+            >
+              <SlidersHorizontal size={16} color={selectedPillar !== 'all' ? '#fff' : NAVY} />
+            </TouchableOpacity>
           </View>
 
-          {/* ── Primary Pillar Filters ── */}
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false} 
-            style={styles.pillarScroll}
-            contentContainerStyle={styles.pillarContainer}
-          >
-            {PILLARS.map(p => {
-              const IconComp = p.icon;
-              const isActive = selectedPillar === p.id;
-              return (
-                <TouchableOpacity
-                  key={p.id}
-                  style={[styles.pillarPill, isActive && styles.pillarPillActive]}
-                  onPress={() => handleSelectPillar(p.id)}
-                  activeOpacity={0.8}
-                >
-                  <IconComp size={15} color={isActive ? '#fff' : p.color} style={{ marginRight: 6 }} />
-                  <Text style={[styles.pillarPillText, isActive && styles.pillarPillTextActive]}>
-                    {p.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-
           {/* ── Secondary Status Filters ── */}
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false} 
-            style={styles.statusScroll}
-            contentContainerStyle={styles.statusContainer}
-          >
-            {availableStatuses.map(status => {
-              const isActive = selectedStatus === status;
-              return (
-                <TouchableOpacity
-                  key={status}
-                  style={[styles.statusPill, isActive && styles.statusPillActive]}
-                  onPress={() => setSelectedStatus(status)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.statusPillText, isActive && styles.statusPillTextActive]}>
-                    {status}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+          {showStatusFilters ? (
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false} 
+              style={styles.statusScroll}
+              contentContainerStyle={styles.statusContainer}
+            >
+              {availableStatuses.map(status => {
+                const isActive = selectedStatus === status;
+                return (
+                  <TouchableOpacity
+                    key={status}
+                    style={[styles.statusPill, isActive && styles.statusPillActive]}
+                    onPress={() => setSelectedStatus(status)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.statusPillText, isActive && styles.statusPillTextActive]}>
+                      {status}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          ) : null}
 
           {/* ── History Record Cards List ── */}
           {filteredHistory.length === 0 ? (
@@ -529,6 +518,79 @@ export default function HistoryPage() {
         </View>
       </Modal>
 
+      {/* ── Category Filter Popup Modal ── */}
+      <Modal
+        visible={filterModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setFilterModalVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.filterModalOverlay}
+          activeOpacity={1}
+          onPress={() => setFilterModalVisible(false)}
+        >
+          <View style={styles.filterModalContent} onStartShouldSetResponder={() => true}>
+            <View style={styles.filterModalHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <SlidersHorizontal size={18} color={NAVY} style={{ marginRight: 8 }} />
+                <Text style={styles.filterModalTitle}>Filter Category</Text>
+              </View>
+              <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
+                <X size={20} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.filterModalSubtitle}>
+              Select a category to view specific history records:
+            </Text>
+
+            <View style={styles.filterOptionsList}>
+              {PILLARS.map(p => {
+                const IconComp = p.icon;
+                const isSelected = selectedPillar === p.id;
+                const count = p.id === 'all' 
+                  ? historyData.length 
+                  : historyData.filter(d => d.pillar === p.id).length;
+
+                return (
+                  <TouchableOpacity
+                    key={p.id}
+                    style={[styles.filterOptionItem, isSelected && styles.filterOptionItemSelected]}
+                    onPress={() => {
+                      setSelectedPillar(p.id);
+                      setSelectedStatus('All');
+                      setFilterModalVisible(false);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <View style={[styles.filterOptionIconBox, { backgroundColor: isSelected ? NAVY : '#F1F5F9' }]}>
+                        <IconComp size={16} color={isSelected ? '#fff' : p.color} />
+                      </View>
+                      <Text style={[styles.filterOptionLabel, isSelected && styles.filterOptionLabelSelected]}>
+                        {p.label}
+                      </Text>
+                      {count > 0 ? (
+                        <View style={[styles.filterCountBadge, isSelected && styles.filterCountBadgeSelected]}>
+                          <Text style={[styles.filterCountText, isSelected && styles.filterCountTextSelected]}>
+                            {count}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+
+                    {isSelected && (
+                      <CircleCheck size={18} color={NAVY} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -537,6 +599,96 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: BG_COLOR },
   container: { flex: 1, backgroundColor: BG_COLOR },
   scrollContent: { paddingBottom: 115 },
+
+  /* Category Filter Popup Modal */
+  filterModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20
+  },
+  filterModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    width: '100%',
+    maxWidth: 380,
+    ...Platform.select({
+      web: { boxShadow: '0 10px 25px rgba(0,0,0,0.15)' },
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 10 },
+      android: { elevation: 8 }
+    })
+  },
+  filterModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4
+  },
+  filterModalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: NAVY
+  },
+  filterModalSubtitle: {
+    fontSize: 13,
+    color: '#64748B',
+    marginBottom: 16
+  },
+  filterOptionsList: {
+    gap: 8
+  },
+  filterOptionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#fff'
+  },
+  filterOptionItemSelected: {
+    borderColor: NAVY,
+    backgroundColor: '#F8FAFC'
+  },
+  filterOptionIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10
+  },
+  filterOptionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#334155'
+  },
+  filterOptionLabelSelected: {
+    color: NAVY,
+    fontWeight: '800'
+  },
+  filterCountBadge: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginLeft: 8
+  },
+  filterCountBadgeSelected: {
+    backgroundColor: NAVY
+  },
+  filterCountText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B'
+  },
+  filterCountTextSelected: {
+    color: '#fff'
+  },
 
   mainLayout: { padding: 14 },
   mainLayoutWeb: { maxWidth: 900, alignSelf: 'center', width: '100%', padding: 24 },
@@ -564,6 +716,8 @@ const styles = StyleSheet.create({
   /* Search Container */
   searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: BORDER, borderRadius: 12, paddingHorizontal: 12, height: 44, marginBottom: 12 },
   searchInput: { flex: 1, fontSize: 14, color: NAVY, ...Platform.select({ web: { outlineStyle: 'none' } }) },
+  filterIconButton: { width: 32, height: 32, borderRadius: 8, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center', marginLeft: 6 },
+  filterIconButtonActive: { backgroundColor: NAVY },
 
   /* Pillar Filters */
   pillarScroll: { flexGrow: 0, marginBottom: 12 },

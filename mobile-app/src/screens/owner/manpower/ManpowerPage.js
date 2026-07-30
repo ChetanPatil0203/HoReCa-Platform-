@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
-import { 
-  Users, Search, Star, Clock, FileText, Check, Phone, ShieldCheck, User, CirclePlus, ArrowRight, TriangleAlert, MessageSquare, ChevronRight, Package
+import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions, ActivityIndicator, RefreshControl } from 'react-native';
+import {
+  Users, Search, Star, Clock, FileText, Check, Phone, ShieldCheck, User, CirclePlus, ArrowRight, TriangleAlert, MessageSquare, ChevronRight, Package, PlusCircle
 } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
-import { MANPOWER_SUMMARY, FREQUENT_ROLES, RECENT_REQUIREMENTS, RECENT_RESPONSES, TOP_AGENCIES } from '../../../constants/manpowerData';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchManpowerDashboardSummary } from '../../../services/api.service';
+import { FREQUENT_ROLES } from '../../../constants/manpowerData';
 import PostRequirementPage from './PostRequirementPage';
 import MyRequirementsPage from './MyRequirementsPage';
 import AgencyResponsesPage from './AgencyResponsesPage';
@@ -23,13 +25,54 @@ const BLUE = '#2563EB';
 export default function ManpowerPage() {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
+  const { user } = useContext(AuthContext);
+  const ownerId = user?.id;
 
-  const [currentView, setCurrentView] = useState('home'); 
+  const [currentView, setCurrentView] = useState('home');
   const [selectedRequirement, setSelectedRequirement] = useState(null);
   const [selectedAgency, setSelectedAgency] = useState(null);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
-
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [selectedRole, setSelectedRole] = useState('');
+
+  const [summary, setSummary] = useState({
+    activeRequirements: 0,
+    agencyResponses: 0,
+    shortlistedCandidates: 0,
+    selectedStaff: 0
+  });
+  const [recentRequirements, setRecentRequirements] = useState([]);
+  const [topAgencies, setTopAgencies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetchManpowerDashboardSummary(ownerId);
+      if (res.success && res.data) {
+        if (res.data.summary) setSummary(res.data.summary);
+        if (res.data.recentRequirements) setRecentRequirements(res.data.recentRequirements);
+        if (res.data.topAgencies) setTopAgencies(res.data.topAgencies);
+      }
+    } catch (err) {
+      console.warn('Failed to load manpower dashboard data:', err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [ownerId]);
+
+  useEffect(() => {
+    if (currentView === 'home') {
+      loadData();
+    }
+  }, [currentView, loadData]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadData();
+  };
 
   // Helper to map icon names from mock data to actual imported components
   const getRoleIcon = (iconName) => {
@@ -47,16 +90,23 @@ export default function ManpowerPage() {
 
   if (currentView === 'postRequirement') {
     return (
-      <PostRequirementPage 
-        onBack={() => setCurrentView('home')}
-        onViewRequirements={() => setCurrentView('requirements')} 
+      <PostRequirementPage
+        initialRole={selectedRole}
+        onBack={() => {
+          setSelectedRole('');
+          setCurrentView('home');
+        }}
+        onViewRequirements={() => {
+          setSelectedRole('');
+          setCurrentView('requirements');
+        }}
       />
     );
   }
 
   if (currentView === 'requirements') {
     return (
-      <MyRequirementsPage 
+      <MyRequirementsPage
         onBack={() => setCurrentView('home')}
         onViewResponses={(req) => {
           setSelectedRequirement(req);
@@ -68,7 +118,7 @@ export default function ManpowerPage() {
 
   if (currentView === 'agencyResponses') {
     return (
-      <AgencyResponsesPage 
+      <AgencyResponsesPage
         requirement={selectedRequirement}
         onBack={() => setCurrentView('requirements')}
       />
@@ -77,7 +127,7 @@ export default function ManpowerPage() {
 
   if (currentView === 'browseAgencies') {
     return (
-      <BrowseAgenciesPage 
+      <BrowseAgenciesPage
         onBack={() => setCurrentView('home')}
         onViewAgency={(agency) => {
           setSelectedAgency(agency);
@@ -93,7 +143,7 @@ export default function ManpowerPage() {
 
   if (currentView === 'agencyProfile') {
     return (
-      <AgencyProfilePage 
+      <AgencyProfilePage
         agency={selectedAgency}
         onBack={() => setCurrentView('browseAgencies')}
         onSendRequirement={(agency) => {
@@ -107,7 +157,7 @@ export default function ManpowerPage() {
 
   if (currentView === 'directRequirement') {
     return (
-      <DirectRequirementPage 
+      <DirectRequirementPage
         agency={selectedAgency}
         onBack={() => setCurrentView('agencyProfile')}
         onHome={() => setCurrentView('home')}
@@ -117,7 +167,7 @@ export default function ManpowerPage() {
 
   if (currentView === 'availableStaff') {
     return (
-      <AvailableStaffPage 
+      <AvailableStaffPage
         onBack={() => setCurrentView('home')}
         onViewCandidate={(cand) => {
           setSelectedCandidate(cand);
@@ -129,7 +179,7 @@ export default function ManpowerPage() {
 
   if (currentView === 'candidateProfile') {
     return (
-      <CandidateProfilePage 
+      <CandidateProfilePage
         candidate={selectedCandidate}
         onBack={() => setCurrentView('home')}
       />
@@ -138,7 +188,7 @@ export default function ManpowerPage() {
 
   if (currentView === 'selectedStaff') {
     return (
-      <SelectedStaffPage 
+      <SelectedStaffPage
         onBack={() => setCurrentView('home')}
         onRequestReplacement={(emp) => {
           setSelectedEmployee(emp);
@@ -150,7 +200,7 @@ export default function ManpowerPage() {
 
   if (currentView === 'replacementRequest') {
     return (
-      <ReplacementRequestPage 
+      <ReplacementRequestPage
         employee={selectedEmployee}
         onBack={() => setCurrentView('selectedStaff')}
       />
@@ -172,41 +222,45 @@ export default function ManpowerPage() {
         </View>
       </View>
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 60 }}>
+      <ScrollView
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 60 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
         <View style={[styles.contentLayout, !isMobile && styles.contentLayoutWeb]}>
-
 
           {/* ── Top Summary Cards ── */}
           <View style={[styles.summaryGrid, isMobile && { flexWrap: 'wrap' }]}>
-            <View style={styles.summaryCard}>
+            <TouchableOpacity style={styles.summaryCard} onPress={() => setCurrentView('requirements')}>
               <View style={styles.summaryIconBox}>
                 <FileText size={20} color={GOLD} />
               </View>
-              <Text style={styles.summaryValue}>{MANPOWER_SUMMARY.activeRequirements}</Text>
+              <Text style={styles.summaryValue}>{summary.activeRequirements}</Text>
               <Text style={styles.summaryLabel}>Active Requirements</Text>
-            </View>
+            </TouchableOpacity>
 
-            <View style={styles.summaryCard}>
+            <TouchableOpacity style={styles.summaryCard} onPress={() => setCurrentView('requirements')}>
               <View style={[styles.summaryIconBox, { backgroundColor: '#EFF6FF' }]}>
                 <MessageSquare size={20} color={BLUE} />
               </View>
-              <Text style={styles.summaryValue}>{MANPOWER_SUMMARY.agencyResponses}</Text>
+              <Text style={styles.summaryValue}>{summary.agencyResponses}</Text>
               <Text style={styles.summaryLabel}>Agency Responses</Text>
-            </View>
-            <View style={styles.summaryCard}>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.summaryCard} onPress={() => setCurrentView('requirements')}>
               <View style={[styles.summaryIconBox, { backgroundColor: '#F3E8FF' }]}>
                 <Users size={20} color="#9333EA" />
               </View>
-              <Text style={styles.summaryValue}>{MANPOWER_SUMMARY.shortlistedCandidates}</Text>
+              <Text style={styles.summaryValue}>{summary.shortlistedCandidates}</Text>
               <Text style={styles.summaryLabel}>Shortlisted Candidates</Text>
-            </View>
-
+            </TouchableOpacity>
 
             <TouchableOpacity style={styles.summaryCard} onPress={() => setCurrentView('selectedStaff')}>
               <View style={[styles.summaryIconBox, { backgroundColor: '#DCFCE7' }]}>
                 <Users size={20} color="#16A34A" />
               </View>
-              <Text style={styles.summaryValue}>{MANPOWER_SUMMARY.selectedStaff}</Text>
+              <Text style={styles.summaryValue}>{summary.selectedStaff}</Text>
               <Text style={styles.summaryLabel}>Selected Staff</Text>
             </TouchableOpacity>
           </View>
@@ -243,7 +297,14 @@ export default function ManpowerPage() {
               {FREQUENT_ROLES.map(role => {
                 const IconComp = getRoleIcon(role.icon);
                 return (
-                  <TouchableOpacity key={role.id} style={styles.roleCard}>
+                  <TouchableOpacity
+                    key={role.id}
+                    style={styles.roleCard}
+                    onPress={() => {
+                      setSelectedRole(role.title);
+                      setCurrentView('postRequirement');
+                    }}
+                  >
                     <View style={styles.roleIconBox}>
                       <IconComp size={20} color="#475569" />
                     </View>
@@ -263,30 +324,48 @@ export default function ManpowerPage() {
                   <Text style={styles.viewAllText}>View All</Text>
                 </TouchableOpacity>
               </View>
-              {RECENT_REQUIREMENTS.map(req => (
-                <View key={req.id} style={styles.reqCard}>
-                  <View style={styles.reqHeader}>
-                    <Text style={styles.reqRole}>{req.role}</Text>
-                    <View style={styles.reqBadge}>
-                      <Text style={styles.reqBadgeText}>{req.status}</Text>
+
+              {loading ? (
+                <View style={{ padding: 24, alignItems: 'center' }}>
+                  <ActivityIndicator size="small" color={BLUE} />
+                </View>
+              ) : recentRequirements.length > 0 ? (
+                recentRequirements.map(req => (
+                  <View key={req.id} style={styles.reqCard}>
+                    <View style={styles.reqHeader}>
+                      <Text style={styles.reqRole}>{req.role}</Text>
+                      <View style={styles.reqBadge}>
+                        <Text style={styles.reqBadgeText}>{req.status}</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.reqMeta}>Needed: {req.staffRequired} Staff • {req.salary}</Text>
+                    <Text style={styles.reqMeta}>Joining: {req.joiningDate}</Text>
+                    <View style={styles.reqFooter}>
+                      <Text style={styles.reqResponses}>{req.responses} Responses</Text>
+                      <TouchableOpacity
+                        style={styles.reqBtn}
+                        onPress={() => {
+                          setSelectedRequirement(req);
+                          setCurrentView('agencyResponses');
+                        }}
+                      >
+                        <Text style={styles.reqBtnText}>View</Text>
+                      </TouchableOpacity>
                     </View>
                   </View>
-                  <Text style={styles.reqMeta}>Needed: {req.staffRequired} Staff • {req.salary}</Text>
-                  <Text style={styles.reqMeta}>Joining: {req.joiningDate}</Text>
-                  <View style={styles.reqFooter}>
-                    <Text style={styles.reqResponses}>{req.responses} Responses</Text>
-                    <TouchableOpacity 
-                      style={styles.reqBtn} 
-                      onPress={() => {
-                        setSelectedRequirement(req);
-                        setCurrentView('agencyResponses');
-                      }}
-                    >
-                      <Text style={styles.reqBtnText}>View</Text>
-                    </TouchableOpacity>
-                  </View>
+                ))
+              ) : (
+                <View style={styles.emptyCard}>
+                  <Text style={styles.emptyTitle}>No requirements posted yet</Text>
+                  <Text style={styles.emptySubtitle}>Post your staffing needs to get applications from top agencies.</Text>
+                  <TouchableOpacity
+                    style={styles.emptyBtn}
+                    onPress={() => setCurrentView('postRequirement')}
+                  >
+                    <Text style={styles.emptyBtnText}>Post Requirement</Text>
+                  </TouchableOpacity>
                 </View>
-              ))}
+              )}
             </View>
           </View>
 
@@ -299,44 +378,51 @@ export default function ManpowerPage() {
               </TouchableOpacity>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.agenciesScroll}>
-              {TOP_AGENCIES.map(agency => (
-                <View key={agency.id} style={styles.agencyCard}>
-                  <View style={styles.agencyHeader}>
-                    <View style={styles.agencyLogo}>
-                      <Text style={styles.agencyLogoText}>{agency.logo}</Text>
+              {topAgencies.length > 0 ? (
+                topAgencies.map(agency => (
+                  <View key={agency.id} style={styles.agencyCard}>
+                    <View style={styles.agencyHeader}>
+                      <View style={styles.agencyLogo}>
+                        <Text style={styles.agencyLogoText}>{agency.logo}</Text>
+                      </View>
+                      <View style={styles.agencyRatingBox}>
+                        <Star size={12} color={GOLD} fill={GOLD} />
+                        <Text style={styles.agencyRating}>{agency.rating}</Text>
+                      </View>
                     </View>
-                    <View style={styles.agencyRatingBox}>
-                      <Star size={12} color={GOLD} fill={GOLD} />
-                      <Text style={styles.agencyRating}>{agency.rating}</Text>
+                    <View style={styles.agencyNameRow}>
+                      <Text style={styles.agencyName}>{agency.name}</Text>
+                      {agency.verified && <ShieldCheck size={14} color="#16A34A" style={{ marginLeft: 4 }} />}
                     </View>
+                    <Text style={styles.agencyLocation}>{agency.location} • {agency.experience} Exp</Text>
+                    <View style={styles.agencyStats}>
+                      <View style={styles.agencyStat}>
+                        <Text style={styles.agencyStatVal}>{agency.availableStaff}</Text>
+                        <Text style={styles.agencyStatLbl}>Staff</Text>
+                      </View>
+                      <View style={styles.agencyStatDivider} />
+                      <View style={styles.agencyStat}>
+                        <Text style={styles.agencyStatVal}>{agency.replacementPolicy}</Text>
+                        <Text style={styles.agencyStatLbl}>Replacement</Text>
+                      </View>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.agencyBtn}
+                      onPress={() => {
+                        setSelectedAgency(agency);
+                        setCurrentView('agencyProfile');
+                      }}
+                    >
+                      <Text style={styles.agencyBtnText}>View Agency</Text>
+                    </TouchableOpacity>
                   </View>
-                  <View style={styles.agencyNameRow}>
-                    <Text style={styles.agencyName}>{agency.name}</Text>
-                    {agency.verified && <ShieldCheck size={14} color="#16A34A" style={{ marginLeft: 4 }} />}
-                  </View>
-                  <Text style={styles.agencyLocation}>{agency.location} • {agency.experience} Exp</Text>
-                  <View style={styles.agencyStats}>
-                    <View style={styles.agencyStat}>
-                      <Text style={styles.agencyStatVal}>{agency.availableStaff}</Text>
-                      <Text style={styles.agencyStatLbl}>Staff</Text>
-                    </View>
-                    <View style={styles.agencyStatDivider} />
-                    <View style={styles.agencyStat}>
-                      <Text style={styles.agencyStatVal}>{agency.replacementPolicy}</Text>
-                      <Text style={styles.agencyStatLbl}>Replacement</Text>
-                    </View>
-                  </View>
-                  <TouchableOpacity 
-                    style={styles.agencyBtn} 
-                    onPress={() => {
-                      setSelectedAgency(agency);
-                      setCurrentView('agencyProfile');
-                    }}
-                  >
-                    <Text style={styles.agencyBtnText}>View Agency</Text>
-                  </TouchableOpacity>
-                </View>
-              ))}
+                ))
+              ) : (
+                <TouchableOpacity style={styles.agencyCard} onPress={() => setCurrentView('browseAgencies')}>
+                  <Text style={styles.agencyName}>Browse Manpower Agencies</Text>
+                  <Text style={styles.agencyLocation}>Find verified staffing partners</Text>
+                </TouchableOpacity>
+              )}
             </ScrollView>
           </View>
 
@@ -363,7 +449,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  
+
   scroll: { flex: 1 },
   contentLayout: { padding: 16, gap: 24 },
   contentLayoutWeb: { padding: 32, maxWidth: 1200, alignSelf: 'center', width: '100%', gap: 32 },
@@ -391,7 +477,7 @@ const styles = StyleSheet.create({
   primaryActionIconBox: { width: 48, height: 48, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
   primaryActionTitle: { fontSize: 20, fontWeight: '800', color: '#fff', marginBottom: 8 },
   primaryActionDesc: { fontSize: 14, color: 'rgba(255,255,255,0.9)', lineHeight: 20 },
-  
+
   secondaryActionCard: { flex: 1, backgroundColor: '#fff', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: colors.border },
   secondaryActionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
   secondaryActionIconBox: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' },
@@ -471,5 +557,12 @@ const styles = StyleSheet.create({
   agencyStatLbl: { fontSize: 11, color: '#64748B', marginTop: 2 },
   agencyStatDivider: { width: 1, backgroundColor: colors.border },
   agencyBtn: { paddingVertical: 10, borderRadius: 8, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: colors.border, alignItems: 'center' },
-  agencyBtnText: { fontSize: 13, fontWeight: '700', color: '#0F172A' }
+  agencyBtnText: { fontSize: 13, fontWeight: '700', color: '#0F172A' },
+
+  // Empty Card
+  emptyCard: { backgroundColor: '#fff', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: colors.border, alignItems: 'center' },
+  emptyTitle: { fontSize: 15, fontWeight: '800', color: '#0F172A', marginBottom: 4 },
+  emptySubtitle: { fontSize: 13, color: '#64748B', textAlign: 'center', marginBottom: 16 },
+  emptyBtn: { backgroundColor: BLUE, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
+  emptyBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 }
 });

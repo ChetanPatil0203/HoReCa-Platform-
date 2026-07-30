@@ -67,6 +67,26 @@ const HorecaRegistration = sequelize.define('HorecaRegistration', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  profilePhoto: {
+    type: DataTypes.TEXT('long'),
+    allowNull: true,
+  },
+  bankName: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  accountNumber: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  ifscCode: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  accountHolderName: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   status: {
     type: DataTypes.STRING,
     defaultValue: 'registered',

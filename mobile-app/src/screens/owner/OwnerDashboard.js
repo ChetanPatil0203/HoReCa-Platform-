@@ -1,8 +1,9 @@
-import React, { useState, useContext } from 'react';
-import { View, StyleSheet, SafeAreaView, useWindowDimensions, ScrollView, TouchableOpacity, Text, Platform, Image, Modal, TouchableWithoutFeedback, Alert } from 'react-native';
-import { Menu, ArrowLeft, Bell, ChefHat, LayoutDashboard, Package, Users, Wrench, Megaphone, BarChart2, Clock, Truck, Settings, CircleHelp as HelpCircle, ChevronDown, LogOut, User, ShieldCheck } from 'lucide-react-native';
+import React, { useState, useContext, useEffect } from 'react';
+import { View, StyleSheet, SafeAreaView, useWindowDimensions, ScrollView, TouchableOpacity, Text, Platform, Image, Modal, TouchableWithoutFeedback, Alert, FlatList } from 'react-native';
+import { Menu, ArrowLeft, Bell, ChefHat, LayoutDashboard, Package, Users, Wrench, Megaphone, BarChart2, Clock, Truck, Settings, CircleHelp as HelpCircle, ChevronDown, LogOut, User, ShieldCheck, X, CircleCheck as CheckCircle2 } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors } from '../../theme/colors';
+import { fetchOwnerRequirements, fetchRawMaterialOrders } from '../../services/api.service';
 
 import RoleBasedMobileDrawer from '../../components/navigation/RoleBasedMobileDrawer';
 import Topbar from '../../components/owner/Topbar';
@@ -56,6 +57,69 @@ export default function OwnerDashboard() {
   const [activePage, setActivePage] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [notificationsModalOpen, setNotificationsModalOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [user?.profilePhoto]);
+
+  useEffect(() => {
+    const loadLiveNotifications = async () => {
+      const ownerId = user?.id || user?.registration?.id || 'OWNER-DEMO-001';
+      try {
+        const [reqRes, ordRes] = await Promise.all([
+          fetchOwnerRequirements(ownerId).catch(() => []),
+          fetchRawMaterialOrders(ownerId).catch(() => [])
+        ]);
+
+        const list = [];
+        const reqList = reqRes?.data || reqRes || [];
+        const ordList = ordRes?.data || ordRes || [];
+
+        if (Array.isArray(reqList)) {
+          reqList.forEach((req, idx) => {
+            const hasResponses = req.supplierId || (req.extraData && req.extraData.responseCount > 0);
+            list.push({
+              id: `req-${req.id || idx}`,
+              type: req.type ? req.type.toUpperCase() : 'REQUIREMENT',
+              title: `${hasResponses ? 'Response Received' : 'Requirement Active'}: ${req.title || 'Requirement'}`,
+              message: `Requirement "${req.title}" is in ${req.status || 'active'} state. Location: ${req.location || 'N/A'}.`,
+              time: req.createdAt ? new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
+              isRead: !hasResponses,
+              color: req.type === 'manpower' ? '#9333EA' : req.type === 'marketing' ? '#8B5CF6' : '#2563EB'
+            });
+          });
+        }
+
+        if (Array.isArray(ordList)) {
+          ordList.forEach((ord, idx) => {
+            const statusText = ord.status === 'confirmed' ? 'Order Confirmed' : ord.status === 'shipped' ? 'Out for Delivery' : ord.status === 'delivered' ? 'Order Delivered' : `Order ${ord.status}`;
+            list.push({
+              id: `ord-${ord.id || idx}`,
+              type: 'RAW MATERIAL',
+              title: `Order Status: ${statusText}`,
+              message: `Order #${(ord.id || '').toString().slice(-4).toUpperCase()} from ${ord.supplier?.bizName || 'Supplier'} is ${ord.status}. Total: ₹${parseFloat(ord.totalAmount || 0).toLocaleString('en-IN')}.`,
+              time: ord.createdAt ? new Date(ord.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
+              isRead: ord.status === 'delivered',
+              color: '#D97706'
+            });
+          });
+        }
+
+        setNotifications(list);
+      } catch (err) {
+        console.warn('Error loading live owner notifications:', err);
+      }
+    };
+
+    loadLiveNotifications();
+    const interval = setInterval(loadLiveNotifications, 4000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const renderActivePage = () => {
     switch (activePage) {
@@ -99,14 +163,13 @@ export default function OwnerDashboard() {
     { key: "service", label: "Service Providers", icon: Wrench },
     { key: "marketing", label: "Marketing", icon: Megaphone },
     { key: "compliance", label: "Compliance", icon: ShieldCheck },
-    { key: "order-tracking", label: "Order Tracking", icon: Truck },
     { key: "history", label: "History", icon: Clock },
     { key: "analytics", label: "Analytics", icon: BarChart2 },
   ];
 
   const bottomNavItems = [
     { key: "support", label: "Support", icon: HelpCircle },
-    { key: "settings", label: "Settings", icon: Settings },
+    { key: "settings", label: "Profile & Settings", icon: Settings },
   ];
 
   const profileData = {
@@ -167,22 +230,83 @@ export default function OwnerDashboard() {
 
               {/* RIGHT */}
               <View style={styles.headerRight}>
-                <TouchableOpacity style={styles.headerIconBtn}>
+                <TouchableOpacity style={styles.headerIconBtn} onPress={() => setNotificationsModalOpen(true)} accessibilityRole="button" accessibilityLabel="Notifications">
                   <Bell size={20} color="#fff" />
-                  <View style={styles.headerBadge} />
+                  {unreadCount > 0 && <View style={styles.headerBadge} />}
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={styles.headerAvatarBtn}
                   onPress={() => setProfileDropdownOpen(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Profile menu"
                 >
-                  <Text style={styles.headerAvatarText}>
-                    {user?.name?.charAt(0)?.toUpperCase() || 'A'}
-                  </Text>
+                  {user?.profilePhoto && !imageError ? (
+                    <Image 
+                      source={{ uri: user.profilePhoto }} 
+                      style={{ width: '100%', height: '100%', borderRadius: 16 }} 
+                      onError={() => setImageError(true)}
+                    />
+                  ) : (
+                    <Text style={styles.headerAvatarText}>
+                      {(user?.businessName || user?.name || user?.registration?.bizName || 'C').charAt(0).toUpperCase()}
+                    </Text>
+                  )}
                   <View style={styles.onlineDot} />
                 </TouchableOpacity>
               </View>
             </View>
           )}
+
+          {/* Live Notifications Modal */}
+          <Modal
+            visible={notificationsModalOpen}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={() => setNotificationsModalOpen(false)}
+          >
+            <View style={styles.notifModalOverlay}>
+              <View style={styles.notifModalCard}>
+                <View style={styles.notifModalHeader}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Bell size={20} color="#071B3A" />
+                    <Text style={styles.notifModalTitle}>Live Notifications</Text>
+                    {unreadCount > 0 && (
+                      <View style={styles.notifBadgeCount}>
+                        <Text style={styles.notifBadgeCountText}>{unreadCount} New</Text>
+                      </View>
+                    )}
+                  </View>
+                  <TouchableOpacity onPress={() => setNotificationsModalOpen(false)}>
+                    <X size={22} color="#071B3A" />
+                  </TouchableOpacity>
+                </View>
+
+                {notifications.length === 0 ? (
+                  <View style={styles.notifEmptyBox}>
+                    <Bell size={40} color="#CBD5E1" style={{ marginBottom: 12 }} />
+                    <Text style={styles.notifEmptyTitle}>No Live Notifications</Text>
+                    <Text style={styles.notifEmptySub}>Updates on orders and requirements will appear here in real-time.</Text>
+                  </View>
+                ) : (
+                  <FlatList
+                    data={notifications}
+                    keyExtractor={item => item.id}
+                    contentContainerStyle={{ padding: 16, gap: 10 }}
+                    renderItem={({ item }) => (
+                      <View style={[styles.notifCardItem, !item.isRead && styles.notifCardItemUnread]}>
+                        <View style={[styles.notifTag, { backgroundColor: item.color + '15' }]}>
+                          <Text style={[styles.notifTagText, { color: item.color }]}>{item.type}</Text>
+                        </View>
+                        <Text style={styles.notifItemTitle}>{item.title}</Text>
+                        <Text style={styles.notifItemMsg}>{item.message}</Text>
+                        <Text style={styles.notifItemTime}>{item.time}</Text>
+                      </View>
+                    )}
+                  />
+                )}
+              </View>
+            </View>
+          </Modal>
 
           {/* Profile Dropdown Modal */}
           <Modal
@@ -457,4 +581,22 @@ const styles = StyleSheet.create({
     marginVertical: 4,
     marginHorizontal: 8,
   },
+
+  /* Live Notifications Modal */
+  notifModalOverlay: { flex: 1, backgroundColor: 'rgba(7, 27, 58, 0.55)', justifyContent: 'flex-end', alignItems: 'center' },
+  notifModalCard: { width: '100%', maxWidth: 500, backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '80%', flex: 1 },
+  notifModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  notifModalTitle: { fontSize: 18, fontWeight: '800', color: '#071B3A' },
+  notifBadgeCount: { backgroundColor: '#EF4444', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 12 },
+  notifBadgeCountText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
+  notifEmptyBox: { padding: 40, alignItems: 'center', justifyContent: 'center' },
+  notifEmptyTitle: { fontSize: 16, fontWeight: '800', color: '#071B3A', marginBottom: 4 },
+  notifEmptySub: { fontSize: 12, color: '#64748B', textAlign: 'center' },
+  notifCardItem: { backgroundColor: '#F8FAFC', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: '#E2E8F0' },
+  notifCardItemUnread: { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' },
+  notifTag: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, marginBottom: 6 },
+  notifTagText: { fontSize: 10, fontWeight: '800' },
+  notifItemTitle: { fontSize: 14, fontWeight: '800', color: '#071B3A', marginBottom: 2 },
+  notifItemMsg: { fontSize: 12, color: '#64748B', lineHeight: 16, marginBottom: 6 },
+  notifItemTime: { fontSize: 11, color: '#94A3B8', fontWeight: '600' }
 });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,44 +7,54 @@ import {
   TouchableOpacity,
   Platform,
   useWindowDimensions,
-  Modal
+  Modal,
+  ActivityIndicator,
+  RefreshControl
 } from 'react-native';
 import {
   Send,
   ClipboardPlus,
   ClipboardList,
-  FileText,
+  MessageSquare,
   Megaphone,
+  CircleCheck,
   ChevronRight,
   BadgeCheck,
-  X
+  ShieldCheck,
+  Star,
+  X,
+  Share2,
+  Search,
+  MousePointerClick,
+  Palette,
+  FileText,
+  Camera,
+  PanelTop,
+  CalendarDays,
+  BriefcaseBusiness
 } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchMarketingDashboardSummary } from '../../../services/api.service';
 import AgencyDirectReqPage from './AgencyDirectReqPage';
 import PostRequirementPage from './PostRequirementPage';
 
 const NAVY = '#071B3A';
-const SECONDARY_NAVY = '#102A4C';
-const GOLD = '#F2C230';
-const BG_PAGE = '#F5F7FA';
-const CARD_BG = '#FFFFFF';
-const INPUT_BG = '#F7F9FC';
-const BORDER = '#E3E9F1';
-const TEXT_PRIMARY = '#091B3A';
-const TEXT_SECONDARY = '#71829B';
+const BORDER = '#E2E8F0';
+const TEXT_MUTED = '#64748B';
 const ACCENT_ORANGE = '#F97316';
 const ACCENT_PURPLE = '#8B5CF6';
 
-// =====================================
-// MOCK DATA
-// =====================================
-
-const MY_REQUIREMENTS = [];
-const RECENT_PROPOSALS = [];
-
-// =====================================
-// HELPER COMPONENTS
-// =====================================
+const POPULAR_SERVICES = [
+  { id: 'social', name: 'Social Media', icon: Share2, category: 'Social Media' },
+  { id: 'seo', name: 'SEO', icon: Search, category: 'SEO' },
+  { id: 'ads', name: 'Paid Ads', icon: MousePointerClick, category: 'Paid Ads' },
+  { id: 'branding', name: 'Branding', icon: Palette, category: 'Branding' },
+  { id: 'content', name: 'Content', icon: FileText, category: 'Content' },
+  { id: 'photo', name: 'Photography', icon: Camera, category: 'Photography' },
+  { id: 'outdoor', name: 'Outdoor Ads', icon: PanelTop, category: 'Outdoor Ads' },
+  { id: 'event', name: 'Event Promo', icon: CalendarDays, category: 'Events' }
+];
 
 const getStatusColor = (status) => {
   switch (status) {
@@ -70,297 +80,330 @@ const getStatusBgColor = (status) => {
   }
 };
 
-// =====================================
-// MAIN SCREEN
-// =====================================
-
 export default function MarketingPage() {
   const { width } = useWindowDimensions();
-  const isMobile = width < 700;
-  
+  const isMobile = width < 768 || Platform.OS !== 'web';
+  const isNarrowMobile = width <= 340;
+  const { user } = useContext(AuthContext);
+  const ownerId = user?.id;
+
+  // Layout sizing
+  const pagePadding = isMobile ? 16 : 32;
+  const gridGap = 12;
+  const columns = isMobile ? 2 : 4;
+  const overviewCardWidth = isMobile
+    ? (width - (pagePadding * 2) - gridGap) / columns
+    : (Math.min(width, 1200) - (pagePadding * 2) - (gridGap * 3)) / columns;
+
   // Modal states
   const [directRequestVisible, setDirectRequestVisible] = useState(false);
   const [postRequirementVisible, setPostRequirementVisible] = useState(false);
   const [viewRequirementVisible, setViewRequirementVisible] = useState(false);
   const [viewProposalVisible, setViewProposalVisible] = useState(false);
-  
+
   const [selectedReq, setSelectedReq] = useState(null);
   const [selectedProp, setSelectedProp] = useState(null);
 
-  const displayRequirements = MY_REQUIREMENTS.slice(0, isMobile ? 3 : 4);
-  const displayProposals = RECENT_PROPOSALS.slice(0, isMobile ? 2 : 3);
+  // Dynamic backend state
+  const [metrics, setMetrics] = useState({
+    activeReq: 0,
+    proposals: 0,
+    campaigns: 0,
+    completed: 0,
+  });
+  const [myRequirements, setMyRequirements] = useState([]);
+  const [recentProposals, setRecentProposals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const openDirectRequest = () => { setDirectRequestVisible(true); };
-  const openPostRequirement = () => { setPostRequirementVisible(true); };
-
-  // Render Overview Segment
-  const renderOverviewSegment = (title, count, icon, accentColor, bgColor) => {
-    const Icon = icon;
-    return (
-      <TouchableOpacity style={styles.overviewSegment} activeOpacity={0.85}>
-        <View style={styles.overviewSegmentHeader}>
-          <View style={[styles.overviewIconContainer, { backgroundColor: bgColor }]}>
-            <Icon size={18} color={accentColor} />
-          </View>
-          <Text style={styles.overviewCount}>{count}</Text>
-        </View>
-        <Text style={styles.overviewTitle} numberOfLines={1}>{title}</Text>
-      </TouchableOpacity>
-    );
-  };
-
-  const renderRequirementCard = (req) => {
-    if (isMobile) {
-      return (
-        <View key={req.id} style={styles.reqCard}>
-          <View style={styles.reqCardHeader}>
-            <Text style={styles.reqId}>{req.id}</Text>
-            <View style={[styles.badge, { backgroundColor: getStatusBgColor(req.status) }]}>
-              <Text style={[styles.badgeText, { color: getStatusColor(req.status) }]}>{req.status}</Text>
-            </View>
-          </View>
-          <Text style={styles.reqTitle} numberOfLines={1}>{req.title}</Text>
-          <Text style={styles.reqService}>{req.service}</Text>
-          
-          <View style={styles.reqDetailsRow}>
-            <View style={[styles.modeBadge, req.mode === 'Direct Request' ? styles.modeDirect : styles.modeFeed]}>
-              <Text style={[styles.modeBadgeText, req.mode === 'Direct Request' ? styles.modeDirectText : styles.modeFeedText]}>
-                {req.mode}
-              </Text>
-            </View>
-            <Text style={styles.reqProposals}>{req.proposals} Proposals</Text>
-          </View>
-
-          <View style={styles.reqFooter}>
-            <Text style={styles.reqDate}>Posted {req.date}</Text>
-            <TouchableOpacity style={styles.textActionBtn} onPress={() => { setSelectedReq(req); setViewRequirementVisible(true); }}>
-              <Text style={styles.textActionBtnText}>View Requirement</Text>
-              <ChevronRight size={16} color={NAVY} />
-            </TouchableOpacity>
-          </View>
-        </View>
-      );
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetchMarketingDashboardSummary(ownerId);
+      if (res.success && res.data) {
+        if (res.data.metrics) setMetrics(res.data.metrics);
+        if (res.data.myRequirements) setMyRequirements(res.data.myRequirements);
+        if (res.data.recentProposals) setRecentProposals(res.data.recentProposals);
+      }
+    } catch (err) {
+      console.warn('Failed to load marketing dashboard summary:', err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
+  }, [ownerId]);
 
-    return (
-      <View key={req.id} style={styles.reqRow}>
-        <View style={styles.reqRowCol1}>
-          <Text style={styles.reqTitle} numberOfLines={1}>{req.title}</Text>
-          <Text style={styles.reqId}>{req.id}</Text>
-        </View>
-        <View style={styles.reqRowCol2}>
-          <Text style={styles.reqService} numberOfLines={1}>{req.service}</Text>
-          <Text style={styles.reqModeText} numberOfLines={1}>{req.mode}</Text>
-        </View>
-        <View style={styles.reqRowCol3}>
-          <View style={{ alignItems: 'flex-start' }}>
-            <View style={[styles.badge, { backgroundColor: getStatusBgColor(req.status) }]}>
-              <Text style={[styles.badgeText, { color: getStatusColor(req.status) }]}>{req.status}</Text>
-            </View>
-          </View>
-        </View>
-        <View style={styles.reqRowCol4}>
-          <Text style={styles.reqProposalsDesktop}>{req.proposals} Proposals</Text>
-          <Text style={styles.reqDate}>{req.date}</Text>
-        </View>
-        <View style={styles.reqRowCol5}>
-          <TouchableOpacity style={styles.viewRowBtn} onPress={() => { setSelectedReq(req); setViewRequirementVisible(true); }}>
-            <Text style={styles.viewRowBtnText}>View</Text>
-            <ChevronRight size={16} color={NAVY} />
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadData();
   };
 
-  const renderProposalCard = (prop) => (
-    <View key={prop.id} style={styles.reqCard}>
-      <View style={styles.propHeader}>
-        <View style={styles.propAvatar}>
-          <Text style={styles.propAvatarText}>{prop.initials}</Text>
-        </View>
-        <View style={{ flex: 1, paddingRight: 12 }}>
-          <View style={styles.propNameRow}>
-            <Text style={styles.propName} numberOfLines={1}>{prop.agencyName}</Text>
-            {prop.verified && <BadgeCheck size={16} color={ACCENT_PURPLE} style={{ marginLeft: 4 }} />}
-          </View>
-          <Text style={styles.propReqName} numberOfLines={1}>{prop.reqName}</Text>
-        </View>
-      </View>
-      
-      <View style={styles.propDetailsGrid}>
-        <View style={styles.propDetailItem}>
-          <Text style={styles.propDetailLabel}>Amount</Text>
-          <Text style={styles.propDetailValue}>{prop.amount}</Text>
-        </View>
-        <View style={styles.propDetailItem}>
-          <Text style={styles.propDetailLabel}>Duration</Text>
-          <Text style={styles.propDetailValue}>{prop.duration}</Text>
-        </View>
-      </View>
+  const openDirectRequest = () => setDirectRequestVisible(true);
+  const openPostRequirement = () => setPostRequirementVisible(true);
 
-      <View style={styles.reqFooter}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
-          <View style={[styles.badge, { backgroundColor: getStatusBgColor(prop.status) }]}>
-            <Text style={[styles.badgeText, { color: getStatusColor(prop.status) }]}>{prop.status}</Text>
-          </View>
-          <Text style={styles.reqDate} numberOfLines={1}>{prop.time}</Text>
-        </View>
-        <TouchableOpacity style={styles.textActionBtn} onPress={() => { setSelectedProp(prop); setViewProposalVisible(true); }}>
-          <Text style={styles.textActionBtnText}>View Proposal</Text>
-          <ChevronRight size={16} color={NAVY} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+  // Overview metric cards config
+  const OVERVIEW_METRICS = [
+    {
+      id: 'activeReq',
+      label: 'Active Requirements',
+      value: String(metrics.activeReq),
+      icon: ClipboardList,
+      color: '#3B82F6',
+      bgColor: '#EFF6FF'
+    },
+    {
+      id: 'proposals',
+      label: 'Proposals Received',
+      value: String(metrics.proposals),
+      icon: MessageSquare,
+      color: '#8B5CF6',
+      bgColor: '#F5F3FF'
+    },
+    {
+      id: 'campaigns',
+      label: 'Active Campaigns',
+      value: String(metrics.campaigns),
+      icon: Megaphone,
+      color: '#10B981',
+      bgColor: '#ECFDF5'
+    },
+    {
+      id: 'completed',
+      label: 'Completed Campaigns',
+      value: String(metrics.completed),
+      icon: CircleCheck,
+      color: '#F59E0B',
+      bgColor: '#FEF3C7'
+    }
+  ];
 
   return (
-    <View style={styles.container}>
-      {/* ── PAGE HEADER ── */}
+    <View style={styles.wrapper}>
+      {/* ── 1. Page Header ── */}
       <View style={[styles.pageHeader, isMobile && styles.pageHeaderMobile]}>
-        <View style={styles.pageHeaderInner}>
+        <View style={{ flex: 1, paddingRight: 12 }}>
           <Text style={styles.pageTitle}>Marketing</Text>
-          <Text style={styles.pageSubtitle}>Promote your business with verified marketing agencies</Text>
+          <Text style={styles.pageSubtitle}>Promote your business with verified marketing agencies.</Text>
         </View>
       </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-        <View style={[styles.contentWrapper, !isMobile && styles.contentWrapperDesktop]}>
-          
-          {/* ── SECTION HEADER & ACTION CARDS IN ONE ROW ── */}
-          <View style={styles.actionSectionContainer}>
-            <View style={styles.actionSectionHeader}>
-              <Text style={styles.actionSectionTitle}>Choose how to hire an agency</Text>
-              <Text style={styles.actionSectionSubtitle}>
-                Send a request directly or publish your requirement to receive proposals.
-              </Text>
-            </View>
+      <ScrollView
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 120 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        <View style={[styles.contentLayout, !isMobile && styles.contentLayoutWeb]}>
 
-            {/* ACTION CARDS ROW (Always 1 row on mobile >=320px) */}
-            <View style={[styles.actionCardsRow, width < 320 && styles.actionCardsRowStacked]}>
-              
-              {/* CARD 1 — DIRECT REQUEST */}
-              <TouchableOpacity
-                style={styles.actionCard}
-                onPress={openDirectRequest}
-                activeOpacity={0.85}
-              >
-                <View style={styles.cardHeaderRow}>
-                  <View style={[styles.cardIconBox, { backgroundColor: '#FFF7ED' }]}>
-                    <Send size={18} color={ACCENT_ORANGE} />
+          {/* ── 2. Overview Grid (2 x 2 Grid) ── */}
+          <View style={styles.sectionContainer}>
+            <View style={[styles.gridContainer, { gap: gridGap }]}>
+              {OVERVIEW_METRICS.map((stat) => {
+                const IconComp = stat.icon;
+                return (
+                  <View key={stat.id} style={[styles.overviewCard, { width: overviewCardWidth }]}>
+                    <View style={[styles.overviewIconBox, { backgroundColor: stat.bgColor }]}>
+                      <IconComp size={20} color={stat.color} strokeWidth={2.5} />
+                    </View>
+                    <Text style={styles.overviewValue}>{stat.value}</Text>
+                    <Text style={styles.overviewLabel} numberOfLines={1}>{stat.label}</Text>
                   </View>
-                  <View style={[styles.cardBadge, { backgroundColor: '#FFEDD5' }]}>
-                    <Text style={[styles.cardBadgeText, { color: '#C2410C' }]}>Quick</Text>
-                  </View>
-                </View>
-
-                <View style={styles.cardBody}>
-                  <Text style={styles.cardTitle} numberOfLines={1}>Direct Request</Text>
-                  <Text style={styles.cardDesc} numberOfLines={2}>
-                    Send your brief to one selected agency.
-                  </Text>
-                </View>
-
-                <View style={styles.cardActionRow}>
-                  <Text style={[styles.cardActionText, { color: ACCENT_ORANGE }]}>Send Request</Text>
-                  <ChevronRight size={15} color={ACCENT_ORANGE} />
-                </View>
-              </TouchableOpacity>
-
-              {/* CARD 2 — POST REQUIREMENT */}
-              <TouchableOpacity
-                style={styles.actionCard}
-                onPress={openPostRequirement}
-                activeOpacity={0.85}
-              >
-                <View style={styles.cardHeaderRow}>
-                  <View style={[styles.cardIconBox, { backgroundColor: '#F5F3FF' }]}>
-                    <ClipboardPlus size={18} color={ACCENT_PURPLE} />
-                  </View>
-                  <View style={[styles.cardBadge, { backgroundColor: '#EDE9FE' }]}>
-                    <Text style={[styles.cardBadgeText, { color: '#6D28D9' }]}>Recommended</Text>
-                  </View>
-                </View>
-
-                <View style={styles.cardBody}>
-                  <Text style={styles.cardTitle} numberOfLines={1}>Post Requirement</Text>
-                  <Text style={styles.cardDesc} numberOfLines={2}>
-                    Broadcast your brief and receive proposals.
-                  </Text>
-                </View>
-
-                <View style={styles.cardActionRow}>
-                  <Text style={[styles.cardActionText, { color: ACCENT_PURPLE }]}>Post Brief</Text>
-                  <ChevronRight size={15} color={ACCENT_PURPLE} />
-                </View>
-              </TouchableOpacity>
-
+                );
+              })}
             </View>
           </View>
 
+          {/* ── 3. Action Cards (Direct Request + Post Requirement) ── */}
+          <View style={styles.actionsRow}>
+            {/* Direct Request Card (Primary Gold/Orange Card like Photo 2) */}
+            <TouchableOpacity
+              style={styles.primaryActionCard}
+              onPress={openDirectRequest}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+            >
+              <View style={styles.actionHeader}>
+                <View style={styles.primaryActionIconBox}>
+                  <Send size={22} color="#FFFFFF" />
+                </View>
+              </View>
+              <Text style={styles.primaryActionTitle} numberOfLines={1}>Direct Request</Text>
+            </TouchableOpacity>
 
-
-          {/* ── COMPACT MARKETING OVERVIEW STRIP ── */}
-          <View style={styles.overviewContainer}>
-            <View style={styles.overviewGrid}>
-              {renderOverviewSegment('Active Requirements', 4, ClipboardList, '#3B82F6', '#EFF6FF')}
-              <View style={styles.overviewDivider} />
-              {renderOverviewSegment('Proposals Received', 12, FileText, '#8B5CF6', '#F5F3FF')}
-              <View style={styles.overviewDivider} />
-              {renderOverviewSegment('Active Campaigns', 3, Megaphone, '#10B981', '#ECFDF5')}
-            </View>
+            {/* Post Requirement Card (Secondary White Card like Photo 2) */}
+            <TouchableOpacity
+              style={styles.secondaryActionCard}
+              onPress={openPostRequirement}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+            >
+              <View style={styles.actionHeader}>
+                <View style={styles.secondaryActionIconBox}>
+                  <ClipboardPlus size={22} color="#2563EB" />
+                </View>
+              </View>
+              <Text style={styles.secondaryActionTitle} numberOfLines={1}>Post Requirement</Text>
+            </TouchableOpacity>
           </View>
 
-          {/* ── MAIN CONTENT LAYOUT ── */}
-          <View style={[styles.mainContentGrid, isMobile ? styles.mainContentCol : null]}>
-            
-            {/* Left Column (Requirements) */}
-            <View style={isMobile ? styles.columnMobile : styles.columnLeft}>
-              <View style={styles.sectionHeader}>
-                <View>
-                  <Text style={styles.sectionTitle}>My Requirements</Text>
-                  <Text style={styles.sectionSubtitle}>Track your direct and posted marketing requirements</Text>
-                </View>
-                <TouchableOpacity><Text style={styles.viewAllBtn}>View All</Text></TouchableOpacity>
+          {/* ── 4. Popular Marketing Services ── */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Popular Marketing Services</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.servicesScroll}>
+              {POPULAR_SERVICES.map(service => {
+                const IconComp = service.icon;
+                return (
+                  <TouchableOpacity
+                    key={service.id}
+                    style={styles.serviceCard}
+                    onPress={openPostRequirement}
+                  >
+                    <View style={styles.serviceIconBox}>
+                      <IconComp size={20} color="#475569" />
+                    </View>
+                    <Text style={styles.serviceTitle} numberOfLines={2}>{service.name}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+
+          {/* ── 5. My Requirements ── */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View>
+                <Text style={styles.sectionTitle}>My Requirements</Text>
+                <Text style={styles.sectionSubtitle}>Track your direct and posted marketing requirements.</Text>
               </View>
-              
-              <View style={styles.listContainer}>
-                {displayRequirements.length > 0 ? (
-                  displayRequirements.map(renderRequirementCard)
-                ) : (
-                  <View style={styles.emptyState}>
-                    <Text style={styles.emptyStateText}>No active requirements.</Text>
-                  </View>
-                )}
-              </View>
+              <TouchableOpacity onPress={openPostRequirement}>
+                <Text style={styles.viewAllText}>View All</Text>
+              </TouchableOpacity>
             </View>
 
-            {/* Right Column (Proposals) */}
-            <View style={isMobile ? styles.columnMobile : styles.columnRight}>
-              <View style={styles.sectionHeader}>
-                <View>
-                  <Text style={styles.sectionTitle}>Recent Proposals</Text>
-                  <Text style={styles.sectionSubtitle}>Latest proposals received from marketing agencies</Text>
-                </View>
-                <TouchableOpacity><Text style={styles.viewAllBtn}>View All</Text></TouchableOpacity>
+            {loading ? (
+              <View style={{ padding: 24, alignItems: 'center' }}>
+                <ActivityIndicator size="small" color="#2563EB" />
               </View>
+            ) : myRequirements.length === 0 ? (
+              <View style={styles.emptyStateCard}>
+                <ClipboardList size={32} color="#CBD5E1" style={{ marginBottom: 8 }} />
+                <Text style={styles.emptyTitle}>No active requirements</Text>
+                <Text style={styles.emptySubtitle}>Your active marketing requirements will appear here.</Text>
+              </View>
+            ) : (
+              <View style={styles.cardsList}>
+                {myRequirements.slice(0, 5).map((req) => (
+                  <View key={req.id} style={styles.reqCard}>
+                    <View style={styles.reqCardHeader}>
+                      <Text style={styles.reqId}>{req.id}</Text>
+                      <View style={[styles.statusBadge, { backgroundColor: getStatusBgColor(req.status) }]}>
+                        <Text style={[styles.statusBadgeText, { color: getStatusColor(req.status) }]}>{req.status}</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.reqTitle} numberOfLines={1}>{req.title}</Text>
+                    <Text style={styles.reqService}>{req.service}</Text>
 
-              <View style={styles.listContainer}>
-                {displayProposals.length > 0 ? (
-                  displayProposals.map(renderProposalCard)
-                ) : (
-                  <View style={styles.emptyState}>
-                    <Text style={styles.emptyStateText}>No recent proposals.</Text>
+                    <View style={styles.reqFooter}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.reqProposalsText}>{req.proposals} Proposals</Text>
+                        <Text style={styles.reqBudgetText}>{req.budget}</Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.reqViewBtn}
+                        onPress={() => {
+                          setSelectedReq(req);
+                          setViewRequirementVisible(true);
+                        }}
+                        accessibilityRole="button"
+                      >
+                        <Text style={styles.reqViewBtnText}>View Requirement</Text>
+                        <ChevronRight size={14} color={NAVY} />
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                )}
+                ))}
               </View>
+            )}
+          </View>
+
+          {/* ── 6. Recent Proposals ── */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View>
+                <Text style={styles.sectionTitle}>Recent Proposals</Text>
+                <Text style={styles.sectionSubtitle}>Latest proposals received from marketing agencies.</Text>
+              </View>
+              <TouchableOpacity onPress={openPostRequirement}>
+                <Text style={styles.viewAllText}>View All</Text>
+              </TouchableOpacity>
             </View>
+
+            {loading ? (
+              <View style={{ padding: 24, alignItems: 'center' }}>
+                <ActivityIndicator size="small" color="#2563EB" />
+              </View>
+            ) : recentProposals.length === 0 ? (
+              <View style={styles.emptyStateCard}>
+                <MessageSquare size={32} color="#CBD5E1" style={{ marginBottom: 8 }} />
+                <Text style={styles.emptyTitle}>No proposals received yet</Text>
+                <Text style={styles.emptySubtitle}>Proposals from verified agencies will appear here.</Text>
+              </View>
+            ) : (
+              <View style={styles.cardsList}>
+                {recentProposals.slice(0, 5).map((prop) => (
+                  <View key={prop.id} style={styles.proposalCard}>
+                    <View style={styles.propHeader}>
+                      <View style={styles.propAvatar}>
+                        <Text style={styles.propAvatarText}>{prop.initials}</Text>
+                      </View>
+                      <View style={{ flex: 1, paddingRight: 8 }}>
+                        <View style={styles.propNameRow}>
+                          <Text style={styles.propAgencyName} numberOfLines={1}>{prop.agencyName}</Text>
+                          {prop.verified && <BadgeCheck size={14} color="#8B5CF6" style={{ marginLeft: 4 }} />}
+                          <View style={styles.ratingBadge}>
+                            <Star size={11} color="#D97706" fill="#D97706" />
+                            <Text style={styles.ratingText}>{prop.rating}</Text>
+                          </View>
+                        </View>
+                        <Text style={styles.propReqTitle} numberOfLines={1}>{prop.reqName}</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.propMetaRow}>
+                      <View style={styles.propMetaItem}>
+                        <Text style={styles.propMetaLabel}>Price</Text>
+                        <Text style={styles.propMetaValue}>{prop.amount}</Text>
+                      </View>
+                      <View style={styles.propMetaItem}>
+                        <Text style={styles.propMetaLabel}>Duration</Text>
+                        <Text style={styles.propMetaValue}>{prop.duration}</Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.propViewBtn}
+                        onPress={() => {
+                          setSelectedProp(prop);
+                          setViewProposalVisible(true);
+                        }}
+                        accessibilityRole="button"
+                      >
+                        <Text style={styles.propViewBtnText}>View Proposal</Text>
+                        <ChevronRight size={14} color={NAVY} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
 
         </View>
       </ScrollView>
 
-      {/* ── POPUP MODALS ── */}
+      {/* ── POPUP MODALS & DIALOGS ── */}
 
       {/* Direct Request Popup */}
       {directRequestVisible && (
@@ -386,19 +429,23 @@ export default function MarketingPage() {
           <View style={styles.modalContentCentered}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Requirement Details</Text>
-              <TouchableOpacity onPress={() => setViewRequirementVisible(false)}><X size={24} color={NAVY} /></TouchableOpacity>
+              <TouchableOpacity onPress={() => setViewRequirementVisible(false)}>
+                <X size={22} color={NAVY} />
+              </TouchableOpacity>
             </View>
             <ScrollView style={styles.modalBody}>
               {selectedReq && (
                 <View style={styles.reviewBox}>
-                  <Text style={styles.reviewLabel}>ID:</Text>
+                  <Text style={styles.reviewLabel}>ID</Text>
                   <Text style={styles.reviewValue}>{selectedReq.id}</Text>
-                  <Text style={styles.reviewLabel}>Title:</Text>
+                  <Text style={styles.reviewLabel}>Title</Text>
                   <Text style={styles.reviewValue}>{selectedReq.title}</Text>
-                  <Text style={styles.reviewLabel}>Service:</Text>
+                  <Text style={styles.reviewLabel}>Service</Text>
                   <Text style={styles.reviewValue}>{selectedReq.service}</Text>
-                  <Text style={styles.reviewLabel}>Status:</Text>
+                  <Text style={styles.reviewLabel}>Status</Text>
                   <Text style={styles.reviewValue}>{selectedReq.status}</Text>
+                  <Text style={styles.reviewLabel}>Budget Range</Text>
+                  <Text style={styles.reviewValue}>{selectedReq.budget}</Text>
                 </View>
               )}
             </ScrollView>
@@ -412,20 +459,23 @@ export default function MarketingPage() {
           <View style={styles.modalContentCentered}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Proposal Details</Text>
-              <TouchableOpacity onPress={() => setViewProposalVisible(false)}><X size={24} color={NAVY} /></TouchableOpacity>
+              <TouchableOpacity onPress={() => setViewProposalVisible(false)}>
+                <X size={22} color={NAVY} />
+              </TouchableOpacity>
             </View>
             <ScrollView style={styles.modalBody}>
               {selectedProp && (
                 <View style={styles.reviewBox}>
-                  <Text style={styles.reviewLabel}>Agency:</Text>
+                  <Text style={styles.reviewLabel}>Agency Name</Text>
                   <Text style={styles.reviewValue}>{selectedProp.agencyName}</Text>
-                  <Text style={styles.reviewLabel}>Requirement:</Text>
+                  <Text style={styles.reviewLabel}>For Requirement</Text>
                   <Text style={styles.reviewValue}>{selectedProp.reqName}</Text>
-                  <Text style={styles.reviewLabel}>Amount:</Text>
+                  <Text style={styles.reviewLabel}>Quoted Amount</Text>
                   <Text style={styles.reviewValue}>{selectedProp.amount}</Text>
-                  <Text style={styles.reviewLabel}>Duration:</Text>
+                  <Text style={styles.reviewLabel}>Duration</Text>
                   <Text style={styles.reviewValue}>{selectedProp.duration}</Text>
-                  <View style={{ marginTop: 24, gap: 12 }}>
+
+                  <View style={{ marginTop: 20, gap: 10 }}>
                     <TouchableOpacity style={[styles.primaryBtnLarge, { backgroundColor: '#10B981' }]} onPress={() => setViewProposalVisible(false)}>
                       <Text style={styles.primaryBtnLargeText}>Accept Proposal</Text>
                     </TouchableOpacity>
@@ -443,251 +493,194 @@ export default function MarketingPage() {
   );
 }
 
-// =====================================
-// STYLES
-// =====================================
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: BG_PAGE },
-  pageHeader: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: BORDER },
-  pageHeaderInner: { width: '100%', maxWidth: 1320, alignSelf: 'center', paddingHorizontal: 32, paddingVertical: 20 },
+  wrapper: { flex: 1, backgroundColor: '#F8FAFC' },
+
+  // Header
+  pageHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 20, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: BORDER },
   pageHeaderMobile: { paddingHorizontal: 16, paddingVertical: 16 },
   pageTitle: { fontSize: 24, fontWeight: '900', color: NAVY, marginBottom: 4 },
-  pageSubtitle: { fontSize: 14, color: TEXT_SECONDARY },
-  
-  scroll: { flex: 1, width: '100%' },
-  scrollContent: { paddingBottom: 120, width: '100%', alignItems: 'center' },
-  contentWrapper: { padding: 16, gap: 20, width: '100%' },
-  contentWrapperDesktop: { paddingHorizontal: 32, paddingVertical: 24, maxWidth: 1320, flex: 1 },
-
-  // Action Cards Section Header
-  actionSectionContainer: { width: '100%', gap: 10 },
-  actionSectionHeader: { marginBottom: 2 },
-  actionSectionTitle: { fontSize: 16, fontWeight: '800', color: NAVY, marginBottom: 2 },
-  actionSectionSubtitle: { fontSize: 13, color: TEXT_SECONDARY },
-
-  // Action Cards Row (Horizontal on Mobile & Desktop)
-  actionCardsRow: {
-    flexDirection: 'row',
-    gap: 10,
-    width: '100%',
-    maxWidth: 720
-  },
-  actionCardsRowStacked: {
-    flexDirection: 'column'
-  },
-
-  // Premium Action Card
-  actionCard: {
-    flex: 1,
-    backgroundColor: CARD_BG,
-    borderRadius: 16,
+  pageSubtitle: { fontSize: 13, color: TEXT_MUTED },
+  headerIcons: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F8FAFC',
     borderWidth: 1,
     borderColor: BORDER,
-    padding: 14,
-    minHeight: 150,
-    maxHeight: 170,
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+
+  scroll: { flex: 1 },
+  contentLayout: { padding: 16, gap: 24 },
+  contentLayoutWeb: { padding: 32, maxWidth: 1200, alignSelf: 'center', width: '100%', gap: 28 },
+
+  // Section Container
+  sectionContainer: { gap: 12 },
+
+  // Overview 2x2 Grid
+  gridContainer: { flexDirection: 'row', flexWrap: 'wrap' },
+  overviewCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     shadowColor: NAVY,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.03,
     shadowRadius: 6,
     elevation: 2
   },
-  cardHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  overviewIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 8
+    justifyContent: 'center',
+    marginBottom: 12
   },
-  cardIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center'
+  overviewValue: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: NAVY,
+    marginBottom: 2
   },
-  cardBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12
+  overviewLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: TEXT_MUTED
   },
-  cardBadgeText: {
-    fontSize: 11,
-    fontWeight: '700'
-  },
-  cardBody: {
+
+  // Action Cards Row (Matching Photo 2)
+  actionsRow: { flexDirection: 'row', gap: 12 },
+  primaryActionCard: {
     flex: 1,
+    backgroundColor: '#D97706',
+    borderRadius: 16,
+    padding: 16,
+    minHeight: 105,
+    justifyContent: 'space-between',
+    overflow: 'hidden'
+  },
+  primaryActionIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    alignItems: 'center',
     justifyContent: 'center'
   },
-  cardTitle: {
+  primaryActionTitle: {
     fontSize: 15,
     fontWeight: '800',
-    color: NAVY,
-    marginBottom: 4
+    color: '#FFFFFF',
+    marginTop: 14
   },
-  cardDesc: {
-    fontSize: 12,
-    color: TEXT_SECONDARY,
-    lineHeight: 16
-  },
-  cardActionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingTop: 4
-  },
-  cardActionText: {
-    fontSize: 12,
-    fontWeight: '700'
-  },
-
-  // Segmented Control Tabs
-  tabsContainer: {
-    flexDirection: 'row',
+  secondaryActionCard: {
+    flex: 1,
     backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    minHeight: 105,
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: NAVY,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 2
+  },
+  secondaryActionIconBox: {
+    width: 42,
+    height: 42,
     borderRadius: 12,
-    padding: 4,
-    borderWidth: 1,
-    borderColor: BORDER,
-    width: '100%',
-    height: 48
-  },
-  tabBtn: {
-    flex: 1,
-    justifyContent: 'center',
+    backgroundColor: '#EFF6FF',
     alignItems: 'center',
-    borderRadius: 8
+    justifyContent: 'center'
   },
-  tabBtnActive: {
-    backgroundColor: NAVY
+  secondaryActionTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginTop: 14
   },
-  tabBtnText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: TEXT_SECONDARY
-  },
-  tabBtnTextActive: {
-    color: '#FFFFFF'
-  },
-
-  // Overview Strip
-  overviewContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: BORDER,
-    overflow: 'hidden',
-    width: '100%'
-  },
-  overviewGrid: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6
-  },
-  overviewSegment: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    alignItems: 'center'
-  },
-  overviewDivider: {
-    width: 1,
-    height: '60%',
-    backgroundColor: BORDER
-  },
-  overviewIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8
-  },
-  overviewSegmentHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4
-  },
-  overviewCount: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: NAVY
-  },
-  overviewTitle: {
-    fontSize: 11,
-    color: TEXT_SECONDARY,
-    fontWeight: '600',
-    textAlign: 'center'
-  },
+  actionHeader: { flexDirection: 'row', alignItems: 'center' },
 
   // Sections
-  mainContentGrid: { flexDirection: 'row', gap: 20, width: '100%', alignItems: 'flex-start' },
-  mainContentCol: { flexDirection: 'column' },
-  columnLeft: { flex: 1.45, gap: 14 },
-  columnRight: { flex: 0.75, minWidth: 320, gap: 14 },
-  columnMobile: { width: '100%', gap: 14 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 },
-  sectionTitle: { fontSize: 17, fontWeight: '800', color: NAVY, marginBottom: 2 },
-  sectionSubtitle: { fontSize: 12, color: TEXT_SECONDARY },
-  viewAllBtn: { fontSize: 13, fontWeight: '700', color: '#2563EB' },
-  listContainer: { gap: 10 },
-  emptyState: { padding: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderRadius: 14, borderWidth: 1, borderColor: BORDER, borderStyle: 'dashed' },
-  emptyStateText: { color: TEXT_SECONDARY, fontSize: 13 },
+  section: { gap: 12 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: NAVY },
+  sectionSubtitle: { fontSize: 12, color: TEXT_MUTED, marginTop: 2 },
+  viewAllText: { fontSize: 13, fontWeight: '700', color: '#2563EB' },
 
-  // Request Mobile Card
-  reqCard: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: BORDER },
-  reqCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  reqId: { fontSize: 12, fontWeight: '700', color: TEXT_SECONDARY },
-  badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  badgeText: { fontSize: 11, fontWeight: '700' },
-  reqTitle: { fontSize: 15, fontWeight: '800', color: NAVY, marginBottom: 4 },
-  reqService: { fontSize: 13, color: TEXT_SECONDARY, marginBottom: 10 },
-  reqDetailsRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
-  modeBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, borderWidth: 1 },
-  modeDirect: { backgroundColor: '#FFF7ED', borderColor: '#FED7AA' },
-  modeFeed: { backgroundColor: '#F5F3FF', borderColor: '#DDD6FE' },
-  modeDirectText: { color: '#C2410C', fontSize: 11, fontWeight: '600' },
-  modeFeedText: { color: '#6D28D9', fontSize: 11, fontWeight: '600' },
-  reqProposals: { fontSize: 12, fontWeight: '600', color: NAVY },
-  reqFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTopWidth: 1, borderTopColor: BORDER },
-  reqDate: { fontSize: 12, color: TEXT_SECONDARY },
-  textActionBtn: { flexDirection: 'row', alignItems: 'center' },
-  textActionBtnText: { fontSize: 13, fontWeight: '700', color: NAVY, marginRight: 2 },
+  // Popular Services
+  servicesScroll: { gap: 12, paddingRight: 16 },
+  serviceCard: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderRadius: 16, padding: 12, width: 92, height: 102, borderWidth: 1, borderColor: BORDER },
+  serviceIconBox: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F8FAFC', alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  serviceTitle: { fontSize: 11, fontWeight: '600', color: '#475569', textAlign: 'center' },
 
-  // Request Desktop Row
-  reqRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: BORDER },
-  reqRowCol1: { flex: 2, paddingRight: 12 },
-  reqRowCol2: { flex: 1.5, paddingRight: 12 },
-  reqRowCol3: { flex: 1, paddingRight: 12 },
-  reqRowCol4: { flex: 1, paddingRight: 12 },
-  reqRowCol5: { width: 80, alignItems: 'flex-end' },
-  reqModeText: { fontSize: 11, color: TEXT_SECONDARY, marginTop: 4, fontWeight: '600' },
-  reqProposalsDesktop: { fontSize: 13, fontWeight: '600', color: NAVY, marginBottom: 4 },
-  viewRowBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, paddingHorizontal: 10, backgroundColor: INPUT_BG, borderRadius: 6, borderWidth: 1, borderColor: BORDER },
-  viewRowBtnText: { fontSize: 12, fontWeight: '700', color: NAVY, marginRight: 2 },
+  // Lists & Cards
+  cardsList: { gap: 12 },
+  reqCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: BORDER },
+  reqCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  reqId: { fontSize: 12, fontWeight: '700', color: TEXT_MUTED },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  statusBadgeText: { fontSize: 11, fontWeight: '700' },
+  reqTitle: { fontSize: 15, fontWeight: '800', color: NAVY, marginBottom: 2 },
+  reqService: { fontSize: 12, color: TEXT_MUTED, marginBottom: 12 },
+  reqFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
+  reqProposalsText: { fontSize: 12, fontWeight: '700', color: '#2563EB' },
+  reqBudgetText: { fontSize: 11, color: TEXT_MUTED, marginTop: 1 },
+  reqViewBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: BORDER },
+  reqViewBtnText: { fontSize: 12, fontWeight: '700', color: NAVY, marginRight: 2 },
 
   // Proposal Card
-  propHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 14 },
-  propAvatar: { width: 36, height: 36, borderRadius: 8, backgroundColor: '#F5F3FF', alignItems: 'center', justifyContent: 'center', marginRight: 10 },
+  proposalCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: BORDER },
+  propHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  propAvatar: { width: 38, height: 38, borderRadius: 10, backgroundColor: '#F5F3FF', alignItems: 'center', justifyContent: 'center', marginRight: 10 },
   propAvatarText: { fontSize: 15, fontWeight: '800', color: ACCENT_PURPLE },
-  propNameRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
-  propName: { fontSize: 14, fontWeight: '800', color: NAVY },
-  propReqName: { fontSize: 12, color: TEXT_SECONDARY },
-  propDetailsGrid: { flexDirection: 'row', gap: 12, marginBottom: 14, backgroundColor: INPUT_BG, padding: 10, borderRadius: 8 },
-  propDetailItem: { flex: 1 },
-  propDetailLabel: { fontSize: 11, color: TEXT_SECONDARY, marginBottom: 2 },
-  propDetailValue: { fontSize: 13, fontWeight: '800', color: NAVY },
+  propNameRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 4 },
+  propAgencyName: { fontSize: 15, fontWeight: '800', color: NAVY },
+  ratingBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFBEB', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, marginLeft: 4 },
+  ratingText: { fontSize: 11, fontWeight: '700', color: '#D97706', marginLeft: 2 },
+  propReqTitle: { fontSize: 12, color: TEXT_MUTED, marginTop: 2 },
+  propMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 10, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
+  propMetaItem: { flex: 1 },
+  propMetaLabel: { fontSize: 11, color: TEXT_MUTED },
+  propMetaValue: { fontSize: 13, fontWeight: '800', color: NAVY, marginTop: 1 },
+  propViewBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: BORDER },
+  propViewBtnText: { fontSize: 12, fontWeight: '700', color: NAVY, marginRight: 2 },
+
+  // Empty State Card
+  emptyStateCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    maxHeight: 210
+  },
+  emptyTitle: { fontSize: 15, fontWeight: '800', color: NAVY, marginBottom: 4 },
+  emptySubtitle: { fontSize: 12, color: TEXT_MUTED, textAlign: 'center', marginBottom: 12 },
+  emptyBtn: { backgroundColor: NAVY, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
+  emptyBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
 
   // Modals
   modalOverlay: { flex: 1, backgroundColor: 'rgba(7, 27, 58, 0.55)', justifyContent: 'center', alignItems: 'center' },
   modalContentCentered: { width: '90%', maxWidth: 500, backgroundColor: '#FFFFFF', borderRadius: 16, maxHeight: '80%' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18, borderBottomWidth: 1, borderBottomColor: BORDER },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: NAVY },
-  modalBody: { flex: 1, padding: 18 },
-  reviewBox: { backgroundColor: INPUT_BG, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: BORDER },
-  reviewLabel: { fontSize: 12, color: TEXT_SECONDARY, marginBottom: 2 },
-  reviewValue: { fontSize: 15, fontWeight: '700', color: NAVY, marginBottom: 10 },
-  primaryBtnLarge: { backgroundColor: NAVY, padding: 14, borderRadius: 10, alignItems: 'center', marginTop: 12 },
-  primaryBtnLargeText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' }
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: BORDER },
+  modalTitle: { fontSize: 17, fontWeight: '800', color: NAVY },
+  modalBody: { padding: 16 },
+  reviewBox: { backgroundColor: '#F8FAFC', padding: 14, borderRadius: 12, borderWidth: 1, borderColor: BORDER },
+  reviewLabel: { fontSize: 11, color: TEXT_MUTED, marginBottom: 2 },
+  reviewValue: { fontSize: 14, fontWeight: '700', color: NAVY, marginBottom: 10 },
+  primaryBtnLarge: { backgroundColor: NAVY, padding: 12, borderRadius: 10, alignItems: 'center' },
+  primaryBtnLargeText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' }
 });

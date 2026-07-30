@@ -57,13 +57,13 @@ export default function ProviderDashboardHome({ onNavigate }) {
         if (Array.isArray(publicList)) {
           publicList.forEach((r, idx) => {
             combinedFeed.push({
-              id: `REQ-${r.id ? r.id.substring(0,4).toUpperCase() : idx}`,
-              service: r.title || 'Service Requirement',
+              id: r.id ? `REQ-${r.id.substring(0,5).toUpperCase()}` : `REQ-${101 + idx}`,
+              service: r.title || r.extraData?.serviceType || 'Service Requirement',
               business: r.owner?.bizName || 'HoReCa Establishment',
-              location: r.location || 'City',
+              location: r.location || r.owner?.city || 'Location Specified',
               responses: 0,
               budget: r.budget || 'Open Budget',
-              date: r.createdAt ? new Date(r.createdAt).toLocaleDateString() : 'Today',
+              date: r.extraData?.date || (r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-IN') : 'Immediate'),
               isDirect: false
             });
           });
@@ -88,7 +88,7 @@ export default function ProviderDashboardHome({ onNavigate }) {
 
   const overviewData = [
     { label: "Open Opportunities", value: stats.openOpportunities.toString(), icon: Radio, color: "#3B82F6", bg: "#EFF6FF", navigateTo: "feed" },
-    { label: "Direct Requests", value: stats.directRequests.toString(), icon: Clock, color: "#F59E0B", bg: "#FFFBEB", navigateTo: "feed" },
+    { label: "Direct Requests", value: stats.directRequests.toString(), icon: Clock, color: "#F59E0B", bg: "#FFFBEB", navigateTo: "requests" },
     { label: "Scheduled Today", value: stats.scheduledToday.toString(), icon: Calendar, color: "#10B981", bg: "#ECFDF5", navigateTo: "jobs" },
     { label: "Active Jobs", value: stats.activeJobs.toString(), icon: Wrench, color: "#6C4CF6", bg: "#F3F0FF", navigateTo: "jobs" },
   ];

@@ -4,6 +4,7 @@ const {
   getVendorManpowerRequirements,
   getPublicManpowerRequirements,
   updateManpowerRequirementStatus,
+  getManpowerDashboardSummary,
 } = require('../services/manpowerRequirementService');
 
 exports.createRequirement = async (req, res) => {
@@ -54,3 +55,14 @@ exports.updateRequirementStatus = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+exports.getDashboardSummary = async (req, res) => {
+  try {
+    const { ownerId } = req.params;
+    const summary = await getManpowerDashboardSummary(ownerId);
+    res.status(200).json({ success: true, data: summary });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+

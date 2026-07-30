@@ -1,4 +1,4 @@
-import React, { useState, useContext, useMemo } from 'react';
+import React, { useState, useContext, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,8 +11,11 @@ import {
   TextInput,
   TouchableOpacity,
   Switch,
-  Alert
+  Alert,
+  Image,
+  Platform
 } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
 import {
   Building2,
   FileText,
@@ -48,9 +51,11 @@ import {
   Check,
   AlertCircle,
   Upload,
-  Info
+  Info,
+  Camera
 } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
+import { getUserProfileApi, updateUserProfileApi } from '../../services/api.service';
 
 const COLORS = {
   navy: '#071B3A',
@@ -103,6 +108,103 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
   const user = auth?.user || {};
   const logout = auth?.logout;
 
+  // Profile photo state initialized from user object or persistent cache
+  const [profilePhoto, setProfilePhoto] = useState(() => {
+    if (user?.profilePhoto) return user.profilePhoto;
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const savedUser = window.localStorage.getItem('hrc_user');
+        if (savedUser) {
+          const parsed = JSON.parse(savedUser);
+          if (parsed?.profilePhoto) return parsed.profilePhoto;
+        }
+      }
+    } catch (e) { }
+    return null;
+  });
+
+  const [showPhotoPreviewModal, setShowPhotoPreviewModal] = useState(false);
+  const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [profilePhoto]);
+
+  const handlePickProfilePhoto = () => {
+    setImgError(false);
+
+    // Web native file picker - synchronous execution prevents browser blocking
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = (e) => {
+        const file = e.target && e.target.files && e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const photoUri = event.target.result;
+            setProfilePhoto(photoUri);
+            setImgError(false);
+
+            if (auth?.updateUser) {
+              auth.updateUser({ profilePhoto: photoUri });
+            }
+
+            try {
+              if (typeof window !== 'undefined' && window.localStorage) {
+                const current = window.localStorage.getItem('hrc_user');
+                const parsed = current ? JSON.parse(current) : {};
+                parsed.profilePhoto = photoUri;
+                window.localStorage.setItem('hrc_user', JSON.stringify(parsed));
+              }
+            } catch (err) { }
+
+            updateUserProfileApi({ profilePhoto: photoUri }).catch(err => {
+              console.warn('DB photo persist note:', err?.message);
+            });
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+      input.click();
+      return;
+    }
+
+    // Mobile fallback (Expo DocumentPicker)
+    DocumentPicker.getDocumentAsync({
+      type: ['image/*'],
+      copyToCacheDirectory: true,
+    }).then(res => {
+      if (!res.canceled && res.assets && res.assets.length > 0) {
+        const asset = res.assets[0];
+        const photoUri = asset.uri;
+
+        setProfilePhoto(photoUri);
+        setImgError(false);
+
+        if (auth?.updateUser) {
+          auth.updateUser({ profilePhoto: photoUri });
+        }
+
+        try {
+          if (typeof window !== 'undefined' && window.localStorage) {
+            const current = window.localStorage.getItem('hrc_user');
+            const parsed = current ? JSON.parse(current) : {};
+            parsed.profilePhoto = photoUri;
+            window.localStorage.setItem('hrc_user', JSON.stringify(parsed));
+          }
+        } catch (err) { }
+
+        updateUserProfileApi({ profilePhoto: photoUri }).catch(err => {
+          console.warn('DB photo persist note:', err?.message);
+        });
+      }
+    }).catch(err => {
+      console.log('Error picking profile photo:', err);
+    });
+  };
+
   // Modals state
   const [showSignOutModal, setShowSignOutModal] = useState(false);
   const [activeModalKey, setActiveModalKey] = useState(null);
@@ -130,7 +232,7 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
   const businessName = user?.businessName || user?.registration?.bizName || (roleKey === 'manpower' ? 'Elite Manpower Agency' : roleKey === 'serviceProvider' ? 'ProCare Facilities' : roleKey === 'rawMaterial' ? 'Vija Supply Hub' : roleKey === 'marketing' ? 'Apex Growth Agency' : 'The Meridian Hotel');
   const contactName = user?.name ? user.name : (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Chetan Patil');
   const cityState = user?.city ? `${user.city}${user?.state ? `, ${user.state}` : ''}` : 'Jalgaon, Maharashtra';
-  
+
   const roleLabelMap = {
     horeca: 'HoReCa Owner',
     rawMaterial: 'Raw Material Vendor',
@@ -287,6 +389,64 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
     deliverables: '12 Posts, 4 Reels, Google Maps SEO Boost'
   });
 
+  // Sync profile data from backend DB
+  useEffect(() => {
+    let isMounted = true;
+    const fetchBackendProfile = async () => {
+      try {
+        const res = await getUserProfileApi();
+        if (isMounted && res && res.success && res.data) {
+          const dbUser = res.data;
+          const reg = dbUser.horecaRegistration || dbUser.vendorRegistration || {};
+
+          const photo = dbUser.profilePhoto || reg.profilePhoto;
+          if (photo) {
+            setProfilePhoto(photo);
+            if (auth?.updateUser) {
+              auth.updateUser({ profilePhoto: photo });
+            }
+          }
+          if (reg.bizName || dbUser.firstName) {
+            setBizForm(prev => ({
+              ...(prev || {}),
+              bizName: reg.bizName || prev?.bizName || '',
+              mobile: reg.mobile || dbUser.mobile || prev?.mobile || '',
+              email: reg.email || dbUser.email || prev?.email || '',
+              address: reg.address || dbUser.address || prev?.address || '',
+              city: reg.city || dbUser.city || prev?.city || '',
+              state: reg.state || dbUser.state || prev?.state || '',
+              pincode: reg.pincode || dbUser.pincode || prev?.pincode || '',
+              gstin: reg.gstin || prev?.gstin || '',
+              pan: reg.panNo || prev?.pan || '',
+              fssai: reg.fssaiNo || prev?.fssai || ''
+            }));
+          }
+          if (reg.bankName || dbUser.bankName) {
+            setBankForm(prev => ({
+              ...(prev || {}),
+              bankName: reg.bankName || dbUser.bankName || prev?.bankName || '',
+              accNumber: reg.accountNumber || dbUser.accountNumber || prev?.accNumber || '',
+              confirmAccNumber: reg.accountNumber || dbUser.accountNumber || prev?.confirmAccNumber || '',
+              ifsc: reg.ifscCode || dbUser.ifscCode || prev?.ifsc || '',
+              accHolder: reg.accountHolderName || dbUser.accountHolderName || prev?.accHolder || ''
+            }));
+          }
+          if (reg.deliveryRadius || dbUser.deliveryRadius) {
+            setDeliveryForm(prev => ({
+              ...(prev || {}),
+              radiusKm: reg.deliveryRadius || dbUser.deliveryRadius || prev?.radiusKm || '',
+              minOrderAmt: reg.minOrderValue || dbUser.minOrderValue || prev?.minOrderAmt || ''
+            }));
+          }
+        }
+      } catch (err) {
+        console.warn('Backend DB profile fetch note:', err?.message || err);
+      }
+    };
+    fetchBackendProfile();
+    return () => { isMounted = false; };
+  }, []);
+
   /* ==================== OPEN SETTING HANDLER ==================== */
   const openSetting = (key) => {
     setModalFeedbackMsg('');
@@ -296,21 +456,21 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
     if (key === 'docsKyc') {
       if (onNavigate) { onNavigate('documentsKyc'); return; }
       if (navigation?.navigate) {
-        try { navigation.navigate('DocumentsKyc'); return; } catch (e) {}
+        try { navigation.navigate('DocumentsKyc'); return; } catch (e) { }
       }
     }
 
     if (key === 'complianceDocs') {
       if (onNavigate) { onNavigate('compliance'); return; }
       if (navigation?.navigate) {
-        try { navigation.navigate('Compliance'); return; } catch (e) {}
+        try { navigation.navigate('Compliance'); return; } catch (e) { }
       }
     }
 
     if (key === 'helpSupport') {
       if (onNavigate) { onNavigate('support'); return; }
       if (navigation?.navigate) {
-        try { navigation.navigate('HelpSupport'); return; } catch (e) {}
+        try { navigation.navigate('HelpSupport'); return; } catch (e) { }
       }
     }
 
@@ -322,9 +482,10 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
     setActiveModalKey(key);
   };
 
-  /* ==================== SAVE HANDLER WITH VALIDATION ==================== */
-  const handleSaveSetting = (customMsg) => {
+  /* ==================== SAVE HANDLER WITH VALIDATION & DB PERSISTENCE ==================== */
+  const handleSaveSetting = async (customMsg) => {
     setModalErrorMsg('');
+    let payload = {};
 
     // Validation for Bank Details
     if (activeModalKey === 'bankDetails') {
@@ -333,6 +494,13 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
       if (!bankForm.accNumber.trim()) { setModalErrorMsg('Account Number is required.'); return; }
       if (bankForm.accNumber !== bankForm.confirmAccNumber) { setModalErrorMsg('Account Numbers do not match.'); return; }
       if (!bankForm.ifsc.trim() || bankForm.ifsc.length < 5) { setModalErrorMsg('Valid IFSC Code is required.'); return; }
+
+      payload = {
+        bankName: bankForm.bankName,
+        accountNumber: bankForm.accNumber,
+        ifscCode: bankForm.ifsc,
+        accountHolderName: bankForm.accHolder
+      };
     }
 
     // Validation for Business Info
@@ -341,6 +509,36 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
       if (!bizForm.mobile.trim() || bizForm.mobile.length < 10) { setModalErrorMsg('Valid 10-digit mobile number required.'); return; }
       if (!bizForm.email.trim() || !bizForm.email.includes('@')) { setModalErrorMsg('Valid email address required.'); return; }
       if (!bizForm.pincode.trim() || bizForm.pincode.length !== 6) { setModalErrorMsg('Valid 6-digit pincode required.'); return; }
+
+      payload = {
+        bizName: bizForm.bizName,
+        contactPerson: bizForm.contactName,
+        mobile: bizForm.mobile,
+        email: bizForm.email,
+        address: bizForm.address,
+        city: bizForm.city,
+        state: bizForm.state,
+        pincode: bizForm.pincode,
+        gstin: bizForm.gstin,
+        panNo: bizForm.pan,
+        fssaiNo: bizForm.fssai
+      };
+    }
+
+    // Validation for Delivery Settings
+    if (activeModalKey === 'deliverySettings') {
+      payload = {
+        deliveryRadius: deliveryForm.radiusKm,
+        minOrderValue: deliveryForm.minOrderAmt,
+        paymentTerms: deliveryForm.days
+      };
+    }
+
+    // Validation for Notification Settings
+    if (activeModalKey === 'notifications') {
+      payload = {
+        notificationSettings: notifForm
+      };
     }
 
     // Validation for Pricing & MOQ
@@ -356,11 +554,25 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
       if (secForm.newPassword !== secForm.confirmPassword) { setModalErrorMsg('New passwords do not match.'); return; }
     }
 
-    setModalFeedbackMsg(customMsg || 'Settings saved successfully.');
-    setTimeout(() => {
-      setActiveModalKey(null);
-      setModalFeedbackMsg('');
-    }, 1000);
+    try {
+      if (Object.keys(payload).length > 0) {
+        await updateUserProfileApi(payload);
+        if (auth?.updateUser) {
+          auth.updateUser({
+            name: payload.contactPerson || user?.name,
+            businessName: payload.bizName || user?.businessName,
+            ...payload
+          });
+        }
+      }
+      setModalFeedbackMsg(customMsg || 'Settings saved successfully to database.');
+      setTimeout(() => {
+        setActiveModalKey(null);
+        setModalFeedbackMsg('');
+      }, 1000);
+    } catch (err) {
+      setModalErrorMsg(err?.response?.data?.message || err?.message || 'Failed to update database profile.');
+    }
   };
 
   const handleConfirmSignOut = () => {
@@ -392,11 +604,38 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
           {/* PROFILE SUMMARY CARD */}
           <View style={styles.profileSummaryCard}>
             <View style={styles.profileRow}>
-              <View style={styles.avatarCircle}>
-                <Text style={styles.avatarText}>{userInitials}</Text>
+              <View style={styles.avatarWrapper}>
+                <TouchableOpacity
+                  style={styles.avatarCircle}
+                  onPress={() => {
+                    if (profilePhoto && !imgError) {
+                      setShowPhotoPreviewModal(true);
+                    } else {
+                      handlePickProfilePhoto();
+                    }
+                  }}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel="View or change profile photo"
+                >
+                  {profilePhoto && !imgError ? (
+                    <Image source={{ uri: profilePhoto }} style={styles.avatarImage} onError={() => setImgError(true)} />
+                  ) : (
+                    <Text style={styles.avatarText}>{userInitials}</Text>
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.cameraBadgeBtn}
+                  onPress={handlePickProfilePhoto}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel="Change profile photo"
+                >
+                  <Camera size={12} color="#FFFFFF" />
+                </TouchableOpacity>
               </View>
               <View style={styles.profileInfoCol}>
-                <Text style={styles.bizNameText} numberOfLines={1}>{bizForm.bizName || businessName}</Text>
+                <Text style={styles.bizNameText} numberOfLines={1}>{bizForm?.bizName || businessName}</Text>
                 <Text style={styles.contactNameText}>{contactName}</Text>
                 <View style={styles.roleBadgeRow}>
                   <Text style={styles.roleBadgeText}>{roleDisplayLabel}</Text>
@@ -408,7 +647,7 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
                 </View>
                 <View style={styles.cityRow}>
                   <MapPin size={12} color={COLORS.secondaryText} style={{ marginRight: 4 }} />
-                  <Text style={styles.cityText}>{bizForm.city}, {bizForm.state}</Text>
+                  <Text style={styles.cityText}>{bizForm?.city || 'Jalgaon'}{bizForm?.state ? `, ${bizForm.state}` : ''}</Text>
                 </View>
               </View>
             </View>
@@ -513,13 +752,13 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
             </View>
           </View>
 
-          {/* SIGN OUT ACTION ROW */}
+          {/* LOGOUT ACTION ROW */}
           <SettingsRow
             icon={LogOut}
-            title="Sign Out"
-            subtitle="Sign out from this account"
+            title="Logout"
+            subtitle="Logout from this account"
             danger={true}
-            onPress={() => setShowSignOutModal(true)}
+            onPress={() => logout && logout()}
           />
 
           <View style={{ height: 120 }} />
@@ -539,7 +778,7 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
               onPress={() => setActiveModalKey(null)}
             >
               <TouchableOpacity style={styles.modalShellCard} activeOpacity={1}>
-                
+
                 {/* DYNAMIC MODAL HEADER & CONTENT BASED ON activeModalKey */}
                 {activeModalKey === 'bizInfo' && (
                   <ModalShellContent
@@ -553,11 +792,11 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
                   >
                     <View style={styles.formGroup}>
                       <Text style={styles.inputLabel}>Business Name *</Text>
-                      <TextInput style={styles.textInput} value={bizForm.bizName} onChangeText={t => setBizForm({...bizForm, bizName: t})} />
+                      <TextInput style={styles.textInput} value={bizForm.bizName} onChangeText={t => setBizForm({ ...bizForm, bizName: t })} />
                     </View>
                     <View style={styles.formGroup}>
                       <Text style={styles.inputLabel}>Trade / Display Name</Text>
-                      <TextInput style={styles.textInput} value={bizForm.tradeName} onChangeText={t => setBizForm({...bizForm, tradeName: t})} />
+                      <TextInput style={styles.textInput} value={bizForm.tradeName} onChangeText={t => setBizForm({ ...bizForm, tradeName: t })} />
                     </View>
                     <View style={styles.formGroup}>
                       <Text style={styles.inputLabel}>Business Category (Read Only)</Text>
@@ -576,25 +815,25 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
                     <View style={styles.rowFormGroup}>
                       <View style={[styles.formGroup, { flex: 1 }]}>
                         <Text style={styles.inputLabel}>Registered Mobile *</Text>
-                        <TextInput style={styles.textInput} value={bizForm.mobile} onChangeText={t => setBizForm({...bizForm, mobile: t})} keyboardType="phone-pad" />
+                        <TextInput style={styles.textInput} value={bizForm.mobile} onChangeText={t => setBizForm({ ...bizForm, mobile: t })} keyboardType="phone-pad" />
                       </View>
                       <View style={[styles.formGroup, { flex: 1 }]}>
                         <Text style={styles.inputLabel}>Registered Email *</Text>
-                        <TextInput style={styles.textInput} value={bizForm.email} onChangeText={t => setBizForm({...bizForm, email: t})} keyboardType="email-address" />
+                        <TextInput style={styles.textInput} value={bizForm.email} onChangeText={t => setBizForm({ ...bizForm, email: t })} keyboardType="email-address" />
                       </View>
                     </View>
                     <View style={styles.formGroup}>
                       <Text style={styles.inputLabel}>Business Address</Text>
-                      <TextInput style={styles.textInput} value={bizForm.address} onChangeText={t => setBizForm({...bizForm, address: t})} />
+                      <TextInput style={styles.textInput} value={bizForm.address} onChangeText={t => setBizForm({ ...bizForm, address: t })} />
                     </View>
                     <View style={styles.rowFormGroup}>
                       <View style={[styles.formGroup, { flex: 1 }]}>
                         <Text style={styles.inputLabel}>City</Text>
-                        <TextInput style={styles.textInput} value={bizForm.city} onChangeText={t => setBizForm({...bizForm, city: t})} />
+                        <TextInput style={styles.textInput} value={bizForm.city} onChangeText={t => setBizForm({ ...bizForm, city: t })} />
                       </View>
                       <View style={[styles.formGroup, { flex: 1 }]}>
                         <Text style={styles.inputLabel}>Pincode *</Text>
-                        <TextInput style={styles.textInput} value={bizForm.pincode} onChangeText={t => setBizForm({...bizForm, pincode: t})} keyboardType="number-pad" maxLength={6} />
+                        <TextInput style={styles.textInput} value={bizForm.pincode} onChangeText={t => setBizForm({ ...bizForm, pincode: t })} keyboardType="number-pad" maxLength={6} />
                       </View>
                     </View>
                   </ModalShellContent>
@@ -613,15 +852,15 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
                     successMsg={modalFeedbackMsg}
                   >
                     <Text style={styles.subSectionTitle}>Notification Channels</Text>
-                    <ToggleRow label="Push Notifications" value={notifForm.pushEnabled} onToggle={v => setNotifForm({...notifForm, pushEnabled: v})} />
-                    <ToggleRow label="Email Alerts" value={notifForm.emailEnabled} onToggle={v => setNotifForm({...notifForm, emailEnabled: v})} />
-                    
+                    <ToggleRow label="Push Notifications" value={notifForm.pushEnabled} onToggle={v => setNotifForm({ ...notifForm, pushEnabled: v })} />
+                    <ToggleRow label="Email Alerts" value={notifForm.emailEnabled} onToggle={v => setNotifForm({ ...notifForm, emailEnabled: v })} />
+
                     <Text style={[styles.subSectionTitle, { marginTop: 14 }]}>Alert Topics</Text>
-                    <ToggleRow label="Order / Request Updates" value={notifForm.orderUpdates} onToggle={v => setNotifForm({...notifForm, orderUpdates: v})} />
-                    <ToggleRow label="Payment & Invoice Alerts" value={notifForm.paymentUpdates} onToggle={v => setNotifForm({...notifForm, paymentUpdates: v})} />
-                    <ToggleRow label="Document Expiry Warning" value={notifForm.docExpiryAlerts} onToggle={v => setNotifForm({...notifForm, docExpiryAlerts: v})} />
-                    <ToggleRow label="Proposal / Quote Updates" value={notifForm.proposalUpdates} onToggle={v => setNotifForm({...notifForm, proposalUpdates: v})} />
-                    <ToggleRow label="Promotional Updates" value={notifForm.promoUpdates} onToggle={v => setNotifForm({...notifForm, promoUpdates: v})} />
+                    <ToggleRow label="Order / Request Updates" value={notifForm.orderUpdates} onToggle={v => setNotifForm({ ...notifForm, orderUpdates: v })} />
+                    <ToggleRow label="Payment & Invoice Alerts" value={notifForm.paymentUpdates} onToggle={v => setNotifForm({ ...notifForm, paymentUpdates: v })} />
+                    <ToggleRow label="Document Expiry Warning" value={notifForm.docExpiryAlerts} onToggle={v => setNotifForm({ ...notifForm, docExpiryAlerts: v })} />
+                    <ToggleRow label="Proposal / Quote Updates" value={notifForm.proposalUpdates} onToggle={v => setNotifForm({ ...notifForm, proposalUpdates: v })} />
+                    <ToggleRow label="Promotional Updates" value={notifForm.promoUpdates} onToggle={v => setNotifForm({ ...notifForm, promoUpdates: v })} />
                   </ModalShellContent>
                 )}
 
@@ -638,15 +877,15 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
                     <Text style={styles.subSectionTitle}>Change Password</Text>
                     <View style={styles.formGroup}>
                       <Text style={styles.inputLabel}>Current Password *</Text>
-                      <TextInput style={styles.textInput} secureTextEntry value={secForm.currentPassword} onChangeText={t => setSecForm({...secForm, currentPassword: t})} />
+                      <TextInput style={styles.textInput} secureTextEntry value={secForm.currentPassword} onChangeText={t => setSecForm({ ...secForm, currentPassword: t })} />
                     </View>
                     <View style={styles.formGroup}>
                       <Text style={styles.inputLabel}>New Password *</Text>
-                      <TextInput style={styles.textInput} secureTextEntry value={secForm.newPassword} onChangeText={t => setSecForm({...secForm, newPassword: t})} />
+                      <TextInput style={styles.textInput} secureTextEntry value={secForm.newPassword} onChangeText={t => setSecForm({ ...secForm, newPassword: t })} />
                     </View>
                     <View style={styles.formGroup}>
                       <Text style={styles.inputLabel}>Confirm New Password *</Text>
-                      <TextInput style={styles.textInput} secureTextEntry value={secForm.confirmPassword} onChangeText={t => setSecForm({...secForm, confirmPassword: t})} />
+                      <TextInput style={styles.textInput} secureTextEntry value={secForm.confirmPassword} onChangeText={t => setSecForm({ ...secForm, confirmPassword: t })} />
                     </View>
 
                     <Text style={[styles.subSectionTitle, { marginTop: 14 }]}>Account Verification</Text>
@@ -816,21 +1055,21 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
                     <View style={styles.rowFormGroup}>
                       <View style={[styles.formGroup, { flex: 1 }]}>
                         <Text style={styles.inputLabel}>Wholesale Price (₹) *</Text>
-                        <TextInput style={styles.textInput} value={pricingForm.wholesalePrice} onChangeText={t => setPricingForm({...pricingForm, wholesalePrice: t})} keyboardType="numeric" />
+                        <TextInput style={styles.textInput} value={pricingForm.wholesalePrice} onChangeText={t => setPricingForm({ ...pricingForm, wholesalePrice: t })} keyboardType="numeric" />
                       </View>
                       <View style={[styles.formGroup, { flex: 1 }]}>
                         <Text style={styles.inputLabel}>Minimum Order (MOQ) *</Text>
-                        <TextInput style={styles.textInput} value={pricingForm.moq} onChangeText={t => setPricingForm({...pricingForm, moq: t})} keyboardType="numeric" />
+                        <TextInput style={styles.textInput} value={pricingForm.moq} onChangeText={t => setPricingForm({ ...pricingForm, moq: t })} keyboardType="numeric" />
                       </View>
                     </View>
                     <View style={styles.rowFormGroup}>
                       <View style={[styles.formGroup, { flex: 1 }]}>
                         <Text style={styles.inputLabel}>Unit</Text>
-                        <TextInput style={styles.textInput} value={pricingForm.unit} onChangeText={t => setPricingForm({...pricingForm, unit: t})} placeholder="Kg, Crates, Bags" />
+                        <TextInput style={styles.textInput} value={pricingForm.unit} onChangeText={t => setPricingForm({ ...pricingForm, unit: t })} placeholder="Kg, Crates, Bags" />
                       </View>
                       <View style={[styles.formGroup, { flex: 1 }]}>
                         <Text style={styles.inputLabel}>Bulk Discount</Text>
-                        <TextInput style={styles.textInput} value={pricingForm.bulkDiscount} onChangeText={t => setPricingForm({...pricingForm, bulkDiscount: t})} placeholder="5%" />
+                        <TextInput style={styles.textInput} value={pricingForm.bulkDiscount} onChangeText={t => setPricingForm({ ...pricingForm, bulkDiscount: t })} placeholder="5%" />
                       </View>
                     </View>
                   </ModalShellContent>
@@ -848,26 +1087,26 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
                   >
                     <View style={styles.formGroup}>
                       <Text style={styles.inputLabel}>Service Areas</Text>
-                      <TextInput style={styles.textInput} value={deliveryForm.areas} onChangeText={t => setDeliveryForm({...deliveryForm, areas: t})} />
+                      <TextInput style={styles.textInput} value={deliveryForm.areas} onChangeText={t => setDeliveryForm({ ...deliveryForm, areas: t })} />
                     </View>
                     <View style={styles.rowFormGroup}>
                       <View style={[styles.formGroup, { flex: 1 }]}>
                         <Text style={styles.inputLabel}>Delivery Radius (km)</Text>
-                        <TextInput style={styles.textInput} value={deliveryForm.radiusKm} onChangeText={t => setDeliveryForm({...deliveryForm, radiusKm: t})} keyboardType="numeric" />
+                        <TextInput style={styles.textInput} value={deliveryForm.radiusKm} onChangeText={t => setDeliveryForm({ ...deliveryForm, radiusKm: t })} keyboardType="numeric" />
                       </View>
                       <View style={[styles.formGroup, { flex: 1 }]}>
                         <Text style={styles.inputLabel}>Min Delivery Order (₹)</Text>
-                        <TextInput style={styles.textInput} value={deliveryForm.minOrderAmt} onChangeText={t => setDeliveryForm({...deliveryForm, minOrderAmt: t})} keyboardType="numeric" />
+                        <TextInput style={styles.textInput} value={deliveryForm.minOrderAmt} onChangeText={t => setDeliveryForm({ ...deliveryForm, minOrderAmt: t })} keyboardType="numeric" />
                       </View>
                     </View>
                     <View style={styles.rowFormGroup}>
                       <View style={[styles.formGroup, { flex: 1 }]}>
                         <Text style={styles.inputLabel}>Delivery Fee (₹)</Text>
-                        <TextInput style={styles.textInput} value={deliveryForm.deliveryFee} onChangeText={t => setDeliveryForm({...deliveryForm, deliveryFee: t})} keyboardType="numeric" />
+                        <TextInput style={styles.textInput} value={deliveryForm.deliveryFee} onChangeText={t => setDeliveryForm({ ...deliveryForm, deliveryFee: t })} keyboardType="numeric" />
                       </View>
                       <View style={[styles.formGroup, { flex: 1 }]}>
                         <Text style={styles.inputLabel}>Delivery Days</Text>
-                        <TextInput style={styles.textInput} value={deliveryForm.days} onChangeText={t => setDeliveryForm({...deliveryForm, days: t})} />
+                        <TextInput style={styles.textInput} value={deliveryForm.days} onChangeText={t => setDeliveryForm({ ...deliveryForm, days: t })} />
                       </View>
                     </View>
                   </ModalShellContent>
@@ -925,16 +1164,16 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
                     <View style={styles.rowFormGroup}>
                       <View style={[styles.formGroup, { flex: 1 }]}>
                         <Text style={styles.inputLabel}>Replacement Period (Days)</Text>
-                        <TextInput style={styles.textInput} value={replacementForm.periodDays} onChangeText={t => setReplacementForm({...replacementForm, periodDays: t})} keyboardType="numeric" />
+                        <TextInput style={styles.textInput} value={replacementForm.periodDays} onChangeText={t => setReplacementForm({ ...replacementForm, periodDays: t })} keyboardType="numeric" />
                       </View>
                       <View style={[styles.formGroup, { flex: 1 }]}>
                         <Text style={styles.inputLabel}>Replacement Limit</Text>
-                        <TextInput style={styles.textInput} value={replacementForm.replacementLimit} onChangeText={t => setReplacementForm({...replacementForm, replacementLimit: t})} />
+                        <TextInput style={styles.textInput} value={replacementForm.replacementLimit} onChangeText={t => setReplacementForm({ ...replacementForm, replacementLimit: t })} />
                       </View>
                     </View>
                     <View style={styles.formGroup}>
                       <Text style={styles.inputLabel}>Policy Conditions</Text>
-                      <TextInput style={[styles.textInput, { height: 80 }]} multiline value={replacementForm.conditions} onChangeText={t => setReplacementForm({...replacementForm, conditions: t})} />
+                      <TextInput style={[styles.textInput, { height: 80 }]} multiline value={replacementForm.conditions} onChangeText={t => setReplacementForm({ ...replacementForm, conditions: t })} />
                     </View>
                   </ModalShellContent>
                 )}
@@ -951,16 +1190,16 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
                   >
                     <View style={styles.formGroup}>
                       <Text style={styles.inputLabel}>Fee Type</Text>
-                      <TextInput style={styles.textInput} value={chargeForm.feeType} onChangeText={t => setChargeForm({...chargeForm, feeType: t})} />
+                      <TextInput style={styles.textInput} value={chargeForm.feeType} onChangeText={t => setChargeForm({ ...chargeForm, feeType: t })} />
                     </View>
                     <View style={styles.rowFormGroup}>
                       <View style={[styles.formGroup, { flex: 1 }]}>
                         <Text style={styles.inputLabel}>Default Charge (₹ / %)</Text>
-                        <TextInput style={styles.textInput} value={chargeForm.defaultCharge} onChangeText={t => setChargeForm({...chargeForm, defaultCharge: t})} />
+                        <TextInput style={styles.textInput} value={chargeForm.defaultCharge} onChangeText={t => setChargeForm({ ...chargeForm, defaultCharge: t })} />
                       </View>
                       <View style={[styles.formGroup, { flex: 1 }]}>
                         <Text style={styles.inputLabel}>Taxes</Text>
-                        <TextInput style={styles.textInput} value={chargeForm.taxInfo} onChangeText={t => setChargeForm({...chargeForm, taxInfo: t})} />
+                        <TextInput style={styles.textInput} value={chargeForm.taxInfo} onChangeText={t => setChargeForm({ ...chargeForm, taxInfo: t })} />
                       </View>
                     </View>
                   </ModalShellContent>
@@ -1018,14 +1257,14 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
                     <View style={styles.rowFormGroup}>
                       <View style={[styles.formGroup, { flex: 1 }]}>
                         <Text style={styles.inputLabel}>Visit Charge (₹)</Text>
-                        <TextInput style={styles.textInput} value={visitForm.visitCharge} onChangeText={t => setVisitForm({...visitForm, visitCharge: t})} keyboardType="numeric" />
+                        <TextInput style={styles.textInput} value={visitForm.visitCharge} onChangeText={t => setVisitForm({ ...visitForm, visitCharge: t })} keyboardType="numeric" />
                       </View>
                       <View style={[styles.formGroup, { flex: 1 }]}>
                         <Text style={styles.inputLabel}>Emergency Charge (₹)</Text>
-                        <TextInput style={styles.textInput} value={visitForm.emergencyCharge} onChangeText={t => setVisitForm({...visitForm, emergencyCharge: t})} keyboardType="numeric" />
+                        <TextInput style={styles.textInput} value={visitForm.emergencyCharge} onChangeText={t => setVisitForm({ ...visitForm, emergencyCharge: t })} keyboardType="numeric" />
                       </View>
                     </View>
-                    <ToggleRow label="Waive Visit Fee if Job Accepted" value={visitForm.waiveOnHire} onToggle={v => setVisitForm({...visitForm, waiveOnHire: v})} />
+                    <ToggleRow label="Waive Visit Fee if Job Accepted" value={visitForm.waiveOnHire} onToggle={v => setVisitForm({ ...visitForm, waiveOnHire: v })} />
                   </ModalShellContent>
                 )}
 
@@ -1039,14 +1278,14 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
                     errorMsg={modalErrorMsg}
                     successMsg={modalFeedbackMsg}
                   >
-                    <ToggleRow label="Provide Service Warranty" value={warrantyForm.available} onToggle={v => setWarrantyForm({...warrantyForm, available: v})} />
+                    <ToggleRow label="Provide Service Warranty" value={warrantyForm.available} onToggle={v => setWarrantyForm({ ...warrantyForm, available: v })} />
                     <View style={styles.formGroup}>
                       <Text style={styles.inputLabel}>Warranty Duration</Text>
-                      <TextInput style={styles.textInput} value={warrantyForm.duration} onChangeText={t => setWarrantyForm({...warrantyForm, duration: t})} />
+                      <TextInput style={styles.textInput} value={warrantyForm.duration} onChangeText={t => setWarrantyForm({ ...warrantyForm, duration: t })} />
                     </View>
                     <View style={styles.formGroup}>
                       <Text style={styles.inputLabel}>Conditions & Exclusions</Text>
-                      <TextInput style={[styles.textInput, { height: 70 }]} multiline value={warrantyForm.conditions} onChangeText={t => setWarrantyForm({...warrantyForm, conditions: t})} />
+                      <TextInput style={[styles.textInput, { height: 70 }]} multiline value={warrantyForm.conditions} onChangeText={t => setWarrantyForm({ ...warrantyForm, conditions: t })} />
                     </View>
                   </ModalShellContent>
                 )}
@@ -1133,21 +1372,21 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
                   >
                     <View style={styles.formGroup}>
                       <Text style={styles.inputLabel}>Package Name</Text>
-                      <TextInput style={styles.textInput} value={mktPackageForm.name} onChangeText={t => setMktPackageForm({...mktPackageForm, name: t})} />
+                      <TextInput style={styles.textInput} value={mktPackageForm.name} onChangeText={t => setMktPackageForm({ ...mktPackageForm, name: t })} />
                     </View>
                     <View style={styles.rowFormGroup}>
                       <View style={[styles.formGroup, { flex: 1 }]}>
                         <Text style={styles.inputLabel}>Price (₹)</Text>
-                        <TextInput style={styles.textInput} value={mktPackageForm.price} onChangeText={t => setMktPackageForm({...mktPackageForm, price: t})} keyboardType="numeric" />
+                        <TextInput style={styles.textInput} value={mktPackageForm.price} onChangeText={t => setMktPackageForm({ ...mktPackageForm, price: t })} keyboardType="numeric" />
                       </View>
                       <View style={[styles.formGroup, { flex: 1 }]}>
                         <Text style={styles.inputLabel}>Duration</Text>
-                        <TextInput style={styles.textInput} value={mktPackageForm.duration} onChangeText={t => setMktPackageForm({...mktPackageForm, duration: t})} />
+                        <TextInput style={styles.textInput} value={mktPackageForm.duration} onChangeText={t => setMktPackageForm({ ...mktPackageForm, duration: t })} />
                       </View>
                     </View>
                     <View style={styles.formGroup}>
                       <Text style={styles.inputLabel}>Deliverables Summary</Text>
-                      <TextInput style={styles.textInput} value={mktPackageForm.deliverables} onChangeText={t => setMktPackageForm({...mktPackageForm, deliverables: t})} />
+                      <TextInput style={styles.textInput} value={mktPackageForm.deliverables} onChangeText={t => setMktPackageForm({ ...mktPackageForm, deliverables: t })} />
                     </View>
                   </ModalShellContent>
                 )}
@@ -1157,46 +1396,45 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
           </Modal>
         )}
 
-        {/* SIGN OUT CONFIRMATION MODAL */}
+        {/* PROFILE PHOTO PREVIEW MODAL */}
         <Modal
-          visible={showSignOutModal}
-          transparent
+          visible={showPhotoPreviewModal}
+          transparent={true}
           animationType="fade"
-          onRequestClose={() => setShowSignOutModal(false)}
+          onRequestClose={() => setShowPhotoPreviewModal(false)}
         >
-          <TouchableOpacity
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setShowSignOutModal(false)}
-          >
-            <TouchableOpacity style={styles.confirmCard} activeOpacity={1}>
-              <View style={styles.confirmIconCircle}>
-                <LogOut size={28} color={COLORS.error} />
-              </View>
-              <Text style={styles.confirmTitle}>Sign out?</Text>
-              <Text style={styles.confirmMessage}>
-                Are you sure you want to sign out from your HRC HUB account?
-              </Text>
-
-              <View style={styles.confirmActionsRow}>
-                <TouchableOpacity
-                  style={styles.cancelBtn}
-                  onPress={() => setShowSignOutModal(false)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.cancelBtnText}>Cancel</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.confirmSignOutBtn}
-                  onPress={handleConfirmSignOut}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.confirmSignOutBtnText}>Sign Out</Text>
-                </TouchableOpacity>
-              </View>
+          <View style={styles.photoModalOverlay}>
+            <TouchableOpacity
+              style={styles.photoModalCloseBtn}
+              onPress={() => setShowPhotoPreviewModal(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Close photo preview"
+            >
+              <X size={24} color="#FFFFFF" />
             </TouchableOpacity>
-          </TouchableOpacity>
+            <View style={styles.photoModalContent}>
+              {profilePhoto ? (
+                <Image source={{ uri: profilePhoto }} style={styles.fullPreviewImage} resizeMode="cover" />
+              ) : (
+                <View style={styles.fullAvatarCircle}>
+                  <Text style={styles.fullAvatarText}>{userInitials}</Text>
+                </View>
+              )}
+              <Text style={styles.photoModalTitle}>{bizForm?.bizName || businessName}</Text>
+              <Text style={styles.photoModalSub}>{contactName}</Text>
+              <TouchableOpacity
+                style={styles.changePhotoModalBtn}
+                onPress={() => {
+                  setShowPhotoPreviewModal(false);
+                  handlePickProfilePhoto();
+                }}
+                accessibilityRole="button"
+              >
+                <Camera size={16} color="#FFFFFF" style={{ marginRight: 8 }} />
+                <Text style={styles.changePhotoModalBtnText}>Change Profile Photo</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </Modal>
       </View>
     </SafeAreaView>
@@ -1354,6 +1592,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 14,
   },
+  avatarWrapper: {
+    position: 'relative',
+    marginRight: 14,
+  },
   avatarCircle: {
     width: 66,
     height: 66,
@@ -1363,7 +1605,30 @@ const styles = StyleSheet.create({
     borderColor: COLORS.gold,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 14,
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 33,
+  },
+  cameraBadgeBtn: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: COLORS.navy,
+    borderWidth: 2,
+    borderColor: COLORS.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   avatarText: { fontSize: 22, fontWeight: '800', color: '#FFFFFF' },
   profileInfoCol: { flex: 1 },
@@ -1562,7 +1827,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F1F5F9',
   },
   toggleLabelText: { fontSize: 13, fontWeight: '600', color: COLORS.primaryText },
-  
+
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1648,4 +1913,64 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   confirmSignOutBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
+
+  /* PHOTO PREVIEW MODAL STYLES */
+  photoModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(7, 27, 58, 0.92)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  photoModalCloseBtn: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  photoModalContent: {
+    width: '100%',
+    maxWidth: 380,
+    alignItems: 'center',
+  },
+  fullPreviewImage: {
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    borderWidth: 3,
+    borderColor: COLORS.gold,
+    marginBottom: 20,
+  },
+  fullAvatarCircle: {
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: COLORS.navy,
+    borderWidth: 3,
+    borderColor: COLORS.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  fullAvatarText: { fontSize: 56, fontWeight: '900', color: '#FFFFFF' },
+  photoModalTitle: { fontSize: 20, fontWeight: '800', color: '#FFFFFF', marginBottom: 4, textAlign: 'center' },
+  photoModalSub: { fontSize: 14, color: COLORS.gold, marginBottom: 24, textAlign: 'center' },
+  changePhotoModalBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.navy,
+    borderWidth: 1,
+    borderColor: COLORS.gold,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
+  },
+  changePhotoModalBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
 });

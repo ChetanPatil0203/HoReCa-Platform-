@@ -1,9 +1,15 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image } from 'react-native';
 import { Search, Bell, Menu } from 'lucide-react-native';
 import { colors } from '../../theme/colors';
 
 export default function Topbar({ activePage, title, user, onMobileMenuPress }) {
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [user?.profilePhoto]);
+
   return (
     <View style={styles.topbar}>
       <View style={styles.leftSection}>
@@ -42,7 +48,15 @@ export default function Topbar({ activePage, title, user, onMobileMenuPress }) {
 
         <TouchableOpacity style={styles.profileBtn}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{user?.name ? user.name.charAt(0).toUpperCase() : (user?.businessName ? user.businessName.charAt(0).toUpperCase() : 'U')}</Text>
+            {user?.profilePhoto && !imageError ? (
+              <Image 
+                source={{ uri: user.profilePhoto }} 
+                style={{ width: '100%', height: '100%', borderRadius: 16 }} 
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <Text style={styles.avatarText}>{user?.name ? user.name.charAt(0).toUpperCase() : (user?.businessName ? user.businessName.charAt(0).toUpperCase() : 'C')}</Text>
+            )}
           </View>
           <Text style={styles.profileName}>Hello, {user?.name ? user.name.split(" ")[0] : (user?.businessName ? user.businessName.split(" ")[0] : 'User')}</Text>
         </TouchableOpacity>

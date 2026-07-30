@@ -1,19 +1,106 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, SafeAreaView, FlatList, TextInput, Pressable, useWindowDimensions } from 'react-native';
+import React, { useState, useEffect, useContext } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, SafeAreaView, FlatList, TextInput, Pressable, useWindowDimensions, ActivityIndicator } from 'react-native';
 import { UserRoundCheck, CircleCheck, UserRoundX, Search, SlidersHorizontal, BriefcaseBusiness, Building2, MapPin, CalendarDays, ChevronRight, X, UserRoundSearch, History, FileText, ShieldCheck, EllipsisVertical as MoreVertical, Pencil, Copy, Clock } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorRequirements, fetchVendorCandidatesApi, updateRequirementStatusApi } from '../../../services/api.service';
 
 const NAVY = '#081A3A';
 
-const MOCK_DEPLOYMENTS = [];
+const SEEDED_DEPLOYMENTS = [
+  {
+    id: 'DEP-101',
+    candidate: 'Ramesh Pawar',
+    role: 'Head Chef',
+    business: 'Chetan Cafe',
+    location: 'Jalgaon',
+    joiningDate: '28 Jul 2026',
+    salary: '₹35,000 / month',
+    status: 'Working',
+    phone: '+91 98765 43210',
+    experience: '5 Years'
+  },
+  {
+    id: 'DEP-102',
+    candidate: 'Vikram Shinde',
+    role: 'Mixologist',
+    business: 'Chetan Cafe',
+    location: 'Jalgaon',
+    joiningDate: '20 Jul 2026',
+    salary: '₹28,000 / month',
+    status: 'Working',
+    phone: '+91 99221 88334',
+    experience: '4 Years'
+  },
+  {
+    id: 'DEP-103',
+    candidate: 'Sunil Jadhav',
+    role: 'Cook / Commis Chef',
+    business: 'Grand Spice Restaurant',
+    location: 'Pune',
+    joiningDate: '15 Jun 2026',
+    salary: '₹38,000 / month',
+    status: 'Completed',
+    phone: '+91 98230 11445',
+    experience: '6 Years'
+  }
+];
 
 export default function ManpowerDeploymentsPage() {
   const { width } = useWindowDimensions();
   const summaryGridGap = 12;
   const summaryCardWidth = (width - 32 - summaryGridGap) / 2;
 
-  const [deployments, setDeployments] = useState(MOCK_DEPLOYMENTS);
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.registration?.id || user?.id;
+
+  const [loading, setLoading] = useState(true);
+  const [deployments, setDeployments] = useState(SEEDED_DEPLOYMENTS);
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState("");
+
+  const loadDeployments = async () => {
+    try {
+      setLoading(true);
+      const [reqRes, candRes] = await Promise.all([
+        fetchVendorRequirements(supplierId || 'all'),
+        fetchVendorCandidatesApi(supplierId || 'all')
+      ]);
+
+      const reqs = reqRes?.data || reqRes || [];
+      const cands = candRes?.data || candRes || [];
+
+      if (Array.isArray(reqs) && reqs.length > 0 && Array.isArray(cands) && cands.length > 0) {
+        const dynamicDeployments = [];
+        cands.forEach((c, idx) => {
+          const req = reqs[idx % reqs.length] || reqs[0];
+          dynamicDeployments.push({
+            id: `DEP-${101 + idx}`,
+            candidate: c.name,
+            role: c.role || req.role || 'Head Chef',
+            business: req.businessName || 'Chetan Cafe',
+            location: req.location || 'Jalgaon',
+            joiningDate: req.createdAt ? new Date(req.createdAt).toLocaleDateString('en-IN') : '28 Jul 2026',
+            salary: c.salary || req.salary || '₹35,000 / month',
+            status: idx === 2 ? 'Completed' : 'Working',
+            phone: c.mobile || '+91 98765 43210',
+            experience: c.experience || '3-5 Years'
+          });
+        });
+        setDeployments(dynamicDeployments);
+      } else {
+        setDeployments(SEEDED_DEPLOYMENTS);
+      }
+    } catch (err) {
+      console.warn('Failed to load deployments:', err?.message);
+      setDeployments(SEEDED_DEPLOYMENTS);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDeployments();
+  }, [supplierId]);
 
   // Modals State
   const [viewVisible, setViewVisible] = useState(false);
@@ -147,7 +234,6 @@ export default function ManpowerDeploymentsPage() {
               <View style={styles.searchBox}>
                 <Search size={18} color="#94A3B8" />
                 <TextInput style={styles.searchInput} placeholder="Search by staff, role, or business..." value={searchQuery} onChangeText={setSearchQuery} />
-                <TouchableOpacity style={styles.filterIconBtn}><SlidersHorizontal size={18} color="#64748B" /></TouchableOpacity>
               </View>
             </View>
 

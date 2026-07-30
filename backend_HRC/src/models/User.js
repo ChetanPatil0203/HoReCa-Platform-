@@ -65,6 +65,42 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  profilePhoto: {
+    type: DataTypes.TEXT('long'),
+    allowNull: true,
+  },
+  bankName: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  accountNumber: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  ifscCode: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  accountHolderName: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  deliveryRadius: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  minOrderValue: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  paymentTerms: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  notificationSettings: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
   token: {
     type: DataTypes.TEXT,
     allowNull: true,

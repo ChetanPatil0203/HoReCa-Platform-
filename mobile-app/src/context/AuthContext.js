@@ -1,6 +1,7 @@
-import React, { createContext, useState } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, SafeAreaView, Dimensions } from 'react-native';
 import { LogOut } from 'lucide-react-native';
+import { getUserProfileApi } from '../services/api.service';
 
 export const AuthContext = createContext();
 
@@ -13,6 +14,51 @@ export const AuthProvider = ({ children }) => {
 
   const [userData, setUserData] = useState(null);
 
+  // Restore session & user profile on page refresh
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const savedToken = window.localStorage.getItem('hrc_token');
+        const savedRole = window.localStorage.getItem('hrc_role');
+        const savedType = window.localStorage.getItem('hrc_vendor_type');
+        const savedUser = window.localStorage.getItem('hrc_user');
+
+        if (savedToken) setUserToken(savedToken);
+        if (savedRole) setUserRole(savedRole);
+        if (savedType) setVendorType(savedType);
+        if (savedUser) setUserData(JSON.parse(savedUser));
+      }
+    } catch (e) {
+      console.warn('LocalStorage restore note:', e);
+    }
+  }, []);
+
+  // Sync profile photo & details from backend whenever logged in
+  useEffect(() => {
+    if (userToken && userToken !== 'demo-token') {
+      getUserProfileApi().then(res => {
+        if (res && res.success && res.data) {
+          const dbUser = res.data;
+          const reg = dbUser.horecaRegistration || dbUser.vendorRegistration || {};
+          const photo = dbUser.profilePhoto || reg.profilePhoto;
+          if (photo) {
+            setUserData(prev => {
+              const updated = { ...(prev || {}), ...dbUser, ...reg, profilePhoto: photo };
+              try {
+                if (typeof window !== 'undefined' && window.localStorage) {
+                  window.localStorage.setItem('hrc_user', JSON.stringify(updated));
+                }
+              } catch (e) {}
+              return updated;
+            });
+          }
+        }
+      }).catch(err => {
+        console.warn('Backend profile sync note:', err?.message);
+      });
+    }
+  }, [userToken]);
+
   const login = (role, token, type = 'raw-material', userObj = null) => {
     setIsLoading(true);
     setUserToken(token);
@@ -21,6 +67,14 @@ export const AuthProvider = ({ children }) => {
     if (userObj) {
       setUserData(userObj);
     }
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        if (token) window.localStorage.setItem('hrc_token', token);
+        if (role) window.localStorage.setItem('hrc_role', role);
+        if (type) window.localStorage.setItem('hrc_vendor_type', type);
+        if (userObj) window.localStorage.setItem('hrc_user', JSON.stringify(userObj));
+      }
+    } catch (e) { }
     setIsLoading(false);
   };
 
@@ -34,12 +88,36 @@ export const AuthProvider = ({ children }) => {
     setUserToken(null);
     setUserRole(null);
     setVendorType('raw-material');
+    setUserData(null);
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem('hrc_token');
+        window.localStorage.removeItem('hrc_role');
+        window.localStorage.removeItem('hrc_vendor_type');
+        window.localStorage.removeItem('hrc_user');
+      }
+    } catch (e) { }
     setShowLogoutModal(false);
     setIsLoading(false);
   };
 
   const cancelLogout = () => {
     setShowLogoutModal(false);
+  };
+
+  const updateUser = (newUserData) => {
+    setUserData(prev => {
+      const updated = {
+        ...(prev || {}),
+        ...(newUserData || {})
+      };
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.setItem('hrc_user', JSON.stringify(updated));
+        }
+      } catch (e) { }
+      return updated;
+    });
   };
 
   const user = userData || {
@@ -49,41 +127,41 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ login, logout, isLoading, userToken, userRole, vendorType, user }}>
+    <AuthContext.Provider value={{ login, logout, isLoading, userToken, userRole, vendorType, user, updateUser }}>
       {children}
-      
+
       {/* Global Logout Confirmation Modal */}
-      <Modal 
-        visible={showLogoutModal} 
-        transparent 
-        animationType="fade" 
+      <Modal
+        visible={showLogoutModal}
+        transparent
+        animationType="fade"
         onRequestClose={cancelLogout}
       >
         <SafeAreaView style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            
+
             <View style={styles.iconContainer}>
               <View style={styles.iconBg}>
                 <LogOut size={28} color="#EF4444" style={{ marginLeft: 4 }} />
               </View>
             </View>
-            
+
             <Text style={styles.title}>Logout?</Text>
             <Text style={styles.subtitle}>
               Are you sure you want to logout of your account?
             </Text>
 
             <View style={styles.buttonRow}>
-              <TouchableOpacity 
-                style={styles.cancelButton} 
+              <TouchableOpacity
+                style={styles.cancelButton}
                 onPress={cancelLogout}
                 activeOpacity={0.7}
               >
                 <Text style={styles.cancelText}>Cancel</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.logoutButton} 
+
+              <TouchableOpacity
+                style={styles.logoutButton}
                 onPress={confirmLogout}
                 activeOpacity={0.7}
               >

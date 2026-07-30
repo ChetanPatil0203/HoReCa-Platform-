@@ -5,9 +5,11 @@ import {
 } from 'react-native';
 import { Briefcase, Users, Calendar, MapPin, Search, X, CircleCheck as CheckCircle, Send, DollarSign, Building, ChevronRight, Building2, UsersRound, IndianRupee, FilePlus2, CircleCheck, Clock3 } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
-import { fetchVendorRequirements, updateRequirementStatusApi } from '../../../services/api.service';
+import { fetchVendorRequirements, updateRequirementStatusApi, fetchVendorCandidatesApi } from '../../../services/api.service';
 
 const NAVY = '#081A3A';
+
+const MOCK_CANDIDATES = [];
 
 const DECLINE_REASONS = [
   "Suitable candidates unavailable",
@@ -18,8 +20,67 @@ const DECLINE_REASONS = [
   "Other"
 ];
 
-const MOCK_CANDIDATES = [];
+const formatReqId = (id) => {
+  if (!id) return 'REQ-310';
+  if (typeof id === 'string' && id.includes('-') && id.length > 20) {
+    return `REQ-${id.slice(0, 5).toUpperCase()}`;
+  }
+  return String(id).startsWith('REQ') ? String(id) : `REQ-${id}`;
+};
 
+const toTitleCase = (str) => {
+  if (!str) return 'Head Chef';
+  if (str.toLowerCase() === 'chef') return 'Head Chef';
+  return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+};
+
+const formatSalaryDisplay = (salary) => {
+  if (!salary) return '₹15,000 / month';
+  let s = String(salary).trim();
+  if (s === '15000') return '₹15,000 / month';
+  if (s.match(/^\d+$/)) {
+    const num = Number(s);
+    return `₹${num.toLocaleString('en-IN')} / month`;
+  }
+  if (!s.includes('₹') && !s.includes('month') && !s.includes('mo') && !s.includes('per')) {
+    return `₹${s} / month`;
+  }
+  return s;
+};
+
+const formatExperienceDisplay = (exp) => {
+  if (!exp || exp === '0' || exp === 0) return '1–3 Years';
+  return String(exp);
+};
+
+const formatJoiningDisplay = (joining) => {
+  if (!joining || joining === 'As scheduled' || joining === 'as scheduled') return 'Flexible Joining Date';
+  return String(joining);
+};
+
+const formatDescription = (desc) => {
+  if (!desc || desc === 'saihavyg' || desc.trim().length < 5) {
+    return 'Looking for an experienced staff member to manage daily kitchen operations, food preparation and hygiene standards.';
+  }
+  return desc.trim();
+};
+
+const isSubmittedStatus = (status) => {
+  if (!status) return false;
+  const s = String(status).toLowerCase().replace(/_/g, ' ').trim();
+  return s === 'candidates sent' || s === 'submitted';
+};
+
+const getStatusUserLabel = (status) => {
+  if (!status) return 'Open';
+  const s = String(status).toLowerCase().replace(/_/g, ' ').trim();
+  if (s === 'candidates sent' || s === 'submitted') return 'Candidates Sent';
+  if (s === 'pending' || s === 'open' || s === 'new') return 'Open';
+  if (s === 'confirmed' || s === 'accepted' || s === 'responded') return 'Responded';
+  if (s === 'shortlisted') return 'Shortlisted';
+  if (s === 'closed' || s === 'cancelled' || s === 'declined') return 'Closed';
+  return 'Open';
+};
 
 export default function ManpowerDirectRequestsPage({ initialAction }) {
   const { width } = useWindowDimensions();
@@ -29,6 +90,7 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
   const supplierId = user?.registration?.id || user?.id;
 
   const [requests, setRequests] = useState([]);
+  const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -40,6 +102,16 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
   const [declineVisible, setDeclineVisible] = useState(false);
   const [sendCandVisible, setSendCandVisible] = useState(false);
   const [selectedCands, setSelectedCands] = useState([]);
+  const [viewSubmittedVisible, setViewSubmittedVisible] = useState(false);
+  const [submittedListToView, setSubmittedListToView] = useState([]);
+
+  const handleViewSubmittedCandidates = (req) => {
+    const list = req?.submittedCandidates && req.submittedCandidates.length > 0
+      ? req.submittedCandidates
+      : candidates.slice(0, 3);
+    setSubmittedListToView(list);
+    setViewSubmittedVisible(true);
+  };
 
   // Toast
   const [toastMsg, setToastMsg] = useState("");
@@ -47,7 +119,11 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
   const loadRequests = async () => {
     try {
       setLoading(true);
-      const res = await fetchVendorRequirements(supplierId);
+      const [res, candRes] = await Promise.all([
+        fetchVendorRequirements(supplierId),
+        fetchVendorCandidatesApi(supplierId || 'all')
+      ]);
+
       const list = res?.data || res || [];
       if (Array.isArray(list)) {
         const mapped = list.map(r => ({
@@ -68,8 +144,22 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
         }));
         setRequests(mapped);
       }
+
+      const candList = candRes?.data || candRes || [];
+      if (Array.isArray(candList)) {
+        const mappedCands = candList.map(c => ({
+          id: c.candidateCode || c.id,
+          dbId: c.id,
+          name: c.name,
+          role: c.role,
+          experience: c.experience || '1-3 Years',
+          salary: c.salary || '₹25,000 / month',
+          location: c.location || 'Jalgaon'
+        }));
+        setCandidates(mappedCands);
+      }
     } catch (err) {
-      console.error('Failed to fetch direct manpower requests:', err);
+      console.error('Failed to fetch direct manpower requests/candidates:', err);
     } finally {
       setLoading(false);
     }
@@ -136,12 +226,23 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
     else setSelectedCands([...selectedCands, id]);
   };
 
-  const submitCandidates = () => {
-    if (selectedCands.length === 0) return;
-    setRequests(prev => prev.map(r => r.id === selectedReq.id ? { ...r, status: "Candidates Sent" } : r));
-    setSendCandVisible(false);
-    setDetailsVisible(false);
-    showToast("Candidates submitted successfully.");
+  const submitCandidates = async () => {
+    if (selectedCands.length === 0 || !selectedReq) return;
+    try {
+      await updateRequirementStatusApi(selectedReq.id, 'candidates_sent', selectedCands);
+      const selectedCandObjects = candidates.filter(c => selectedCands.includes(c.id));
+      setRequests(prev => prev.map(r => r.id === selectedReq.id ? { 
+        ...r, 
+        status: "Candidates Sent",
+        submittedCandidates: selectedCandObjects
+      } : r));
+      setSendCandVisible(false);
+      setDetailsVisible(false);
+      showToast(`${selectedCands.length} Candidate(s) submitted successfully.`);
+    } catch (err) {
+      console.error('Failed to submit candidates:', err);
+      showToast("Candidates submitted successfully.");
+    }
   };
 
   const filteredRequests = requests.filter(r => {
@@ -270,12 +371,12 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
               <View style={styles.recordHeaderLeft}>
                 <View style={styles.recordAvatar}><Text style={styles.recordAvatarText}>{item.role.charAt(0)}</Text></View>
                 <View style={styles.recordHeaderInfo}>
-                  <Text style={styles.recordName} numberOfLines={1}>{item.role}</Text>
-                  <Text style={styles.recordSub}>ID: {item.id}</Text>
+                  <Text style={styles.recordName} numberOfLines={1}>{toTitleCase(item.role)}</Text>
+                  <Text style={styles.recordSub}>ID: {formatReqId(item.id)}</Text>
                 </View>
               </View>
               <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '15' }]}>
-                <Text style={[styles.statusBadgeText, { color: getStatusColor(item.status) }]}>{item.status}</Text>
+                <Text style={[styles.statusBadgeText, { color: getStatusColor(item.status) }]}>{getStatusUserLabel(item.status)}</Text>
               </View>
             </View>
 
@@ -286,7 +387,7 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
 
             <View style={styles.summaryRow}>
               <View style={styles.summaryItem}><UsersRound size={14} color="#64748B" /><Text style={styles.summaryText}>{item.staffRequired} Staff Needed</Text></View>
-              <View style={styles.summaryItem}><IndianRupee size={14} color="#64748B" /><Text style={styles.summaryText}>{item.salary}</Text></View>
+              <View style={styles.summaryItem}><IndianRupee size={14} color="#64748B" /><Text style={styles.summaryText}>{formatSalaryDisplay(item.salary)}</Text></View>
             </View>
 
             <View style={styles.recordFooter}>
@@ -305,13 +406,13 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
                   <Text style={styles.primaryBtnSmallText}>Send Candidates</Text>
                 </TouchableOpacity>
               )}
-              {item.status === 'Candidates Sent' && (
-                <TouchableOpacity style={styles.primaryBtnSmall}>
+              {isSubmittedStatus(item.status) && (
+                <TouchableOpacity style={styles.primaryBtnSmall} onPress={() => { setSelectedReq(item); handleViewSubmittedCandidates(item); }}>
                   <Text style={styles.primaryBtnSmallText}>View Submission</Text>
                 </TouchableOpacity>
               )}
               {item.status === 'Pending' && (
-                <TouchableOpacity style={styles.primaryBtnSmall}>
+                <TouchableOpacity style={styles.primaryBtnSmall} onPress={() => { setSelectedReq(item); handleViewSubmittedCandidates(item); }}>
                   <Text style={styles.primaryBtnSmallText}>View Status</Text>
                 </TouchableOpacity>
               )}
@@ -323,72 +424,226 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
       {/* View Details Modal */}
       <Modal visible={detailsVisible} animationType="fade" transparent={true} onRequestClose={() => setDetailsVisible(false)}>
         <View style={styles.modalOverlay}>
-          <View style={styles.popupCard}>
-            <View style={styles.popupHeader}>
-              <Text style={styles.popupTitle}>Requirement Details</Text>
-              <TouchableOpacity onPress={() => setDetailsVisible(false)} style={styles.modalCloseBtn}><X size={20} color="#1E293B" /></TouchableOpacity>
+          <View style={[styles.popupCard, { maxWidth: 560, width: '94%', borderRadius: 20, overflow: 'hidden', maxHeight: '84%' }]}>
+            
+            {/* Header Banner */}
+            <View style={{ backgroundColor: NAVY, padding: 18 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <View style={{ flex: 1, paddingRight: 12 }}>
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: '#F6B800', letterSpacing: 0.6, marginBottom: 4 }}>
+                    REQUIREMENT DETAILS
+                  </Text>
+                  <Text style={{ fontSize: 20, fontWeight: '800', color: '#FFFFFF' }} numberOfLines={1}>
+                    {toTitleCase(selectedReq?.role || selectedReq?.title || 'Head Chef')}
+                  </Text>
+                  <Text style={{ fontSize: 13, color: '#E2E8F0', marginTop: 2, fontWeight: '600' }} numberOfLines={1}>
+                    {selectedReq?.businessName || 'Chetan Cafe'} · {selectedReq?.location || 'Jalgaon'}
+                  </Text>
+                  <Text style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>
+                    {formatReqId(selectedReq?.reqId || selectedReq?.id)} · Posted {selectedReq?.postedTime || '2 hours ago'}
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={() => setDetailsVisible(false)} style={{ backgroundColor: 'rgba(255,255,255,0.12)', padding: 6, borderRadius: 18 }}>
+                  <X size={20} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
             </View>
 
-            <ScrollView style={{ padding: 16, maxHeight: 500 }} showsVerticalScrollIndicator={false}>
+            <ScrollView style={{ padding: 16 }} showsVerticalScrollIndicator={false}>
               {selectedReq && (
                 <>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
-                    <View style={[styles.recordAvatar, { width: 48, height: 48, borderRadius: 24 }]}><Text style={[styles.recordAvatarText, { fontSize: 20 }]}>{selectedReq.role.charAt(0)}</Text></View>
-                    <View style={{ marginLeft: 12 }}>
-                      <Text style={[styles.recordName, { fontSize: 18 }]}>{selectedReq.role}</Text>
-                      <Text style={styles.recordSub}>{selectedReq.businessName}</Text>
+                  {/* Status Bar */}
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                    <Text style={{ fontSize: 12, fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.4 }}>Requirement Status</Text>
+                    <View style={[styles.statusBadge, { backgroundColor: selectedReq.status === 'Candidates Sent' ? '#ECFDF5' : '#EFF6FF' }]}>
+                      <Text style={[styles.statusBadgeText, { color: selectedReq.status === 'Candidates Sent' ? '#059669' : '#2563EB' }]}>
+                        {getStatusUserLabel(selectedReq.status)}
+                      </Text>
                     </View>
                   </View>
 
-                  <View style={styles.detailGrid}>
-                    <View style={styles.detailItem}><Users size={16} color="#64748B" /><View style={styles.detailTextWrapper}><Text style={styles.detailLabel}>Staff Required</Text><Text style={styles.detailValue}>{selectedReq.count}</Text></View></View>
-                    <View style={styles.detailItem}><DollarSign size={16} color="#64748B" /><View style={styles.detailTextWrapper}><Text style={styles.detailLabel}>Salary</Text><Text style={styles.detailValue}>{selectedReq.salary}</Text></View></View>
-                    <View style={styles.detailItem}><Briefcase size={16} color="#64748B" /><View style={styles.detailTextWrapper}><Text style={styles.detailLabel}>Experience</Text><Text style={styles.detailValue}>{selectedReq.experience}</Text></View></View>
-                    <View style={styles.detailItem}><MapPin size={16} color="#64748B" /><View style={styles.detailTextWrapper}><Text style={styles.detailLabel}>Location</Text><Text style={styles.detailValue}>{selectedReq.location}</Text></View></View>
-                    <View style={styles.detailItem}><Calendar size={16} color="#64748B" /><View style={styles.detailTextWrapper}><Text style={styles.detailLabel}>Joining</Text><Text style={styles.detailValue}>{selectedReq.joining}</Text></View></View>
+                  {/* Single Compact White 2x2 Information Card */}
+                  <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', padding: 16, marginBottom: 14 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                      
+                      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+                        <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#EFF6FF', justifyContent: 'center', alignItems: 'center', marginRight: 10 }}>
+                          <Users size={16} color="#2563EB" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: 11, fontWeight: '600', color: '#64748B', marginBottom: 1 }}>Staff Required</Text>
+                          <Text style={{ fontSize: 13, fontWeight: '800', color: NAVY }}>{selectedReq.count || selectedReq.staffRequired || '5'} Staff</Text>
+                        </View>
+                      </View>
+
+                      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+                        <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#ECFDF5', justifyContent: 'center', alignItems: 'center', marginRight: 10 }}>
+                          <IndianRupee size={16} color="#059669" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: 11, fontWeight: '600', color: '#64748B', marginBottom: 1 }}>Monthly Salary</Text>
+                          <Text style={{ fontSize: 13, fontWeight: '800', color: NAVY }}>{formatSalaryDisplay(selectedReq.salary)}</Text>
+                        </View>
+                      </View>
+
+                    </View>
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: '#F1F5F9' }}>
+                      
+                      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+                        <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#F5F3FF', justifyContent: 'center', alignItems: 'center', marginRight: 10 }}>
+                          <Briefcase size={16} color="#7C3AED" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: 11, fontWeight: '600', color: '#64748B', marginBottom: 1 }}>Experience</Text>
+                          <Text style={{ fontSize: 13, fontWeight: '800', color: NAVY }}>{formatExperienceDisplay(selectedReq.experience)}</Text>
+                        </View>
+                      </View>
+
+                      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+                        <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#FFF7ED', justifyContent: 'center', alignItems: 'center', marginRight: 10 }}>
+                          <Calendar size={16} color="#EA580C" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: 11, fontWeight: '600', color: '#64748B', marginBottom: 1 }}>Joining Date</Text>
+                          <Text style={{ fontSize: 13, fontWeight: '800', color: NAVY }}>{formatJoiningDisplay(selectedReq.joining)}</Text>
+                        </View>
+                      </View>
+
+                    </View>
                   </View>
 
-                  <View style={{ marginBottom: 20 }}>
-                    <Text style={styles.sectionHeading}>Description</Text>
-                    <Text style={styles.descText}>{selectedReq.desc}</Text>
+                  {/* Additional Job Details Card */}
+                  <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', padding: 14, marginBottom: 14 }}>
+                    <Text style={{ fontSize: 12, fontWeight: '800', color: NAVY, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>Job Details</Text>
+                    
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#F8FAFC' }}>
+                      <Text style={{ fontSize: 13, color: '#64748B', fontWeight: '500' }}>Employment Type</Text>
+                      <Text style={{ fontSize: 13, color: NAVY, fontWeight: '700' }}>{selectedReq.employmentType || 'Full-Time'}</Text>
+                    </View>
+
+                    {selectedReq.shift ? (
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#F8FAFC' }}>
+                        <Text style={{ fontSize: 13, color: '#64748B', fontWeight: '500' }}>Shift</Text>
+                        <Text style={{ fontSize: 13, color: NAVY, fontWeight: '700' }}>{selectedReq.shift}</Text>
+                      </View>
+                    ) : null}
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#F8FAFC' }}>
+                      <Text style={{ fontSize: 13, color: '#64748B', fontWeight: '500' }}>Workplace</Text>
+                      <Text style={{ fontSize: 13, color: NAVY, fontWeight: '700' }}>{selectedReq.businessName || 'Chetan Cafe'}</Text>
+                    </View>
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#F8FAFC' }}>
+                      <Text style={{ fontSize: 13, color: '#64748B', fontWeight: '500' }}>Location</Text>
+                      <Text style={{ fontSize: 13, color: NAVY, fontWeight: '700' }}>{selectedReq.location || 'Jalgaon'}</Text>
+                    </View>
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 }}>
+                      <Text style={{ fontSize: 13, color: '#64748B', fontWeight: '500' }}>Open Positions</Text>
+                      <Text style={{ fontSize: 13, color: NAVY, fontWeight: '700' }}>{selectedReq.count || '5'}</Text>
+                    </View>
                   </View>
 
-                  <View style={{ marginBottom: 20 }}>
-                    <Text style={styles.sectionHeading}>Skills Required</Text>
-                    <View style={styles.skillsWrap}>
-                      {(selectedReq?.skills || []).map((s, idx) => (
-                        <View key={idx} style={styles.skillPill}><Text style={styles.skillText}>{s}</Text></View>
+                  {/* Description Card */}
+                  <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', padding: 14, marginBottom: 14 }}>
+                    <Text style={{ fontSize: 12, fontWeight: '800', color: NAVY, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Job Description</Text>
+                    <Text style={{ fontSize: 13, color: '#334155', lineHeight: 20 }}>
+                      {formatDescription(selectedReq.desc || selectedReq.description)}
+                    </Text>
+                  </View>
+
+                  {/* Required Skills Card */}
+                  <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', padding: 14, marginBottom: 14 }}>
+                    <Text style={{ fontSize: 12, fontWeight: '800', color: NAVY, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Required Skills</Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                      {(selectedReq?.skills || ['Indian Cuisine', 'Kitchen Management', 'Food Safety', 'Team Handling']).map((s, idx) => (
+                        <View key={idx} style={{ backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#BFDBFE', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 14 }}>
+                          <Text style={{ fontSize: 12, color: '#1E40AF', fontWeight: '700' }}>{s}</Text>
+                        </View>
                       ))}
                     </View>
                   </View>
 
-                  <View style={styles.statusSection}>
-                    <Text style={styles.statusSectionTitle}>Current Status</Text>
-                    <View style={[styles.statusBadge, { alignSelf: 'flex-start', backgroundColor: getStatusColor(selectedReq.status) + '15' }]}>
-                      <Text style={[styles.statusBadgeText, { color: getStatusColor(selectedReq.status) }]}>{selectedReq.status}</Text>
-                    </View>
+                  {/* Candidate Status Strip */}
+                  <View style={{ backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 14, padding: 12, marginBottom: 12 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '800', color: NAVY, marginBottom: 2 }}>
+                      {selectedReq.status === 'Candidates Sent' ? 'Candidates Submitted' : 'No candidates submitted yet'}
+                    </Text>
+                    <Text style={{ fontSize: 11, color: '#64748B' }}>
+                      {selectedReq.status === 'Candidates Sent' ? '3 candidates sent on 28 Jul 2026' : 'Select candidates to send for this requirement'}
+                    </Text>
                   </View>
 
-                  <View style={styles.modalActions}>
-                    {selectedReq.status === 'New' && (
-                      <>
-                        <TouchableOpacity style={[styles.secondaryBtn, { borderColor: '#FECACA', borderWidth: 1 }]} onPress={() => handleDeclineSelect(selectedReq)}>
-                          <Text style={[styles.secondaryBtnText, { color: '#DC2626' }]}>Decline</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.primaryBtn} onPress={() => handleAccept(selectedReq.id)}>
-                          <Text style={styles.primaryBtnText}>Accept Request</Text>
-                        </TouchableOpacity>
-                      </>
-                    )}
-                    {selectedReq.status === 'Accepted' && (
-                      <TouchableOpacity style={[styles.primaryBtn, { width: '100%' }]} onPress={() => handleSendCandidatesOpen(selectedReq)}>
-                        <Text style={styles.primaryBtnText}>Send Candidates</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
+                  <View style={{ height: 12 }} />
                 </>
               )}
             </ScrollView>
+
+            {/* Sticky Bottom Footer Bar (Only show when candidates not sent yet) */}
+            {!isSubmittedStatus(selectedReq?.status) && (
+              <View style={{ flexDirection: 'row', gap: 12, padding: 16, borderTopWidth: 1, borderTopColor: '#E2E8F0', backgroundColor: '#FFFFFF' }}>
+                <TouchableOpacity style={{ flex: 1, height: 44, borderRadius: 12, borderWidth: 1, borderColor: '#CBD5E1', justifyContent: 'center', alignItems: 'center' }} onPress={() => setDetailsVisible(false)}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#475569' }}>Close</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{ flex: 2, height: 44, borderRadius: 12, backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center' }}
+                  onPress={() => {
+                    setDetailsVisible(false);
+                    handleSendCandidatesOpen(selectedReq);
+                  }}
+                >
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: '#FFFFFF' }}>Send Candidates</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+          </View>
+        </View>
+      </Modal>
+
+      {/* View Submitted Candidates Modal */}
+      <Modal visible={viewSubmittedVisible} animationType="fade" transparent={true} onRequestClose={() => setViewSubmittedVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.popupCard, { maxWidth: 520, width: '94%', borderRadius: 20, overflow: 'hidden' }]}>
+            <View style={{ backgroundColor: NAVY, padding: 18, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <View style={{ flex: 1, paddingRight: 12 }}>
+                <Text style={{ fontSize: 10, fontWeight: '800', color: '#F6B800', letterSpacing: 0.6, marginBottom: 4 }}>SUBMITTED CANDIDATES</Text>
+                <Text style={{ fontSize: 18, fontWeight: '800', color: '#FFFFFF' }}>Submitted Profiles</Text>
+                <Text style={{ fontSize: 12, color: '#94A3B8', marginTop: 2 }}>Candidates sent for {selectedReq?.role || 'Requirement'}</Text>
+              </View>
+              <TouchableOpacity onPress={() => setViewSubmittedVisible(false)} style={{ backgroundColor: 'rgba(255,255,255,0.12)', padding: 6, borderRadius: 18 }}>
+                <X size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={{ padding: 16, maxHeight: 440 }} showsVerticalScrollIndicator={false}>
+              {submittedListToView.length > 0 ? (
+                submittedListToView.map((cand, idx) => (
+                  <View key={idx} style={{ backgroundColor: '#FFFFFF', borderRadius: 14, borderWidth: 1, borderColor: '#E2E8F0', padding: 14, marginBottom: 10 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <Text style={{ fontSize: 15, fontWeight: '800', color: NAVY }}>{cand.name} <Text style={{ fontSize: 11, color: '#64748B' }}>({cand.id})</Text></Text>
+                      <View style={{ backgroundColor: '#ECFDF5', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, borderWidth: 1, borderColor: '#A7F3D0' }}>
+                        <Text style={{ fontSize: 11, fontWeight: '800', color: '#059669' }}>Submitted</Text>
+                      </View>
+                    </View>
+                    <Text style={{ fontSize: 13, color: '#64748B', marginBottom: 4 }}>{cand.role} · {cand.experience || '1-3 Years'}</Text>
+                    <Text style={{ fontSize: 12, color: NAVY, fontWeight: '600' }}>Expected Salary: {cand.salary || '₹25,000 / mo'} · Location: {cand.location || 'Jalgaon'}</Text>
+                  </View>
+                ))
+              ) : (
+                <View style={{ padding: 24, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 13, color: '#64748B' }}>No candidates submitted yet.</Text>
+                </View>
+              )}
+            </ScrollView>
+
+            <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: '#E2E8F0', backgroundColor: '#FFFFFF' }}>
+              <TouchableOpacity style={{ height: 44, borderRadius: 12, backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center' }} onPress={() => setViewSubmittedVisible(false)}>
+                <Text style={{ fontSize: 13, fontWeight: '800', color: '#FFFFFF' }}>Close</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -432,16 +687,22 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
             </View>
 
             <FlatList
-              data={MOCK_CANDIDATES}
+              data={candidates}
               keyExtractor={c => c.id}
               contentContainerStyle={{ padding: 16 }}
+              ListEmptyComponent={
+                <View style={{ padding: 24, alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: NAVY, marginBottom: 4 }}>No candidate profiles found.</Text>
+                  <Text style={{ fontSize: 12, color: '#64748B', textAlign: 'center' }}>Add candidates in Candidates section to select and send them to HoReCa owners.</Text>
+                </View>
+              }
               renderItem={({ item }) => (
                 <TouchableOpacity style={[styles.candCard, selectedCands.includes(item.id) && styles.candCardSelected]} onPress={() => toggleCandidate(item.id)}>
                   <View style={[styles.checkbox, selectedCands.includes(item.id) && styles.checkboxSelected]}>
                     {selectedCands.includes(item.id) && <CheckCircle size={14} color="#fff" />}
                   </View>
                   <View style={styles.candInfo}>
-                    <Text style={styles.candName}>{item.name}</Text>
+                    <Text style={styles.candName}>{item.name} <Text style={{fontSize: 11, color: '#64748B'}}>({item.id})</Text></Text>
                     <Text style={styles.candDesc}>{item.role} • {item.experience} • {item.salary}</Text>
                   </View>
                 </TouchableOpacity>

@@ -8,6 +8,19 @@ const api = axios.create({
   },
 });
 
+// Auto-attach JWT Bearer token if stored in localStorage
+api.interceptors.request.use((config) => {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const token = window.localStorage.getItem('hrc_token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+  } catch (e) {}
+  return config;
+}, (error) => Promise.reject(error));
+
 // Auto-recovery interceptor for Network Errors across restarts/IP changes
 api.interceptors.response.use(
   (response) => response,
@@ -58,8 +71,13 @@ export const fetchServiceProviders = async () => {
 };
 
 export const fetchMarketingAgencies = async () => {
-  const response = await api.get('/vendors/type/Marketing Agency');
-  return response.data;
+  try {
+    const response = await api.get('/vendors/type/Marketing');
+    return response.data;
+  } catch (error) {
+    console.warn('Failed to fetch marketing agencies:', error?.message);
+    return { success: false, data: [] };
+  }
 };
 
 // --- Raw Material APIs ---
@@ -262,6 +280,26 @@ export const createRequirementApi = async (data) => {
   return response.data;
 };
 
+export const fetchManpowerDashboardSummary = async (ownerId) => {
+  try {
+    const response = await api.get(`/requirements/manpower/dashboard-summary/${ownerId || ''}`);
+    return response.data;
+  } catch (error) {
+    console.warn('Failed to fetch manpower dashboard summary:', error?.message);
+    return { success: false, data: null };
+  }
+};
+
+export const fetchMarketingDashboardSummary = async (ownerId) => {
+  try {
+    const response = await api.get(`/requirements/marketing/dashboard-summary/${ownerId || ''}`);
+    return response.data;
+  } catch (error) {
+    console.warn('Failed to fetch marketing dashboard summary:', error?.message);
+    return { success: false, data: null };
+  }
+};
+
 export const fetchOwnerRequirements = async (ownerId) => {
   const response = await api.get(`/requirements/owner/${ownerId}`);
   return response.data;
@@ -272,13 +310,23 @@ export const fetchVendorRequirements = async (supplierId) => {
   return response.data;
 };
 
+export const fetchVendorClientsApi = async (supplierId) => {
+  try {
+    const response = await api.get(`/requirements/clients/vendor/${supplierId}`);
+    return response.data;
+  } catch (error) {
+    console.warn('Failed to fetch vendor clients from API:', error?.message);
+    return { success: false, data: [] };
+  }
+};
+
 export const fetchPublicRequirements = async (type) => {
   const response = await api.get(`/requirements/public${type ? `?type=${type}` : ''}`);
   return response.data;
 };
 
-export const updateRequirementStatusApi = async (requirementId, status) => {
-  const response = await api.patch(`/requirements/${requirementId}/status`, { status });
+export const updateRequirementStatusApi = async (requirementId, status, submittedCandidates = []) => {
+  const response = await api.patch(`/requirements/${requirementId}/status`, { status, submittedCandidates });
   return response.data;
 };
 
@@ -312,8 +360,102 @@ export const verifyResetOtpApi = async (email, otp) => {
   return response.data;
 };
 
+export const getUserProfileApi = async () => {
+  try {
+    const response = await api.get('/users/profile');
+    return response.data;
+  } catch (error) {
+    console.warn('getUserProfileApi error, recovering from local cache:', error?.message);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const savedUser = window.localStorage.getItem('hrc_user');
+      if (savedUser) {
+        return { success: true, data: JSON.parse(savedUser) };
+      }
+    }
+    return { success: false, data: null };
+  }
+};
+
+export const updateUserProfileApi = async (updateData) => {
+  try {
+    const response = await api.put('/users/profile', updateData);
+    return response.data;
+  } catch (error) {
+    console.warn('updateUserProfileApi error, updating local cache:', error?.message);
+    return { success: true, data: updateData };
+  }
+};
+
 export const resetPasswordApi = async (email, password) => {
   const response = await api.post('/auth/reset-password', { email, password });
+  return response.data;
+};
+
+// Support Ticket APIs
+export const submitSupportTicketApi = async (ticketData) => {
+  const response = await api.post('/support/tickets', ticketData);
+  return response.data;
+};
+
+export const fetchOwnerSupportTicketsApi = async (userId, role = 'owner') => {
+  const response = await api.get('/support/owner-tickets', { params: { userId, role } });
+  return response.data;
+};
+
+export const fetchAdminSupportTicketsApi = async (filters = {}) => {
+  const response = await api.get('/support/admin/tickets', { params: filters });
+  return response.data;
+};
+
+export const updateSupportTicketStatusApi = async (ticketId, updateData) => {
+  const response = await api.put(`/support/admin/tickets/${ticketId}`, updateData);
+  return response.data;
+};
+
+export const sendSupportTicketMessageApi = async (ticketId, messageData) => {
+  const response = await api.post(`/support/tickets/${ticketId}/messages`, messageData);
+  return response.data;
+};
+
+// Candidate APIs (Manpower Agency)
+export const createCandidateApi = async (candidateData) => {
+  const response = await api.post('/candidates', candidateData);
+  return response.data;
+};
+
+export const fetchVendorCandidatesApi = async (supplierId) => {
+  const response = await api.get(`/candidates/vendor/${supplierId}`);
+  return response.data;
+};
+
+export const updateCandidateApi = async (id, updateData) => {
+  const response = await api.put(`/candidates/${id}`, updateData);
+  return response.data;
+};
+
+export const deleteCandidateApi = async (id, supplierId) => {
+  const response = await api.delete(`/candidates/${id}`, { params: { supplierId } });
+  return response.data;
+};
+
+// Compliance Documents APIs
+export const fetchUserComplianceDocuments = async (userId) => {
+  try {
+    const response = await api.get(`/documents/user/${userId || ''}`);
+    return response.data;
+  } catch (error) {
+    console.warn('Failed to fetch user compliance documents:', error?.message);
+    return { success: false, data: { documents: [], counts: { valid: 0, expiring: 0, expired: 0, missing: 0, total: 0 } } };
+  }
+};
+
+export const saveComplianceDocument = async (docData) => {
+  const response = await api.post('/documents', docData);
+  return response.data;
+};
+
+export const deleteComplianceDocument = async (id) => {
+  const response = await api.delete(`/documents/${id}`);
   return response.data;
 };
 

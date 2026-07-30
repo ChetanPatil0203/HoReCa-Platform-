@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity,
-  useWindowDimensions, Modal, SafeAreaView, Platform, TouchableWithoutFeedback
+  useWindowDimensions, Modal, SafeAreaView, Platform, TouchableWithoutFeedback, TextInput
 } from 'react-native';
-import { Search, Filter, Users, User, RefreshCw, CircleAlert as AlertCircle, MapPin, Star, ShoppingBag, MessageSquare, EllipsisVertical as MoreVertical, FileText, Gift, CircleX as XCircle, Building, Phone, Mail, FileCheck, Package, CreditCard, Clock3, CircleCheck as CheckCircle2, CircleHelp as HelpCircle } from 'lucide-react-native';
+import { Search, Filter, Users, User, RefreshCw, CircleAlert as AlertCircle, MapPin, Star, ShoppingBag, MessageSquare, EllipsisVertical as MoreVertical, FileText, Gift, CircleX as XCircle, Building, Phone, Mail, FileCheck, Package, CreditCard, Clock3, CircleCheck as CheckCircle2, CircleHelp as HelpCircle, X } from 'lucide-react-native';
 
 const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
@@ -26,6 +26,8 @@ export default function ProviderClientsPage() {
   const [activeFilter, setActiveFilter] = useState('All');
   const [clients, setClients] = useState(MOCK_CLIENTS);
   const [activeTab, setActiveTab] = useState('clients'); // 'clients' or 'transactions'
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   
   const [menuVisibleId, setMenuVisibleId] = useState(null);
   
@@ -37,9 +39,15 @@ export default function ProviderClientsPage() {
   const [selectedTxn, setSelectedTxn] = useState(null);
   const [txnModalVisible, setTxnModalVisible] = useState(false);
 
-  const filteredClients = activeFilter === 'All' 
-    ? clients 
-    : clients.filter(c => c.type === activeFilter);
+  const filteredClients = clients.filter(c => {
+    const matchesFilter = activeFilter === 'All' || c.type === activeFilter;
+    const matchesSearch = !searchQuery.trim() || 
+      c.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      c.business?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      c.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.location?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
 
   const getTagColor = (tag) => {
     switch (tag) {
@@ -212,15 +220,31 @@ export default function ProviderClientsPage() {
         
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Clients</Text>
-          <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.iconBtn}>
-              <Search size={20} color={NAVY} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn}>
-              <Filter size={20} color={NAVY} />
-            </TouchableOpacity>
-          </View>
+          {isSearchOpen ? (
+            <View style={styles.searchBarHeader}>
+              <Search size={18} color="#64748B" style={{ marginRight: 8 }} />
+              <TextInput
+                style={styles.searchInputHeader}
+                placeholder="Search clients by name, business, city..."
+                placeholderTextColor="#94A3B8"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                autoFocus
+              />
+              <TouchableOpacity onPress={() => { setIsSearchOpen(false); setSearchQuery(''); }}>
+                <X size={20} color={NAVY} />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
+              <Text style={styles.headerTitle}>Clients</Text>
+              <View style={styles.headerActions}>
+                <TouchableOpacity style={styles.iconBtn} onPress={() => setIsSearchOpen(true)} accessibilityRole="button">
+                  <Search size={20} color={NAVY} />
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
         </View>
 
         {/* Summary Cards */}
@@ -473,6 +497,8 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: NAVY },
   headerActions: { flexDirection: 'row' },
   iconBtn: { padding: 8, marginLeft: 8 },
+  searchBarHeader: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1F5F9', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6 },
+  searchInputHeader: { flex: 1, fontSize: 14, color: NAVY, paddingVertical: 4 },
   summaryContainer: {
     backgroundColor: '#FFFFFF',
     paddingVertical: 16,

@@ -5,9 +5,11 @@ const {
   VendorRegistration,
 } = require('../models');
 
+const isUuid = (id) => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
 // Helper to resolve Horeca Registration ID
 const resolveHorecaId = async (ownerId) => {
-  if (!ownerId) return null;
+  if (!ownerId || !isUuid(ownerId)) return null;
   const reg = await HorecaRegistration.findOne({
     where: {
       [Op.or]: [{ id: ownerId }, { userId: ownerId }],
@@ -18,7 +20,7 @@ const resolveHorecaId = async (ownerId) => {
 
 // Helper to resolve Vendor Registration ID
 const resolveVendorId = async (supplierId) => {
-  if (!supplierId) return null;
+  if (!supplierId || !isUuid(supplierId)) return null;
   const reg = await VendorRegistration.findOne({
     where: {
       [Op.or]: [{ id: supplierId }, { userId: supplierId }],
@@ -147,4 +149,70 @@ exports.updateMarketingRequirementStatus = async (requirementId, status) => {
   record.status = status;
   await record.save();
   return record;
+};
+
+exports.getMarketingDashboardSummary = async (ownerId) => {
+  let horecaRegId = isUuid(ownerId) ? ownerId : null;
+  let userId = isUuid(ownerId) ? ownerId : null;
+
+  if (isUuid(ownerId)) {
+    const horecaReg = await HorecaRegistration.findOne({
+      where: {
+        [Op.or]: [{ id: ownerId }, { userId: ownerId }]
+      }
+    });
+
+    if (horecaReg) {
+      horecaRegId = horecaReg.id;
+      userId = horecaReg.userId;
+    }
+  }
+
+  const whereClause = (horecaRegId || userId) ? {
+    ownerId: { [Op.or]: [horecaRegId, userId].filter(Boolean) }
+  } : {};
+
+  const reqs = await MarketingRequirement.findAll({
+    where: whereClause,
+    include: [{ model: VendorRegistration, as: 'supplier', attributes: ['id', 'bizName', 'city', 'mobile'] }],
+    order: [['createdAt', 'DESC']],
+  });
+
+  const activeReq = reqs.filter(r => ['pending', 'active', 'open', 'in_progress', 'submitted'].includes(r.status)).length;
+  const proposals = reqs.filter(r => ['candidates_sent', 'submitted', 'responses', 'proposal_received', 'shortlisted'].includes(r.status) || r.supplierId).length;
+  const campaigns = reqs.filter(r => ['active', 'running', 'in_progress', 'campaign_started'].includes(r.status)).length;
+  const completed = reqs.filter(r => ['completed', 'finished', 'closed'].includes(r.status)).length;
+
+  const myRequirements = reqs.map(r => ({
+    id: `#${r.id.slice(0, 8).toUpperCase()}`,
+    _rawId: r.id,
+    title: r.campaignType || 'Marketing Campaign',
+    service: r.services || r.businessType || 'Marketing Service',
+    status: r.status === 'pending' ? 'Open' : (r.status.charAt(0).toUpperCase() + r.status.slice(1)),
+    budget: r.budget || '—',
+    proposals: ['submitted', 'responses', 'proposal_received'].includes(r.status) || r.supplierId ? 1 : 0,
+    createdAt: r.createdAt
+  }));
+
+  const recentProposals = reqs.filter(r => r.supplier || r.supplierId).map(r => ({
+    id: r.id,
+    initials: (r.supplier?.bizName || 'MA').substring(0, 2).toUpperCase(),
+    agencyName: r.supplier?.bizName || 'Verified Marketing Agency',
+    verified: true,
+    rating: '4.9',
+    reqName: r.campaignType || 'Marketing Campaign',
+    amount: r.budget || 'Market Rate',
+    duration: r.duration || 'Monthly',
+  }));
+
+  return {
+    metrics: {
+      activeReq,
+      proposals,
+      campaigns,
+      completed
+    },
+    myRequirements,
+    recentProposals
+  };
 };

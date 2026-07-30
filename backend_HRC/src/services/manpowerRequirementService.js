@@ -5,9 +5,11 @@ const {
   VendorRegistration,
 } = require('../models');
 
+const isUuid = (id) => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
 // Helper to resolve Horeca Registration ID
 const resolveHorecaId = async (ownerId) => {
-  if (!ownerId) return null;
+  if (!ownerId || !isUuid(ownerId)) return null;
   const reg = await HorecaRegistration.findOne({
     where: {
       [Op.or]: [{ id: ownerId }, { userId: ownerId }],
@@ -18,7 +20,7 @@ const resolveHorecaId = async (ownerId) => {
 
 // Helper to resolve Vendor Registration ID
 const resolveVendorId = async (supplierId) => {
-  if (!supplierId) return null;
+  if (!supplierId || !isUuid(supplierId)) return null;
   const reg = await VendorRegistration.findOne({
     where: {
       [Op.or]: [{ id: supplierId }, { userId: supplierId }],
@@ -154,3 +156,84 @@ exports.updateManpowerRequirementStatus = async (requirementId, status) => {
   await record.save();
   return record;
 };
+
+exports.getManpowerDashboardSummary = async (ownerId) => {
+  let horecaRegId = isUuid(ownerId) ? ownerId : null;
+  let userId = isUuid(ownerId) ? ownerId : null;
+
+  if (isUuid(ownerId)) {
+    const horecaReg = await HorecaRegistration.findOne({
+      where: {
+        [Op.or]: [{ id: ownerId }, { userId: ownerId }]
+      }
+    });
+
+    if (horecaReg) {
+      horecaRegId = horecaReg.id;
+      userId = horecaReg.userId;
+    }
+  }
+
+  const whereClause = (horecaRegId || userId) ? {
+    ownerId: { [Op.or]: [horecaRegId, userId].filter(Boolean) }
+  } : {};
+
+  const reqs = await ManpowerRequirement.findAll({
+    where: whereClause,
+    include: [{ model: VendorRegistration, as: 'supplier', attributes: ['id', 'bizName', 'city', 'mobile'] }],
+    order: [['createdAt', 'DESC']],
+  });
+
+  const activeRequirements = reqs.filter(r => ['pending', 'active', 'open'].includes(r.status)).length;
+  const agencyResponses = reqs.filter(r => ['candidates_sent', 'submitted', 'responses', 'accepted'].includes(r.status)).length;
+  const shortlistedCandidates = reqs.filter(r => r.status === 'shortlisted').length;
+  const selectedStaff = reqs.filter(r => ['selected', 'hired', 'confirmed', 'completed', 'filled'].includes(r.status)).length;
+
+  const recentRequirements = reqs.slice(0, 5).map(r => ({
+    id: r.id,
+    reqId: `#${r.id.slice(0, 8).toUpperCase()}`,
+    role: r.jobRole || 'Manpower Requirement',
+    staffRequired: r.numberOfStaff || '1',
+    responses: ['candidates_sent', 'submitted', 'responses', 'accepted'].includes(r.status) ? 1 : 0,
+    salary: r.salaryRange || '—',
+    joiningDate: r.joiningDate || 'Immediate',
+    postedDate: new Date(r.createdAt).toLocaleDateString('en-IN'),
+    status: (r.status === 'candidates_sent' || r.status === 'submitted') ? 'Responses' : (r.status === 'pending' ? 'Active' : (r.status.charAt(0).toUpperCase() + r.status.slice(1))),
+  }));
+
+  const topVendors = await VendorRegistration.findAll({
+    where: {
+      [Op.or]: [
+        { vendorType: { [Op.like]: '%manpower%' } },
+        { vendorType: { [Op.like]: '%Manpower%' } }
+      ]
+    },
+    limit: 5,
+    order: [['createdAt', 'DESC']],
+  });
+
+  const topAgencies = topVendors.map(v => ({
+    id: v.id,
+    name: v.bizName || 'Manpower Agency',
+    verified: v.status === 'approved' || v.status === 'registered',
+    rating: 4.8,
+    location: v.city || 'Unknown',
+    experience: '3+ Years',
+    availableStaff: '15+',
+    logo: (v.bizName || 'A').charAt(0).toUpperCase(),
+    roles: v.subCategory ? v.subCategory.split(',').map(s => s.trim()) : ['Chef', 'Waiter', 'Kitchen Helper'],
+    replacementPolicy: '30 Days'
+  }));
+
+  return {
+    summary: {
+      activeRequirements,
+      agencyResponses,
+      shortlistedCandidates,
+      selectedStaff
+    },
+    recentRequirements,
+    topAgencies
+  };
+};
+

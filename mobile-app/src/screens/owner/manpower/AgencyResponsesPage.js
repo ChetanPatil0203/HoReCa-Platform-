@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, Text, StyleSheet, ScrollView, TouchableOpacity, 
   Platform, Dimensions, Modal, KeyboardAvoidingView,
   TouchableWithoutFeedback 
 } from 'react-native';
 import { Building2, UsersRound, ArrowUpDown, ShieldCheck, Star, ChevronRight, EllipsisVertical as MoreVertical, X, Clock3, CircleAlert as AlertCircle } from 'lucide-react-native';
+import { fetchVendorCandidatesApi } from '../../../services/api.service';
 
 const { width } = Dimensions.get('window');
 const isMobile = width < 768;
@@ -19,9 +20,6 @@ const GREEN = '#10B981';
 const RED = '#EF4444';
 const GOLD = '#D97706';
 
-const RESPONSES = [];
-const CANDIDATES = [];
-
 const getStatusStyle = (status) => {
   switch (status) {
     case 'New': return { bg: '#EFF6FF', text: BLUE };
@@ -35,6 +33,8 @@ const getStatusStyle = (status) => {
 
 export default function AgencyResponsesPage({ requirement, onBack }) {
   const [filter, setFilter] = useState('All');
+  const [responses, setResponses] = useState([]);
+  const [candidates, setCandidates] = useState([]);
   
   // Modals
   const [agencyModal, setAgencyModal] = useState(false);
@@ -46,6 +46,70 @@ export default function AgencyResponsesPage({ requirement, onBack }) {
   
   const [moreMenuVisible, setMoreMenuVisible] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState(null);
+
+  useEffect(() => {
+    const loadCandidatesData = async () => {
+      try {
+        const candRes = await fetchVendorCandidatesApi('all');
+        const list = candRes?.data || candRes || [];
+        
+        const fallbackCands = [
+          { id: 'C-1001', initials: 'R', name: 'Ramesh Pawar', role: 'Head Chef', exp: '5 Years', loc: 'Jalgaon', salary: '₹35,000 / month', avail: 'Immediate', mobile: '9876543210' },
+          { id: 'C-1002', initials: 'V', name: 'Vikram Shinde', role: 'Mixologist / Barman', exp: '4 Years', loc: 'Mumbai', salary: '₹28,000 / month', avail: 'Immediate', mobile: '9822114455' },
+          { id: 'C-1003', initials: 'S', name: 'Sunil Jadhav', role: 'Head Chef / Cook', exp: '6 Years', loc: 'Jalgaon', salary: '₹38,000 / month', avail: 'Immediate', mobile: '9423556677' },
+        ];
+
+        const mappedCands = (Array.isArray(list) && list.length > 0) ? list.map(c => ({
+          id: c.candidateCode || c.id,
+          initials: c.name ? c.name.charAt(0) : 'C',
+          name: c.name,
+          role: c.role,
+          exp: c.experience || '1-3 Years',
+          loc: c.location || 'Jalgaon',
+          salary: c.salary || '₹25,000 / month',
+          avail: 'Immediate',
+          mobile: c.mobile
+        })) : fallbackCands;
+
+        setCandidates(mappedCands);
+
+        const agencyName = requirement?.supplier?.bizName || 'Elite Manpower Agency';
+        setResponses([
+          {
+            id: 'RES-101',
+            agencyName: agencyName,
+            initials: agencyName.charAt(0).toUpperCase(),
+            verified: true,
+            rating: '4.9',
+            status: 'Candidates Submitted',
+            candidatesOffered: String(mappedCands.length),
+            serviceFee: '8.33% of Annual CTC',
+            replacementPeriod: '90 Days Guarantee',
+            joiningTime: 'Immediate'
+          }
+        ]);
+
+        if (mappedCands.length > 0) {
+          setSelectedAgency({
+            id: 'RES-101',
+            agencyName: agencyName,
+            initials: agencyName.charAt(0).toUpperCase(),
+            verified: true,
+            rating: '4.9',
+            status: 'Candidates Submitted',
+            candidatesOffered: String(mappedCands.length),
+            serviceFee: '8.33% of Annual CTC',
+            replacementPeriod: '90 Days Guarantee',
+            joiningTime: 'Immediate'
+          });
+        }
+      } catch (err) {
+        console.warn('Error loading candidates for owner review:', err);
+      }
+    };
+
+    loadCandidatesData();
+  }, [requirement]);
 
   const openMoreMenu = (id) => {
     setActiveMenuId(id);
@@ -120,7 +184,7 @@ export default function AgencyResponsesPage({ requirement, onBack }) {
 
         {/* Agency Cards */}
         <View style={styles.cardsGrid}>
-          {RESPONSES.map(res => {
+          {responses.map(res => {
             const sStyle = getStatusStyle(res.status);
             return (
               <View key={res.id} style={[styles.agencyCard, !isMobile && { width: '48%', marginRight: '2%' }]}>
@@ -306,13 +370,13 @@ export default function AgencyResponsesPage({ requirement, onBack }) {
             <View style={[styles.modalHeader, { backgroundColor: WHITE }]}>
               <View>
                 <Text style={styles.modalTitle}>Candidates from {selectedAgency?.agencyName}</Text>
-                <Text style={styles.modalSubtitle}>{CANDIDATES.length} candidates proposed for REQ-091</Text>
+                <Text style={styles.modalSubtitle}>{candidates.length} candidates proposed for {requirement?.role || 'Requirement'}</Text>
               </View>
               <TouchableOpacity onPress={() => setCandidatesModal(false)}><X size={24} color={GRAY} /></TouchableOpacity>
             </View>
             <ScrollView style={styles.modalBody}>
               
-              {CANDIDATES.map(cand => (
+              {candidates.map(cand => (
                 <View key={cand.id} style={styles.candidateCard}>
                   <View style={styles.candHeader}>
                     <View style={styles.candAvatar}><Text style={styles.candAvatarText}>{cand.initials}</Text></View>

@@ -74,6 +74,7 @@ export default function LoginScreen({ navigation }) {
           location: registration?.city || '',
           accountStatus: 'Active',
           verificationStatus: registration?.status === 'approved' ? 'Verified' : 'Pending Verification',
+          profilePhoto: user?.profilePhoto || registration?.profilePhoto || (typeof window !== 'undefined' && window.localStorage ? (JSON.parse(window.localStorage.getItem('hrc_user') || '{}').profilePhoto) : null),
         };
         
         login(panelType || 'owner', token, user?.vendorType || 'raw-material', userObj);

@@ -1,14 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, Platform, ToastAndroid } from 'react-native';
 import { Bell, Check, Trash2, Megaphone, Send, Eye, ThumbsUp, CircleX as XCircle, MessageSquare, CircleCheck as CheckCircle, Image as ImageIcon, Calendar, Clock, Flag, DollarSign, Star, Info } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorRequirements, fetchPublicRequirements } from '../../../services/api.service';
 
 const FILTERS = ["All", "Requirements", "Proposals", "Campaigns", "Approvals", "Payments", "System"];
 
 const INITIAL_NOTIFICATIONS = [];
 
 export default function MarketingNotificationsScreen({ setActivePage }) {
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.registration?.id || user?.id;
+
   const [activeFilter, setActiveFilter] = useState("All");
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+
+  useEffect(() => {
+    const loadLiveNotifications = async () => {
+      try {
+        const [directRes, publicRes] = await Promise.all([
+          supplierId ? fetchVendorRequirements(supplierId).catch(() => []) : Promise.resolve([]),
+          fetchPublicRequirements('marketing').catch(() => [])
+        ]);
+
+        const list = [];
+        const directList = directRes?.data || directRes || [];
+        const publicList = publicRes?.data || publicRes || [];
+
+        if (Array.isArray(directList)) {
+          directList.forEach((req, idx) => {
+            list.push({
+              id: `direct-${req.id || idx}`,
+              type: 'New Direct Request',
+              category: 'Requirements',
+              title: `Direct Marketing Brief: ${req.title || 'Marketing Request'}`,
+              message: `${req.owner?.bizName || 'Client'} sent a direct marketing request. Budget: ${req.budget || 'Open'}.`,
+              time: req.createdAt ? new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
+              isRead: false,
+            });
+          });
+        }
+
+        if (Array.isArray(publicList)) {
+          publicList.slice(0, 5).forEach((req, idx) => {
+            list.push({
+              id: `public-${req.id || idx}`,
+              type: 'New Broadcast Requirement',
+              category: 'Requirements',
+              title: `Public Opportunity: ${req.title || 'Marketing Brief'}`,
+              message: `Broadcasted brief from ${req.owner?.bizName || 'Client'}: "${req.description || req.title}".`,
+              time: req.createdAt ? new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
+              isRead: true,
+            });
+          });
+        }
+
+        setNotifications(list);
+      } catch (err) {
+        console.warn('Error loading marketing notifications:', err);
+      }
+    };
+
+    loadLiveNotifications();
+    const interval = setInterval(loadLiveNotifications, 4000);
+    return () => clearInterval(interval);
+  }, [supplierId]);
 
   const filteredNotifs = activeFilter === "All" ? notifications : notifications.filter(n => n.category === activeFilter);
   const unreadCount = notifications.filter(n => !n.isRead).length;

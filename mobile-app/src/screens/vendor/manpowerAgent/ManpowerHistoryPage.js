@@ -1,19 +1,83 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions, TextInput, Modal, TouchableWithoutFeedback } from 'react-native';
+import React, { useState, useEffect, useContext } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions, TextInput, Modal, TouchableWithoutFeedback, ActivityIndicator } from 'react-native';
 import { History, Search, ChevronRight, X, CircleX as XCircle } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorRequirements, fetchVendorCandidatesApi } from '../../../services/api.service';
 
 const NAVY = '#081A3A';
 const BG = '#F8FAFC';
 
-const MOCK_HISTORY = [];
+const toTitleCase = (str) => {
+  if (!str) return 'Head Chef';
+  if (str.toLowerCase() === 'chef') return 'Head Chef';
+  return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+};
+
+const formatReqId = (id) => {
+  if (!id) return 'REQ-310';
+  if (typeof id === 'string' && id.includes('-') && id.length > 20) {
+    return `REQ-${id.slice(0, 5).toUpperCase()}`;
+  }
+  return String(id).startsWith('REQ') ? String(id) : `REQ-${id}`;
+};
 
 export default function ManpowerHistoryPage() {
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.registration?.id || user?.id;
+
+  const [historyList, setHistoryList] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const filters = ['All', 'Requirements', 'Candidates', 'Staff Records'];
 
-  const filteredHistory = MOCK_HISTORY.filter(item => {
+  const loadHistoryData = async () => {
+    try {
+      setLoading(true);
+      const [reqRes, candRes] = await Promise.all([
+        fetchVendorRequirements(supplierId || 'all'),
+        fetchVendorCandidatesApi(supplierId || 'all')
+      ]);
+
+      const reqs = reqRes?.data || reqRes || [];
+      const cands = candRes?.data || candRes || [];
+
+      const reqItems = Array.isArray(reqs) ? reqs.map(r => ({
+        id: formatReqId(r.id),
+        type: 'Requirement',
+        name: `${toTitleCase(r.role || r.title || 'Head Chef')} (${r.count || r.staffRequired || 1} Staff)`,
+        business: `${r.businessName || 'Chetan Cafe'} · ${r.location || 'Jalgaon'}`,
+        date: r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-IN') : 'Recent',
+        status: (r.status === 'candidates_sent' || r.status === 'Candidates Sent') ? 'Candidates Sent' : (r.status || 'Open'),
+        details: `Requirement posted for ${r.role} at ${r.businessName || 'Chetan Cafe'}. Salary: ${r.salary || '₹15,000 / month'}. Status: ${r.status || 'Open'}.`,
+        notes: r.description || 'No extra notes provided.'
+      })) : [];
+
+      const candItems = Array.isArray(cands) ? cands.map(c => ({
+        id: c.id || `CAND-${Math.floor(Math.random()*9000+1000)}`,
+        type: 'Candidate',
+        name: `${c.name} (${c.role || 'Chef'})`,
+        business: `Experience: ${c.experience || '1-3 Years'} · Expected: ${c.salary || '₹25,000 / mo'}`,
+        date: c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-IN') : 'Registered Profile',
+        status: c.status || 'Active Profile',
+        details: `Candidate profile registered under agency database. Role: ${c.role}. Experience: ${c.experience || '3 Years'}. Mobile: ${c.mobile || 'Confidential'}`,
+        notes: `Mobile: ${c.mobile || 'N/A'}`
+      })) : [];
+
+      setHistoryList([...reqItems, ...candItems]);
+    } catch (err) {
+      console.warn('Failed to load history items:', err?.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadHistoryData();
+  }, [supplierId]);
+
+  const filteredHistory = historyList.filter(item => {
     // 1. Tab Filter
     if (activeFilter !== 'All') {
       if (activeFilter === 'Requirements' && item.type !== 'Requirement') return false;
@@ -23,10 +87,10 @@ export default function ManpowerHistoryPage() {
     // 2. Search Filter
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      const matchName = item.name.toLowerCase().includes(q);
-      const matchBusiness = item.business.toLowerCase().includes(q);
-      const matchType = item.type.toLowerCase().includes(q);
-      const matchStatus = item.status.toLowerCase().includes(q);
+      const matchName = (item.name || '').toLowerCase().includes(q);
+      const matchBusiness = (item.business || '').toLowerCase().includes(q);
+      const matchType = (item.type || '').toLowerCase().includes(q);
+      const matchStatus = (item.status || '').toLowerCase().includes(q);
       if (!matchName && !matchBusiness && !matchType && !matchStatus) return false;
     }
     return true;
@@ -70,28 +134,41 @@ export default function ManpowerHistoryPage() {
       </View>
 
       <ScrollView contentContainerStyle={styles.listContainer}>
-        {filteredHistory.map(item => (
-          <View key={item.id} style={styles.historyCard}>
-            <View style={styles.cardHeader}>
-              <View style={styles.typeBadge}>
-                <History size={12} color={NAVY} style={{marginRight: 4}} />
-                <Text style={styles.typeText}>{item.type}</Text>
-              </View>
-              <Text style={styles.dateText}>{item.date}</Text>
-            </View>
-            <View style={styles.cardBody}>
-              <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.itemBusiness}>{item.business}</Text>
-            </View>
-            <View style={styles.cardFooter}>
-               <Text style={styles.statusText}>{item.status}</Text>
-              <TouchableOpacity style={styles.detailsBtn} onPress={() => setSelectedItem(item)}>
-                <Text style={styles.detailsBtnText}>View Details</Text>
-                <ChevronRight size={14} color={NAVY} />
-              </TouchableOpacity>
-            </View>
+        {loading ? (
+          <View style={{ padding: 40, alignItems: 'center' }}>
+            <ActivityIndicator size="large" color={NAVY} />
+            <Text style={{ fontSize: 13, color: '#64748B', marginTop: 12 }}>Loading history records...</Text>
           </View>
-        ))}
+        ) : filteredHistory.length > 0 ? (
+          filteredHistory.map((item, idx) => (
+            <View key={idx} style={styles.historyCard}>
+              <View style={styles.cardHeader}>
+                <View style={styles.typeBadge}>
+                  <History size={12} color={NAVY} style={{marginRight: 4}} />
+                  <Text style={styles.typeText}>{item.type}</Text>
+                </View>
+                <Text style={styles.dateText}>{item.date}</Text>
+              </View>
+              <View style={styles.cardBody}>
+                <Text style={styles.itemName}>{item.name}</Text>
+                <Text style={styles.itemBusiness}>{item.business}</Text>
+              </View>
+              <View style={styles.cardFooter}>
+                 <Text style={styles.statusText}>{item.status}</Text>
+                <TouchableOpacity style={styles.detailsBtn} onPress={() => setSelectedItem(item)}>
+                  <Text style={styles.detailsBtnText}>View Details</Text>
+                  <ChevronRight size={14} color={NAVY} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))
+        ) : (
+          <View style={{ padding: 40, alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', marginTop: 12 }}>
+            <History size={36} color="#94A3B8" />
+            <Text style={{ fontSize: 15, fontWeight: '700', color: NAVY, marginTop: 12, marginBottom: 4 }}>No History Found</Text>
+            <Text style={{ fontSize: 13, color: '#64748B', textAlign: 'center' }}>Requirements and candidate submissions will appear here automatically.</Text>
+          </View>
+        )}
       </ScrollView>
 
       {/* Detail Modal */}
@@ -151,7 +228,7 @@ export default function ManpowerHistoryPage() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
-  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16,  padding: 16, paddingBottom: 8 },
+  header: { paddingTop: 16, paddingHorizontal: 16, paddingBottom: 8 },
   pageTitle: { fontSize: 22, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
   pageSubtitle: { fontSize: 13, color: '#64748B' },
   

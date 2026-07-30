@@ -1,21 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  useWindowDimensions, Modal, SafeAreaView, FlatList, TextInput, KeyboardAvoidingView, Platform
+  useWindowDimensions, Modal, SafeAreaView, FlatList, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator
 } from 'react-native';
-import { UsersRound, UserPlus, EllipsisVertical as MoreVertical, Search, SlidersHorizontal, Users, UserRoundCheck, BriefcaseBusiness, BadgeCheck, Clock3, CircleX, ChevronRight, Send, X, MapPin, Briefcase, DollarSign, Calendar, Upload, Download, FileText, User } from 'lucide-react-native';
+import { UsersRound, UserPlus, EllipsisVertical as MoreVertical, Search, SlidersHorizontal, Users, UserRoundCheck, BriefcaseBusiness, BadgeCheck, Clock3, CircleX, ChevronRight, Send, X, MapPin, Briefcase, DollarSign, Calendar, Upload, Download, FileText, User, CircleCheck as CheckCircle, Trash2 } from 'lucide-react-native';
+import * as DocumentPicker from 'expo-document-picker';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorCandidatesApi, createCandidateApi, updateCandidateApi, deleteCandidateApi } from '../../../services/api.service';
 
 const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
 
-const INITIAL_CANDIDATES = [];
-
 export default function ManpowerCandidatesPage({ route, initialAction }) {
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.registration?.id || user?.id;
+
   // Simulate passing a context via route params
   const selectedJobReq = route?.params?.selectedJobReq || null; // e.g. { id: 'REQ-901', role: 'Head Chef', business: 'The Grand Taj' }
 
   const { width } = useWindowDimensions();
-  const [candidates, setCandidates] = useState(INITIAL_CANDIDATES);
+  const [candidates, setCandidates] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
 
@@ -29,12 +34,77 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
   const [selectedCand, setSelectedCand] = useState(null);
 
   const [addStep, setAddStep] = useState(1);
-  const [newCand, setNewCand] = useState({ name: '', mobile: '', role: '', experience: '', salary: '' });
+  const [newCand, setNewCand] = useState({ 
+    name: '', 
+    mobile: '', 
+    role: '', 
+    experience: '', 
+    salary: '',
+    location: '',
+    documents: { aadhaar: null, pan: null, photo: null }
+  });
 
   const [toastMsg, setToastMsg] = useState("");
   const showToast = (msg) => { setToastMsg(msg); setTimeout(() => setToastMsg(""), 3000); };
 
-  React.useEffect(() => {
+  const loadCandidates = async () => {
+    try {
+      setLoading(true);
+      const targetId = supplierId || 'all';
+      const res = await fetchVendorCandidatesApi(targetId);
+      const list = res?.data || res || [];
+      if (Array.isArray(list)) {
+        const mapped = list.map(c => ({
+          id: c.candidateCode || c.id,
+          dbId: c.id,
+          name: c.name,
+          mobile: c.mobile,
+          role: c.role,
+          experience: c.experience || 'Fresh / 1 Year',
+          salary: c.salary || 'Market Rate',
+          location: c.location || 'Local',
+          status: c.status || 'Available',
+          verification: c.verification || 'Pending Verification',
+          skills: c.skills || [],
+          documents: c.documents || {},
+          prevEmployer: c.notes || 'N/A'
+        }));
+        setCandidates(mapped);
+      }
+    } catch (err) {
+      console.warn('Failed to load candidate database:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCandidates();
+  }, [supplierId]);
+
+  const handlePickCandidateDoc = async (docType) => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: docType === 'photo' ? ['image/*'] : ['application/pdf', 'image/*'],
+        copyToCacheDirectory: true,
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const file = result.assets[0];
+        setNewCand(prev => ({
+          ...prev,
+          documents: {
+            ...prev?.documents,
+            [docType]: file
+          }
+        }));
+        showToast(`${docType.toUpperCase()} document selected.`);
+      }
+    } catch (err) {
+      console.log('Error picking candidate doc:', err);
+    }
+  };
+
+  useEffect(() => {
     if (initialAction === 'add-candidate') {
       setAddStep(1);
       setAddVisible(true);
@@ -57,33 +127,63 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
     return <CircleX size={14} color="#EF4444" />;
   };
 
-  const submitAddCandidate = () => {
+  const submitAddCandidate = async () => {
     if (!newCand.name || !newCand.mobile || !newCand.role) {
       showToast("Please fill required fields (Name, Mobile, Role)");
       return;
     }
-    const cand = {
-      ...newCand,
-      id: "C-" + Math.floor(Math.random() * 9000 + 1000),
-      verification: "Pending",
-      status: "Available",
-      location: "Mumbai",
-      availability: "Immediate",
-      availMsg: "Available Immediately",
-      skills: [],
-      prevEmployer: "N/A"
-    };
-    setCandidates([cand, ...candidates]);
-    setAddVisible(false);
-    setAddStep(1);
-    setNewCand({ name: '', mobile: '', role: '', experience: '', salary: '' });
-    showToast("Candidate added successfully!");
+    try {
+      const payload = {
+        supplierId,
+        name: newCand.name,
+        mobile: newCand.mobile,
+        role: newCand.role,
+        experience: newCand.experience || '1-3 Years',
+        salary: newCand.salary || '₹20,000 / month',
+        location: newCand.location || 'Jalgaon',
+        documents: newCand.documents
+      };
+
+      const res = await createCandidateApi(payload);
+      if (res.success) {
+        showToast("Candidate added successfully to Database!");
+        setAddVisible(false);
+        setAddStep(1);
+        setNewCand({ name: '', mobile: '', role: '', experience: '', salary: '', location: '', documents: { aadhaar: null, pan: null, photo: null } });
+        loadCandidates();
+      }
+    } catch (err) {
+      console.error('Failed to add candidate to DB:', err);
+      showToast("Failed to save candidate to Database.");
+    }
   };
 
-  const handleConfirmSubmit = () => {
-    setCandidates(prev => prev.map(c => c.id === selectedCand.id ? { ...c, status: 'Submitted', availMsg: 'Submitted to Job' } : c));
-    setSubmitConfirmVisible(false);
-    showToast("Candidate submitted successfully.");
+  const handleConfirmSubmit = async () => {
+    if (!selectedCand) return;
+    try {
+      await updateCandidateApi(selectedCand.dbId || selectedCand.id, { supplierId, status: 'Submitted' });
+      setCandidates(prev => prev.map(c => (c.dbId === selectedCand.dbId || c.id === selectedCand.id) ? { ...c, status: 'Submitted', availMsg: 'Submitted to Job' } : c));
+      setSubmitConfirmVisible(false);
+      showToast("Candidate submitted successfully.");
+    } catch (err) {
+      console.error('Failed to update candidate status:', err);
+      showToast("Error updating candidate status.");
+    }
+  };
+
+  const handleDeleteCandidate = async (cand) => {
+    const target = cand || selectedCand;
+    if (!target) return;
+    try {
+      await deleteCandidateApi(target.dbId || target.id, supplierId);
+      showToast("Candidate deleted from Database.");
+      setMoreVisible(false);
+      setProfileVisible(false);
+      loadCandidates();
+    } catch (err) {
+      console.error('Failed to delete candidate:', err);
+      showToast("Failed to delete candidate.");
+    }
   };
 
   const filteredCandidates = candidates.filter(c =>
@@ -158,9 +258,6 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
               onChangeText={setSearchQuery}
               placeholderTextColor="#94A3B8"
             />
-            <TouchableOpacity onPress={() => setAdvancedFilterVisible(true)} style={styles.filterIconBtn}>
-              <SlidersHorizontal size={18} color={NAVY} />
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -357,17 +454,49 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
 
                   <Text style={styles.formSectionTitle}>Documents Upload</Text>
                   <View style={styles.docGrid}>
-                    <TouchableOpacity style={styles.docUploadBoxSmall}>
-                      <Upload size={18} color={NAVY} style={{ marginBottom: 4 }} />
-                      <Text style={styles.docUploadText}>Aadhaar</Text>
+                    <TouchableOpacity 
+                      style={[styles.docUploadBoxSmall, newCand.documents?.aadhaar && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]} 
+                      onPress={() => handlePickCandidateDoc('aadhaar')}
+                      accessibilityRole="button"
+                    >
+                      {newCand.documents?.aadhaar ? (
+                        <CheckCircle size={18} color="#10B981" style={{ marginBottom: 4 }} />
+                      ) : (
+                        <Upload size={18} color={NAVY} style={{ marginBottom: 4 }} />
+                      )}
+                      <Text style={[styles.docUploadText, newCand.documents?.aadhaar && { color: '#10B981', fontWeight: 'bold' }]} numberOfLines={1}>
+                        {newCand.documents?.aadhaar ? newCand.documents.aadhaar.name : 'Aadhaar'}
+                      </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.docUploadBoxSmall}>
-                      <Upload size={18} color={NAVY} style={{ marginBottom: 4 }} />
-                      <Text style={styles.docUploadText}>PAN Card</Text>
+
+                    <TouchableOpacity 
+                      style={[styles.docUploadBoxSmall, newCand.documents?.pan && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]} 
+                      onPress={() => handlePickCandidateDoc('pan')}
+                      accessibilityRole="button"
+                    >
+                      {newCand.documents?.pan ? (
+                        <CheckCircle size={18} color="#10B981" style={{ marginBottom: 4 }} />
+                      ) : (
+                        <Upload size={18} color={NAVY} style={{ marginBottom: 4 }} />
+                      )}
+                      <Text style={[styles.docUploadText, newCand.documents?.pan && { color: '#10B981', fontWeight: 'bold' }]} numberOfLines={1}>
+                        {newCand.documents?.pan ? newCand.documents.pan.name : 'PAN Card'}
+                      </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.docUploadBoxSmall}>
-                      <User size={18} color={NAVY} style={{ marginBottom: 4 }} />
-                      <Text style={styles.docUploadText}>Photo</Text>
+
+                    <TouchableOpacity 
+                      style={[styles.docUploadBoxSmall, newCand.documents?.photo && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]} 
+                      onPress={() => handlePickCandidateDoc('photo')}
+                      accessibilityRole="button"
+                    >
+                      {newCand.documents?.photo ? (
+                        <CheckCircle size={18} color="#10B981" style={{ marginBottom: 4 }} />
+                      ) : (
+                        <User size={18} color={NAVY} style={{ marginBottom: 4 }} />
+                      )}
+                      <Text style={[styles.docUploadText, newCand.documents?.photo && { color: '#10B981', fontWeight: 'bold' }]} numberOfLines={1}>
+                        {newCand.documents?.photo ? newCand.documents.photo.name : 'Photo'}
+                      </Text>
                     </TouchableOpacity>
                   </View>
 

@@ -15,7 +15,7 @@ const NAV = [
 
 const NAV_BOTTOM = [
   { key: "support", label: "Support", icon: HelpCircle },
-  { key: "settings", label: "Settings", icon: Settings },
+  { key: "settings", label: "Profile & Settings", icon: Settings },
 ];
 
 export default function RawMaterialSidebar({ activePage, setActivePage, isMobile, mobileMenuOpen, setMobileMenuOpen, onLogout }) {

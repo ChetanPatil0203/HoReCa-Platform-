@@ -9,7 +9,6 @@ import VendorNavigator from './VendorNavigator';
 import ServiceProviderNavigator from './ServiceProviderNavigator';
 import ManpowerNavigator from './ManpowerNavigator';
 import MarketingNavigator from './MarketingNavigator';
-import AdminDashboardScreen from '../screens/common/AdminDashboardScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -25,9 +24,6 @@ const getAuthenticatedScreen = (userRole) => {
       return <Stack.Screen name="ManpowerFlow" component={ManpowerNavigator} />;
     case 'marketing':
       return <Stack.Screen name="MarketingFlow" component={MarketingNavigator} />;
-    case 'admin':
-    case 'superadmin':
-      return <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />;
     default:
       return <Stack.Screen name="Auth" component={AuthNavigator} />;
   }

@@ -288,6 +288,7 @@ exports.loginService = async (email, password, reqIp = null) => {
       role: user.role,
       vendorType: user.vendorType,
       isVerified: user.isVerified,
+      profilePhoto: user.profilePhoto || user.horecaRegistration?.profilePhoto || user.vendorRegistration?.profilePhoto || null,
     },
     registration: user.horecaRegistration || user.vendorRegistration,
   };

@@ -311,8 +311,8 @@ export default function AdminLayout({ children }) {
         </header>
 
         {/* View Canvas Wrapper */}
-        <div className="flex-1 overflow-y-auto p-6 bg-[#F3F4F6]" style={{ scrollbarWidth: "thin" }}>
-          <div className="w-full max-w-7xl mx-auto h-full">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#F3F4F6]" style={{ scrollbarWidth: "thin" }}>
+          <div className="w-full max-w-[1700px] mx-auto h-full min-w-0">
             {children}
           </div>
         </div>

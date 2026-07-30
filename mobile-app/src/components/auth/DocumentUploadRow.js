@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, UIManager, LayoutAnimation, Modal, Image, Linking, Alert } from 'react-native';
-import { FileText, Upload, Trash2, CheckCircle2, FileUp, CircleHelp as HelpCircle, X } from 'lucide-react-native';
+import { FileText, Upload, Trash2, CircleCheck as CheckCircle2, FileUp, CircleHelp as HelpCircle, X } from 'lucide-react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { AUTH_COLORS } from './AuthTheme';
 

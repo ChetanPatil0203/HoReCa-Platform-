@@ -20,6 +20,9 @@ router.get('/vendor/:supplierId', requirementController.getVendorRequirements);
 // GET public requirements (Feed Wall posts)
 router.get('/public', requirementController.getPublicRequirements);
 
+// GET vendor clients summary and deployments
+router.get('/clients/vendor/:supplierId', requirementController.getVendorClients);
+
 // PATCH update status of a requirement
 router.patch('/:requirementId/status', requirementController.updateRequirementStatus);
 

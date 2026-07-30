@@ -6,6 +6,7 @@ const {
   updateRequirementStatusService,
   getOwnerHistoryService,
   getOwnerTrackingService,
+  getVendorClientsService,
 } = require('../services/requirementService');
 
 exports.createRequirement = async (req, res) => {
@@ -72,9 +73,19 @@ exports.getPublicRequirements = async (req, res) => {
 exports.updateRequirementStatus = async (req, res) => {
   try {
     const { requirementId } = req.params;
-    const { status } = req.body;
-    const requirement = await updateRequirementStatusService(requirementId, status);
+    const { status, submittedCandidates } = req.body;
+    const requirement = await updateRequirementStatusService(requirementId, status, { submittedCandidates });
     res.status(200).json({ success: true, message: 'Status updated successfully', data: requirement });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.getVendorClients = async (req, res) => {
+  try {
+    const { supplierId } = req.params;
+    const clients = await getVendorClientsService(supplierId);
+    res.status(200).json({ success: true, data: clients });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

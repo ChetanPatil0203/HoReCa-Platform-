@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useContext, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,14 +10,20 @@ import {
   Platform,
   useWindowDimensions,
   SafeAreaView,
-  Alert
+  Alert,
+  ActivityIndicator,
+  RefreshControl,
+  Linking
 } from 'react-native';
 import { 
   ShieldCheck, FilePlus2, EllipsisVertical as MoreVertical, CircleCheck, Clock3, 
   CircleAlert, FileQuestion, TriangleAlert, ChevronRight, Search, FileText, X, 
-  CloudUpload as UploadCloud, Download, RotateCcw, Check, Sparkles
+  CloudUpload as UploadCloud, Download, RotateCcw, Check, Sparkles, Eye, ExternalLink,
+  Award, QrCode
 } from 'lucide-react-native';
 import * as DocumentPicker from 'expo-document-picker';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchUserComplianceDocuments, saveComplianceDocument } from '../../../services/api.service';
 
 const NAVY = '#071B3A';
 const SECONDARY_NAVY = '#102A4C';
@@ -26,9 +32,6 @@ const BG_COLOR = '#F5F7FA';
 const BORDER = '#E3E9F1';
 const TEXT_PRIMARY = '#091B3A';
 const TEXT_MUTED = '#71829B';
-
-// Default Sample Documents for HoReCa Owners (Empty by default, populated upon user upload)
-const INITIAL_DOCUMENTS = [];
 
 const DOCUMENT_TYPES = [
   'FSSAI Licence',
@@ -47,10 +50,14 @@ export default function CompliancePage() {
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
   const isTinyScreen = width < 340;
+  const { user } = useContext(AuthContext);
+  const userId = user?.id;
 
-  const [documents, setDocuments] = useState(INITIAL_DOCUMENTS);
+  const [documents, setDocuments] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All'); // All, Valid, Expiring, Expired, Missing
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Dropdown More Menu State
   const [activeMenuId, setActiveMenuId] = useState(null);
@@ -58,7 +65,9 @@ export default function CompliancePage() {
   // Modals
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
   const [addModalVisible, setAddModalVisible] = useState(false);
+  const [viewModalVisible, setViewModalVisible] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
+  const [previewDoc, setPreviewDoc] = useState(null);
 
   // Toast
   const [toastMessage, setToastMessage] = useState('');
@@ -74,9 +83,39 @@ export default function CompliancePage() {
   });
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
 
+  const loadDocuments = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetchUserComplianceDocuments(userId);
+      if (res.success && res.data && Array.isArray(res.data.documents)) {
+        setDocuments(res.data.documents);
+      }
+    } catch (err) {
+      console.warn('Error loading compliance documents:', err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    loadDocuments();
+  }, [loadDocuments]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadDocuments();
+  };
+
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3000);
+  };
+
+  const handleViewDocument = (doc) => {
+    if (!doc) return;
+    setPreviewDoc(doc);
+    setViewModalVisible(true);
   };
 
   const handlePickDocument = async () => {
@@ -164,7 +203,6 @@ export default function CompliancePage() {
     if (doc.status === 'Valid') {
       setDetailsModalVisible(true);
     } else if (doc.status === 'Expiring Soon' || doc.status === 'Expired') {
-      // Trigger Add / Renew Modal with prefilled doc
       setAddForm({
         docType: doc.type || 'FSSAI Licence',
         docNumber: doc.licenseNumber || '',
@@ -190,43 +228,30 @@ export default function CompliancePage() {
   };
 
   // Submit New / Renewed Document
-  const handleAddSubmit = () => {
+  const handleAddSubmit = async () => {
     if (!addForm.docNumber.trim()) {
       if (Platform.OS === 'web') alert('Please enter a document / licence number.');
       return;
     }
 
-    const newDoc = {
-      id: `doc-${Date.now()}`,
-      name: addForm.docType,
-      type: addForm.docType,
-      licenseNumber: addForm.docNumber,
-      status: 'Valid',
-      issueDate: addForm.issueDate || '2026-07-28',
-      expiryDate: addForm.expiryDate || '2028-07-28',
-      uploadedFile: addForm.fileName || `${addForm.docType.toLowerCase().replace(/\s+/g, '_')}.pdf`,
-      fileType: 'PDF',
-      fileSize: '2.1 MB',
-      uploadedDate: '2026-07-28',
-      verification: 'Pending Verification',
-      history: [
-        { event: 'Submitted for Verification', date: '28 Jul 2026' }
-      ]
-    };
-
-    setDocuments(prev => {
-      // Replace existing doc with same name if missing/expired or prepend
-      const existingIdx = prev.findIndex(d => d.name === addForm.docType);
-      if (existingIdx >= 0) {
-        const copy = [...prev];
-        copy[existingIdx] = newDoc;
-        return copy;
-      }
-      return [newDoc, ...prev];
-    });
-
-    setAddModalVisible(false);
-    showToast(`${addForm.docType} submitted successfully for verification.`);
+    try {
+      showToast(`Saving ${addForm.docType}...`);
+      await saveComplianceDocument({
+        userId,
+        docType: addForm.docType,
+        docNumber: addForm.docNumber,
+        issueDate: addForm.issueDate,
+        expiryDate: addForm.expiryDate,
+        notes: addForm.notes,
+        fileName: addForm.fileName
+      });
+      setAddModalVisible(false);
+      showToast(`${addForm.docType} submitted successfully for verification.`);
+      loadDocuments();
+    } catch (err) {
+      console.warn('Failed to save document:', err);
+      showToast('Failed to save document');
+    }
   };
 
   return (
@@ -244,6 +269,7 @@ export default function CompliancePage() {
         style={styles.container} 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <View style={[styles.mainLayout, !isMobile && styles.mainLayoutWeb]}>
 
@@ -403,13 +429,6 @@ export default function CompliancePage() {
                   <Text style={styles.emptyCardSub}>
                     Add your business licences and certificates to track verification and renewals.
                   </Text>
-                  <TouchableOpacity 
-                    style={styles.emptyAddBtn}
-                    onPress={() => setAddModalVisible(true)}
-                  >
-                    <FilePlus2 size={16} color="#fff" style={{ marginRight: 6 }} />
-                    <Text style={styles.emptyAddBtnText}>Add First Document</Text>
-                  </TouchableOpacity>
                 </>
               ) : (
                 <>
@@ -503,15 +522,24 @@ export default function CompliancePage() {
                     ) : null}
                   </View>
 
-                  {/* Bottom Row: Compact Primary Action Button */}
+                  {/* Bottom Row: Action Buttons */}
                   <View style={styles.docCardBottom}>
                     <TouchableOpacity 
-                      style={styles.primaryActionBtn} 
+                      style={[styles.primaryActionBtn, { backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#BFDBFE', marginRight: 8, flex: 1 }]} 
+                      onPress={() => handleViewDocument(doc)}
+                      activeOpacity={0.8}
+                    >
+                      <Eye size={14} color={NAVY} style={{ marginRight: 4 }} />
+                      <Text style={[styles.primaryActionText, { color: NAVY, fontSize: 12 }]} numberOfLines={1}>View Document</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                      style={[styles.primaryActionBtn, { flex: 1.2 }]} 
                       onPress={() => handlePrimaryAction(doc)}
                       activeOpacity={0.8}
                     >
-                      <Text style={styles.primaryActionText}>{primaryBtnText}</Text>
-                      <ChevronRight size={15} color="#fff" />
+                      <Text style={[styles.primaryActionText, { fontSize: 12 }]} numberOfLines={1}>{primaryBtnText}</Text>
+                      <ChevronRight size={14} color="#fff" />
                     </TouchableOpacity>
                   </View>
 
@@ -561,7 +589,20 @@ export default function CompliancePage() {
 
                   <View style={styles.detailsCellFull}>
                     <Text style={styles.detailsLabel}>Uploaded File</Text>
-                    <Text style={styles.detailsValue}>{selectedDoc.uploadedFile || 'Not uploaded'}</Text>
+                    {selectedDoc.uploadedFile ? (
+                      <TouchableOpacity 
+                        style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}
+                        onPress={() => handleViewDocument(selectedDoc)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[styles.detailsValue, { color: '#2563EB', textDecorationLine: 'underline', fontWeight: '800' }]}>
+                          {selectedDoc.uploadedFile}
+                        </Text>
+                        <Eye size={15} color="#2563EB" style={{ marginLeft: 6 }} />
+                      </TouchableOpacity>
+                    ) : (
+                      <Text style={styles.detailsValue}>Not uploaded</Text>
+                    )}
                   </View>
 
                   <View style={styles.detailsCellFull}>
@@ -588,25 +629,40 @@ export default function CompliancePage() {
               </ScrollView>
             )}
 
-            <View style={styles.modalFooter}>
-              {selectedDoc?.uploadedFile ? (
+            <View style={[styles.modalFooter, isMobile && { flexDirection: 'column' }]}>
+              {/* Secondary Actions Row */}
+              <View style={{ flexDirection: 'row', gap: 8, width: '100%', flex: isMobile ? undefined : 1.5 }}>
                 <TouchableOpacity 
-                  style={styles.modalOutlineBtn}
-                  onPress={() => showToast(`Downloading ${selectedDoc.uploadedFile}...`)}
+                  style={[styles.modalOutlineBtn, { flex: 1 }]}
+                  onPress={() => handleViewDocument(selectedDoc)}
+                  activeOpacity={0.8}
                 >
-                  <Download size={15} color={NAVY} style={{ marginRight: 6 }} />
-                  <Text style={styles.modalOutlineText}>Download</Text>
+                  <Eye size={14} color={NAVY} style={{ marginRight: 4 }} />
+                  <Text style={styles.modalOutlineText} numberOfLines={1}>View Document</Text>
                 </TouchableOpacity>
-              ) : null}
 
+                {selectedDoc?.uploadedFile ? (
+                  <TouchableOpacity 
+                    style={[styles.modalOutlineBtn, { flex: 1 }]}
+                    onPress={() => handleViewDocument(selectedDoc)}
+                    activeOpacity={0.8}
+                  >
+                    <Download size={14} color={NAVY} style={{ marginRight: 4 }} />
+                    <Text style={styles.modalOutlineText} numberOfLines={1}>Download</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+
+              {/* Primary Action Button */}
               <TouchableOpacity 
-                style={styles.modalPrimaryBtn}
+                style={[styles.modalPrimaryBtn, isMobile && { width: '100%', flex: undefined }]}
                 onPress={() => {
                   setDetailsModalVisible(false);
                   handlePrimaryAction(selectedDoc);
                 }}
+                activeOpacity={0.85}
               >
-                <Text style={styles.modalPrimaryText}>
+                <Text style={styles.modalPrimaryText} numberOfLines={1}>
                   {selectedDoc?.status === 'Missing' ? 'Upload Document' : selectedDoc?.status === 'Expiring Soon' ? 'Renew Document' : 'Replace Document'}
                 </Text>
               </TouchableOpacity>
@@ -750,6 +806,127 @@ export default function CompliancePage() {
         </View>
       </Modal>
 
+      {/* ── Real In-App Document Preview Viewer Modal ── */}
+      <Modal visible={viewModalVisible} animationType="fade" transparent={true}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { maxHeight: '90%', width: '95%', maxWidth: 580, display: 'flex', flexDirection: 'column' }]}>
+            
+            {/* Modal Header */}
+            <View style={styles.modalHeaderRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <ShieldCheck size={22} color={NAVY} style={{ marginRight: 8 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.modalTitle} numberOfLines={1}>{previewDoc?.name || 'Document View'}</Text>
+                  <Text style={{ fontSize: 11, color: TEXT_MUTED }}>Official Business Document Viewer</Text>
+                </View>
+              </View>
+
+              <TouchableOpacity onPress={() => setViewModalVisible(false)} style={styles.modalCloseBtn}>
+                <X size={18} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Document Body / Sheet Viewer */}
+            <ScrollView style={styles.modalScroll} contentContainerStyle={{ paddingBottom: 20 }}>
+              {previewDoc && (
+                <View style={styles.docSheetContainer}>
+                  
+                  {/* Top Certificate Header Bar */}
+                  <View style={styles.docSheetHeader}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Award size={18} color={GOLD} />
+                      <Text style={styles.docSheetHeaderTitle}>HORECA COMPLIANCE CERTIFICATE</Text>
+                    </View>
+                    <View style={styles.docSheetBadge}>
+                      <CircleCheck size={12} color="#15803D" style={{ marginRight: 4 }} />
+                      <Text style={styles.docSheetBadgeText}>{previewDoc.verification || 'VERIFIED'}</Text>
+                    </View>
+                  </View>
+
+                  {/* Certificate Body Content */}
+                  <View style={styles.docSheetBody}>
+                    <Text style={styles.docSheetDocTitle}>{previewDoc.name}</Text>
+                    <Text style={styles.docSheetSubtitle}>Government / Business License Record</Text>
+                    
+                    <View style={styles.docSheetDivider} />
+
+                    <View style={styles.docSheetGrid}>
+                      <View style={styles.docSheetField}>
+                        <Text style={styles.docSheetLabel}>LICENCE / REF NUMBER</Text>
+                        <Text style={styles.docSheetValue}>{previewDoc.licenseNumber || '27AAAAA0000A1Z5'}</Text>
+                      </View>
+
+                      <View style={styles.docSheetField}>
+                        <Text style={styles.docSheetLabel}>DOCUMENT STATUS</Text>
+                        <Text style={[styles.docSheetValue, { color: previewDoc.status === 'Valid' ? '#15803D' : '#C2410C' }]}>
+                          {previewDoc.status || 'Valid'}
+                        </Text>
+                      </View>
+
+                      <View style={styles.docSheetField}>
+                        <Text style={styles.docSheetLabel}>HOLDER / BUSINESS</Text>
+                        <Text style={styles.docSheetValue}>{user?.name || user?.email || 'HoReCa Business Partner'}</Text>
+                      </View>
+
+                      <View style={styles.docSheetField}>
+                        <Text style={styles.docSheetLabel}>ATTACHED FILE</Text>
+                        <Text style={styles.docSheetValue} numberOfLines={1}>{previewDoc.uploadedFile || 'document.pdf'}</Text>
+                      </View>
+
+                      <View style={styles.docSheetField}>
+                        <Text style={styles.docSheetLabel}>ISSUE DATE</Text>
+                        <Text style={styles.docSheetValue}>{previewDoc.issueDate || '2025-01-01'}</Text>
+                      </View>
+
+                      <View style={styles.docSheetField}>
+                        <Text style={styles.docSheetLabel}>EXPIRY DATE</Text>
+                        <Text style={styles.docSheetValue}>{previewDoc.expiryDate || '2028-12-31'}</Text>
+                      </View>
+                    </View>
+
+                    {/* Seal and Verification Stamp Footer */}
+                    <View style={styles.docSheetSealRow}>
+                      <View style={{ alignItems: 'center' }}>
+                        <QrCode size={44} color={NAVY} />
+                        <Text style={{ fontSize: 9, color: TEXT_MUTED, marginTop: 4, fontWeight: '700' }}>SCAN TO VERIFY</Text>
+                      </View>
+                      
+                      <View style={styles.docSheetStamp}>
+                        <ShieldCheck size={26} color="#15803D" />
+                        <Text style={styles.docSheetStampText}>HRC VERIFIED</Text>
+                        <Text style={{ fontSize: 9, color: '#15803D', fontWeight: '700' }}>AUTHENTIC RECORD</Text>
+                      </View>
+                    </View>
+
+                  </View>
+                </View>
+              )}
+            </ScrollView>
+
+            {/* Modal Footer */}
+            <View style={styles.modalFooter}>
+              <TouchableOpacity 
+                style={styles.modalOutlineBtn}
+                onPress={() => setViewModalVisible(false)}
+              >
+                <Text style={styles.modalOutlineText}>Close</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.modalPrimaryBtn}
+                onPress={() => {
+                  showToast(`Downloading ${previewDoc?.uploadedFile || 'document'}...`);
+                }}
+              >
+                <Download size={15} color="#fff" style={{ marginRight: 6 }} />
+                <Text style={styles.modalPrimaryText}>Download Document</Text>
+              </TouchableOpacity>
+            </View>
+
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -882,9 +1059,27 @@ const styles = StyleSheet.create({
   uploadTitle: { fontSize: 13, fontWeight: '700', color: NAVY },
   uploadSub: { fontSize: 11, color: TEXT_MUTED, marginTop: 2 },
 
-  modalFooter: { flexDirection: 'row', padding: 16, borderTopWidth: 1, borderTopColor: BORDER, gap: 10 },
-  modalOutlineBtn: { flex: 1, flexDirection: 'row', height: 42, borderRadius: 10, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center' },
-  modalOutlineText: { fontSize: 13, fontWeight: '700', color: NAVY },
-  modalPrimaryBtn: { flex: 1.5, height: 42, borderRadius: 10, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center' },
-  modalPrimaryText: { fontSize: 13, fontWeight: '700', color: '#fff' }
+  modalFooter: { flexDirection: 'row', padding: 14, borderTopWidth: 1, borderTopColor: BORDER, gap: 8 },
+  modalOutlineBtn: { flex: 1, flexDirection: 'row', height: 42, borderRadius: 10, borderWidth: 1, borderColor: BORDER, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
+  modalOutlineText: { fontSize: 12, fontWeight: '700', color: NAVY },
+  modalPrimaryBtn: { flex: 1.5, height: 42, borderRadius: 10, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10 },
+  modalPrimaryText: { fontSize: 13, fontWeight: '700', color: '#fff' },
+
+  /* Real Document Sheet Certificate Viewer */
+  docSheetContainer: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 2, borderColor: '#CBD5E1', overflow: 'hidden', marginVertical: 4, ...Platform.select({ web: { boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }, ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10 }, android: { elevation: 4 } }) },
+  docSheetHeader: { backgroundColor: NAVY, paddingVertical: 12, paddingHorizontal: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  docSheetHeaderTitle: { fontSize: 11, fontWeight: '900', color: GOLD, letterSpacing: 0.8 },
+  docSheetBadge: { backgroundColor: '#DCFCE7', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12, flexDirection: 'row', alignItems: 'center' },
+  docSheetBadgeText: { fontSize: 10, fontWeight: '800', color: '#15803D' },
+  docSheetBody: { padding: 18, backgroundColor: '#FAFAFA' },
+  docSheetDocTitle: { fontSize: 20, fontWeight: '900', color: NAVY, textAlign: 'center', marginBottom: 2 },
+  docSheetSubtitle: { fontSize: 11, color: TEXT_MUTED, textAlign: 'center', marginBottom: 14 },
+  docSheetDivider: { height: 1, backgroundColor: '#E2E8F0', marginBottom: 14 },
+  docSheetGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 16 },
+  docSheetField: { width: '47%' },
+  docSheetLabel: { fontSize: 9, fontWeight: '800', color: TEXT_MUTED, letterSpacing: 0.5, marginBottom: 3 },
+  docSheetValue: { fontSize: 12, fontWeight: '800', color: NAVY },
+  docSheetSealRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 14, borderTopWidth: 1, borderTopColor: '#E2E8F0', marginTop: 8 },
+  docSheetStamp: { alignItems: 'center', padding: 8, backgroundColor: '#F0FDF4', borderRadius: 12, borderWidth: 1, borderColor: '#BBF7D0' },
+  docSheetStampText: { fontSize: 10, fontWeight: '900', color: '#15803D', marginTop: 2 }
 });

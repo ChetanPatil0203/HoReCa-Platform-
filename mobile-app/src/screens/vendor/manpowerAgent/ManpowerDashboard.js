@@ -15,6 +15,7 @@ import ManpowerSupportPage from './ManpowerSupportPage';
 import ManpowerHistoryPage from './ManpowerHistoryPage';
 import ManpowerProfilePage from './ManpowerProfilePage';
 import ManpowerClientsPage from './ManpowerClientsPage';
+import FeedWallPage from '../FeedWallPage';
 import CompliancePage from '../../owner/compliance/CompliancePage';
 import DocumentsKycScreen from '../../common/DocumentsKycScreen';
 
@@ -23,12 +24,12 @@ const ACCENT = '#081A3A';
 const BG = '#F3F4F6';
 const WHITE = '#FFFFFF';
 
-export default function ManpowerDashboard() {
+export default function ManpowerDashboard({ initialTab = "dashboard" }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || (Platform.OS !== 'web');
   const { user, logout } = useContext(AuthContext);
 
-  const [activePage, setActivePage] = useState("dashboard");
+  const [activePage, setActivePage] = useState(initialTab);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [initialAction, setInitialAction] = useState(null);
 
@@ -49,6 +50,7 @@ export default function ManpowerDashboard() {
     setInitialAction(action);
     setActivePage(page);
     setIsPlusMenuOpen(false);
+    setMobileMenuOpen(false);
   };
 
   const handleLogout = () => {
@@ -72,11 +74,20 @@ export default function ManpowerDashboard() {
     switch (activePage) {
       case "dashboard":
         return <ManpowerDashboardHome onNavigate={navigateTo} />;
+      case "feed":
+      case "feedwall":
+      case "FeedWall":
+        return <FeedWallPage />;
       case "job-requirements":
+      case "DirectRequests":
+      case "direct-requests":
         return <ManpowerDirectRequestsPage initialAction={initialAction} />;
       case "candidates":
+      case "Candidates":
         return <ManpowerCandidatesPage initialAction={initialAction} />;
       case "staff-records":
+      case "StaffRecords":
+      case "staff":
         return <ManpowerDeploymentsPage />;
       case "history":
         return <ManpowerHistoryPage />;
@@ -110,7 +121,7 @@ export default function ManpowerDashboard() {
 
   const bottomNavItems = [
     { key: "support", label: "Help & Support", icon: HelpCircle },
-    { key: "settings", label: "Settings", icon: Settings },
+    { key: "settings", label: "Profile & Settings", icon: Settings },
   ];
 
   const agencyName = user?.registration?.bizName || user?.bizName || user?.contactPerson || (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Agency Partner');
@@ -190,7 +201,11 @@ export default function ManpowerDashboard() {
                 <View style={styles.mobileNotificationDot} />
               </TouchableOpacity>
               <TouchableOpacity style={styles.mobileAvatarBtn} onPress={() => navigateTo('profile')}>
-                <User size={16} color={PRIMARY} />
+                {(user?.profilePhoto || user?.profileImage) ? (
+                  <Image source={{ uri: user?.profilePhoto || user?.profileImage }} style={{ width: 28, height: 28, borderRadius: 14 }} />
+                ) : (
+                  <User size={16} color={PRIMARY} />
+                )}
               </TouchableOpacity>
             </View>
           </View>

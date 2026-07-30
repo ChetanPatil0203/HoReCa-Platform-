@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity, SafeAreaView
 } from 'react-native';
 import { Bell, Package, TriangleAlert as AlertTriangle, FileText, Check } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorOrders } from '../../../services/api.service';
 
 const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
@@ -12,8 +14,43 @@ const FILTERS = ['All', 'Orders', 'Alerts', 'System'];
 const MOCK_NOTIFICATIONS = [];
 
 export default function RawMaterialNotificationsPage() {
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.registration?.id || user?.id;
+
   const [activeFilter, setActiveFilter] = useState('All');
   const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
+
+  useEffect(() => {
+    const loadLiveNotifications = async () => {
+      if (!supplierId) return;
+      try {
+        const res = await fetchVendorOrders(supplierId);
+        const ordersList = res?.data || res || [];
+        const list = [];
+
+        if (Array.isArray(ordersList)) {
+          ordersList.forEach((ord, idx) => {
+            const statusLabel = ord.status === 'confirmed' ? 'Order Confirmed' : ord.status === 'shipped' ? 'Out for Delivery' : ord.status === 'delivered' ? 'Order Delivered' : `Order ${ord.status}`;
+            list.push({
+              id: `ord-${ord.id || idx}`,
+              type: 'Orders',
+              title: `New Order Update: #${(ord.id || '').toString().slice(-4).toUpperCase()}`,
+              message: `Customer ${ord.owner?.bizName || 'Client'} placed an order worth ₹${parseFloat(ord.totalAmount || 0).toLocaleString('en-IN')}. Status: ${statusLabel}.`,
+              time: ord.createdAt ? new Date(ord.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
+              isRead: ord.status === 'delivered',
+            });
+          });
+        }
+        setNotifications(list);
+      } catch (err) {
+        console.warn('Error loading raw material notifications:', err);
+      }
+    };
+
+    loadLiveNotifications();
+    const interval = setInterval(loadLiveNotifications, 4000);
+    return () => clearInterval(interval);
+  }, [supplierId]);
 
   const getIcon = (type) => {
     switch(type) {

@@ -5,6 +5,9 @@ const marketingController = require('../controllers/marketingRequirementControll
 // POST create marketing requirement
 router.post('/', marketingController.createRequirement);
 
+// GET marketing dashboard summary for an owner
+router.get('/dashboard-summary/:ownerId', marketingController.getDashboardSummary);
+
 // GET marketing requirements posted by an owner
 router.get('/owner/:ownerId', marketingController.getOwnerRequirements);
 

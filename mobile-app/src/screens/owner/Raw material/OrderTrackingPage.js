@@ -6,7 +6,7 @@ import {
 import { 
   Truck, Search, CircleCheck as CheckCircle, Clock, MapPin, MessageSquare, 
   Package, ArrowLeft, UsersRound, Wrench, Megaphone, ChevronRight, X, 
-  RotateCcw, Activity, ShieldCheck, CircleAlert, Phone, User
+  RotateCcw, Activity, ShieldCheck, CircleAlert, Phone, User, SlidersHorizontal
 } from 'lucide-react-native';
 import { fetchOwnerActivityHistoryApi, fetchOwnerTrackingApi } from '../../../services/api.service';
 
@@ -73,6 +73,8 @@ export default function OrderTrackingPage() {
   const [selectedPillar, setSelectedPillar] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showStatusFilters, setShowStatusFilters] = useState(true);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
 
   // Selected record for details modal
   const [detailRecord, setDetailRecord] = useState(null);
@@ -96,21 +98,41 @@ export default function OrderTrackingPage() {
         if (res && res.success && res.data) {
           const { orders = [], requirements = [] } = res.data;
 
-          const mappedOrders = orders.map(ord => ({
-            id: `ORD-${(ord.id || '').toString().slice(-4).padStart(4, '0')}`,
-            pillar: 'raw-material',
-            title: ord.items && ord.items[0] ? `${ord.items[0].product?.name || 'Raw Material'} x ${ord.items[0].quantity}` : 'Raw Material Order',
-            vendor: ord.supplier?.bizName || 'Supplier Wholesaler',
-            status: ord.status === 'confirmed' ? 'On the Way' : ord.status.charAt(0).toUpperCase() + ord.status.slice(1),
-            date: new Date(ord.createdAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
-            amount: `₹${parseFloat(ord.totalAmount || 0).toLocaleString('en-IN')}`,
-            actionText: 'Track Delivery',
-            steps: ['Confirmed', 'Preparing', 'On the Way', 'Delivered'],
-            currentStepIndex: ord.status === 'confirmed' ? 2 : 1,
-            updates: [
-              { message: `Order status is ${ord.status}`, location: ord.deliveryAddress || 'Warehouse', time: 'Just now' }
-            ]
-          }));
+          const mappedOrders = orders.map(ord => {
+            const statusLower = (ord.status || '').toLowerCase();
+            let currentStepIndex = 1;
+            let status = ord.status ? (ord.status.charAt(0).toUpperCase() + ord.status.slice(1)) : 'In Progress';
+
+            if (statusLower === 'delivered' || statusLower === 'completed') {
+              currentStepIndex = 3;
+              status = 'Delivered';
+            } else if (statusLower === 'shipped' || statusLower === 'on the way' || statusLower === 'dispatched' || statusLower === 'on_the_way') {
+              currentStepIndex = 2;
+              status = 'On the Way';
+            } else if (statusLower === 'preparing' || statusLower === 'processing') {
+              currentStepIndex = 1;
+              status = 'Preparing';
+            } else if (statusLower === 'confirmed' || statusLower === 'accepted') {
+              currentStepIndex = 0;
+              status = 'Confirmed';
+            }
+
+            return {
+              id: `ORD-${(ord.id || '').toString().slice(-4).padStart(4, '0')}`,
+              pillar: 'raw-material',
+              title: ord.items && ord.items[0] ? `${ord.items[0].product?.name || 'Raw Material'} x ${ord.items[0].quantity}` : 'Raw Material Order',
+              vendor: ord.supplier?.bizName || 'Supplier Wholesaler',
+              status,
+              date: new Date(ord.createdAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+              amount: `₹${parseFloat(ord.totalAmount || 0).toLocaleString('en-IN')}`,
+              actionText: 'Track Delivery',
+              steps: ['Confirmed', 'Preparing', 'On the Way', 'Delivered'],
+              currentStepIndex,
+              updates: [
+                { message: `Order status is ${status}`, location: ord.deliveryAddress || 'Warehouse', time: 'Just now' }
+              ]
+            };
+          });
 
           const mappedReqs = requirements.map(r => {
             let pillar = 'service';
@@ -128,9 +150,19 @@ export default function OrderTrackingPage() {
             }
 
             let status = 'In Progress';
-            if (r.status === 'completed' || r.status === 'accepted') status = 'Completed';
-            else if (r.status === 'cancelled') status = 'Cancelled';
-            else status = (r.status || 'pending').charAt(0).toUpperCase() + (r.status || 'pending').slice(1);
+            let currentStepIndex = 1;
+            const rStatusLower = (r.status || '').toLowerCase();
+
+            if (rStatusLower === 'completed' || rStatusLower === 'accepted' || r.supplierId) {
+              status = 'Completed';
+              currentStepIndex = 3;
+            } else if (rStatusLower === 'cancelled') {
+              status = 'Cancelled';
+              currentStepIndex = 0;
+            } else {
+              status = (r.status || 'pending').charAt(0).toUpperCase() + (r.status || 'pending').slice(1);
+              currentStepIndex = 1;
+            }
 
             return {
               id: `REQ-${(r.id || '').toString().slice(-4).padStart(4, '0')}`,
@@ -140,10 +172,10 @@ export default function OrderTrackingPage() {
               status,
               date: new Date(r.createdAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
               amount: r.budget ? (r.budget.toString().startsWith('₹') ? r.budget : `₹${r.budget}`) : null,
-              progress: pillar === 'marketing' ? 50 : undefined,
+              progress: pillar === 'marketing' ? (rStatusLower === 'completed' ? 100 : 50) : undefined,
               actionText,
               steps,
-              currentStepIndex: 2,
+              currentStepIndex,
               updates: [
                 { message: `Requirement status: ${status}`, location: r.location || 'Branch', time: 'Just now' }
               ]
@@ -252,34 +284,6 @@ export default function OrderTrackingPage() {
             </View>
           </View>
 
-          {/* ── Horizontally Scrollable Pillar Pills ── */}
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            style={styles.pillarScroll}
-            contentContainerStyle={styles.pillarContainer}
-          >
-            {PILLARS.map(p => {
-              const IconComp = p.icon;
-              const isActive = selectedPillar === p.id;
-              const count = pillarCounts[p.id] || 0;
-
-              return (
-                <TouchableOpacity
-                  key={p.id}
-                  style={[styles.pillarPill, isActive && styles.pillarPillActive]}
-                  onPress={() => handleSelectPillar(p.id)}
-                  activeOpacity={0.8}
-                >
-                  <IconComp size={16} color={isActive ? '#fff' : p.color} style={{ marginRight: 6 }} />
-                  <Text style={[styles.pillarPillText, isActive && styles.pillarPillTextActive]}>
-                    {p.label} {count > 0 ? `(${count})` : ''}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-
           {/* ── Search Input ── */}
           <View style={styles.searchContainer}>
             <Search size={18} color="#94A3B8" style={{ marginRight: 8 }} />
@@ -291,35 +295,45 @@ export default function OrderTrackingPage() {
               onChangeText={setSearchQuery}
             />
             {searchQuery ? (
-              <TouchableOpacity onPress={() => setSearchQuery('')} style={{ padding: 4 }}>
+              <TouchableOpacity onPress={() => setSearchQuery('')} style={{ padding: 4, marginRight: 4 }}>
                 <X size={16} color="#64748B" />
               </TouchableOpacity>
             ) : null}
+            <TouchableOpacity 
+              style={[styles.filterIconButton, selectedPillar !== 'all' && styles.filterIconButtonActive]}
+              onPress={() => setFilterModalVisible(true)}
+              activeOpacity={0.7}
+              accessibilityLabel="Filter categories"
+            >
+              <SlidersHorizontal size={16} color={selectedPillar !== 'all' ? '#fff' : NAVY} />
+            </TouchableOpacity>
           </View>
 
           {/* ── Dynamic Status Filter Pills ── */}
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            style={styles.statusScroll}
-            contentContainerStyle={styles.statusContainer}
-          >
-            {availableStatuses.map(status => {
-              const isActive = selectedStatus === status;
-              return (
-                <TouchableOpacity
-                  key={status}
-                  style={[styles.statusPill, isActive && styles.statusPillActive]}
-                  onPress={() => setSelectedStatus(status)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.statusPillText, isActive && styles.statusPillTextActive]}>
-                    {status}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+          {showStatusFilters ? (
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              style={styles.statusScroll}
+              contentContainerStyle={styles.statusContainer}
+            >
+              {availableStatuses.map(status => {
+                const isActive = selectedStatus === status;
+                return (
+                  <TouchableOpacity
+                    key={status}
+                    style={[styles.statusPill, isActive && styles.statusPillActive]}
+                    onPress={() => setSelectedStatus(status)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.statusPillText, isActive && styles.statusPillTextActive]}>
+                      {status}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          ) : null}
 
           {/* ── Tracking Cards List ── */}
           {filteredRecords.length === 0 ? (
@@ -572,6 +586,77 @@ export default function OrderTrackingPage() {
         </View>
       </Modal>
 
+      {/* ── Category Filter Popup Modal ── */}
+      <Modal
+        visible={filterModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setFilterModalVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.filterModalOverlay}
+          activeOpacity={1}
+          onPress={() => setFilterModalVisible(false)}
+        >
+          <View style={styles.filterModalContent} onStartShouldSetResponder={() => true}>
+            <View style={styles.filterModalHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <SlidersHorizontal size={18} color={NAVY} style={{ marginRight: 8 }} />
+                <Text style={styles.filterModalTitle}>Filter Category</Text>
+              </View>
+              <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
+                <X size={20} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.filterModalSubtitle}>
+              Select a category to view specific tracking records:
+            </Text>
+
+            <View style={styles.filterOptionsList}>
+              {PILLARS.map(p => {
+                const IconComp = p.icon;
+                const isSelected = selectedPillar === p.id;
+                const count = pillarCounts[p.id] || 0;
+
+                return (
+                  <TouchableOpacity
+                    key={p.id}
+                    style={[styles.filterOptionItem, isSelected && styles.filterOptionItemSelected]}
+                    onPress={() => {
+                      setSelectedPillar(p.id);
+                      setSelectedStatus('All');
+                      setFilterModalVisible(false);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <View style={[styles.filterOptionIconBox, { backgroundColor: isSelected ? NAVY : '#F1F5F9' }]}>
+                        <IconComp size={16} color={isSelected ? '#fff' : p.color} />
+                      </View>
+                      <Text style={[styles.filterOptionLabel, isSelected && styles.filterOptionLabelSelected]}>
+                        {p.label}
+                      </Text>
+                      {count > 0 ? (
+                        <View style={[styles.filterCountBadge, isSelected && styles.filterCountBadgeSelected]}>
+                          <Text style={[styles.filterCountText, isSelected && styles.filterCountTextSelected]}>
+                            {count}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+
+                    {isSelected && (
+                      <CheckCircle size={18} color={NAVY} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -580,6 +665,96 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: LIGHT_BG },
   container: { flex: 1, backgroundColor: LIGHT_BG },
   scrollContent: { paddingBottom: 115 },
+
+  /* Category Filter Popup Modal */
+  filterModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20
+  },
+  filterModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    width: '100%',
+    maxWidth: 380,
+    ...Platform.select({
+      web: { boxShadow: '0 10px 25px rgba(0,0,0,0.15)' },
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 10 },
+      android: { elevation: 8 }
+    })
+  },
+  filterModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4
+  },
+  filterModalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: NAVY
+  },
+  filterModalSubtitle: {
+    fontSize: 13,
+    color: '#64748B',
+    marginBottom: 16
+  },
+  filterOptionsList: {
+    gap: 8
+  },
+  filterOptionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#fff'
+  },
+  filterOptionItemSelected: {
+    borderColor: NAVY,
+    backgroundColor: '#F8FAFC'
+  },
+  filterOptionIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10
+  },
+  filterOptionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#334155'
+  },
+  filterOptionLabelSelected: {
+    color: NAVY,
+    fontWeight: '800'
+  },
+  filterCountBadge: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginLeft: 8
+  },
+  filterCountBadgeSelected: {
+    backgroundColor: NAVY
+  },
+  filterCountText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B'
+  },
+  filterCountTextSelected: {
+    color: '#fff'
+  },
 
   mainLayout: { padding: 14 },
   mainLayoutWeb: { maxWidth: 900, alignSelf: 'center', width: '100%', padding: 24 },
@@ -605,6 +780,8 @@ const styles = StyleSheet.create({
   /* Search Container */
   searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: BORDER, borderRadius: 12, paddingHorizontal: 12, height: 44, marginBottom: 12 },
   searchInput: { flex: 1, fontSize: 14, color: NAVY, ...Platform.select({ web: { outlineStyle: 'none' } }) },
+  filterIconButton: { width: 32, height: 32, borderRadius: 8, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center', marginLeft: 6 },
+  filterIconButtonActive: { backgroundColor: NAVY },
 
   /* Dynamic Status Pills */
   statusScroll: { flexGrow: 0, marginBottom: 16 },

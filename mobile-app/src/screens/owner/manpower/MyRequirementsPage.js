@@ -34,14 +34,14 @@ export default function MyRequirementsPage({ onBack, onViewResponses }) {
       const res = await fetchOwnerRequirements(ownerId);
       if (res.success) {
         const mapped = (res.data || []).map(r => ({
-          id: `#${r.id.slice(0, 8).toUpperCase()}`,
+          id: r.reqId || `#${r.id.slice(0, 8).toUpperCase()}`,
           _rawId: r.id,
-          role: r.title,
-          staffRequired: r.extraData?.numberOfStaff || '1',
-          responses: 0,
-          salary: r.budget || '—',
+          role: r.title || r.jobRole || 'Manpower Requirement',
+          staffRequired: r.extraData?.numberOfStaff || r.numberOfStaff || '1',
+          responses: (r.status === 'candidates_sent' || r.status === 'submitted' || r.status === 'confirmed') ? 1 : 0,
+          salary: r.budget || r.salaryRange || '—',
           postedDate: new Date(r.createdAt).toLocaleDateString('en-IN'),
-          status: r.status === 'pending' ? 'Active' : r.status.charAt(0).toUpperCase() + r.status.slice(1)
+          status: (r.status === 'candidates_sent' || r.status === 'submitted') ? 'Responses' : (r.status === 'pending' ? 'Active' : r.status.charAt(0).toUpperCase() + r.status.slice(1))
         }));
         setRequirements(mapped);
       }

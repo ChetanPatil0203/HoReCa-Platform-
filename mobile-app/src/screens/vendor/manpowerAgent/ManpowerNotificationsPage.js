@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, RefreshControl } from 'react-native';
 import { Bell, Briefcase, User, Calendar, CircleCheck as CheckCircle, DollarSign, TriangleAlert as AlertTriangle, ChevronRight, Check } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorRequirements, fetchPublicRequirements } from '../../../services/api.service';
 
 const NAVY = '#081A3A';
 
@@ -9,12 +11,68 @@ const MOCK_NOTIFICATIONS = [];
 const FILTERS = ['All', 'Requirements', 'Candidates', 'Staff Records', 'Payments', 'System'];
 
 export default function ManpowerNotificationsPage() {
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.registration?.id || user?.id;
+
   const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
   const [activeFilter, setActiveFilter] = useState('All');
   const [refreshing, setRefreshing] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
 
   const showToast = (msg) => { setToastMsg(msg); setTimeout(() => setToastMsg(""), 3000); };
+
+  useEffect(() => {
+    const loadLiveNotifications = async () => {
+      try {
+        const [directRes, publicRes] = await Promise.all([
+          supplierId ? fetchVendorRequirements(supplierId).catch(() => []) : Promise.resolve([]),
+          fetchPublicRequirements('manpower').catch(() => [])
+        ]);
+
+        const list = [];
+        const directList = directRes?.data || directRes || [];
+        const publicList = publicRes?.data || publicRes || [];
+
+        if (Array.isArray(directList)) {
+          directList.forEach((req, idx) => {
+            list.push({
+              id: `direct-${req.id || idx}`,
+              type: 'Requirements',
+              title: `Direct Request: ${req.title || 'Staff Requirement'}`,
+              message: `${req.owner?.bizName || 'Client'} sent a direct requirement. Location: ${req.location || 'N/A'}. Budget: ${req.budget || 'Open'}.`,
+              date: req.createdAt ? new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
+              read: false,
+              icon: Briefcase,
+              color: '#3B82F6',
+            });
+          });
+        }
+
+        if (Array.isArray(publicList)) {
+          publicList.slice(0, 5).forEach((req, idx) => {
+            list.push({
+              id: `public-${req.id || idx}`,
+              type: 'Requirements',
+              title: `Public Opportunity: ${req.title || 'Broadcast Requirement'}`,
+              message: `New requirement from ${req.owner?.bizName || 'Client'}: "${req.description || req.title}".`,
+              date: req.createdAt ? new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
+              read: true,
+              icon: User,
+              color: '#9333EA',
+            });
+          });
+        }
+
+        setNotifications(list);
+      } catch (err) {
+        console.warn('Error loading manpower notifications:', err);
+      }
+    };
+
+    loadLiveNotifications();
+    const interval = setInterval(loadLiveNotifications, 4000);
+    return () => clearInterval(interval);
+  }, [supplierId]);
 
   const handleRefresh = () => {
     setRefreshing(true);

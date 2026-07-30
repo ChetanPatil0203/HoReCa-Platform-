@@ -50,8 +50,9 @@ export default function FeedWallPage() {
           category: type,
           details: type === 'manpower' ? [
             { label: 'Staff Count', value: String(r.extraData?.numberOfStaff || '1') },
-            { label: 'Experience', value: String(r.extraData?.experience || 'Any') },
-            { label: 'Shift', value: String(r.extraData?.shift || 'Day Shift') },
+            { label: 'Experience', value: String(r.extraData?.experience || '1-3 Years') },
+            { label: 'Joining', value: String(r.extraData?.joiningDate || 'Immediate') },
+            { label: 'Type', value: String(r.extraData?.employmentType || 'Full-Time') },
           ] : type === 'service' ? [
             { label: 'Service Type', value: String(r.extraData?.serviceType || 'General') },
             { label: 'Scheduled Date', value: String(r.extraData?.date || 'As scheduled') },

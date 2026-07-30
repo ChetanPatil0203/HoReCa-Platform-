@@ -12,6 +12,9 @@ const requirementRoutes = require('./routes/requirementRoutes');
 const manpowerRequirementRoutes = require('./routes/manpowerRequirementRoutes');
 const marketingRequirementRoutes = require('./routes/marketingRequirementRoutes');
 const serviceProviderRequirementRoutes = require('./routes/serviceProviderRequirementRoutes');
+const supportRoutes = require('./routes/supportRoutes');
+const candidateRoutes = require('./routes/candidateRoutes');
+const documentRoutes = require('./routes/documentRoutes');
 
 const app = express();
 
@@ -33,6 +36,9 @@ app.use('/api/requirements/manpower', manpowerRequirementRoutes);
 app.use('/api/requirements/marketing', marketingRequirementRoutes);
 app.use('/api/requirements/service-provider', serviceProviderRequirementRoutes);
 app.use('/api/requirements', requirementRoutes);
+app.use('/api/support', supportRoutes);
+app.use('/api/candidates', candidateRoutes);
+app.use('/api/documents', documentRoutes);
 
 // Root & API Health Check Route
 app.get(['/', '/api', '/api/health'], (req, res) => {

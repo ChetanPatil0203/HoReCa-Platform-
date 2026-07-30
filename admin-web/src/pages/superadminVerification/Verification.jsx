@@ -621,8 +621,8 @@ export default function Verification() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] text-[#091B3A] p-4 sm:p-6 md:p-8 font-sans">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-[#F5F7FA] text-[#091B3A] p-2 sm:p-4 md:p-6 font-sans">
+      <div className="w-full max-w-[1700px] mx-auto space-y-6 min-w-0">
         {/* Toast Container */}
         {toasts.length > 0 && (
           <div className="fixed top-5 right-5 z-50 space-y-2">

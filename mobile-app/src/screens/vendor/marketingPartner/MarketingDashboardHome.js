@@ -219,19 +219,17 @@ export default function MarketingDashboardHome({ setActivePage, handleSendPropos
 
         <View style={styles.oppsGrid}>
           {publicReqs.length > 0 ? (
-            publicReqs.map(req => (
-              <TouchableOpacity key={req.id} style={[styles.oppCard, !isMobile && { width: '48%' }]} onPress={() => handleSendProposal(req)}>
+            publicReqs.slice(0, 4).map(req => (
+              <TouchableOpacity key={req.id} style={[styles.oppCard, !isMobile && { width: '48%' }]} onPress={() => handleSendProposal && handleSendProposal(req)}>
                 <View style={styles.oppTopRow}>
-                  <Text style={styles.oppId}>{req.id}</Text>
-                  {req.priority === 'HIGH PRIORITY' && (
-                    <View style={styles.badgeRed}><Text style={styles.badgeRedText}>{req.priority}</Text></View>
-                  )}
+                  <Text style={styles.oppId}>{`REQ-${req.id ? req.id.substring(0, 5).toUpperCase() : '101'}`}</Text>
+                  <View style={styles.badgeGlass}><Text style={styles.badgeGlassText}>PUBLIC</Text></View>
                 </View>
-                <Text style={styles.oppTitle}>{req.title || req.jobRole || 'Marketing Requirement'}</Text>
-                <Text style={styles.oppBusiness}>{req.owner?.bizName || 'HoReCa Establishment'}</Text>
+                <Text style={styles.oppTitle}>{req.title || req.campaignType || 'Marketing Requirement'}</Text>
+                <Text style={styles.oppBusiness}>{req.owner?.bizName || 'HoReCa Establishment'} · {req.location || req.owner?.city || 'India'}</Text>
                 
-                <Text style={styles.oppCategory}>{req.category || 'Marketing'}</Text>
-                <Text style={styles.oppDetails}>{req.budget || 'Custom Budget'}</Text>
+                <Text style={styles.oppCategory}>{req.extraData?.objective || req.category || 'Marketing Campaign'}</Text>
+                <Text style={styles.oppDetails}>{req.budget || 'Custom Budget'} · {req.extraData?.duration || '1 Month'}</Text>
                 
                 <View style={styles.oppFooter}>
                   <Text style={styles.textActionText}>View Opportunity</Text>

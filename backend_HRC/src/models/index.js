@@ -13,10 +13,15 @@ const ManpowerRequirement = require('./ManpowerRequirement');
 const MarketingRequirement = require('./MarketingRequirement');
 const ServiceProviderRequirement = require('./ServiceProviderRequirement');
 const PasswordReset = require('./PasswordReset');
+const SupportTicket = require('./SupportTicket');
+const Candidate = require('./Candidate');
 
 // Associations
 User.hasMany(Document, { foreignKey: 'userId', as: 'documents', onDelete: 'CASCADE' });
 Document.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+User.hasMany(SupportTicket, { foreignKey: 'userId', as: 'supportTickets', onDelete: 'SET NULL' });
+SupportTicket.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
 User.hasOne(HorecaRegistration, { foreignKey: 'userId', as: 'horecaRegistration', onDelete: 'CASCADE' });
 HorecaRegistration.belongsTo(User, { foreignKey: 'userId', as: 'user' });
@@ -26,6 +31,10 @@ VendorRegistration.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
 User.hasMany(UserLoginLog, { foreignKey: 'userId', as: 'loginLogs', onDelete: 'CASCADE' });
 UserLoginLog.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+// Candidate Associations
+VendorRegistration.hasMany(Candidate, { foreignKey: 'supplierId', as: 'candidates', onDelete: 'CASCADE' });
+Candidate.belongsTo(VendorRegistration, { foreignKey: 'supplierId', as: 'supplier' });
 
 // Raw Material Module Associations
 ProductCategory.hasMany(Product, { foreignKey: 'categoryId', as: 'products' });
@@ -86,4 +95,6 @@ module.exports = {
   MarketingRequirement,
   ServiceProviderRequirement,
   PasswordReset,
+  SupportTicket,
+  Candidate,
 };

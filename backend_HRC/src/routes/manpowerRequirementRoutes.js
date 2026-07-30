@@ -5,6 +5,9 @@ const manpowerController = require('../controllers/manpowerRequirementController
 // POST create manpower requirement
 router.post('/', manpowerController.createRequirement);
 
+// GET manpower dashboard summary for an owner
+router.get('/dashboard-summary/:ownerId', manpowerController.getDashboardSummary);
+
 // GET manpower requirements posted by an owner
 router.get('/owner/:ownerId', manpowerController.getOwnerRequirements);
 

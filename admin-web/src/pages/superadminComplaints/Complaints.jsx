@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, Search, Funnel as Filter, Download, RefreshCw, Clock, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle2, X, Eye, ChevronRight, UserCheck, ShieldAlert, FileText, Phone, Mail, MapPin, Copy, Check, ExternalLink, SlidersHorizontal, Send, FileQuestion, Info, Users, Lock, LockOpen as Unlock, ArrowUpRight, RotateCcw, Paperclip, Building2, Tag, CircleAlert as AlertCircle, CircleHelp as HelpCircle, SquareCheck as CheckSquare } from 'lucide-react';
 
-// Helper function to fetch tickets from backend if endpoint is available
+// Helper function to fetch tickets from backend
 const fetchComplaintTickets = async () => {
   try {
-    const res = await fetch('http://localhost:5000/api/admin/complaint-tickets');
+    const res = await fetch('http://localhost:5000/api/support/admin/tickets');
     if (!res.ok) return null;
     const json = await res.json();
     return json.success ? json.data : null;
@@ -19,48 +19,65 @@ const fetchComplaintTickets = async () => {
 const INITIAL_MOCK_TICKETS = [];
 
 const mapTicketRecord = (t) => {
-  const code = t.ticketCode || (t.id ? `CMP-${t.id.substring(0, 4).toUpperCase()}` : 'CMP-1024');
+  const code = t.ticketId || (t.id ? `TKT-${t.id.substring(0, 4).toUpperCase()}` : 'TKT');
+  const user = t.user || {};
+  const horeca = user.horecaRegistration || {};
+  const vendor = user.vendorRegistration || {};
+
+  const ownerName = (t.userName && t.userName !== 'HRC Owner' && t.userName !== 'User')
+    ? t.userName
+    : (user.firstName || user.lastName)
+      ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
+      : (horeca.ownerName || vendor.ownerName || t.userName || 'HRC User');
+    
+  const business = horeca.bizName || vendor.bizName || 'N/A';
+  const email = t.userEmail || user.email || horeca.email || 'N/A';
+  const phone = t.userMobile || user.mobile || horeca.mobile || 'N/A';
+  const city = horeca.city || vendor.city || user.city || 'N/A';
+  const state = horeca.state || vendor.state || user.state || 'N/A';
+
   return {
     id: t.id,
     ticketCode: code,
-    ticketType: t.ticketType || 'Complaint',
-    subject: t.subject || 'Platform Support Request',
-    description: t.description || 'Support request submitted to platform admin.',
-    category: t.category || 'General Issue',
+    ticketType: t.category || 'Support Request',
+    subject: t.subject || 'Support Request',
+    description: t.message || t.description || '',
+    category: t.category || 'General Query',
     priority: t.priority || 'Medium',
     status: t.status || 'Open',
-    assignedAdmin: t.assignedAdmin || t.assignedTo || 'Unassigned',
-    assignedDept: t.assignedDept || 'Support Helpdesk',
-    createdDate: t.createdDate || (t.createdAt ? new Date(t.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '24 Jul 2026'),
-    lastActivity: t.lastActivity || 'Recently updated',
-    lastActivityBy: t.lastActivityBy || 'Admin',
-    slaTimer: t.slaTimer || 'Due in 12 hours',
-    slaStatus: t.slaStatus || 'On Track',
+    assignedAdmin: t.adminNotes ? 'Admin Handled' : 'Unassigned',
+    assignedDept: 'Support Helpdesk',
+    createdDate: t.createdAt ? new Date(t.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
+    lastActivity: t.updatedAt ? new Date(t.updatedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
+    lastActivityBy: 'Admin / User',
+    slaTimer: 'Due in 12 hours',
+    slaStatus: 'On Track',
     raisedBy: t.raisedBy || {
-      name: t.ownerName || 'Chetan Patil',
-      business: t.bizName || 'Chetan Hotel',
-      role: 'HoReCa Owner',
-      city: t.city || 'Jalgaon',
-      state: t.state || 'Maharashtra',
-      phone: t.phone || '+91 9856320427',
-      email: t.email || 'cp02032006@gmail.com',
+      name: ownerName,
+      business: business,
+      role: (t.userRole || 'owner').toUpperCase(),
+      city: city,
+      state: state,
+      phone: phone,
+      email: email,
     },
     against: t.against || {
-      name: 'Vendor Partner',
-      businessName: 'Vija Agro Supply',
-      role: 'Raw Material Vendor',
-      city: 'Pune',
-      phone: '+91 9822334455',
-      email: 'vendor@supplyhub.com',
+      name: 'HRC HUB Platform',
+      businessName: 'Super Admin Helpdesk',
+      role: 'Platform Admin',
+      city: 'N/A',
+      phone: 'N/A',
+      email: 'support@hrchub.com',
     },
-    relatedEntity: t.relatedEntity || { type: 'Order', id: 'ORD-941', details: 'Supply Order #941' },
+    relatedEntity: t.relatedEntity || { type: 'Support Request', id: code, details: t.relatedTo || 'General Support' },
     messages: t.messages || [
-      { sender: 'User', type: 'user', text: t.description || 'Issue reported to helpdesk.', time: '24 Jul 2026, 09:30 AM' },
+      { sender: ownerName, type: 'user', text: t.message || t.description || 'Issue reported.', time: t.createdAt ? new Date(t.createdAt).toLocaleString() : '' },
+      ...(t.adminNotes ? [{ sender: 'Super Admin Resolution Desk', type: 'admin', text: t.adminNotes, time: t.updatedAt ? new Date(t.updatedAt).toLocaleString() : '' }] : [])
     ],
-    internalNotes: t.internalNotes || [],
-    attachments: t.attachments || [],
-    history: t.history || [
-      { action: 'Ticket Created', date: '24 Jul 2026, 09:30 AM', actor: 'User' },
+    internalNotes: t.adminNotes ? [{ id: 1, note: t.adminNotes, author: 'Super Admin', time: t.updatedAt ? new Date(t.updatedAt).toLocaleString() : '' }] : [],
+    attachments: [],
+    history: [
+      { action: `Status: ${t.status}`, date: t.createdAt ? new Date(t.createdAt).toLocaleString() : '', actor: 'System' },
     ],
   };
 };
@@ -321,12 +338,26 @@ export default function Complaints() {
     showToast('Complaint escalated successfully.', 'success');
   };
 
-  const handleConfirmResolve = () => {
+  const handleConfirmResolve = async () => {
     if (!resolutionSummary.trim()) {
       showToast('Resolution summary is required.', 'error');
       return;
     }
     const targetId = resolvingTicket.id;
+
+    try {
+      await fetch(`http://localhost:5000/api/support/admin/tickets/${targetId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'Resolved',
+          adminNotes: userFacingMessage.trim() || resolutionSummary.trim()
+        })
+      });
+    } catch (e) {
+      console.warn('Backend update error:', e);
+    }
+
     const updated = tickets.map((t) => {
       if (t.id === targetId) {
         const newHistory = [
@@ -423,13 +454,29 @@ export default function Complaints() {
     showToast('Ticket reopened successfully.', 'info');
   };
 
-  const handleSendPublicReply = () => {
+  const handleSendPublicReply = async () => {
     if (!publicReplyText.trim() || !selectedTicket) return;
     const targetId = selectedTicket.id;
+    const replyContent = publicReplyText.trim();
     const timeStr = new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    try {
+      await fetch(`http://localhost:5000/api/support/tickets/${targetId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          senderName: 'Super Admin',
+          senderRole: 'admin',
+          message: replyContent
+        })
+      });
+    } catch (e) {
+      console.warn('Backend send reply error:', e);
+    }
+
     const updated = tickets.map((t) => {
       if (t.id === targetId) {
-        const newMsgs = [...(t.messages || []), { sender: 'Super Admin Support Desk', type: 'admin', text: publicReplyText, time: timeStr }];
+        const newMsgs = [...(t.messages || []), { sender: 'Super Admin Support Desk', type: 'admin', text: replyContent, time: timeStr }];
         return { ...t, messages: newMsgs, lastActivity: 'Admin replied', lastActivityBy: 'Super Admin' };
       }
       return t;
@@ -755,8 +802,8 @@ export default function Complaints() {
       {/* Directory Table / Mobile Cards */}
       <div className="bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden flex flex-col">
         {/* Desktop View */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        <div className="hidden md:block overflow-x-auto w-full">
+          <table className="w-full min-w-[1100px] text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 <th className="py-3.5 px-4">Ticket</th>
@@ -840,9 +887,9 @@ export default function Complaints() {
 
                       {/* Raised By Column */}
                       <td className="py-3.5 px-4">
-                        <div className="text-xs font-bold text-slate-900">{t.raisedBy.business}</div>
+                        <div className="text-xs font-bold text-slate-900">{t.raisedBy.name}</div>
                         <div className="text-[11px] text-slate-500 font-medium mt-0.5">
-                          {t.raisedBy.role} · {t.raisedBy.city}
+                          {t.raisedBy.business !== 'N/A' ? `${t.raisedBy.business} · ` : ''}{t.raisedBy.role}{t.raisedBy.city !== 'N/A' ? ` · ${t.raisedBy.city}` : ''}
                         </div>
                       </td>
 
@@ -962,7 +1009,7 @@ export default function Complaints() {
                 <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 pt-1">
                   <div>
                     <span className="text-[10px] text-slate-400 block font-semibold">Raised By</span>
-                    <span className="font-bold text-slate-800">{t.raisedBy.business}</span>
+                    <span className="font-bold text-slate-800">{t.raisedBy.name}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 block font-semibold">Against</span>
@@ -1172,21 +1219,24 @@ export default function Complaints() {
                         </h3>
                         <div className="text-xs space-y-1.5 pt-1">
                           <div>
-                            <span className="font-bold text-slate-900 block">{selectedTicket.raisedBy.business}</span>
-                            <span className="text-[11px] text-slate-500">{selectedTicket.raisedBy.role}</span>
+                            <span className="font-extrabold text-slate-900 text-sm block">{selectedTicket.raisedBy.name}</span>
+                            {selectedTicket.raisedBy.business !== 'N/A' && (
+                              <span className="font-bold text-slate-700 text-xs block mt-0.5">{selectedTicket.raisedBy.business}</span>
+                            )}
+                            <span className="text-[11px] text-slate-500 font-medium">{selectedTicket.raisedBy.role}</span>
+                          </div>
+                          <div className="text-slate-700 flex items-center gap-1.5 pt-1">
+                            <Phone className="w-3.5 h-3.5 text-slate-400" />
+                            <span className="font-medium">{selectedTicket.raisedBy.phone}</span>
                           </div>
                           <div className="text-slate-700 flex items-center gap-1.5">
-                            <Phone className="w-3 h-3 text-slate-400" />
-                            <span>{selectedTicket.raisedBy.phone}</span>
+                            <Mail className="w-3.5 h-3.5 text-slate-400" />
+                            <span className="font-medium">{selectedTicket.raisedBy.email}</span>
                           </div>
                           <div className="text-slate-700 flex items-center gap-1.5">
-                            <Mail className="w-3 h-3 text-slate-400" />
-                            <span>{selectedTicket.raisedBy.email}</span>
-                          </div>
-                          <div className="text-slate-700 flex items-center gap-1.5">
-                            <MapPin className="w-3 h-3 text-slate-400" />
-                            <span>
-                              {selectedTicket.raisedBy.city}, {selectedTicket.raisedBy.state}
+                            <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                            <span className="font-medium">
+                              {selectedTicket.raisedBy.city}{selectedTicket.raisedBy.state !== 'N/A' ? `, ${selectedTicket.raisedBy.state}` : ''}
                             </span>
                           </div>
                         </div>

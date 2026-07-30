@@ -82,7 +82,7 @@ export default function MarketingDashboard() {
 
   const bottomNavItems = [
     { key: "support", label: "Help & Support", icon: HelpCircle },
-    { key: "settings", label: "Settings", icon: Settings },
+    { key: "settings", label: "Profile & Settings", icon: Settings },
   ];
 
   const profileData = {
