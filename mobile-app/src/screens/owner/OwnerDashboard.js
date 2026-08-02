@@ -33,17 +33,17 @@ const PlaceholderPage = ({ title }) => (
 );
 
 const PAGE_TITLES = {
-  "dashboard": "Dashboard Overview", 
+  "dashboard": "Dashboard Overview",
   "marketplace": "Marketplace Pillars",
-  "raw-material": "Raw Material Procurement", 
+  "raw-material": "Raw Material Procurement",
   "manpower": "Manpower Dispatch",
-  "service": "Facilities & Services", 
+  "service": "Facilities & Services",
   "marketing": "Growth & Marketing",
   "compliance": "Compliance & Licensing",
-  "order-tracking": "Active Logs Tracking", 
+  "order-tracking": "Active Logs Tracking",
   "history": "Procurement History",
-  "analytics": "Business Intelligence Analytics", 
-  "profile": "Executive Profile", 
+  "analytics": "Business Intelligence Analytics",
+  "profile": "Executive Profile",
   "settings": "Account Control Panel",
   "support": "Help & Support Desk",
 };
@@ -60,6 +60,7 @@ export default function OwnerDashboard() {
   const [notificationsModalOpen, setNotificationsModalOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [imageError, setImageError] = useState(false);
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
   useEffect(() => {
     setImageError(false);
@@ -173,7 +174,7 @@ export default function OwnerDashboard() {
   ];
 
   const profileData = {
-    initials: user?.name ? user.name.substring(0,2).toUpperCase() : (user?.email ? user.email.substring(0,2).toUpperCase() : "U"),
+    initials: user?.name ? user.name.substring(0, 2).toUpperCase() : (user?.email ? user.email.substring(0, 2).toUpperCase() : "U"),
     name: user?.name || user?.email || "User",
     role: user?.businessType || "Business Owner",
     badge: "OWNER"
@@ -182,7 +183,7 @@ export default function OwnerDashboard() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        
+
         <RoleBasedMobileDrawer
           activePage={activePage}
           onNavigate={setActivePage}
@@ -195,13 +196,13 @@ export default function OwnerDashboard() {
           profile={profileData}
           panelTitle="ADMIN OPERATIONS"
         />
-        
+
         {/* Main Content Area */}
         <View style={styles.mainContent}>
           {/* Desktop/Tablet Topbar */}
           {isLargeScreen && (
-            <Topbar 
-              activePage={activePage} 
+            <Topbar
+              activePage={activePage}
               title={PAGE_TITLES[activePage]}
               user={user}
             />
@@ -218,12 +219,12 @@ export default function OwnerDashboard() {
                 >
                   <Menu size={22} color="#fff" />
                 </TouchableOpacity>
-                <Image 
-                  source={require('../../../assets/HRCHUB_Logo.png')} 
-                  style={{ width: 24, height: 24, resizeMode: 'contain', marginRight: 8 }} 
+                <Image
+                  source={require('../../../assets/HRCHUB_Logo.png')}
+                  style={{ width: 24, height: 24, resizeMode: 'contain', marginRight: 8 }}
                 />
                 <View style={styles.headerLogoBox}>
-                  <Text style={styles.headerLogoText}>HRC<Text style={{color:'#F6B800'}}>HUB</Text></Text>
+                  <Text style={styles.headerLogoText}>HRC<Text style={{ color: '#F6B800' }}>HUB</Text></Text>
                   <Text style={styles.headerLogoSub}>HoReCa Business Partner</Text>
                 </View>
               </View>
@@ -234,16 +235,16 @@ export default function OwnerDashboard() {
                   <Bell size={20} color="#fff" />
                   {unreadCount > 0 && <View style={styles.headerBadge} />}
                 </TouchableOpacity>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.headerAvatarBtn}
                   onPress={() => setProfileDropdownOpen(true)}
                   accessibilityRole="button"
                   accessibilityLabel="Profile menu"
                 >
                   {user?.profilePhoto && !imageError ? (
-                    <Image 
-                      source={{ uri: user.profilePhoto }} 
-                      style={{ width: '100%', height: '100%', borderRadius: 16 }} 
+                    <Image
+                      source={{ uri: user.profilePhoto }}
+                      style={{ width: '100%', height: '100%', borderRadius: 16 }}
                       onError={() => setImageError(true)}
                     />
                   ) : (
@@ -319,14 +320,14 @@ export default function OwnerDashboard() {
               <View style={styles.dropdownOverlay}>
                 <TouchableWithoutFeedback>
                   <View style={styles.dropdownMenu}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={styles.dropdownItem}
                       onPress={() => {
                         setProfileDropdownOpen(false);
                         setActivePage("profile");
                       }}
                     >
-                      <View style={[styles.dropdownIconBox, {backgroundColor: '#EFF6FF'}]}>
+                      <View style={[styles.dropdownIconBox, { backgroundColor: '#EFF6FF' }]}>
                         <User size={18} color="#2563EB" />
                       </View>
                       <View style={styles.dropdownTextWrapper}>
@@ -335,43 +336,20 @@ export default function OwnerDashboard() {
                       </View>
                     </TouchableOpacity>
 
-                    <TouchableOpacity 
-                      style={styles.dropdownItem}
-                      onPress={() => {
-                        setProfileDropdownOpen(false);
-                        setActivePage("settings");
-                      }}
-                    >
-                      <View style={[styles.dropdownIconBox, {backgroundColor: '#F5F3FF'}]}>
-                        <Settings size={18} color="#7C3AED" />
-                      </View>
-                      <View style={styles.dropdownTextWrapper}>
-                        <Text style={styles.dropdownItemTitle}>Settings</Text>
-                        <Text style={styles.dropdownItemSub}>Manage app settings and preferences</Text>
-                      </View>
-                    </TouchableOpacity>
-
                     <View style={styles.dropdownDivider} />
 
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={styles.dropdownItem}
                       onPress={() => {
                         setProfileDropdownOpen(false);
-                        Alert.alert(
-                          "Logout",
-                          "Are you sure you want to logout?",
-                          [
-                            { text: "Cancel", style: "cancel" },
-                            { text: "Logout", style: "destructive", onPress: () => logout() }
-                          ]
-                        );
+                        setLogoutModalOpen(true);
                       }}
                     >
-                      <View style={[styles.dropdownIconBox, {backgroundColor: '#FEF2F2'}]}>
+                      <View style={[styles.dropdownIconBox, { backgroundColor: '#FEF2F2' }]}>
                         <LogOut size={18} color="#DC2626" />
                       </View>
                       <View style={styles.dropdownTextWrapper}>
-                        <Text style={[styles.dropdownItemTitle, {color: '#DC2626'}]}>Logout</Text>
+                        <Text style={[styles.dropdownItemTitle, { color: '#DC2626' }]}>Logout</Text>
                         <Text style={styles.dropdownItemSub}>Sign out from account</Text>
                       </View>
                     </TouchableOpacity>
@@ -381,12 +359,48 @@ export default function OwnerDashboard() {
             </TouchableWithoutFeedback>
           </Modal>
 
+          {/* Custom Logout Confirmation Modal */}
+          <Modal
+            visible={logoutModalOpen}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setLogoutModalOpen(false)}
+          >
+            <View style={styles.logoutModalOverlay}>
+              <View style={styles.logoutModalCard}>
+                <View style={styles.logoutIconWrapper}>
+                  <LogOut size={26} color="#EF4444" />
+                </View>
+                <Text style={styles.logoutModalTitle}>Logout?</Text>
+                <Text style={styles.logoutModalSubtitle}>Are you sure you want to logout of your account?</Text>
+                
+                <View style={styles.logoutModalActions}>
+                  <TouchableOpacity 
+                    style={styles.logoutCancelBtn} 
+                    onPress={() => setLogoutModalOpen(false)}
+                  >
+                    <Text style={styles.logoutCancelBtnText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.logoutConfirmBtn} 
+                    onPress={() => {
+                      setLogoutModalOpen(false);
+                      logout();
+                    }}
+                  >
+                    <Text style={styles.logoutConfirmBtnText}>Logout</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
+
           {/* Page Content Viewport */}
           <View style={styles.pageViewport}>
-            {activePage === 'marketplace' ? (
+            {['marketplace', 'dashboard', 'raw-material', 'manpower', 'service', 'marketing', 'compliance', 'history', 'analytics'].includes(activePage) ? (
               renderActivePage()
             ) : (
-              <ScrollView contentContainerStyle={[styles.scrollContent, !isLargeScreen && { padding: 0, paddingHorizontal: 0, paddingTop: 16, paddingBottom: 110 }]}>
+              <ScrollView contentContainerStyle={[styles.scrollContent, !isLargeScreen && { padding: 0, paddingHorizontal: 0, paddingTop: 0, paddingBottom: 110 }]}>
                 {renderActivePage()}
               </ScrollView>
             )}
@@ -394,9 +408,9 @@ export default function OwnerDashboard() {
 
           {/* Mobile Bottom Navigation */}
           {!isLargeScreen && activePage !== 'marketplace' && (
-            <MobileBottomNav 
-              activePage={activePage} 
-              onNavigate={setActivePage} 
+            <MobileBottomNav
+              activePage={activePage}
+              onNavigate={setActivePage}
             />
           )}
         </View>
@@ -598,5 +612,84 @@ const styles = StyleSheet.create({
   notifTagText: { fontSize: 10, fontWeight: '800' },
   notifItemTitle: { fontSize: 14, fontWeight: '800', color: '#071B3A', marginBottom: 2 },
   notifItemMsg: { fontSize: 12, color: '#64748B', lineHeight: 16, marginBottom: 6 },
-  notifItemTime: { fontSize: 11, color: '#94A3B8', fontWeight: '600' }
+  notifItemTime: { fontSize: 11, color: '#94A3B8', fontWeight: '600' },
+ 
+  /* Custom Logout Modal Styles */
+  logoutModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(9, 13, 22, 0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  logoutModalCard: {
+    width: '100%',
+    maxWidth: 320,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+    ...Platform.select({
+      web: { boxShadow: '0 10px 25px rgba(0,0,0,0.08)' },
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.08, shadowRadius: 12 },
+      android: { elevation: 8 }
+    })
+  },
+  logoutIconWrapper: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: '#FEF2F2',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  logoutModalTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#071B3A',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  logoutModalSubtitle: {
+    fontSize: 14,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+    maxWidth: 240,
+  },
+  logoutModalActions: {
+    flexDirection: 'row',
+    width: '100%',
+    gap: 12,
+  },
+  logoutCancelBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoutCancelBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#071B3A',
+  },
+  logoutConfirmBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoutConfirmBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
 });

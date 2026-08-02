@@ -31,13 +31,16 @@ import {
   Camera,
   PanelTop,
   CalendarDays,
-  BriefcaseBusiness
+  BriefcaseBusiness,
+  Package
 } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 import { AuthContext } from '../../../context/AuthContext';
 import { fetchMarketingDashboardSummary } from '../../../services/api.service';
 import AgencyDirectReqPage from './AgencyDirectReqPage';
 import PostRequirementPage from './PostRequirementPage';
+import BrowseAgenciesPage from './BrowseAgenciesPage';
+import CampaignRequestsPage from './CampaignRequestsPage';
 
 const NAVY = '#071B3A';
 const BORDER = '#E2E8F0';
@@ -98,11 +101,13 @@ export default function MarketingPage() {
   // Modal states
   const [directRequestVisible, setDirectRequestVisible] = useState(false);
   const [postRequirementVisible, setPostRequirementVisible] = useState(false);
+  const [browseAgenciesVisible, setBrowseAgenciesVisible] = useState(false);
   const [viewRequirementVisible, setViewRequirementVisible] = useState(false);
   const [viewProposalVisible, setViewProposalVisible] = useState(false);
 
   const [selectedReq, setSelectedReq] = useState(null);
   const [selectedProp, setSelectedProp] = useState(null);
+  const [campaignRequestsVisible, setCampaignRequestsVisible] = useState(false);
 
   // Dynamic backend state
   const [metrics, setMetrics] = useState({
@@ -187,7 +192,11 @@ export default function MarketingPage() {
       <View style={[styles.pageHeader, isMobile && styles.pageHeaderMobile]}>
         <View style={{ flex: 1, paddingRight: 12 }}>
           <Text style={styles.pageTitle}>Marketing</Text>
-          <Text style={styles.pageSubtitle}>Promote your business with verified marketing agencies.</Text>
+        </View>
+        <View style={styles.headerIcons}>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => setCampaignRequestsVisible(true)}>
+            <Package size={20} color={NAVY} />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -206,10 +215,12 @@ export default function MarketingPage() {
                 const IconComp = stat.icon;
                 return (
                   <View key={stat.id} style={[styles.overviewCard, { width: overviewCardWidth }]}>
-                    <View style={[styles.overviewIconBox, { backgroundColor: stat.bgColor }]}>
-                      <IconComp size={20} color={stat.color} strokeWidth={2.5} />
+                    <View style={styles.overviewHeader}>
+                      <View style={[styles.overviewIconBox, { backgroundColor: stat.bgColor }]}>
+                        <IconComp size={20} color={stat.color} strokeWidth={2.5} />
+                      </View>
+                      <Text style={styles.overviewValue}>{stat.value}</Text>
                     </View>
-                    <Text style={styles.overviewValue}>{stat.value}</Text>
                     <Text style={styles.overviewLabel} numberOfLines={1}>{stat.label}</Text>
                   </View>
                 );
@@ -217,36 +228,36 @@ export default function MarketingPage() {
             </View>
           </View>
 
-          {/* ── 3. Action Cards (Direct Request + Post Requirement) ── */}
+          {/* ── 3. Action Cards (Post Requirement + Browse Agencies) ── */}
           <View style={styles.actionsRow}>
-            {/* Direct Request Card (Primary Gold/Orange Card like Photo 2) */}
+            {/* Post Requirement Card (Primary Navy Card like Photo 2) */}
             <TouchableOpacity
               style={styles.primaryActionCard}
-              onPress={openDirectRequest}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-            >
-              <View style={styles.actionHeader}>
-                <View style={styles.primaryActionIconBox}>
-                  <Send size={22} color="#FFFFFF" />
-                </View>
-              </View>
-              <Text style={styles.primaryActionTitle} numberOfLines={1}>Direct Request</Text>
-            </TouchableOpacity>
-
-            {/* Post Requirement Card (Secondary White Card like Photo 2) */}
-            <TouchableOpacity
-              style={styles.secondaryActionCard}
               onPress={openPostRequirement}
               activeOpacity={0.85}
               accessibilityRole="button"
             >
               <View style={styles.actionHeader}>
-                <View style={styles.secondaryActionIconBox}>
-                  <ClipboardPlus size={22} color="#2563EB" />
+                <View style={styles.primaryActionIconBox}>
+                  <ClipboardPlus size={22} color="#FFFFFF" />
                 </View>
               </View>
-              <Text style={styles.secondaryActionTitle} numberOfLines={1}>Post Requirement</Text>
+              <Text style={styles.primaryActionTitle} numberOfLines={1}>Post Requirement</Text>
+            </TouchableOpacity>
+
+            {/* Browse Agencies Card (Secondary White Card like Photo 2) */}
+            <TouchableOpacity
+              style={styles.secondaryActionCard}
+              onPress={() => setBrowseAgenciesVisible(true)}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+            >
+              <View style={styles.actionHeader}>
+                <View style={styles.secondaryActionIconBox}>
+                  <Search size={22} color="#2563EB" />
+                </View>
+              </View>
+              <Text style={styles.secondaryActionTitle} numberOfLines={1}>Browse Agencies</Text>
             </TouchableOpacity>
           </View>
 
@@ -277,7 +288,6 @@ export default function MarketingPage() {
             <View style={styles.sectionHeader}>
               <View>
                 <Text style={styles.sectionTitle}>My Requirements</Text>
-                <Text style={styles.sectionSubtitle}>Track your direct and posted marketing requirements.</Text>
               </View>
               <TouchableOpacity onPress={openPostRequirement}>
                 <Text style={styles.viewAllText}>View All</Text>
@@ -335,7 +345,6 @@ export default function MarketingPage() {
             <View style={styles.sectionHeader}>
               <View>
                 <Text style={styles.sectionTitle}>Recent Proposals</Text>
-                <Text style={styles.sectionSubtitle}>Latest proposals received from marketing agencies.</Text>
               </View>
               <TouchableOpacity onPress={openPostRequirement}>
                 <Text style={styles.viewAllText}>View All</Text>
@@ -421,6 +430,30 @@ export default function MarketingPage() {
           onBack={() => setPostRequirementVisible(false)}
           onSuccess={() => setPostRequirementVisible(false)}
         />
+      )}
+
+      {/* Browse Agencies Popup */}
+      {browseAgenciesVisible && (
+        <Modal visible={browseAgenciesVisible} animationType="slide">
+          <BrowseAgenciesPage
+            onBack={() => setBrowseAgenciesVisible(false)}
+            onViewProfile={(agency) => {
+              setBrowseAgenciesVisible(false);
+            }}
+          />
+        </Modal>
+      )}
+ 
+      {/* Campaign Requests Popup */}
+      {campaignRequestsVisible && (
+        <Modal visible={campaignRequestsVisible} animationType="slide">
+          <CampaignRequestsPage
+            onBack={() => setCampaignRequestsVisible(false)}
+            onViewResponses={(req) => {
+              setCampaignRequestsVisible(false);
+            }}
+          />
+        </Modal>
       )}
 
       {/* View Requirement Modal */}
@@ -524,8 +557,8 @@ const styles = StyleSheet.create({
   gridContainer: { flexDirection: 'row', flexWrap: 'wrap' },
   overviewCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 14,
+    padding: 14,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     shadowColor: NAVY,
@@ -534,19 +567,23 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 2
   },
-  overviewIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+  overviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 12
   },
+  overviewIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   overviewValue: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '900',
     color: NAVY,
-    marginBottom: 2
   },
   overviewLabel: {
     fontSize: 12,
@@ -558,7 +595,7 @@ const styles = StyleSheet.create({
   actionsRow: { flexDirection: 'row', gap: 12 },
   primaryActionCard: {
     flex: 1,
-    backgroundColor: '#D97706',
+    backgroundColor: NAVY,
     borderRadius: 16,
     padding: 16,
     minHeight: 105,

@@ -39,7 +39,7 @@ const getTrackingStages = (order) => {
 export default function RawMaterialOrderTrackingPage({ order, onBack }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
-  
+
   const currentOrder = order || {
     id: '',
     displayId: '',
@@ -81,7 +81,7 @@ export default function RawMaterialOrderTrackingPage({ order, onBack }) {
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={[styles.contentLayout, !isMobile && styles.contentLayoutWeb]}>
-          
+
           <View style={styles.leftCol}>
             {/* Status Header */}
             <View style={styles.statusHeaderCard}>
@@ -89,9 +89,9 @@ export default function RawMaterialOrderTrackingPage({ order, onBack }) {
                 <View>
                   <Text style={styles.statusTitle}>{statusLabels[currentOrder.status] || currentOrder.status}</Text>
                   <Text style={styles.expectedText}>
-                    {currentOrder.status === 'delivered' ? 'Order Delivered' : 
-                     currentOrder.status === 'cancelled' ? 'Order Cancelled' :
-                     'Expected: Tomorrow by 10:00 AM'}
+                    {currentOrder.status === 'delivered' ? 'Order Delivered' :
+                      currentOrder.status === 'cancelled' ? 'Order Cancelled' :
+                        'Expected: Tomorrow by 10:00 AM'}
                   </Text>
                 </View>
                 <View style={styles.truckIconBox}>
@@ -103,7 +103,7 @@ export default function RawMaterialOrderTrackingPage({ order, onBack }) {
             {/* Timeline */}
             <View style={styles.timelineCard}>
               <Text style={styles.sectionTitle}>Tracking Updates</Text>
-              
+
               <View style={styles.timeline}>
                 {stages.map((stage, index) => {
                   const isLast = index === stages.length - 1;
@@ -111,15 +111,15 @@ export default function RawMaterialOrderTrackingPage({ order, onBack }) {
                     <View key={stage.id} style={styles.timelineRow}>
                       <View style={styles.timelineIndicator}>
                         <View style={[
-                          styles.dot, 
-                          stage.completed ? (stage.isCancelled ? styles.dotCancelled : styles.dotCompleted) : null, 
+                          styles.dot,
+                          stage.completed ? (stage.isCancelled ? styles.dotCancelled : styles.dotCompleted) : null,
                           stage.current && !stage.isCancelled ? styles.dotCurrent : null
                         ]}>
                           {stage.completed && !stage.current && <Check size={10} color="#fff" />}
                         </View>
                         {!isLast && <View style={[styles.line, stage.completed ? (stage.isCancelled ? styles.lineCancelled : styles.lineCompleted) : null]} />}
                       </View>
-                      
+
                       <View style={[styles.timelineContent, isLast && { paddingBottom: 0 }]}>
                         <Text style={[styles.timelineLabel, stage.completed ? styles.timelineLabelActive : null]}>
                           {stage.label}
@@ -137,7 +137,7 @@ export default function RawMaterialOrderTrackingPage({ order, onBack }) {
             {/* Delivery Info */}
             <View style={styles.card}>
               <Text style={styles.sectionTitle}>Delivery Details</Text>
-              
+
               <View style={styles.detailRow}>
                 <MapPin size={18} color="#64748B" />
                 <View style={styles.detailTextCol}>
@@ -201,11 +201,11 @@ const styles = StyleSheet.create({
   headerCenter: { alignItems: 'center' },
   headerTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
   headerSub: { fontSize: 13, color: '#64748B', marginTop: 2, fontWeight: '600' },
-  
+
   scroll: { flex: 1 },
   contentLayout: { padding: 16 },
   contentLayoutWeb: { flexDirection: 'row', gap: 24, padding: 32, maxWidth: 1000, alignSelf: 'center', width: '100%', alignItems: 'flex-start' },
-  
+
   leftCol: { flex: 1, minWidth: 0, gap: 16 },
   rightCol: { flex: 1, minWidth: 0, gap: 16 },
 
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
 
   card: { backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border, marginBottom: Platform.OS === 'web' ? 0 : 16 },
   timelineCard: { backgroundColor: '#fff', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: colors.border },
-  
+
   sectionTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A', marginBottom: 20 },
 
   timeline: { paddingLeft: 8 },
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   line: { width: 2, flex: 1, backgroundColor: '#E2E8F0', marginVertical: -4, zIndex: 1 },
   lineCompleted: { backgroundColor: '#10B981' },
   lineCancelled: { backgroundColor: '#DC2626' },
-  
+
   timelineContent: { flex: 1, paddingLeft: 16, paddingBottom: 32, paddingTop: -2 },
   timelineLabel: { fontSize: 15, fontWeight: '700', color: '#64748B', marginBottom: 4 },
   timelineLabelActive: { color: '#0F172A' },
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   itemName: { fontSize: 14, fontWeight: '700', color: '#0F172A', marginBottom: 2 },
   itemQty: { fontSize: 12, color: '#64748B' },
   itemPrice: { fontSize: 14, fontWeight: '700', color: '#0F172A' },
-  
+
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   totalLabel: { fontSize: 15, fontWeight: '700', color: '#0F172A' },
   totalValue: { fontSize: 18, fontWeight: '900', color: PURPLE }

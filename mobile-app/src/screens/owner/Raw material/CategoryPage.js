@@ -71,7 +71,7 @@ export default function CategoryPage({ category, onBack }) {
   const meta = CAT_META[category] || CAT_META["raw-material"];
   const Icon = meta.icon;
   const orders = SEED_ORDERS[category] || [];
-  
+
   const [activeFilter, setActiveFilter] = useState("All");
   const filters = ["All", "New", "Pending", "Accepted"];
 
@@ -127,7 +127,7 @@ export default function CategoryPage({ category, onBack }) {
       <View style={styles.filterRow}>
         <View style={styles.searchBox}>
           <Search size={16} color={colors.muted} />
-          <TextInput 
+          <TextInput
             style={styles.searchInput}
             placeholder="Search orders..."
             placeholderTextColor={colors.muted}
@@ -135,16 +135,16 @@ export default function CategoryPage({ category, onBack }) {
         </View>
         <View style={styles.filterGroup}>
           {filters.map(f => (
-            <TouchableOpacity 
+            <TouchableOpacity
               key={f}
               onPress={() => setActiveFilter(f)}
               style={[
-                styles.filterBtn, 
+                styles.filterBtn,
                 activeFilter === f && { backgroundColor: meta.color }
               ]}
             >
               <Text style={[
-                styles.filterBtnText, 
+                styles.filterBtnText,
                 activeFilter === f && styles.filterBtnTextActive
               ]}>{f}</Text>
             </TouchableOpacity>
@@ -214,7 +214,7 @@ export default function CategoryPage({ category, onBack }) {
               </View>
               <Text style={styles.vendorName}>{v.name}</Text>
               <Text style={styles.vendorSpeciality}>{v.speciality}</Text>
-              
+
               <View style={styles.vendorMeta}>
                 <View style={styles.ratingRow}>
                   <Star size={12} color="#D4940A" fill="#D4940A" />

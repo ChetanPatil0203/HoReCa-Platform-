@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Platform } from 'react-native';
 import { Lock, Eye, EyeOff, CircleCheck as CheckCircle2, Circle } from 'lucide-react-native';
 import { AUTH_COLORS } from './AuthTheme';
 
 export default function PasswordField({
-  label, error, containerStyle, showChecklist = false, ...textInputProps
+  label, error, containerStyle, showChecklist = false, secureTextEntry, ...textInputProps
 }) {
   const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -37,14 +37,15 @@ export default function PasswordField({
           {isRequired && <Text style={styles.asterisk}> *</Text>}
         </Text>
       )}
-      <View style={styles.inputWrapper}>
+      <View style={[
+        styles.inputWrapper,
+        isFocused && styles.inputWrapperFocused,
+        error && styles.inputWrapperError
+      ]}>
         <Lock size={20} color={iconColor} style={styles.inputIcon} />
         <TextInput
-          style={[
-            styles.input,
-            isFocused && styles.inputFocused,
-            error && styles.inputError
-          ]}
+          key={showPassword ? 'text' : 'password'}
+          style={styles.input}
           placeholderTextColor={AUTH_COLORS.muted}
           secureTextEntry={!showPassword}
           autoCapitalize="none"
@@ -94,25 +95,40 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5
   },
   asterisk: { color: AUTH_COLORS.error },
-  inputWrapper: { position: 'relative', justifyContent: 'center' },
-  inputIcon: { position: 'absolute', left: 16, zIndex: 1 },
-  rightIcon: { position: 'absolute', right: 8, zIndex: 1, padding: 8 },
-  input: {
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: AUTH_COLORS.input,
     borderWidth: 1,
     borderColor: AUTH_COLORS.border,
     borderRadius: 14,
     height: 52,
-    paddingLeft: 46,
-    paddingRight: 46,
-    fontSize: 15,
-    color: AUTH_COLORS.text
+    paddingHorizontal: 16,
   },
-  inputFocused: {
+  inputWrapperFocused: {
     borderColor: AUTH_COLORS.primary,
     backgroundColor: '#F0F4F8'
   },
-  inputError: { borderColor: AUTH_COLORS.error, backgroundColor: '#FEF2F2' },
+  inputWrapperError: {
+    borderColor: AUTH_COLORS.error,
+    backgroundColor: '#FEF2F2'
+  },
+  inputIcon: { marginRight: 10 },
+  rightIcon: { padding: 8, marginLeft: 10 },
+  input: {
+    flex: 1,
+    height: '100%',
+    fontSize: 15,
+    color: AUTH_COLORS.text,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    // Add outline: 'none' for React Native Web
+    ...Platform.select({
+      web: {
+        outlineStyle: 'none',
+      },
+    }),
+  },
   errorText: { color: AUTH_COLORS.error, fontSize: 12, marginTop: 6, fontWeight: '500' },
 
   checklist: {

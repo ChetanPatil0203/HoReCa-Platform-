@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, ShieldAlert, Search, Download, RefreshCw, Clock, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle2, X, Eye, ChevronRight, Phone, Mail, MapPin, Copy, Check, SlidersHorizontal, Building2, Users, SearchX, Calendar, CircleAlert as AlertCircle, Ban, RotateCcw, FileText, Tag, SquareCheck as CheckSquare } from 'lucide-react';
-import { fetchHorecaRegistrations, fetchVendorRegistrations } from '../../services/api.service';
+import { fetchHorecaRegistrations, fetchVendorRegistrations, fetchSystemLimitsApi, updateSystemLimitsApi, updateVerificationStatus } from '../../services/api.service';
 
 const INITIAL_MOCK_ACCOUNTS = [];
 
@@ -117,6 +117,10 @@ export default function Limits() {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
+  const [systemLimits, setSystemLimits] = useState([]);
+  const [savingLimits, setSavingLimits] = useState(false);
+  const [showLimitsModal, setShowLimitsModal] = useState(false);
+
   const showToast = (message, type = 'success') => {
     const id = Math.random().toString(36).substring(2, 9);
     setToasts((prev) => [...prev, { id, message, type }]);
@@ -127,7 +131,11 @@ export default function Limits() {
     setLoading(true);
     setErrorState(false);
     try {
-      const [horecaData, vendorData] = await Promise.all([fetchHorecaRegistrations(), fetchVendorRegistrations()]);
+      const [horecaData, vendorData, limitsData] = await Promise.all([
+        fetchHorecaRegistrations(),
+        fetchVendorRegistrations(),
+        fetchSystemLimitsApi()
+      ]);
       const combinedApi = [...(Array.isArray(horecaData) ? horecaData : []), ...(Array.isArray(vendorData) ? vendorData : [])];
 
       if (combinedApi.length > 0) {
@@ -136,11 +144,34 @@ export default function Limits() {
       } else {
         setAccounts([]);
       }
+
+      if (Array.isArray(limitsData)) {
+        setSystemLimits(limitsData);
+      }
     } catch (err) {
-      console.warn('API error fetching account registrations:', err);
+      console.warn('API error fetching data:', err);
       setAccounts([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveSystemLimits = async () => {
+    setSavingLimits(true);
+    try {
+      const payload = systemLimits.map(l => ({ key: l.key, value: l.value }));
+      const res = await updateSystemLimitsApi(payload);
+      if (res && res.success) {
+        showToast('System limits & quotas updated successfully.', 'success');
+        if (res.data) setSystemLimits(res.data);
+        setShowLimitsModal(false);
+      } else {
+        showToast(res?.message || 'Failed to update system limits.', 'error');
+      }
+    } catch (e) {
+      showToast('Error saving system limits.', 'error');
+    } finally {
+      setSavingLimits(false);
     }
   };
 

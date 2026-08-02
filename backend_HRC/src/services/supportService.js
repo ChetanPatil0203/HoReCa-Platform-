@@ -1,5 +1,7 @@
 const { SupportTicket, User, HorecaRegistration, VendorRegistration } = require('../models');
 const { Op } = require('sequelize');
+const socketService = require('./socketService');
+const { sendNotificationToUser } = require('./notificationService');
 
 // Create Support Ticket
 exports.createSupportTicketService = async (data) => {
@@ -145,6 +147,16 @@ exports.updateSupportTicketStatusService = async (id, updateData) => {
   }
 
   await ticket.save();
+
+  // Socket.io & Notification Emits
+  socketService.emitToRoom(ticket.ticketId, 'ticket_updated', ticket);
+  socketService.emitToRoom(ticket.id, 'ticket_updated', ticket);
+  socketService.broadcastEvent('ticket_updated', ticket);
+
+  if (ticket.userId) {
+    sendNotificationToUser(ticket.userId, `Ticket ${ticket.ticketId} Updated`, `Status: ${ticket.status}`);
+  }
+
   return ticket;
 };
 
@@ -172,5 +184,15 @@ exports.addTicketMessageService = async (id, { senderName, senderRole, message }
   ticket.changed('messages', true);
 
   await ticket.save();
+
+  // Socket.io & Notification Emits
+  socketService.emitToRoom(ticket.ticketId, 'receive_message', newMsg);
+  socketService.emitToRoom(ticket.id, 'receive_message', newMsg);
+  socketService.broadcastEvent('receive_message', { ticketId: ticket.ticketId, newMsg });
+
+  if (senderRole === 'admin' && ticket.userId) {
+    sendNotificationToUser(ticket.userId, `New Reply on ${ticket.ticketId}`, message);
+  }
+
   return { ticket, newMsg, messages: currentMessages };
 };

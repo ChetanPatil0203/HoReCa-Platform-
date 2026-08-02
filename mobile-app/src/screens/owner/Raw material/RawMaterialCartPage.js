@@ -68,7 +68,7 @@ export default function RawMaterialCartPage({ cartItems, setCartItems, onBack, o
         <TouchableOpacity style={styles.backBtn} onPress={onBack}>
           <ArrowLeft size={20} color="#0F172A" />
         </TouchableOpacity>
-        
+
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>My Cart</Text>
           <Text style={styles.headerSub}>{cartItems.length} items</Text>
@@ -81,7 +81,7 @@ export default function RawMaterialCartPage({ cartItems, setCartItems, onBack, o
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={isMobile ? { paddingBottom: 100 } : { paddingBottom: 40 }}>
         <View style={[styles.contentLayout, !isMobile && styles.contentLayoutWeb]}>
-          
+
           <View style={styles.leftCol}>
             {Object.keys(groupedCart).map(vendor => (
               <View key={vendor} style={styles.vendorGroup}>
@@ -89,7 +89,7 @@ export default function RawMaterialCartPage({ cartItems, setCartItems, onBack, o
                   <Store size={18} color={PURPLE} />
                   <Text style={styles.vendorName}>{vendor}</Text>
                 </View>
-                
+
                 {groupedCart[vendor].map(item => {
                   const minQ = parseInt(item.moq) || 1;
                   return (
@@ -105,7 +105,7 @@ export default function RawMaterialCartPage({ cartItems, setCartItems, onBack, o
                           </TouchableOpacity>
                         </View>
                         <Text style={styles.itemPrice}>₹{item.price} / {item.unit}</Text>
-                        
+
                         <View style={styles.itemRowBottom}>
                           <View style={styles.qtyControls}>
                             <TouchableOpacity style={styles.qtyBtn} onPress={() => updateQty(item.id, -1, minQ)}>
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   contentLayout: { padding: 16 },
   contentLayoutWeb: { flexDirection: 'row', gap: 24, padding: 32, maxWidth: 1200, alignSelf: 'center', width: '100%', alignItems: 'flex-start' },
-  
+
   leftCol: { flex: 1, minWidth: 0 },
   rightCol: { width: 360 },
   rightColMobile: { width: '100%', marginTop: 16 },
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
   vendorGroup: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: colors.border, marginBottom: 16, ...Platform.select({ web: { boxShadow: '0 2px 8px rgba(0,0,0,0.02)' } }) },
   vendorHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 16, backgroundColor: '#F8FAFC', borderBottomWidth: 1, borderBottomColor: colors.border, borderTopLeftRadius: 16, borderTopRightRadius: 16 },
   vendorName: { fontSize: 15, fontWeight: '800', color: '#0F172A' },
-  
+
   cartItem: { flexDirection: 'row', padding: 16, borderBottomWidth: 1, borderBottomColor: colors.border },
   itemImageContainer: { width: 64, height: 64, borderRadius: 12, overflow: 'hidden', marginRight: 12, backgroundColor: '#F1F5F9' },
   itemImage: { width: '100%', height: '100%', resizeMode: 'cover' },
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   itemName: { fontSize: 14, fontWeight: '700', color: '#0F172A', flex: 1, marginRight: 8 },
   removeBtn: { padding: 4 },
   itemPrice: { fontSize: 13, color: '#64748B', marginBottom: 8 },
-  
+
   itemRowBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   qtyControls: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: colors.border, borderRadius: 8, height: 32 },
   qtyBtn: { width: 32, height: '100%', alignItems: 'center', justifyContent: 'center' },

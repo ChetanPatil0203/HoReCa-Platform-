@@ -17,7 +17,7 @@ const STATUS_COLORS = {
 export default function RawMaterialOrderDetailsPage({ order, user, onBack, onReorder }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
-  
+
   const [fullOrder, setFullOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
@@ -201,7 +201,7 @@ export default function RawMaterialOrderDetailsPage({ order, user, onBack, onReo
           {/* Ordered Items */}
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Ordered Items</Text>
-            {( displayOrder?.items || [] ).map((item, index) => (
+            {(displayOrder?.items || []).map((item, index) => (
               <View key={item.id || index} style={styles.itemRow}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.itemName}>{item.name}</Text>
@@ -210,9 +210,9 @@ export default function RawMaterialOrderDetailsPage({ order, user, onBack, onReo
                 <Text style={styles.itemPrice}>₹{(item.price * item.qty).toLocaleString()}</Text>
               </View>
             ))}
-            
+
             <View style={styles.divider} />
-            
+
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Items Total</Text>
               <Text style={styles.summaryValue}>₹{displayOrder.itemsTotal.toLocaleString()}</Text>
@@ -221,9 +221,9 @@ export default function RawMaterialOrderDetailsPage({ order, user, onBack, onReo
               <Text style={styles.summaryLabel}>Delivery Charges</Text>
               <Text style={styles.summaryValue}>{displayOrder.deliveryCharges === 0 ? 'Free' : `₹${displayOrder.deliveryCharges}`}</Text>
             </View>
-            
+
             <View style={styles.divider} />
-            
+
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Total Amount</Text>
               <Text style={styles.totalValue}>₹{displayOrder.amount.toLocaleString()}</Text>
@@ -232,8 +232,8 @@ export default function RawMaterialOrderDetailsPage({ order, user, onBack, onReo
 
           {/* Cancel Order */}
           {canCancel && (
-            <TouchableOpacity 
-              style={styles.cancelBtn} 
+            <TouchableOpacity
+              style={styles.cancelBtn}
               onPress={handleCancel}
               disabled={cancelling}
             >
@@ -268,42 +268,42 @@ const styles = StyleSheet.create({
   headerCenter: { alignItems: 'center' },
   headerTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
   headerSub: { fontSize: 13, color: '#64748B', marginTop: 2, fontWeight: '600' },
-  
+
   scroll: { flex: 1 },
   contentLayout: { padding: 16, maxWidth: 600, alignSelf: 'center', width: '100%', gap: 16 },
-  
+
   card: { backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border, ...Platform.select({ web: { boxShadow: '0 2px 8px rgba(0,0,0,0.02)' } }) },
-  
+
   statusRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   statusLabel: { fontSize: 13, color: '#64748B', marginBottom: 6 },
   statusBadge: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8 },
   statusValue: { fontSize: 14, fontWeight: '800' },
   dateValue: { fontSize: 15, fontWeight: '600', color: '#0F172A' },
-  
+
   sectionTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A', marginBottom: 16 },
   detailRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   detailTextCol: { flex: 1 },
   detailValue: { fontSize: 14, fontWeight: '600', color: '#0F172A', lineHeight: 20 },
   detailSub: { fontSize: 13, color: '#64748B', marginTop: 2 },
-  
+
   itemRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   itemName: { fontSize: 14, fontWeight: '700', color: '#0F172A', marginBottom: 4 },
   itemQty: { fontSize: 13, color: '#64748B' },
   itemPrice: { fontSize: 14, fontWeight: '700', color: '#0F172A' },
-  
+
   divider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 16 },
-  
+
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
   summaryLabel: { fontSize: 14, color: '#475569' },
   summaryValue: { fontSize: 14, fontWeight: '600', color: '#0F172A' },
-  
+
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   totalLabel: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
   totalValue: { fontSize: 20, fontWeight: '900', color: PURPLE },
 
   cancelBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: '#FCA5A5', backgroundColor: '#FEF2F2' },
   cancelBtnText: { fontSize: 14, fontWeight: '700', color: '#DC2626' },
-  
+
   bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16, paddingBottom: Platform.OS === 'ios' ? 32 : 16, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: colors.border },
   reorderBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: PURPLE, height: 48, borderRadius: 12 },
   reorderText: { fontSize: 15, fontWeight: '700', color: '#fff' }

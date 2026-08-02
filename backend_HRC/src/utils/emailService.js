@@ -1,9 +1,10 @@
 const nodemailer = require('nodemailer');
 require('dotenv').config();
+const templates = require('./emailTemplates');
 
 // Create a transporter using SMTP
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // You can use other services like 'smtp.mailtrap.io', 'sendgrid', etc.
+  service: 'gmail',
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
@@ -11,75 +12,159 @@ const transporter = nodemailer.createTransport({
 });
 
 /**
- * Sends an OTP email to the user
- * @param {string} toEmail - The recipient's email address
- * @param {string} otpCode - The 6-digit OTP code
+ * Generic mail sender wrapper with html and text fallback
  */
-const sendOTPEmail = async (toEmail, otpCode) => {
+const sendMail = async ({ to, subject, html, text }) => {
   try {
     const mailOptions = {
-      from: `"HRC HUB Support" <${process.env.SMTP_USER}>`,
-      to: toEmail,
-      subject: 'Your Verification Code - HRC HUB',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #4CAF50; text-align: center;">HRC HUB</h2>
-          <p>Hello,</p>
-          <p>Thank you for registering with HRC HUB. Please use the verification code below to complete your registration:</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #333; background: #f4f4f4; padding: 10px 20px; border-radius: 5px;">${otpCode}</span>
-          </div>
-          <p>This code is valid for 10 minutes. If you did not request this, please ignore this email.</p>
-          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-          <p style="font-size: 12px; color: #888; text-align: center;">&copy; ${new Date().getFullYear()} HRC HUB. All rights reserved.</p>
-        </div>
-      `,
+      from: `"HRC HUB" <${process.env.SMTP_USER || 'no-reply@hrchub.com'}>`,
+      to,
+      subject,
+      html,
+      text,
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log('OTP Email sent successfully:', info.messageId);
+    console.log(`Email [${subject}] sent successfully to ${to}: ${info.messageId}`);
     return true;
   } catch (error) {
-    console.error('Error sending OTP Email:', error);
-    // We do not throw the error here to prevent the main registration flow from breaking if email fails
-    // However, for production, it's better to throw and inform the user.
-    throw new Error('Could not send OTP email. Please check the provided email address.');
-  }
-};
-
-const sendApprovalEmail = async (toEmail, userName) => {
-  try {
-    const mailOptions = {
-      from: `"HRC HUB Admin" <${process.env.SMTP_USER}>`,
-      to: toEmail,
-      subject: 'Account Approved - Welcome to HRC HUB',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #4CAF50; text-align: center;">HRC HUB</h2>
-          <p>Hello ${userName || 'User'},</p>
-          <p>Great news! Your profile registration has been reviewed and <strong>approved</strong> by the HRC HUB Admin team.</p>
-          <p>You can now successfully log in to the HRC HUB application and start using our services.</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="https://hrchub.com" style="background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Login Now</a>
-          </div>
-          <p>If you have any questions, feel free to reach out to our support team.</p>
-          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-          <p style="font-size: 12px; color: #888; text-align: center;">&copy; ${new Date().getFullYear()} HRC HUB. All rights reserved.</p>
-        </div>
-      `,
-    };
-
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Approval Email sent successfully:', info.messageId);
-    return true;
-  } catch (error) {
-    console.error('Error sending Approval Email:', error);
-    // Don't throw to prevent blocking the approval flow
+    console.error(`Error sending email [${subject}] to ${to}:`, error.message);
     return false;
   }
 };
 
+/**
+ * 1. Registration OTP Email
+ */
+const sendOTPEmail = async (toEmail, otpCode, firstName = 'User', expiryMinutes = 10) => {
+  const { subject, html, text } = templates.buildRegistrationOtpEmail({
+    firstName,
+    otp: otpCode,
+    expiryMinutes,
+  });
+  return await sendMail({ to: toEmail, subject, html, text });
+};
+
+/**
+ * 2. Forgot Password OTP Email
+ */
+const sendForgotPasswordOtpEmail = async (toEmail, otpCode, firstName = 'User', expiryMinutes = 10) => {
+  const { subject, html, text } = templates.buildForgotPasswordOtpEmail({
+    firstName,
+    otp: otpCode,
+    expiryMinutes,
+  });
+  return await sendMail({ to: toEmail, subject, html, text });
+};
+
+/**
+ * 3. Registration Submitted Email
+ */
+const sendRegistrationSubmittedEmail = async (toEmail, { firstName, businessName, applicationId, businessType }) => {
+  const { subject, html, text } = templates.buildRegistrationSubmittedEmail({
+    firstName,
+    businessName,
+    applicationId,
+    businessType,
+  });
+  return await sendMail({ to: toEmail, subject, html, text });
+};
+
+/**
+ * 4. Account Approved Email
+ */
+const sendApprovalEmail = async (toEmail, userName = 'User', businessName, actionUrl) => {
+  const { subject, html, text } = templates.buildAccountApprovedEmail({
+    firstName: userName,
+    businessName,
+    actionUrl,
+  });
+  return await sendMail({ to: toEmail, subject, html, text });
+};
+
+/**
+ * 5. Account Action Required Email
+ */
+const sendAccountActionRequiredEmail = async (toEmail, { firstName, businessName, reason, requiredAction, actionUrl }) => {
+  const { subject, html, text } = templates.buildAccountActionRequiredEmail({
+    firstName,
+    businessName,
+    reason,
+    requiredAction,
+    actionUrl,
+  });
+  return await sendMail({ to: toEmail, subject, html, text });
+};
+
+/**
+ * 6. Order Confirmation Email
+ */
+const sendOrderConfirmationEmail = async (toEmail, orderData) => {
+  const { subject, html, text } = templates.buildOrderConfirmationEmail(orderData);
+  return await sendMail({ to: toEmail, subject, html, text });
+};
+
+/**
+ * 7. Order Status Update Email
+ */
+const sendOrderStatusEmail = async (toEmail, statusData) => {
+  const { subject, html, text } = templates.buildOrderStatusEmail(statusData);
+  return await sendMail({ to: toEmail, subject, html, text });
+};
+
+/**
+ * 8. Manpower Update Email
+ */
+const sendManpowerUpdateEmail = async (toEmail, updateData) => {
+  const { subject, html, text } = templates.buildManpowerUpdateEmail(updateData);
+  return await sendMail({ to: toEmail, subject, html, text });
+};
+
+/**
+ * 9. Service Update Email
+ */
+const sendServiceUpdateEmail = async (toEmail, updateData) => {
+  const { subject, html, text } = templates.buildServiceUpdateEmail(updateData);
+  return await sendMail({ to: toEmail, subject, html, text });
+};
+
+/**
+ * 10. Marketing Update Email
+ */
+const sendMarketingUpdateEmail = async (toEmail, updateData) => {
+  const { subject, html, text } = templates.buildMarketingUpdateEmail(updateData);
+  return await sendMail({ to: toEmail, subject, html, text });
+};
+
+/**
+ * 11. Compliance Reminder Email
+ */
+const sendComplianceReminderEmail = async (toEmail, reminderData) => {
+  const { subject, html, text } = templates.buildComplianceReminderEmail(reminderData);
+  return await sendMail({ to: toEmail, subject, html, text });
+};
+
+/**
+ * 12. Support Ticket Email
+ */
+const sendSupportTicketEmail = async (toEmail, ticketData) => {
+  const { subject, html, text } = templates.buildSupportTicketEmail(ticketData);
+  return await sendMail({ to: toEmail, subject, html, text });
+};
+
 module.exports = {
   sendOTPEmail,
+  sendRegistrationOtpEmail: sendOTPEmail,
+  sendForgotPasswordOtpEmail,
+  sendRegistrationSubmittedEmail,
   sendApprovalEmail,
+  sendAccountApprovedEmail: sendApprovalEmail,
+  sendAccountActionRequiredEmail,
+  sendOrderConfirmationEmail,
+  sendOrderStatusEmail,
+  sendManpowerUpdateEmail,
+  sendServiceUpdateEmail,
+  sendMarketingUpdateEmail,
+  sendComplianceReminderEmail,
+  sendSupportTicketEmail,
 };

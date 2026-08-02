@@ -1,9 +1,9 @@
 import React, { useState, useContext, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Modal, SafeAreaView, FlatList, TextInput, Pressable, useWindowDimensions, ActivityIndicator
+  Modal, SafeAreaView, FlatList, TextInput, Pressable, useWindowDimensions, ActivityIndicator, Animated
 } from 'react-native';
-import { Briefcase, Users, Calendar, MapPin, Search, X, CircleCheck as CheckCircle, Send, DollarSign, Building, ChevronRight, Building2, UsersRound, IndianRupee, FilePlus2, CircleCheck, Clock3 } from 'lucide-react-native';
+import { Briefcase, Users, Calendar, MapPin, Search, X, CircleCheck as CheckCircle, Send, DollarSign, Building, ChevronRight, Building2, UsersRound, IndianRupee, FilePlus2, CircleCheck, Clock3, Copy, Phone } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
 import { fetchVendorRequirements, updateRequirementStatusApi, fetchVendorCandidatesApi } from '../../../services/api.service';
 
@@ -82,6 +82,64 @@ const getStatusUserLabel = (status) => {
   return 'Open';
 };
 
+const FadeInCard = ({ children, index }) => {
+  const animatedValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(animatedValue, {
+      toValue: 1,
+      duration: 350,
+      delay: Math.min(index * 80, 600),
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  const translateY = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [15, 0],
+  });
+
+  return (
+    <Animated.View style={{ opacity: animatedValue, transform: [{ translateY }], flex: 1 }}>
+      {children}
+    </Animated.View>
+  );
+};
+
+const ScalePressable = ({ children, onPress, style }) => {
+  const scaleValue = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleValue, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleValue, {
+      toValue: 1,
+      friction: 4,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  return (
+    <TouchableOpacity
+      activeOpacity={1}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={onPress}
+      style={style}
+    >
+      <Animated.View style={{ transform: [{ scale: scaleValue }], flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+        {children}
+      </Animated.View>
+    </TouchableOpacity>
+  );
+};
+
 export default function ManpowerDirectRequestsPage({ initialAction }) {
   const { width } = useWindowDimensions();
   const summaryGridGap = 12;
@@ -92,6 +150,17 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
   const [requests, setRequests] = useState([]);
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Pulsing animation for status indicator dots
+  const pulseAnim = useRef(new Animated.Value(0.4)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.0, duration: 1000, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 0.4, duration: 1000, useNativeDriver: true })
+      ])
+    ).start();
+  }, []);
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const filters = ["All", "New", "Accepted", "Candidates Sent", "Closed", "Declined"];
@@ -365,59 +434,81 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
             </View>
           )
         )}
-        renderItem={({ item }) => (
-          <View style={styles.recordCard}>
-            <View style={styles.recordHeader}>
-              <View style={styles.recordHeaderLeft}>
-                <View style={styles.recordAvatar}><Text style={styles.recordAvatarText}>{item.role.charAt(0)}</Text></View>
-                <View style={styles.recordHeaderInfo}>
-                  <Text style={styles.recordName} numberOfLines={1}>{toTitleCase(item.role)}</Text>
-                  <Text style={styles.recordSub}>ID: {formatReqId(item.id)}</Text>
+        renderItem={({ item, index }) => (
+          <FadeInCard index={index}>
+            <View style={[styles.recordCard, { borderLeftColor: getStatusColor(item.status), borderLeftWidth: 5 }]}>
+              <View style={styles.recordHeader}>
+                <View style={styles.recordHeaderLeft}>
+                  <View style={styles.recordAvatar}><Text style={styles.recordAvatarText}>{item.role.charAt(0)}</Text></View>
+                  <View style={styles.recordHeaderInfo}>
+                    <Text style={styles.recordName} numberOfLines={1}>{toTitleCase(item.role)}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                      <Text style={styles.recordSub}>ID: {formatReqId(item.id)}</Text>
+                      <TouchableOpacity onPress={() => showToast(`Copied Request ID: ${formatReqId(item.id)}`)} style={{ padding: 2 }}>
+                        <Copy size={12} color="#64748B" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '15', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+                  <Animated.View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: getStatusColor(item.status), opacity: pulseAnim }} />
+                  <Text style={[styles.statusBadgeText, { color: getStatusColor(item.status) }]}>{getStatusUserLabel(item.status)}</Text>
                 </View>
               </View>
-              <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '15' }]}>
-                <Text style={[styles.statusBadgeText, { color: getStatusColor(item.status) }]}>{getStatusUserLabel(item.status)}</Text>
+
+              <View style={styles.recordBody}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <View style={styles.infoRow}><Building2 size={14} color="#64748B" /><Text style={styles.infoText} numberOfLines={1}>{item.businessName}</Text></View>
+                    <View style={styles.infoRow}><MapPin size={14} color="#64748B" /><Text style={styles.infoText} numberOfLines={1}>{item.location}</Text></View>
+                  </View>
+                  <TouchableOpacity 
+                    onPress={() => Alert.alert('Call Customer', `Dialing ${item.businessName}...`)}
+                    style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Phone size={14} color="#3B82F6" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.summaryRow}>
+                <View style={styles.summaryItem}><UsersRound size={14} color="#64748B" /><Text style={styles.summaryText}>{item.staffRequired} Staff Needed</Text></View>
+                <View style={styles.summaryItem}><IndianRupee size={14} color="#64748B" /><Text style={styles.summaryText}>{formatSalaryDisplay(item.salary)}</Text></View>
+              </View>
+
+              <View style={styles.recordFooter}>
+                <TouchableOpacity style={styles.viewDetailsBtn} onPress={() => { setSelectedReq(item); setDetailsVisible(true); }}>
+                  <Text style={styles.viewDetailsText}>View Details</Text>
+                  <ChevronRight size={16} color={NAVY} />
+                </TouchableOpacity>
+
+                {item.status === 'New' && (
+                  <ScalePressable style={styles.primaryBtnSmall} onPress={() => handleAccept(item.id)}>
+                    <CheckCircle size={14} color="#fff" style={{ marginRight: 6 }} />
+                    <Text style={styles.primaryBtnSmallText}>Accept</Text>
+                  </ScalePressable>
+                )}
+                {item.status === 'Accepted' && (
+                  <ScalePressable style={styles.primaryBtnSmall} onPress={() => { setSelectedReq(item); setSendCandVisible(true); }}>
+                    <Send size={14} color="#fff" style={{ marginRight: 6 }} />
+                    <Text style={styles.primaryBtnSmallText}>Send Candidates</Text>
+                  </ScalePressable>
+                )}
+                {isSubmittedStatus(item.status) && (
+                  <ScalePressable style={styles.primaryBtnSmall} onPress={() => { setSelectedReq(item); handleViewSubmittedCandidates(item); }}>
+                    <Users size={14} color="#fff" style={{ marginRight: 6 }} />
+                    <Text style={styles.primaryBtnSmallText}>View Submission</Text>
+                  </ScalePressable>
+                )}
+                {item.status === 'Pending' && (
+                  <ScalePressable style={styles.primaryBtnSmall} onPress={() => { setSelectedReq(item); handleViewSubmittedCandidates(item); }}>
+                    <Users size={14} color="#fff" style={{ marginRight: 6 }} />
+                    <Text style={styles.primaryBtnSmallText}>View Status</Text>
+                  </ScalePressable>
+                )}
               </View>
             </View>
-
-            <View style={styles.recordBody}>
-              <View style={styles.infoRow}><Building2 size={14} color="#64748B" /><Text style={styles.infoText} numberOfLines={1}>{item.businessName}</Text></View>
-              <View style={styles.infoRow}><MapPin size={14} color="#64748B" /><Text style={styles.infoText} numberOfLines={1}>{item.location}</Text></View>
-            </View>
-
-            <View style={styles.summaryRow}>
-              <View style={styles.summaryItem}><UsersRound size={14} color="#64748B" /><Text style={styles.summaryText}>{item.staffRequired} Staff Needed</Text></View>
-              <View style={styles.summaryItem}><IndianRupee size={14} color="#64748B" /><Text style={styles.summaryText}>{formatSalaryDisplay(item.salary)}</Text></View>
-            </View>
-
-            <View style={styles.recordFooter}>
-              <TouchableOpacity style={styles.viewDetailsBtn} onPress={() => { setSelectedReq(item); setDetailsVisible(true); }}>
-                <Text style={styles.viewDetailsText}>View Details</Text>
-                <ChevronRight size={16} color={NAVY} />
-              </TouchableOpacity>
-
-              {item.status === 'New' && (
-                <TouchableOpacity style={styles.primaryBtnSmall} onPress={() => handleAccept(item.id)}>
-                  <Text style={styles.primaryBtnSmallText}>Accept</Text>
-                </TouchableOpacity>
-              )}
-              {item.status === 'Accepted' && (
-                <TouchableOpacity style={styles.primaryBtnSmall} onPress={() => { setSelectedReq(item); setSendCandVisible(true); }}>
-                  <Text style={styles.primaryBtnSmallText}>Send Candidates</Text>
-                </TouchableOpacity>
-              )}
-              {isSubmittedStatus(item.status) && (
-                <TouchableOpacity style={styles.primaryBtnSmall} onPress={() => { setSelectedReq(item); handleViewSubmittedCandidates(item); }}>
-                  <Text style={styles.primaryBtnSmallText}>View Submission</Text>
-                </TouchableOpacity>
-              )}
-              {item.status === 'Pending' && (
-                <TouchableOpacity style={styles.primaryBtnSmall} onPress={() => { setSelectedReq(item); handleViewSubmittedCandidates(item); }}>
-                  <Text style={styles.primaryBtnSmallText}>View Status</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
+          </FadeInCard>
         )}
       />
 
@@ -794,7 +885,7 @@ const styles = StyleSheet.create({
 
   listContent: { paddingBottom: 120 },
 
-  recordCard: { marginHorizontal: 16, backgroundColor: '#fff', borderRadius: 16, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
+  recordCard: { marginHorizontal: 16, backgroundColor: '#fff', borderRadius: 16, padding: 14, marginBottom: 12, shadowColor: '#0F172A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2 },
   recordHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   recordHeaderLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 },
   recordAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' },

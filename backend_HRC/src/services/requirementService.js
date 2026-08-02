@@ -484,58 +484,6 @@ exports.getOwnerTrackingService = async (ownerId) => {
     }
   }
 
-  // Active tracking fallback seed records for 4 pillars when database is fresh
-  if ((!data.orders || data.orders.length === 0) && (!data.requirements || data.requirements.length === 0)) {
-    data = {
-      orders: [
-        {
-          id: 'ORD-94101',
-          supplier: { bizName: 'Metro Fresh Wholesalers' },
-          totalAmount: 45000,
-          status: 'confirmed',
-          deliveryAddress: 'Main Kitchen Gate',
-          createdAt: new Date(),
-          items: [{ product: { name: 'Premium Basmati Rice' }, quantity: '500 kg' }]
-        }
-      ],
-      requirements: [
-        {
-          id: 'REQ-31001',
-          type: 'manpower',
-          title: 'Head Chef (Chinese & Continental)',
-          supplier: { bizName: 'Elite Manpower Agency' },
-          budget: '₹35,000 / mo',
-          location: 'Main Branch',
-          status: 'pending',
-          createdAt: new Date(),
-          extraData: { numberOfStaff: '1', joiningDate: '30 Jul 2026' }
-        },
-        {
-          id: 'SRV-45201',
-          type: 'serviceProvider',
-          title: 'Kitchen Hood Deep Cleaning E2E',
-          supplier: { bizName: 'SafeGuard Maintenance Solutions' },
-          budget: '₹18,000',
-          location: 'Kitchen Premises',
-          status: 'pending',
-          createdAt: new Date(),
-          extraData: { category: 'Deep Cleaning' }
-        },
-        {
-          id: 'CMP-10101',
-          type: 'marketing',
-          title: 'Summer Monsoon Festival Campaign',
-          supplier: { bizName: 'BrandCraft Digital Agency' },
-          budget: '₹50,000',
-          location: 'Digital & Local',
-          status: 'pending',
-          createdAt: new Date(),
-          extraData: { duration: '3 Months' }
-        }
-      ]
-    };
-  }
-
   return data;
 };
 

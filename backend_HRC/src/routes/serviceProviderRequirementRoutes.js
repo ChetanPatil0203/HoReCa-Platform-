@@ -17,4 +17,10 @@ router.get('/public', serviceProviderController.getPublicRequirements);
 // PATCH update status of service provider requirement
 router.patch('/:requirementId/status', serviceProviderController.updateRequirementStatus);
 
+// POST submit quote for service provider requirement
+router.post('/:requirementId/quote', serviceProviderController.submitQuote);
+
+// POST decline service provider requirement
+router.post('/:requirementId/decline', serviceProviderController.declineRequirement);
+
 module.exports = router;

@@ -59,7 +59,6 @@ export default function BrowseProvidersPage({ onBack, onViewProfile, onSendReque
           </TouchableOpacity>
           <View style={styles.headerCenter}>
             <Text style={styles.pageTitle}>Browse Service Providers</Text>
-            <Text style={styles.pageSubtitle}>Find trusted service professionals for your business</Text>
           </View>
           <View style={{ width: 36 }} />
         </View>

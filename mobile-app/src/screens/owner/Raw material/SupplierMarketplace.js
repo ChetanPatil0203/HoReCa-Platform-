@@ -49,19 +49,19 @@ export default function SupplierMarketplace({ onBack, onNavigate }) {
           </View>
         </View>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[
-            styles.cartBtn, 
-            isMobile && { 
-              width: 44, 
-              height: 44, 
-              paddingHorizontal: 0, 
-              justifyContent: 'center', 
-              alignItems: 'center', 
+            styles.cartBtn,
+            isMobile && {
+              width: 44,
+              height: 44,
+              paddingHorizontal: 0,
+              justifyContent: 'center',
+              alignItems: 'center',
               position: 'relative',
               borderRadius: 22
             }
-          ]} 
+          ]}
           onPress={() => setCartOpen(true)}
         >
           <ShoppingCart size={18} color="#2563EB" />
@@ -86,10 +86,10 @@ export default function SupplierMarketplace({ onBack, onNavigate }) {
             {CATEGORIES.map(cat => {
               const isActive = activeCategory === cat.id;
               return (
-                <TouchableOpacity 
-                  key={cat.id} 
+                <TouchableOpacity
+                  key={cat.id}
                   style={[
-                    styles.catBtn, 
+                    styles.catBtn,
                     isActive && styles.catBtnActive,
                     isMobile && { flexDirection: 'column', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 4, borderRadius: 8, marginBottom: 8 }
                   ]}
@@ -97,7 +97,7 @@ export default function SupplierMarketplace({ onBack, onNavigate }) {
                 >
                   <Text style={[styles.catEmoji, isMobile && { marginRight: 0, marginBottom: 4, fontSize: 20 }]}>{cat.emoji}</Text>
                   <Text style={[
-                    styles.catLabel, 
+                    styles.catLabel,
                     isActive && styles.catLabelActive,
                     isMobile && { fontSize: 9, textAlign: 'center', lineHeight: 12 }
                   ]}>
@@ -115,7 +115,7 @@ export default function SupplierMarketplace({ onBack, onNavigate }) {
           <View style={styles.toolbar}>
             <View style={styles.searchBox}>
               <Search size={16} color={colors.muted} />
-              <TextInput 
+              <TextInput
                 style={styles.searchInput}
                 placeholder="Search products..."
                 value={search}
@@ -143,11 +143,11 @@ export default function SupplierMarketplace({ onBack, onNavigate }) {
                         <Text style={styles.deliveryText}>{product.delivery}</Text>
                       </View>
                     </View>
-                    
+
                     <View style={styles.productInfo}>
                       <Text style={styles.productName}>{product.name}</Text>
                       <Text style={styles.productUnit}>{product.unitSize}</Text>
-                      
+
                       <View style={styles.supplierRow}>
                         <Text style={styles.supplierName}>{product.supplier}</Text>
                         <View style={styles.ratingBox}>
@@ -155,9 +155,9 @@ export default function SupplierMarketplace({ onBack, onNavigate }) {
                           <Text style={styles.ratingText}>4.7</Text>
                         </View>
                       </View>
-                      
+
                       <Text style={styles.moqText}>MOQ: <Text style={{ color: colors.dark }}>{product.moq}</Text></Text>
-                      
+
                       <View style={styles.priceRow}>
                         <Text style={styles.priceText}>₹{product.price}</Text>
                       </View>
@@ -205,7 +205,7 @@ export default function SupplierMarketplace({ onBack, onNavigate }) {
                 <Text style={{ fontSize: 18, color: colors.muted }}>✕</Text>
               </TouchableOpacity>
             </View>
-            
+
             <ScrollView style={styles.cartItemsScroll}>
               {cartItemCount === 0 ? (
                 <View style={styles.emptyCart}>
@@ -250,7 +250,7 @@ export default function SupplierMarketplace({ onBack, onNavigate }) {
               <View style={styles.cartFooter}>
                 <View style={styles.cartTotalRow}>
                   <Text style={styles.cartTotalLabel}>Total</Text>
-<Text style={styles.cartTotalVal}>
+                  <Text style={styles.cartTotalVal}>
                     ₹{Object.keys(cart).reduce((sum, id) => {
                       const p = PRODUCTS.find(p => p.id === id);
                       return sum + (p ? p.price * cart[id] : 0);
@@ -258,35 +258,35 @@ export default function SupplierMarketplace({ onBack, onNavigate }) {
                   </Text>
                 </View>
                 <TouchableOpacity style={styles.checkoutBtn} onPress={() => {
-                   const ordersToPlace = [];
-                   let totalAmount = 0;
-                   Object.keys(cart).forEach(id => {
-                     const p = PRODUCTS.find(p => p.id === id);
-                     if (!p) return;
-                     const qty = cart[id];
-                     const orderId = "ORD-" + Math.floor(Math.random() * 900 + 100);
-                     const orderAmount = p.price * qty;
-                     totalAmount += orderAmount;
-                     const orderObj = {
-                       id: orderId,
-                       title: p.name,
-                       category: "raw-material",
-                       qty: qty + " " + (p.unitSize.includes("Per") ? p.unitSize.split(" ")[1] || "Kg" : p.unitSize.split(" ")[1] || "units"),
-                       vendor: p.supplier,
-                       date: new Date().toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' }),
-                       status: "New",
-                       amount: "₹" + orderAmount.toLocaleString("en-IN"),
-                       client: "Business Owner"
-                     };
-                     ordersToPlace.push(orderObj);
+                  const ordersToPlace = [];
+                  let totalAmount = 0;
+                  Object.keys(cart).forEach(id => {
+                    const p = PRODUCTS.find(p => p.id === id);
+                    if (!p) return;
+                    const qty = cart[id];
+                    const orderId = "ORD-" + Math.floor(Math.random() * 900 + 100);
+                    const orderAmount = p.price * qty;
+                    totalAmount += orderAmount;
+                    const orderObj = {
+                      id: orderId,
+                      title: p.name,
+                      category: "raw-material",
+                      qty: qty + " " + (p.unitSize.includes("Per") ? p.unitSize.split(" ")[1] || "Kg" : p.unitSize.split(" ")[1] || "units"),
+                      vendor: p.supplier,
+                      date: new Date().toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' }),
+                      status: "New",
+                      amount: "₹" + orderAmount.toLocaleString("en-IN"),
+                      client: "Business Owner"
+                    };
+                    ordersToPlace.push(orderObj);
 
-                   });
-                   setPlacedOrders(ordersToPlace);
-                   setPlacedTotal(totalAmount);
-                   setCartOpen(false);
-                   setCart({});
-                   setShowSuccess(true);
-                 }}>
+                  });
+                  setPlacedOrders(ordersToPlace);
+                  setPlacedTotal(totalAmount);
+                  setCartOpen(false);
+                  setCart({});
+                  setShowSuccess(true);
+                }}>
                   <Text style={styles.checkoutBtnText}>Confirm & Place Order</Text>
                 </TouchableOpacity>
               </View>
@@ -332,8 +332,8 @@ export default function SupplierMarketplace({ onBack, onNavigate }) {
 
             {/* Action Buttons */}
             <View style={styles.successActionRow}>
-              <TouchableOpacity 
-                style={styles.successTrackBtn} 
+              <TouchableOpacity
+                style={styles.successTrackBtn}
                 onPress={() => {
                   setShowSuccess(false);
                   if (onBack) onBack();
@@ -342,9 +342,9 @@ export default function SupplierMarketplace({ onBack, onNavigate }) {
               >
                 <Text style={styles.successTrackBtnText}>Track Orders</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.successContinueBtn} 
+
+              <TouchableOpacity
+                style={styles.successContinueBtn}
                 onPress={() => {
                   setShowSuccess(false);
                 }}
@@ -364,7 +364,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16, 
+  header: {
+    minHeight: 90, paddingTop: 40, paddingBottom: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

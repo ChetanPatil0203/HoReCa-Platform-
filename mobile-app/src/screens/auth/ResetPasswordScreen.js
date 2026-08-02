@@ -16,7 +16,7 @@ export default function ResetPasswordScreen({ route, navigation }) {
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -35,7 +35,7 @@ export default function ResetPasswordScreen({ route, navigation }) {
 
   const calculateStrength = (pwd) => {
     if (!pwd) return { score: 0, label: '', color: AUTH_COLORS.muted };
-    
+
     let score = 0;
     if (pwd.length >= 8) score += 1;
     if (/[A-Z]/.test(pwd)) score += 1;
@@ -99,7 +99,7 @@ export default function ResetPasswordScreen({ route, navigation }) {
             <Text style={styles.successSubtitle}>
               Your password has been updated. Sign in using your new password.
             </Text>
-            
+
             <AuthButton
               title="BACK TO SIGN IN"
               onPress={handleBackToLogin}
@@ -153,14 +153,14 @@ export default function ResetPasswordScreen({ route, navigation }) {
               </Text>
             </View>
             <View style={styles.strengthBarContainer}>
-              <View 
+              <View
                 style={[
-                  styles.strengthBar, 
-                  { 
+                  styles.strengthBar,
+                  {
                     width: `${(strength.score / 5) * 100}%`,
-                    backgroundColor: strength.color 
+                    backgroundColor: strength.color
                   }
-                ]} 
+                ]}
               />
             </View>
           </View>
@@ -189,9 +189,9 @@ export default function ResetPasswordScreen({ route, navigation }) {
           <Text style={styles.checklistTitle}>Password Requirements</Text>
           {requirements.map((req, idx) => (
             <View key={idx} style={styles.checkRow}>
-              <CheckCircle 
-                size={16} 
-                color={req.met ? AUTH_COLORS.success : '#CBD5E1'} 
+              <CheckCircle
+                size={16}
+                color={req.met ? AUTH_COLORS.success : '#CBD5E1'}
                 style={styles.checkIcon}
               />
               <Text style={[styles.checkText, req.met ? styles.checkTextMet : null]}>
@@ -228,18 +228,18 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginTop: 5,
   },
-  heading: { 
-    fontSize: 26, 
-    fontWeight: 'bold', 
-    color: AUTH_COLORS.primary, 
-    marginBottom: 8, 
-    marginTop: 10 
+  heading: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: AUTH_COLORS.primary,
+    marginBottom: 8,
+    marginTop: 10
   },
-  subtitle: { 
-    fontSize: 14, 
-    color: AUTH_COLORS.muted, 
-    marginBottom: 24, 
-    lineHeight: 20 
+  subtitle: {
+    fontSize: 14,
+    color: AUTH_COLORS.muted,
+    marginBottom: 24,
+    lineHeight: 20
   },
   strengthContainer: {
     marginBottom: 18,
@@ -302,21 +302,21 @@ const styles = StyleSheet.create({
     color: AUTH_COLORS.primary,
     fontWeight: '500',
   },
-  errorBanner: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#FFF5F5', 
-    padding: 12, 
-    borderRadius: 12, 
-    marginBottom: 16, 
-    borderWidth: 1, 
-    borderColor: '#FEE2E2' 
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF5F5',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#FEE2E2'
   },
-  errorBannerText: { 
-    fontSize: 13, 
-    color: AUTH_COLORS.error, 
-    fontWeight: '500', 
-    flex: 1 
+  errorBannerText: {
+    fontSize: 13,
+    color: AUTH_COLORS.error,
+    fontWeight: '500',
+    flex: 1
   },
   actionBtn: {
     marginBottom: 10,

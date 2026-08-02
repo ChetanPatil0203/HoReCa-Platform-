@@ -16,35 +16,35 @@ export default function MobileBottomNav({ activePage, onNavigate }) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-      {TABS.map((item) => {
-        const Icon = item.icon;
-        
-        // Tracking tab could remain active for tracking sub-pages if necessary
-        const isActive = activePage === item.key;
+        {TABS.map((item) => {
+          const Icon = item.icon;
 
-        return (
-          <TouchableOpacity 
-            key={item.key} 
-            style={[
-              styles.tabItem, 
-              isActive && styles.tabItemActive
-            ]}
-            onPress={() => onNavigate(item.key)}
-          >
-            <Icon 
-              size={18} 
-              color={isActive ? colors.primary : colors.muted} 
-              strokeWidth={isActive ? 2.5 : 1.8} 
-            />
-            <Text style={[
-              styles.tabLabel, 
-              { color: isActive ? colors.primary : colors.muted }
-            ]}>
-              {item.label}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
+          // Tracking tab could remain active for tracking sub-pages if necessary
+          const isActive = activePage === item.key;
+
+          return (
+            <TouchableOpacity
+              key={item.key}
+              style={[
+                styles.tabItem,
+                isActive && styles.tabItemActive
+              ]}
+              onPress={() => onNavigate(item.key)}
+            >
+              <Icon
+                size={18}
+                color={isActive ? colors.primary : colors.muted}
+                strokeWidth={isActive ? 2.5 : 1.8}
+              />
+              <Text style={[
+                styles.tabLabel,
+                { color: isActive ? colors.primary : colors.muted }
+              ]}>
+                {item.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </SafeAreaView>
   );

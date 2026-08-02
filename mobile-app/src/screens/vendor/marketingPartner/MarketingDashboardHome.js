@@ -135,7 +135,10 @@ export default function MarketingDashboardHome({ setActivePage, handleSendPropos
                 <Text style={styles.sectionTitle}>Needs Attention</Text>
                 <Text style={styles.sectionSubtitle}>Items requiring your response</Text>
               </View>
-              <TouchableOpacity onPress={() => setActivePage('campaigns')}><Text style={styles.actionLink}>View All &gt;</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => setActivePage('campaigns')} style={styles.viewAllBtn}>
+                <Text style={styles.actionLink}>View All</Text>
+                <ChevronRight size={13} color={PURPLE} />
+              </TouchableOpacity>
             </View>
 
             <View style={styles.attentionContainer}>
@@ -176,7 +179,10 @@ export default function MarketingDashboardHome({ setActivePage, handleSendPropos
               <View>
                 <Text style={styles.sectionTitle}>Today’s Schedule</Text>
               </View>
-              <TouchableOpacity onPress={() => setActivePage('campaigns')}><Text style={styles.actionLink}>View All &gt;</Text></TouchableOpacity>
+              <TouchableOpacity onPress={() => setActivePage('campaigns')} style={styles.viewAllBtn}>
+                <Text style={styles.actionLink}>View All</Text>
+                <ChevronRight size={13} color={PURPLE} />
+              </TouchableOpacity>
             </View>
 
             <View style={styles.scheduleBox}>
@@ -214,7 +220,10 @@ export default function MarketingDashboardHome({ setActivePage, handleSendPropos
             <Text style={styles.sectionTitle}>Open Opportunities</Text>
             <Text style={styles.sectionSubtitle}>Marketing requirements matching your services</Text>
           </View>
-          <TouchableOpacity onPress={() => setActivePage('feed')}><Text style={styles.actionLink}>View Feed Wall &gt;</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => setActivePage('feed')} style={styles.viewAllBtn}>
+            <Text style={styles.actionLink}>View Feed Wall</Text>
+            <ChevronRight size={13} color={PURPLE} />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.oppsGrid}>
@@ -276,7 +285,12 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
   sectionSubtitle: { fontSize: 13, color: MUTED, marginBottom: 12 },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 24, marginBottom: 12 },
-  actionLink: { fontSize: 13, fontWeight: 'bold', color: PURPLE },
+  viewAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  actionLink: { fontSize: 12, fontWeight: 'bold', color: PURPLE },
 
   overviewGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   overviewCard: { backgroundColor: WHITE, borderRadius: 16, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 2, elevation: 1 },

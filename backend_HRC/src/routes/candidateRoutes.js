@@ -3,6 +3,7 @@ const router = express.Router();
 const candidateController = require('../controllers/candidateController');
 
 router.post('/', candidateController.createCandidate);
+router.get('/', candidateController.getVendorCandidates);
 router.get('/vendor/:supplierId', candidateController.getVendorCandidates);
 router.put('/:id', candidateController.updateCandidate);
 router.delete('/:id', candidateController.deleteCandidate);

@@ -4,7 +4,7 @@ import {
   ScrollView, TextInput, KeyboardAvoidingView, Platform, Dimensions,
   TouchableWithoutFeedback
 } from 'react-native';
-import { Search, SlidersHorizontal, ChevronRight, Send, EllipsisVertical as MoreVertical, X, CircleCheck as CheckCircle } from 'lucide-react-native';
+import { Search, SlidersHorizontal, ChevronRight, Send, EllipsisVertical as MoreVertical, X, CircleCheck as CheckCircle, Copy, Phone, FileText } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
 import { fetchVendorRequirements } from '../../../services/api.service';
 
@@ -131,13 +131,13 @@ export default function MarketingRequestsScreen({ setActivePage, handleSendPropo
 
   const getStatusStyle = (status) => {
     switch(status) {
-      case 'New': return { bg: '#E0F2FE', text: '#0369A1' }; // Soft blue
-      case 'Viewed': return { bg: '#F1F5F9', text: '#475569' }; // Soft gray-blue
-      case 'Proposal Sent': return { bg: '#E0F2FE', text: '#0369A1' }; // Soft blue
-      case 'Accepted': return { bg: '#DCFCE7', text: '#15803D' }; // Soft green
-      case 'Declined': return { bg: '#FEE2E2', text: '#B91C1C' }; // Soft red
-      case 'Closed': return { bg: '#F3F4F6', text: '#4B5563' }; // Soft gray
-      default: return { bg: '#F1F5F9', text: '#475569' };
+      case 'New': return { bg: '#E0F2FE', text: '#0369A1', accent: '#0369A1' }; // Soft blue
+      case 'Viewed': return { bg: '#F1F5F9', text: '#475569', accent: '#475569' }; // Soft gray-blue
+      case 'Proposal Sent': return { bg: '#E0F2FE', text: '#0369A1', accent: '#0369A1' }; // Soft blue
+      case 'Accepted': return { bg: '#DCFCE7', text: '#15803D', accent: '#15803D' }; // Soft green
+      case 'Declined': return { bg: '#FEE2E2', text: '#B91C1C', accent: '#B91C1C' }; // Soft red
+      case 'Closed': return { bg: '#F3F4F6', text: '#4B5563', accent: '#4B5563' }; // Soft gray
+      default: return { bg: '#F1F5F9', text: '#475569', accent: '#475569' };
     }
   };
 
@@ -161,20 +161,35 @@ export default function MarketingRequestsScreen({ setActivePage, handleSendPropo
     const statusStyle = getStatusStyle(item.status);
     const isMenuOpen = activeMenuId === item.id;
     return (
-      <View style={styles.card}>
+      <View style={[styles.card, { borderLeftColor: statusStyle.accent || statusStyle.text, borderLeftWidth: 5 }]}>
         <View style={styles.cardHeaderRow}>
           <View style={styles.cardHeaderLeft}>
             <Text style={styles.idText}>{item.id}</Text>
+            <TouchableOpacity onPress={() => showToast(`Copied Request ID: ${item.id}`)} style={{ padding: 4 }}>
+              <Copy size={12} color="#64748B" />
+            </TouchableOpacity>
             <View style={styles.badgeDirect}><Text style={styles.badgeDirectText}>DIRECT REQUEST</Text></View>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+          <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: statusStyle.accent || statusStyle.text }} />
             <Text style={[styles.statusText, { color: statusStyle.text }]}>{item.status.toUpperCase()}</Text>
           </View>
         </View>
 
         <Text style={styles.cardTitle}>{item.campaign}</Text>
-        <Text style={styles.clientName}>{item.client}</Text>
-        <Text style={styles.categoryText}>{item.category}</Text>
+        
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <View style={{ flex: 1, marginRight: 8 }}>
+            <Text style={styles.clientName}>{item.client}</Text>
+            <Text style={styles.categoryText}>{item.category}</Text>
+          </View>
+          <TouchableOpacity 
+            onPress={() => Alert.alert('Call Customer', `Dialing ${item.client}...`)}
+            style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Phone size={14} color="#3B82F6" />
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.detailsGrid}>
           <View style={styles.detailCol}>
@@ -195,7 +210,7 @@ export default function MarketingRequestsScreen({ setActivePage, handleSendPropo
           </View>
         </View>
 
-        <Text style={styles.timeText}>Requested {item.requestedTime}</Text>
+        <Text style={styles.timeText}>Requested {item.requestedTime || 'Recently'}</Text>
 
         <View style={styles.actionRow}>
           <TouchableOpacity style={styles.textAction} onPress={() => openDetails(item)}>
@@ -205,7 +220,8 @@ export default function MarketingRequestsScreen({ setActivePage, handleSendPropo
           <View style={styles.rightActions}>
             {(item.status === 'New' || item.status === 'Viewed') && (
               <>
-                <TouchableOpacity style={styles.btnPrimary} onPress={() => openSendProposal(item)}>
+                <TouchableOpacity style={[styles.btnPrimary, { flexDirection: 'row', alignItems: 'center', gap: 6 }]} onPress={() => openSendProposal(item)}>
+                  <Send size={14} color="#fff" />
                   <Text style={styles.btnPrimaryText}>Send Proposal</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
@@ -217,7 +233,8 @@ export default function MarketingRequestsScreen({ setActivePage, handleSendPropo
               </>
             )}
             {item.status === 'Proposal Sent' && (
-              <TouchableOpacity style={styles.btnPrimary} onPress={() => setActivePage('proposals')}>
+              <TouchableOpacity style={[styles.btnPrimary, { flexDirection: 'row', alignItems: 'center', gap: 6 }]} onPress={() => setActivePage('proposals')}>
+                <FileText size={14} color="#fff" />
                 <Text style={styles.btnPrimaryText}>View Proposal</Text>
               </TouchableOpacity>
             )}
@@ -555,8 +572,8 @@ const styles = StyleSheet.create({
     padding: 16, paddingBottom: 115, gap: 12,
   },
   card: {
-    backgroundColor: '#fff', borderRadius: 16, padding: 14, borderWidth: 1, borderColor: '#E2E8F0',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1, position: 'relative'
+    backgroundColor: '#fff', borderRadius: 16, padding: 14,
+    shadowColor: '#0F172A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2, position: 'relative'
   },
   cardHeaderRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10,

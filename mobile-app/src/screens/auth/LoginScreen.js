@@ -64,7 +64,7 @@ export default function LoginScreen({ navigation }) {
       const response = await loginApi(email, password);
       if (response.success && response.data) {
         const { token, panelType, user, registration } = response.data;
-        
+
         const userObj = {
           ...user,
           ...registration,
@@ -76,7 +76,7 @@ export default function LoginScreen({ navigation }) {
           verificationStatus: registration?.status === 'approved' ? 'Verified' : 'Pending Verification',
           profilePhoto: user?.profilePhoto || registration?.profilePhoto || (typeof window !== 'undefined' && window.localStorage ? (JSON.parse(window.localStorage.getItem('hrc_user') || '{}').profilePhoto) : null),
         };
-        
+
         login(panelType || 'owner', token, user?.vendorType || 'raw-material', userObj);
       } else {
         setLoginError(response.message || 'Login failed.');
@@ -95,31 +95,28 @@ export default function LoginScreen({ navigation }) {
   return (
     <AuthScreenWrapper>
 
-      {/* Brand Identity */}
-      <View style={styles.brandContainer}>
-        <View style={styles.brandIconBox}>
-          <Image 
-            source={require('../../../assets/HoReCa_Logo.png')} 
-            style={{ width: 32, height: 32, resizeMode: 'contain' }} 
-          />
-        </View>
-        <Text style={styles.brandName}>
-          <Text style={{ color: AUTH_COLORS.card }}>HRC </Text>
-          <Text style={{ color: AUTH_COLORS.accent }}>HUB</Text>
+      {/* Clean Compact Brand Header */}
+      <View style={styles.brandHeader}>
+        <Image
+          source={require('../../../assets/HRCHUB_Logo.png')}
+          style={styles.brandLogo}
+          resizeMode="contain"
+        />
+        <Text style={styles.brandTitle}>
+          HRC <Text style={{ color: AUTH_COLORS.accent }}>HUB</Text>
         </Text>
-        <Text style={styles.brandSub}>HoReCa Business Partner</Text>
+        <Text style={styles.brandSubtitle}>HoReCa Business Partner</Text>
       </View>
 
       {/* Main Login Card */}
       <AuthCard>
-        <AuthTabs 
-          activeTab="login" 
-          onTabChange={(tab) => tab === 'register' && navigation.navigate('RegisterStepOne')} 
+        <AuthTabs
+          activeTab="login"
+          onTabChange={(tab) => tab === 'register' && navigation.navigate('RegisterStepOne')}
         />
 
-        {/* Login Introduction */}
-        <Text style={styles.heading}>Welcome back</Text>
-        <Text style={styles.subtitle}>Enter your credentials to access your HRC HUB business account.</Text>
+        {/* Compact Login Introduction */}
+        <Text style={styles.compactHeading}>Sign in to your business account</Text>
 
         <FormField
           label="EMAIL ADDRESS *"
@@ -174,7 +171,7 @@ export default function LoginScreen({ navigation }) {
 
         {/* Registration Prompt */}
         <View style={[styles.regPrompt, isNarrow && { flexDirection: 'column', alignItems: 'center' }]}>
-          <Text style={styles.regPromptText}>Don't have a business account? </Text>
+          <Text style={styles.regPromptText}>New to HRC HUB? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('RegisterStepOne')} accessibilityRole="button">
             <Text style={styles.regPromptLink}>Create a business profile</Text>
           </TouchableOpacity>
@@ -185,45 +182,51 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  brandContainer: {
+  brandHeader: {
     alignItems: 'center',
-    marginBottom: 24,
     marginTop: 16,
-    backgroundColor: AUTH_COLORS.primary,
-    paddingVertical: 18,
-    paddingHorizontal: 32,
-    borderRadius: 20
+    marginBottom: 20,
+    width: '100%',
   },
-  brandIconBox: {
-    backgroundColor: 'transparent',
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10
+  brandLogo: {
+    width: 60,
+    height: 60,
+    marginBottom: 6,
   },
-  brandName: { fontSize: 20, fontWeight: '900', letterSpacing: 0.5, marginBottom: 2 },
-  brandSub: { fontSize: 13, color: '#A0B3C6', fontWeight: '500' }, // slightly lighter than muted for dark bg
+  brandTitle: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: AUTH_COLORS.primary,
+    letterSpacing: 1,
+    textAlign: 'center',
+    marginBottom: 2,
+  },
+  brandSubtitle: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: AUTH_COLORS.muted,
+    letterSpacing: 0.8,
+    textAlign: 'center',
+  },
 
-  heading: { fontSize: 26, fontWeight: 'bold', color: AUTH_COLORS.primary, marginBottom: 8, marginTop: 24 },
-  subtitle: { fontSize: 14, color: AUTH_COLORS.muted, marginBottom: 24, lineHeight: 20 },
+  compactHeading: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: AUTH_COLORS.primary,
+    textAlign: 'left',
+    marginTop: 24,
+    marginBottom: 18,
+  },
 
-  forgotLink: { alignSelf: 'flex-end', paddingVertical: 4, paddingHorizontal: 4, marginBottom: 20, marginTop: 2 },
+  forgotLink: { alignSelf: 'flex-end', paddingVertical: 2, paddingHorizontal: 2, marginBottom: 18, marginTop: 2 },
   forgotText: { fontSize: 13, fontWeight: '600', color: AUTH_COLORS.primary },
 
   errorBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF7ED', padding: 12, borderRadius: 12, marginBottom: 16, borderWidth: 1, borderColor: '#FFEDD5' },
   errorBannerText: { fontSize: 13, color: '#C2410C', fontWeight: '500', flex: 1 },
 
-  dividerRow: { flexDirection: 'row', alignItems: 'center', marginTop: 24, marginBottom: 20 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: AUTH_COLORS.border },
-  dividerText: { marginHorizontal: 16, fontSize: 13, color: AUTH_COLORS.muted, fontWeight: 'bold' },
+  signInButton: { marginTop: 4 },
 
-  demoBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%', height: 50, backgroundColor: AUTH_COLORS.input, borderWidth: 1, borderColor: AUTH_COLORS.border, borderRadius: 14 },
-  demoBtnText: { fontSize: 14, fontWeight: 'bold', color: AUTH_COLORS.text },
-  demoHelper: { fontSize: 12, color: AUTH_COLORS.muted, textAlign: 'center', marginTop: 8, marginBottom: 24 },
-
-  regPrompt: { flexDirection: 'row', justifyContent: 'center', marginTop: 8, flexWrap: 'wrap' },
+  regPrompt: { flexDirection: 'row', justifyContent: 'center', marginTop: 16, flexWrap: 'wrap' },
   regPromptText: { fontSize: 14, color: AUTH_COLORS.muted },
   regPromptLink: { fontSize: 14, fontWeight: '600', color: AUTH_COLORS.primary },
 

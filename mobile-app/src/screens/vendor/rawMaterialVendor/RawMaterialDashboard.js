@@ -36,6 +36,9 @@ export default function RawMaterialDashboard() {
   const [filterState, setFilterState] = useState(null);
   const [initialAction, setInitialAction] = useState(null);
 
+  const [imgError, setImgError] = useState(false);
+  const userPhoto = user?.profilePhoto || user?.profileImage || user?.registration?.profilePhoto || user?.vendorRegistration?.profilePhoto;
+
   // Radial Menu State
   const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
   const animation = useRef(new Animated.Value(0)).current;
@@ -123,7 +126,7 @@ export default function RawMaterialDashboard() {
 
   const action1TranslateY = animation.interpolate({
     inputRange: [0, 1],
-    outputRange: [20, -55]
+    outputRange: [20, -120]
   });
 
   const action1TranslateX = animation.interpolate({
@@ -184,7 +187,11 @@ export default function RawMaterialDashboard() {
                 <View style={styles.mobileNotificationDot} />
               </TouchableOpacity>
               <TouchableOpacity style={styles.mobileAvatarBtn} onPress={() => navigateTo('profile')}>
-                <Text style={styles.avatarText}>{profileData.initials}</Text>
+                {userPhoto && !imgError ? (
+                  <Image source={{ uri: userPhoto }} style={{ width: 28, height: 28, borderRadius: 14 }} onError={() => setImgError(true)} />
+                ) : (
+                  <Text style={styles.avatarText}>{profileData.initials}</Text>
+                )}
                 <View style={styles.onlineIndicator} />
               </TouchableOpacity>
             </View>
@@ -199,21 +206,6 @@ export default function RawMaterialDashboard() {
         {/* Custom Mobile Bottom Navigation */}
         {isMobile && (
           <View style={styles.bottomNavWrapper}>
-            {/* Radial Menu Overlay & Actions */}
-            {isPlusMenuOpen && (
-              <TouchableWithoutFeedback onPress={() => setIsPlusMenuOpen(false)}>
-                <Animated.View style={[styles.radialOverlay, { opacity: bgOpacity }]} />
-              </TouchableWithoutFeedback>
-            )}
-
-            <Animated.View style={[styles.radialAction, { opacity: actionScale, transform: [{ translateX: action1TranslateX }, { translateY: action1TranslateY }, { scale: actionScale }] }]}>
-              <TouchableOpacity style={styles.radialActionBtn} onPress={() => navigateTo('inventory', null, null)}>
-                <Boxes size={22} color={PRIMARY} />
-              </TouchableOpacity>
-              <View style={styles.radialLabelBox}>
-                <Text style={styles.radialLabelTitle}>Manage Inventory</Text>
-              </View>
-            </Animated.View>
 
 
 
@@ -242,10 +234,8 @@ export default function RawMaterialDashboard() {
             </View>
 
             {/* Center Plus Button */}
-            <TouchableOpacity style={styles.centerPlusButton} onPress={togglePlusMenu} activeOpacity={0.8}>
-              <Animated.View style={{ transform: [{ rotate: rotation }] }}>
-                <Plus size={32} color={WHITE} />
-              </Animated.View>
+            <TouchableOpacity style={styles.centerPlusButton} onPress={() => navigateTo('inventory')} activeOpacity={0.8}>
+              <Plus size={32} color={WHITE} />
             </TouchableOpacity>
 
           </View>

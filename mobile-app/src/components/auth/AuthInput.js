@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Platform } from 'react-native';
 import { AUTH_COLORS } from './AuthTheme';
 
 export default function AuthInput({
@@ -28,15 +28,17 @@ export default function AuthInput({
           {required && <Text style={styles.required}> *</Text>}
         </Text>
       )}
-      <View style={[styles.inputWrapper, disabled && styles.disabledWrapper]}>
+      <View style={[
+        styles.inputWrapper,
+        isFocused && styles.inputWrapperFocused,
+        error && styles.inputWrapperError,
+        disabled && styles.disabledWrapper
+      ]}>
         {Icon && <Icon size={20} color={iconColor} style={styles.leftIcon} />}
         <TextInput
+          key={secureTextEntry ? 'password' : 'text'}
           style={[
             styles.input,
-            Icon ? styles.inputWithLeftIcon : styles.inputWithoutLeftIcon,
-            RightIcon ? styles.inputWithRightIcon : styles.inputWithoutRightIcon,
-            isFocused && styles.inputFocused,
-            error && styles.inputError,
             disabled && styles.inputDisabled,
           ]}
           placeholderTextColor={AUTH_COLORS.placeholder}
@@ -79,54 +81,46 @@ const styles = StyleSheet.create({
     color: AUTH_COLORS.error,
   },
   inputWrapper: {
-    position: 'relative',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  leftIcon: {
-    position: 'absolute',
-    left: 16,
-    zIndex: 2,
-  },
-  rightIconWrapper: {
-    position: 'absolute',
-    right: 8,
-    zIndex: 2,
-    padding: 10,
-    minWidth: 40,
-    minHeight: 40,
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  input: {
     backgroundColor: AUTH_COLORS.input,
     borderWidth: 1,
     borderColor: AUTH_COLORS.border,
     borderRadius: 14,
     height: 52,
-    fontSize: 15,
-    color: AUTH_COLORS.text,
+    paddingHorizontal: 16,
     width: '100%',
   },
-  inputFocused: {
+  inputWrapperFocused: {
     borderColor: AUTH_COLORS.primary,
     backgroundColor: '#F2F6FC', // subtle focus background
   },
-  inputWithLeftIcon: {
-    paddingLeft: 48,
-  },
-  inputWithoutLeftIcon: {
-    paddingLeft: 16,
-  },
-  inputWithRightIcon: {
-    paddingRight: 48,
-  },
-  inputWithoutRightIcon: {
-    paddingRight: 16,
-  },
-  inputError: {
+  inputWrapperError: {
     borderColor: AUTH_COLORS.error,
     backgroundColor: '#FEF2F2',
+  },
+  leftIcon: {
+    marginRight: 12,
+  },
+  rightIconWrapper: {
+    padding: 10,
+    marginLeft: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  input: {
+    flex: 1,
+    height: '100%',
+    fontSize: 15,
+    color: AUTH_COLORS.text,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    // Add outline: 'none' for React Native Web
+    ...Platform.select({
+      web: {
+        outlineStyle: 'none',
+      },
+    }),
   },
   inputDisabled: {
     color: AUTH_COLORS.muted,

@@ -7,6 +7,7 @@ import { createRequirementApi } from '../../../services/api.service';
 
 const GOLD = '#D97706';
 const BLUE = '#2563EB';
+const NAVY = '#071B3A';
 
 export default function PostRequirementPage({ onBack, onViewRequirements, initialRole }) {
   const { width } = useWindowDimensions();
@@ -346,7 +347,7 @@ const styles = StyleSheet.create({
   switchLabel: { fontSize: 14, fontWeight: '600', color: '#0F172A' },
 
   submitWrapper: { marginTop: 32, alignItems: 'center' },
-  submitBtn: { backgroundColor: GOLD, paddingHorizontal: 40, paddingVertical: 16, borderRadius: 12, width: Platform.OS === 'web' ? 'auto' : '100%', alignItems: 'center' },
+  submitBtn: { backgroundColor: NAVY, paddingHorizontal: 40, paddingVertical: 16, borderRadius: 12, width: Platform.OS === 'web' ? 'auto' : '100%', alignItems: 'center' },
   submitBtnText: { fontSize: 16, fontWeight: '800', color: '#fff' },
 
   // Success Screen

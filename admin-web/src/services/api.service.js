@@ -95,3 +95,37 @@ export const updateVerificationStatus = async (registrationId, type, status) => 
     return { success: false, message: err.message };
   }
 };
+
+/**
+ * Fetch all system limits and quotas
+ */
+export const fetchSystemLimitsApi = async () => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/limits`);
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const json = await res.json();
+    return json.success ? json.data : null;
+  } catch (err) {
+    console.warn('Backend API unreachable for System Limits:', err.message);
+    return null;
+  }
+};
+
+/**
+ * Update system limits
+ * @param {Array<{key: string, value: string}>} limits
+ */
+export const updateSystemLimitsApi = async (limits) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/limits`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ limits }),
+    });
+    const json = await res.json();
+    return json;
+  } catch (err) {
+    console.error('Failed to update system limits on backend:', err.message);
+    return { success: false, message: err.message };
+  }
+};

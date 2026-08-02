@@ -3,49 +3,50 @@ import {
   View, Text, StyleSheet, Animated, useWindowDimensions,
   Easing, AccessibilityInfo, Platform, SafeAreaView, Image
 } from 'react-native';
-import Svg, { Path, Circle, G, LinearGradient, Stop } from 'react-native-svg';
+import Svg, { Path, Circle } from 'react-native-svg';
 import { Package, Users, Wrench, Megaphone } from 'lucide-react-native';
 
-const PRIMARY_NAVY = '#041533';
-const SECONDARY_NAVY = '#0A2454';
-const BRAND_GOLD = '#C89423';
+const PRIMARY_NAVY = '#071B3A';
+const SECONDARY_NAVY = '#102A4C';
+const BRAND_GOLD = '#D8A51F';
 const WHITE = '#FFFFFF';
-const BG_WHITE = '#FAFBFD';
-const TEXT_NAVY = '#041533';
+const BG_WHITE = '#F7F9FC';
+const TEXT_NAVY = '#071B3A';
+const BORDER_COLOR = '#E4EAF2';
 
 export default function SplashScreen({ onFinish }) {
-  const { width, height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
 
   const isSmallPhone = width < 350;
   const isTablet = width >= 600;
 
-  // Responsive dimensions strictly matching Image 2 hierarchy
-  const logoSize = isSmallPhone ? 110 : isTablet ? 200 : 155;
-  const titleSize = isSmallPhone ? 38 : isTablet ? 58 : 50;
-  const subtitleSize = isSmallPhone ? 14 : isTablet ? 20 : 16;
-  const categorySize = isSmallPhone ? 12 : isTablet ? 17 : 14;
-  const cardHeight = isSmallPhone ? 78 : isTablet ? 98 : 88;
+  // Responsive dimensions meeting exact 8-12% logo reduction and hierarchy rules
+  const logoSize = isSmallPhone ? 92 : width < 390 ? 102 : isTablet ? 136 : 110;
+  const titleSize = isSmallPhone ? 36 : width < 390 ? 42 : isTablet ? 52 : 46;
+  const subtitleSize = isSmallPhone ? 13 : isTablet ? 18 : 15;
+  const categorySize = isSmallPhone ? 12 : isTablet ? 16 : 14;
+  const cardHeight = isSmallPhone ? 82 : isTablet ? 96 : 88;
 
   // Animation values
   const bgOpacity = useRef(new Animated.Value(1)).current;
-  const logoScale = useRef(new Animated.Value(0.9)).current;
+  const logoScale = useRef(new Animated.Value(0.92)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
-  const logoTranslateY = useRef(new Animated.Value(12)).current;
+  const logoTranslateY = useRef(new Animated.Value(8)).current;
   const titleOpacity = useRef(new Animated.Value(0)).current;
-  const titleTranslateY = useRef(new Animated.Value(10)).current;
+  const titleTranslateY = useRef(new Animated.Value(8)).current;
   const subtitleOpacity = useRef(new Animated.Value(0)).current;
   const dividerOpacity = useRef(new Animated.Value(0)).current;
   const categoriesOpacity = useRef(new Animated.Value(0)).current;
 
   // Cards stagger animation values
   const card1Opacity = useRef(new Animated.Value(0)).current;
-  const card1TranslateY = useRef(new Animated.Value(10)).current;
+  const card1TranslateY = useRef(new Animated.Value(8)).current;
   const card2Opacity = useRef(new Animated.Value(0)).current;
-  const card2TranslateY = useRef(new Animated.Value(10)).current;
+  const card2TranslateY = useRef(new Animated.Value(8)).current;
   const card3Opacity = useRef(new Animated.Value(0)).current;
-  const card3TranslateY = useRef(new Animated.Value(10)).current;
+  const card3TranslateY = useRef(new Animated.Value(8)).current;
   const card4Opacity = useRef(new Animated.Value(0)).current;
-  const card4TranslateY = useRef(new Animated.Value(10)).current;
+  const card4TranslateY = useRef(new Animated.Value(8)).current;
 
   // Loader and bottom tagline animations
   const loaderOpacity = useRef(new Animated.Value(0)).current;
@@ -65,57 +66,55 @@ export default function SplashScreen({ onFinish }) {
       }
 
       if (isReduceMotionEnabled) {
-        // Simple fade animations only
         Animated.parallel([
-          Animated.timing(logoOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
-          Animated.timing(titleOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
-          Animated.timing(subtitleOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
-          Animated.timing(dividerOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
-          Animated.timing(categoriesOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
-          Animated.timing(card1Opacity, { toValue: 1, duration: 400, useNativeDriver: true }),
-          Animated.timing(card2Opacity, { toValue: 1, duration: 400, useNativeDriver: true }),
-          Animated.timing(card3Opacity, { toValue: 1, duration: 400, useNativeDriver: true }),
-          Animated.timing(card4Opacity, { toValue: 1, duration: 400, useNativeDriver: true }),
-          Animated.timing(loaderOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
-          Animated.timing(taglineOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+          Animated.timing(logoOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.timing(titleOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.timing(subtitleOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.timing(dividerOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.timing(categoriesOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.timing(card1Opacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.timing(card2Opacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.timing(card3Opacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.timing(card4Opacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.timing(loaderOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.timing(taglineOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
         ]).start();
       } else {
-        // High fidelity sequence matching Image 2 style
         Animated.sequence([
-          // 1. Logo scale & fade in
+          // 1. Logo scale & fade in (350ms)
           Animated.parallel([
-            Animated.timing(logoOpacity, { toValue: 1, duration: 450, useNativeDriver: true }),
+            Animated.timing(logoOpacity, { toValue: 1, duration: 350, useNativeDriver: true }),
             Animated.timing(logoScale, {
               toValue: 1,
-              duration: 450,
+              duration: 350,
               easing: Easing.out(Easing.cubic),
               useNativeDriver: true,
             }),
             Animated.timing(logoTranslateY, {
               toValue: 0,
-              duration: 450,
+              duration: 350,
               easing: Easing.out(Easing.cubic),
               useNativeDriver: true,
             })
           ]),
-          // 2. Title & Subtitle fade up
+          // 2. Title & Subtitle fade up (280ms)
           Animated.parallel([
-            Animated.timing(titleOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+            Animated.timing(titleOpacity, { toValue: 1, duration: 280, useNativeDriver: true }),
             Animated.timing(titleTranslateY, {
               toValue: 0,
-              duration: 300,
+              duration: 280,
               easing: Easing.out(Easing.cubic),
               useNativeDriver: true,
             }),
-            Animated.timing(subtitleOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+            Animated.timing(subtitleOpacity, { toValue: 1, duration: 280, useNativeDriver: true }),
           ]),
-          // 3. Divider line & Category list
+          // 3. Divider line & Category list (220ms)
           Animated.parallel([
-            Animated.timing(dividerOpacity, { toValue: 1, duration: 250, useNativeDriver: true }),
-            Animated.timing(categoriesOpacity, { toValue: 1, duration: 250, useNativeDriver: true }),
+            Animated.timing(dividerOpacity, { toValue: 1, duration: 220, useNativeDriver: true }),
+            Animated.timing(categoriesOpacity, { toValue: 1, duration: 220, useNativeDriver: true }),
           ]),
-          // 4. Staggered card animation sequence
-          Animated.stagger(60, [
+          // 4. Staggered card animation sequence (50ms stagger)
+          Animated.stagger(50, [
             Animated.parallel([
               Animated.timing(card1Opacity, { toValue: 1, duration: 220, useNativeDriver: true }),
               Animated.timing(card1TranslateY, { toValue: 0, duration: 220, useNativeDriver: true })
@@ -133,10 +132,10 @@ export default function SplashScreen({ onFinish }) {
               Animated.timing(card4TranslateY, { toValue: 0, duration: 220, useNativeDriver: true })
             ]),
           ]),
-          // 5. Loader & Tagline
+          // 5. Loader & Tagline (250ms)
           Animated.parallel([
-            Animated.timing(loaderOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
-            Animated.timing(taglineOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+            Animated.timing(loaderOpacity, { toValue: 1, duration: 250, useNativeDriver: true }),
+            Animated.timing(taglineOpacity, { toValue: 1, duration: 250, useNativeDriver: true }),
           ])
         ]).start();
       }
@@ -144,26 +143,26 @@ export default function SplashScreen({ onFinish }) {
 
     checkReduceMotion();
 
-    // Loader rotation spin
+    // Loader rotation spin (1300ms duration per rotation)
     Animated.loop(
       Animated.timing(spinValue, {
         toValue: 1,
-        duration: 1200,
+        duration: 1300,
         easing: Easing.linear,
         useNativeDriver: true,
       })
     ).start();
 
-    // Total display duration of 5 seconds
+    // Exactly 3 seconds (3000ms) total screen duration
     const timer = setTimeout(() => {
       Animated.timing(bgOpacity, {
         toValue: 0,
-        duration: 250,
+        duration: 300,
         useNativeDriver: true,
       }).start(() => {
         if (onFinish) onFinish();
       });
-    }, 4750);
+    }, 2700);
 
     return () => clearTimeout(timer);
   }, []);
@@ -174,28 +173,24 @@ export default function SplashScreen({ onFinish }) {
   });
 
   return (
-    <Animated.View 
+    <Animated.View
       style={[styles.container, { opacity: bgOpacity }]}
       accessibilityLabel="HRC HUB Splash Screen"
     >
-      {/* Background Layer matching Image 2 */}
+      {/* Background Layer */}
       <View style={StyleSheet.absoluteFill}>
         <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-          {/* Main White Central Surface */}
+          {/* Main Light Central Surface */}
           <Path d="M 0 0 L 100 0 L 100 100 L 0 100 Z" fill={BG_WHITE} />
 
           {/* Top-Left Dark Navy Curve */}
           <Path d="M 0 0 L 58 0 C 42 16 18 22 0 18 Z" fill={PRIMARY_NAVY} />
-          {/* Gold highlight top curve */}
+          {/* Thin gold highlight top curve */}
           <Path d="M 0 18 C 18 22 42 16 58 0" fill="none" stroke={BRAND_GOLD} strokeWidth="0.8" />
-          {/* Secondary thin white/light grey arc */}
-          <Path d="M 0 20 C 20 24 44 18 60 0" fill="none" stroke="#E2E8F0" strokeWidth="0.6" />
 
-          {/* Bottom Dark Navy Footer Curve */}
+          {/* Bottom Dark Navy Footer Curves */}
           <Path d="M 0 81 C 25 75 75 73 100 85 L 100 100 L 0 100 Z" fill={PRIMARY_NAVY} />
-          {/* Wave navy layers */}
           <Path d="M 0 84 C 30 78 70 81 100 89 L 100 100 L 0 100 Z" fill={SECONDARY_NAVY} opacity="0.6" />
-          {/* Thin gold edge above footer */}
           <Path d="M 0 81 C 25 75 75 73 100 85" fill="none" stroke={BRAND_GOLD} strokeWidth="1" />
         </Svg>
       </View>
@@ -203,14 +198,14 @@ export default function SplashScreen({ onFinish }) {
       {/* Decorative Gold Microdots in Footer Area */}
       <View style={styles.microDots}>
         <Svg width="35" height="35" viewBox="0 0 35 35">
-          <Circle cx="4" cy="4" r="1.5" fill={BRAND_GOLD} opacity="0.4" />
-          <Circle cx="12" cy="4" r="1.5" fill={BRAND_GOLD} opacity="0.4" />
-          <Circle cx="20" cy="4" r="1.5" fill={BRAND_GOLD} opacity="0.4" />
-          <Circle cx="4" cy="12" r="1.5" fill={BRAND_GOLD} opacity="0.4" />
-          <Circle cx="12" cy="12" r="1.5" fill={BRAND_GOLD} opacity="0.4" />
-          <Circle cx="20" cy="12" r="1.5" fill={BRAND_GOLD} opacity="0.4" />
-          <Circle cx="4" cy="20" r="1.5" fill={BRAND_GOLD} opacity="0.4" />
-          <Circle cx="12" cy="20" r="1.5" fill={BRAND_GOLD} opacity="0.4" />
+          <Circle cx="4" cy="4" r="1.4" fill={BRAND_GOLD} opacity="0.35" />
+          <Circle cx="12" cy="4" r="1.4" fill={BRAND_GOLD} opacity="0.35" />
+          <Circle cx="20" cy="4" r="1.4" fill={BRAND_GOLD} opacity="0.35" />
+          <Circle cx="4" cy="12" r="1.4" fill={BRAND_GOLD} opacity="0.35" />
+          <Circle cx="12" cy="12" r="1.4" fill={BRAND_GOLD} opacity="0.35" />
+          <Circle cx="20" cy="12" r="1.4" fill={BRAND_GOLD} opacity="0.35" />
+          <Circle cx="4" cy="20" r="1.4" fill={BRAND_GOLD} opacity="0.35" />
+          <Circle cx="12" cy="20" r="1.4" fill={BRAND_GOLD} opacity="0.35" />
         </Svg>
       </View>
 
@@ -218,9 +213,9 @@ export default function SplashScreen({ onFinish }) {
         {/* Top Spacer */}
         <View style={styles.topSpacer} />
 
-        {/* Central Logo, Brand and Cards Block */}
+        {/* Central Brand & Content Hierarchy Block */}
         <View style={styles.centerBrandBlock}>
-          {/* Large Gold H Logo (Rendered using high-fidelity transparent PNG) */}
+          {/* 1. Official Gold H Logo (Refined responsive size) */}
           <Animated.View style={[
             styles.logoContainer,
             {
@@ -237,43 +232,43 @@ export default function SplashScreen({ onFinish }) {
             />
           </Animated.View>
 
-          {/* Large Title */}
+          {/* 2. HRC HUB Wordmark */}
           <Animated.View style={{
             opacity: titleOpacity,
             transform: [{ translateY: titleTranslateY }]
           }}>
-            <Text style={[styles.brandTitle, { fontSize: titleSize }]}>
+            <Text style={[styles.brandTitle, { fontSize: titleSize, lineHeight: titleSize * 1.15 }]}>
               HRC <Text style={{ color: BRAND_GOLD }}>HUB</Text>
             </Text>
           </Animated.View>
 
-          {/* Subtitle */}
+          {/* 3. Subtitle */}
           <Animated.View style={{ opacity: subtitleOpacity }}>
             <Text style={[styles.brandSubtitle, { fontSize: subtitleSize }]}>
               HoReCa Business Partner
             </Text>
           </Animated.View>
 
-          {/* Divider diamond layout */}
+          {/* 4. Small Gold Diamond Divider */}
           <Animated.View style={[styles.dividerRow, { opacity: dividerOpacity }]}>
             <View style={styles.dividerLine} />
             <View style={styles.dividerDiamond} />
             <View style={styles.dividerLine} />
           </Animated.View>
 
-          {/* Hotels Restaurants Cafes Row */}
+          {/* 5. Business Types Line */}
           <Animated.View style={{ opacity: categoriesOpacity }}>
             <Text style={[styles.categoriesText, { fontSize: categorySize }]}>
               Hotels <Text style={{ color: BRAND_GOLD }}>•</Text> Restaurants <Text style={{ color: BRAND_GOLD }}>•</Text> Cafes
             </Text>
           </Animated.View>
 
-          {/* Business Pillar Cards forced side-by-side in a single row */}
+          {/* 6. Four Platform Pillar Cards (Single Row Layout) */}
           <View style={styles.cardsContainer}>
             {/* Card 1: Raw Material */}
             <Animated.View style={[
               styles.card,
-              { width: '23.2%', height: cardHeight, opacity: card1Opacity, transform: [{ translateY: card1TranslateY }] }
+              { height: cardHeight, opacity: card1Opacity, transform: [{ translateY: card1TranslateY }] }
             ]}>
               <View style={styles.cardIconBox}>
                 <Package size={20} color={BRAND_GOLD} />
@@ -284,18 +279,18 @@ export default function SplashScreen({ onFinish }) {
             {/* Card 2: Manpower */}
             <Animated.View style={[
               styles.card,
-              { width: '23.2%', height: cardHeight, opacity: card2Opacity, transform: [{ translateY: card2TranslateY }] }
+              { height: cardHeight, opacity: card2Opacity, transform: [{ translateY: card2TranslateY }] }
             ]}>
               <View style={styles.cardIconBox}>
                 <Users size={20} color={BRAND_GOLD} />
               </View>
-              <Text style={styles.cardLabel} numberOfLines={2}>Manpower</Text>
+              <Text style={styles.cardLabel} numberOfLines={1}>Manpower</Text>
             </Animated.View>
 
             {/* Card 3: Service Provider */}
             <Animated.View style={[
               styles.card,
-              { width: '23.2%', height: cardHeight, opacity: card3Opacity, transform: [{ translateY: card3TranslateY }] }
+              { height: cardHeight, opacity: card3Opacity, transform: [{ translateY: card3TranslateY }] }
             ]}>
               <View style={styles.cardIconBox}>
                 <Wrench size={20} color={BRAND_GOLD} />
@@ -306,24 +301,24 @@ export default function SplashScreen({ onFinish }) {
             {/* Card 4: Marketing */}
             <Animated.View style={[
               styles.card,
-              { width: '23.2%', height: cardHeight, opacity: card4Opacity, transform: [{ translateY: card4TranslateY }] }
+              { height: cardHeight, opacity: card4Opacity, transform: [{ translateY: card4TranslateY }] }
             ]}>
               <View style={styles.cardIconBox}>
                 <Megaphone size={20} color={BRAND_GOLD} />
               </View>
-              <Text style={styles.cardLabel} numberOfLines={2}>Marketing</Text>
+              <Text style={styles.cardLabel} numberOfLines={1}>Marketing</Text>
             </Animated.View>
           </View>
         </View>
 
-        {/* Bottom Curved Section */}
+        {/* Bottom Curved Section with Loader & Tagline */}
         <View style={styles.bottomCurvedContainer}>
           {/* Gold Loading Indicator */}
           <Animated.View style={[styles.loaderContainer, { opacity: loaderOpacity }]}>
             <Animated.View style={{ transform: [{ rotate: spin }] }}>
-              <Svg width="46" height="46" viewBox="0 0 36 36">
-                <Circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="2.5" />
-                <Circle cx="18" cy="18" r="15" fill="none" stroke={BRAND_GOLD} strokeWidth="2.5" strokeDasharray="50 40" strokeLinecap="round" />
+              <Svg width="36" height="36" viewBox="0 0 36 36">
+                <Circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="2.5" />
+                <Circle cx="18" cy="18" r="14" fill="none" stroke={BRAND_GOLD} strokeWidth="2.5" strokeDasharray="44 40" strokeLinecap="round" />
               </Svg>
             </Animated.View>
           </Animated.View>
@@ -356,18 +351,18 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     width: '100%',
-    maxWidth: 600, // Center viewport composition
+    maxWidth: 460, // Expo Web mobile emulation center constraint
     justifyContent: 'space-between',
     alignItems: 'center',
     zIndex: 10,
   },
   topSpacer: {
-    height: Platform.OS === 'ios' ? 24 : 44,
+    height: Platform.OS === 'ios' ? 20 : 36,
   },
   microDots: {
     position: 'absolute',
-    bottom: 84,
-    left: 20,
+    bottom: 76,
+    left: 18,
     zIndex: 2,
   },
   centerBrandBlock: {
@@ -376,89 +371,90 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
-    paddingTop: 10,
   },
   logoContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   brandTitle: {
     fontWeight: '900',
     color: TEXT_NAVY,
-    letterSpacing: 2,
+    letterSpacing: 1.5,
     textAlign: 'center',
-    lineHeight: 64,
   },
   brandSubtitle: {
     color: TEXT_NAVY,
-    fontWeight: '700',
-    letterSpacing: 1.5,
-    marginTop: 4,
+    fontWeight: '600',
+    letterSpacing: 1.2,
+    marginTop: 2,
     textAlign: 'center',
   },
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '60%',
-    marginVertical: 14,
+    width: 190,
+    marginVertical: 10,
     gap: 8,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: 'rgba(7, 27, 58, 0.25)',
+    backgroundColor: 'rgba(7, 27, 58, 0.2)',
   },
   dividerDiamond: {
-    width: 6,
-    height: 6,
+    width: 5,
+    height: 5,
     transform: [{ rotate: '45deg' }],
     backgroundColor: BRAND_GOLD,
   },
   categoriesText: {
     color: TEXT_NAVY,
     fontWeight: '600',
-    letterSpacing: 1.2,
+    letterSpacing: 1.1,
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   cardsContainer: {
     width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
-    gap: 4,
+    marginTop: 6,
+    gap: 8,
   },
   card: {
+    flex: 1,
     backgroundColor: WHITE,
-    borderRadius: 18,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 8,
+    paddingHorizontal: 4,
+    paddingVertical: 6,
     shadowColor: '#071B3A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
     borderWidth: 1,
-    borderColor: 'rgba(226, 232, 240, 0.8)',
+    borderColor: BORDER_COLOR,
   },
   cardIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#FAF3E0',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
     borderWidth: 1,
-    borderColor: 'rgba(200, 148, 35, 0.15)',
+    borderColor: 'rgba(216, 165, 31, 0.15)',
   },
   cardLabel: {
     fontSize: 10,
-    fontWeight: '700',
+    lineHeight: 14,
+    fontWeight: '600',
     color: TEXT_NAVY,
     textAlign: 'center',
   },
@@ -466,20 +462,19 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingBottom: Platform.OS === 'ios' ? 24 : 36,
-    height: '22%',
-    minHeight: 140,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 30,
+    height: 120,
   },
   loaderContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 22,
+    marginBottom: 18,
   },
   taglineText: {
     color: BRAND_GOLD,
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 2.2,
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 2.0,
     textAlign: 'center',
   },
 });

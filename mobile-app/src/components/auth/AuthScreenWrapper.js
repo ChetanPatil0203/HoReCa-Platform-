@@ -5,8 +5,8 @@ import { AUTH_COLORS } from './AuthTheme';
 export default function AuthScreenWrapper({ children }) {
   const { width } = useWindowDimensions();
   const isWeb = Platform.OS === 'web';
-  const contentWidth = isWeb ? Math.min(width * 0.92, 430) : width * 0.92;
-  const horizontalPadding = width < 340 ? 12 : 16;
+  const contentWidth = isWeb ? Math.min(width * 0.95, 440) : Math.min(width * 0.96, 440);
+  const horizontalPadding = width < 340 ? 8 : 12;
 
   return (
     <SafeAreaView style={styles.container}>

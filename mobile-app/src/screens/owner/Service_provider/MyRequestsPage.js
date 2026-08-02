@@ -91,13 +91,14 @@ export default function MyRequestsPage({ onBack, onViewResponses }) {
         const filtered = (res.data || [])
           .filter(r => r.type === 'serviceProvider')
           .map(r => {
-            const respCount = r.supplierId ? 1 : (r.extraData?.responseCount || 0);
+            const hasQuote = !!(r.quoteData || r.status === 'Quote Sent' || r.supplierId);
+            const respCount = hasQuote ? 1 : (r.extraData?.responseCount || 0);
             let displayStatus = 'Active';
             if (r.status === 'cancelled') displayStatus = 'Cancelled';
             else if (r.status === 'completed') displayStatus = 'Completed';
             else if (r.status === 'scheduled') displayStatus = 'Scheduled';
             else if (r.status === 'accepted') displayStatus = 'Accepted';
-            else if (respCount > 0) displayStatus = 'Responses';
+            else if (r.status === 'Quote Sent' || hasQuote || respCount > 0) displayStatus = 'Responses';
 
             return {
               id: `#${r.id.slice(0, 8).toUpperCase()}`,
@@ -687,7 +688,7 @@ const styles = StyleSheet.create({
 
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 110 },
-  emptyScrollContent: { flexGrow: 1, justifyContent: 'center' },
+  emptyScrollContent: { flexGrow: 1 },
   contentLayout: { padding: 14 },
   contentLayoutWeb: { maxWidth: 900, alignSelf: 'center', width: '100%', padding: 24 },
 

@@ -11,12 +11,12 @@ export default function LandingScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        
+
         {/* ── Logo mark ── */}
         <View style={styles.logoContainer}>
-          <Image 
-            source={require('../../../assets/HRCHUB_Logo.png')} 
-            style={styles.logoImage} 
+          <Image
+            source={require('../../../assets/HRCHUB_Logo.png')}
+            style={styles.logoImage}
             resizeMode="contain"
           />
           <View>
@@ -50,16 +50,16 @@ export default function LandingScreen({ navigation }) {
 
         {/* ── CTAs ── */}
         <View style={styles.actionContainer}>
-          <PrimaryButton 
-            title="GET STARTED" 
-            onPress={() => navigation.navigate('Auth')} 
+          <PrimaryButton
+            title="GET STARTED"
+            onPress={() => navigation.navigate('Auth')}
           />
-          <SecondaryButton 
-            title="BOOK A DEMO" 
-            onPress={() => navigation.navigate('Auth')} 
+          <SecondaryButton
+            title="BOOK A DEMO"
+            onPress={() => navigation.navigate('Auth')}
             style={{ marginTop: 12 }}
           />
-          
+
           <View style={styles.loginHint}>
             <Text style={styles.hintText}>Already have an account? </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Auth')}>

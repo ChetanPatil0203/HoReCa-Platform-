@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { Star, MapPin, Package } from 'lucide-react-native';
+import { CARD } from '../../../theme/cards';
 import { colors } from '../../../theme/colors';
 
 export default function VendorCard({ vendor, onViewProducts }) {
@@ -52,13 +53,17 @@ export default function VendorCard({ vendor, onViewProducts }) {
 const styles = StyleSheet.create({
   card: {
     width: 180,
-    backgroundColor: '#fff',
-    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: CARD.borderRadius,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: CARD.border,
     padding: 16,
     marginRight: 14,
-    ...Platform.select({ web: { boxShadow: '0 2px 12px rgba(0,0,0,0.05)' } }),
+    shadowColor: CARD.shadowColor,
+    shadowOffset: CARD.shadowOffset,
+    shadowOpacity: CARD.shadowOpacity,
+    shadowRadius: CARD.shadowRadius,
+    elevation: CARD.elevation,
   },
   topRow: {
     flexDirection: 'row',

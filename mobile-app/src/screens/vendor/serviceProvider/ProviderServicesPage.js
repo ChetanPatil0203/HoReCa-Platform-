@@ -1,24 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect, useRef, useCallback } from 'react';
 import { 
   View, Text, StyleSheet, FlatList, TouchableOpacity, 
   SafeAreaView, useWindowDimensions, Modal, TextInput, 
   ScrollView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Alert
 } from 'react-native';
 import { Search, SlidersHorizontal, Plus, Wrench, CircleCheck, CirclePause, EllipsisVertical as MoreVertical, Pencil as Edit, ChevronRight, Clock, CalendarClock, Trash2, Copy, FileText, CircleCheck as CheckCircle2 } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorServicesApi, saveVendorServiceApi, updateVendorServiceApi, deleteVendorServiceApi } from '../../../services/api.service';
 
 const NAVY = '#071B3A';
 const GOLD = '#F6B800';
 const LIGHT_BG = '#F8FAFC';
 const WHITE = '#FFFFFF';
 
-const MOCK_SERVICES = [];
-
 export default function ProviderServicesPage() {
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 360;
   const modalWidth = Math.min(width * 0.9, 560);
+  const { user } = useContext(AuthContext);
 
-  const [services, setServices] = useState(MOCK_SERVICES);
+  const [services, setServices] = useState([]);
   const [filterMode, setFilterMode] = useState('All'); // All, Active, Inactive
   const [searchQuery, setSearchQuery] = useState('');
   const [filterModalVisible, setFilterModalVisible] = useState(false);
@@ -40,6 +41,25 @@ export default function ProviderServicesPage() {
     price: '', duration: '', availability: 'Available Today', status: 'Active',
     included: '', excluded: ''
   });
+
+  const loadServices = async () => {
+    const vendorId = user?.registration?.id || user?.id;
+    if (!vendorId) return;
+    try {
+      const res = await fetchVendorServicesApi(vendorId);
+      if (res?.success && Array.isArray(res.data)) {
+        setServices(res.data);
+      }
+    } catch (err) {
+      console.warn('Error fetching vendor services:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadServices();
+    const interval = setInterval(loadServices, 4000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const getCounts = () => {
     const active = services.filter(s => s.status === 'Active').length;
@@ -81,7 +101,7 @@ export default function ProviderServicesPage() {
     setFormModalVisible(true);
   };
 
-  const handleSaveService = () => {
+  const handleSaveService = async () => {
     if (!form.name || !form.category || !form.description || !form.pricingType || !form.duration || !form.availability) {
       alert("Please fill all required fields.");
       return;
@@ -91,15 +111,22 @@ export default function ProviderServicesPage() {
       return;
     }
 
-    if (editingService) {
-      setServices(prev => prev.map(s => s.id === editingService.id ? { ...form, id: s.id } : s));
-      alert("Service updated successfully.");
-    } else {
-      const newService = { ...form, id: `SRV-${Math.floor(Math.random() * 1000)}`, created: "Today", updated: "Today" };
-      setServices([newService, ...services]);
-      alert("Service added successfully.");
+    const vendorId = user?.registration?.id || user?.id;
+
+    try {
+      if (editingService) {
+        await updateVendorServiceApi(editingService.id, { ...form, vendorId });
+        alert("Service updated successfully.");
+      } else {
+        await saveVendorServiceApi({ ...form, vendorId });
+        alert("Service added successfully.");
+      }
+      setFormModalVisible(false);
+      loadServices();
+    } catch (err) {
+      console.error('Error saving vendor service:', err);
+      alert(err?.message || "Failed to save service in database.");
     }
-    setFormModalVisible(false);
   };
 
   const handleViewDetails = (service) => {
@@ -114,24 +141,41 @@ export default function ProviderServicesPage() {
     setAvailabilityModalVisible(true);
   };
 
-  const handleDuplicate = (service) => {
+  const handleDuplicate = async (service) => {
     setActiveMenuId(null);
-    const duplicate = { ...service, name: `${service.name} Copy`, status: 'Inactive', id: `SRV-${Math.floor(Math.random() * 1000)}` };
-    setServices([duplicate, ...services]);
-    handleOpenForm(duplicate);
+    const vendorId = user?.registration?.id || user?.id;
+    const duplicate = { ...service, name: `${service.name} Copy`, status: 'Inactive', vendorId };
+    delete duplicate.id;
+    try {
+      await saveVendorServiceApi(duplicate);
+      loadServices();
+    } catch (err) {
+      console.error('Error duplicating service:', err);
+    }
   };
 
-  const handleToggleStatus = (service, activate) => {
+  const handleToggleStatus = async (service, activate) => {
     setActiveMenuId(null);
+    const newStatus = activate ? 'Active' : 'Inactive';
     if (activate) {
-      setServices(prev => prev.map(s => s.id === service.id ? { ...s, status: 'Active' } : s));
-      alert("Service activated successfully.");
+      try {
+        await updateVendorServiceApi(service.id, { status: newStatus });
+        alert("Service activated successfully.");
+        loadServices();
+      } catch (err) {
+        console.error('Error updating status:', err);
+      }
     } else {
       Alert.alert("Deactivate this service?", "This service will no longer appear as available to HoReCa owners.", [
         { text: "Cancel", style: "cancel" },
-        { text: "Deactivate", style: "destructive", onPress: () => {
-          setServices(prev => prev.map(s => s.id === service.id ? { ...s, status: 'Inactive' } : s));
-          alert("Service deactivated successfully.");
+        { text: "Deactivate", style: "destructive", onPress: async () => {
+          try {
+            await updateVendorServiceApi(service.id, { status: newStatus });
+            alert("Service deactivated successfully.");
+            loadServices();
+          } catch (err) {
+            console.error('Error updating status:', err);
+          }
         }}
       ]);
     }
@@ -139,19 +183,15 @@ export default function ProviderServicesPage() {
 
   const handleDelete = (service) => {
     setActiveMenuId(null);
-    // Mock dependency check
-    const hasDependency = service.id === 'SRV-01'; 
-    if (hasDependency) {
-      Alert.alert("Cannot Delete", "This service is connected to active requests or service work. Deactivate it instead.", [
-        { text: "Cancel", style: "cancel" },
-        { text: "Deactivate Service", onPress: () => handleToggleStatus(service, false) }
-      ]);
-      return;
-    }
     Alert.alert("Delete this service permanently?", "", [
       { text: "Cancel", style: "cancel" },
-      { text: "Delete Service", style: "destructive", onPress: () => {
-        setServices(prev => prev.filter(s => s.id !== service.id));
+      { text: "Delete Service", style: "destructive", onPress: async () => {
+        try {
+          await deleteVendorServiceApi(service.id);
+          loadServices();
+        } catch (err) {
+          console.error('Error deleting service:', err);
+        }
       }}
     ]);
   };
@@ -342,7 +382,7 @@ export default function ProviderServicesPage() {
                 <Text style={styles.emptyText}>
                   {searchQuery ? "Try changing your search or filters." : "Add the professional services your business provides."}
                 </Text>
-                {searchQuery ? (
+                {Boolean(searchQuery) ? (
                   <TouchableOpacity style={styles.btnOutlineEmpty} onPress={() => {setSearchQuery(''); setFilterMode('All');}}>
                     <Text style={styles.btnOutlineEmptyText}>Clear Filters</Text>
                   </TouchableOpacity>

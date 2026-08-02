@@ -141,8 +141,9 @@ export default function RawMaterialDashboardHome({ onNavigate, setActivePage }) 
             <View style={[styles.section, isMobile ? {} : { flex: 1, marginRight: 16 }]}>
               <View style={styles.sectionHeaderRow}>
                 <Text style={styles.sectionTitle}>Recent Orders</Text>
-                <TouchableOpacity onPress={() => onNavigate && onNavigate('requests')}>
-                  <Text style={styles.viewAllText}>View All {'>'}</Text>
+                <TouchableOpacity onPress={() => onNavigate && onNavigate('requests')} style={styles.viewAllBtn}>
+                  <Text style={styles.viewAllText}>View All</Text>
+                  <ChevronRight size={13} color={GOLD} />
                 </TouchableOpacity>
               </View>
               {loading ? (
@@ -155,13 +156,14 @@ export default function RawMaterialDashboardHome({ onNavigate, setActivePage }) 
               ) : recentOrders.map(order => (
                 <TouchableOpacity 
                   key={order.id} 
-                  style={styles.card}
-                  onPress={() => setActivePage && setActivePage('orders')}
+                  style={[styles.card, { borderLeftColor: order.statusColor, borderLeftWidth: 5 }]}
+                  onPress={() => onNavigate && onNavigate('requests')}
                   activeOpacity={0.7}
                 >
                   <View style={styles.cardHeader}>
                     <Text style={styles.idText}>{order.id}</Text>
-                    <View style={[styles.statusBadge, { backgroundColor: order.statusBg }]}>
+                    <View style={[styles.statusBadge, { backgroundColor: order.statusBg, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+                      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: order.statusColor }} />
                       <Text style={[styles.statusText, { color: order.statusColor }]}>{order.status}</Text>
                     </View>
                   </View>
@@ -222,13 +224,17 @@ const styles = StyleSheet.create({
   section: { marginBottom: 24 },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', color: NAVY, marginBottom: 12 },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  viewAllText: { fontSize: 13, fontWeight: '600', color: MUTED },
+  viewAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  viewAllText: { fontSize: 12, fontWeight: '700', color: GOLD },
   
   overviewGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12 },
   overviewCard: { 
     backgroundColor: WHITE, borderRadius: 16, padding: 16, marginBottom: 4, 
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1, 
-    borderWidth: 1, borderColor: '#E6EBF2' 
+    shadowColor: '#0F172A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2, 
   },
   overviewTop: { flexDirection: 'row', marginBottom: 12 },
   iconBox: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
@@ -237,8 +243,7 @@ const styles = StyleSheet.create({
   
   card: { 
     backgroundColor: WHITE, borderRadius: 16, padding: 16, marginBottom: 12, 
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1, 
-    borderWidth: 1, borderColor: '#E6EBF2' 
+    shadowColor: '#0F172A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2, 
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   idText: { fontSize: 13, fontWeight: 'bold', color: NAVY },

@@ -15,6 +15,12 @@ const ServiceProviderRequirement = require('./ServiceProviderRequirement');
 const PasswordReset = require('./PasswordReset');
 const SupportTicket = require('./SupportTicket');
 const Candidate = require('./Candidate');
+const VendorService = require('./VendorService');
+const SystemLimit = require('./SystemLimit');
+const MarketingProposal = require('./MarketingProposal');
+const MarketingCreative = require('./MarketingCreative');
+const MarketingTeamMember = require('./MarketingTeamMember');
+const MarketingCampaignMetric = require('./MarketingCampaignMetric');
 
 // Associations
 User.hasMany(Document, { foreignKey: 'userId', as: 'documents', onDelete: 'CASCADE' });
@@ -31,6 +37,10 @@ VendorRegistration.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
 User.hasMany(UserLoginLog, { foreignKey: 'userId', as: 'loginLogs', onDelete: 'CASCADE' });
 UserLoginLog.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+// Vendor Offered Services Associations
+VendorRegistration.hasMany(VendorService, { foreignKey: 'vendorId', as: 'services', onDelete: 'CASCADE' });
+VendorService.belongsTo(VendorRegistration, { foreignKey: 'vendorId', as: 'vendor' });
 
 // Candidate Associations
 VendorRegistration.hasMany(Candidate, { foreignKey: 'supplierId', as: 'candidates', onDelete: 'CASCADE' });
@@ -79,6 +89,23 @@ Requirement.belongsTo(HorecaRegistration, { foreignKey: 'ownerId', as: 'owner' }
 VendorRegistration.hasMany(Requirement, { foreignKey: 'supplierId', as: 'receivedRequirements' });
 Requirement.belongsTo(VendorRegistration, { foreignKey: 'supplierId', as: 'supplier' });
 
+// Marketing Module Additional Associations
+MarketingRequirement.hasMany(MarketingProposal, { foreignKey: 'requirementId', as: 'proposals', onDelete: 'CASCADE' });
+MarketingProposal.belongsTo(MarketingRequirement, { foreignKey: 'requirementId', as: 'requirement' });
+VendorRegistration.hasMany(MarketingProposal, { foreignKey: 'supplierId', as: 'marketingProposals', onDelete: 'CASCADE' });
+MarketingProposal.belongsTo(VendorRegistration, { foreignKey: 'supplierId', as: 'supplier' });
+
+MarketingRequirement.hasMany(MarketingCreative, { foreignKey: 'requirementId', as: 'creatives', onDelete: 'CASCADE' });
+MarketingCreative.belongsTo(MarketingRequirement, { foreignKey: 'requirementId', as: 'requirement' });
+VendorRegistration.hasMany(MarketingCreative, { foreignKey: 'supplierId', as: 'marketingCreatives', onDelete: 'CASCADE' });
+MarketingCreative.belongsTo(VendorRegistration, { foreignKey: 'supplierId', as: 'supplier' });
+
+VendorRegistration.hasMany(MarketingTeamMember, { foreignKey: 'supplierId', as: 'teamMembers', onDelete: 'CASCADE' });
+MarketingTeamMember.belongsTo(VendorRegistration, { foreignKey: 'supplierId', as: 'supplier' });
+
+MarketingRequirement.hasMany(MarketingCampaignMetric, { foreignKey: 'requirementId', as: 'metrics', onDelete: 'CASCADE' });
+MarketingCampaignMetric.belongsTo(MarketingRequirement, { foreignKey: 'requirementId', as: 'requirement' });
+
 module.exports = {
   sequelize,
   User,
@@ -97,4 +124,10 @@ module.exports = {
   PasswordReset,
   SupportTicket,
   Candidate,
+  VendorService,
+  SystemLimit,
+  MarketingProposal,
+  MarketingCreative,
+  MarketingTeamMember,
+  MarketingCampaignMetric,
 };

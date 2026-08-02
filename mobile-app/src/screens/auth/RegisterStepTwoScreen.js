@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, LayoutAnimation, UIManager } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, LayoutAnimation, UIManager, Alert } from 'react-native';
 import { User, Mail, ArrowRight, Building2, MapPin, CircleCheck as CheckCircle, Shield, ChevronDown, ChevronUp, Lock } from 'lucide-react-native';
 
 import AuthCard from '../../components/auth/AuthCard';
@@ -20,11 +20,12 @@ const CITIES = ['Mumbai', 'Delhi', 'Bengaluru', 'Pune', 'Hyderabad', 'Chennai', 
 
 export default function RegisterStepTwoScreen({ navigation, route }) {
   const existingState = route.params?.registrationData || {};
+  const city = existingState.city || '';
   const { width } = useWindowDimensions();
-  
+
   const isWeb = Platform.OS === 'web';
-  const contentWidth = isWeb ? Math.min(width * 0.92, 540) : width * 0.92;
-  const showTwoColumns = width >= 360;
+  const contentWidth = isWeb ? Math.min(width * 0.94, 520) : Math.min(width * 0.96, 520);
+  const showTwoColumns = width >= 480;
 
   // Form State
   const [firstName, setFirstName] = useState(existingState.firstName || '');
@@ -32,7 +33,7 @@ export default function RegisterStepTwoScreen({ navigation, route }) {
   const [email, setEmail] = useState(existingState.email || '');
   const [password, setPassword] = useState(existingState.password || '');
   const [confirmPassword, setConfirmPassword] = useState(existingState.confirmPassword || '');
-  const [city, setCity] = useState(existingState.city || '');
+
 
   // Errors & UI State
   const [errors, setErrors] = useState({});
@@ -58,7 +59,7 @@ export default function RegisterStepTwoScreen({ navigation, route }) {
     if (/[A-Z]/.test(pwd)) score++;
     if (/[a-z]/.test(pwd)) score++;
     if (/[0-9]/.test(pwd)) score++;
-    
+
     if (score <= 2) return { label: 'Weak', color: AUTH_COLORS.error };
     if (score === 3) return { label: 'Medium', color: AUTH_COLORS.warning };
     return { label: 'Strong', color: AUTH_COLORS.success };
@@ -76,7 +77,7 @@ export default function RegisterStepTwoScreen({ navigation, route }) {
 
     if (!firstName.trim()) { nextErrors.firstName = 'Required'; isValid = false; }
     if (!lastName.trim()) { nextErrors.lastName = 'Required'; isValid = false; }
-    
+
     if (!email.trim()) {
       nextErrors.email = 'Email is required'; isValid = false;
     } else if (!/^\S+@\S+\.\S+$/.test(email)) {
@@ -97,9 +98,7 @@ export default function RegisterStepTwoScreen({ navigation, route }) {
       nextErrors.confirmPassword = 'Passwords do not match'; isValid = false;
     }
 
-    if (!city) {
-      nextErrors.city = 'Operational Headquarters City is required'; isValid = false;
-    }
+
 
     setErrors(nextErrors);
     return isValid;
@@ -107,24 +106,24 @@ export default function RegisterStepTwoScreen({ navigation, route }) {
 
   const handleNext = async () => {
     if (!validate()) return;
-    const registrationData = { 
-      ...existingState, 
-      firstName: firstName.trim(), 
-      lastName: lastName.trim(), 
-      email: email.toLowerCase().trim(), 
-      password, 
-      confirmPassword, 
-      city 
+    const registrationData = {
+      ...existingState,
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: email.toLowerCase().trim(),
+      password,
+      confirmPassword
     };
-    
+
     setIsSubmitting(true);
     try {
       const response = await registerApi(registrationData);
       const token = response?.data?.token || response?.token;
       navigation.navigate('RegisterStepThree', { registrationData, token });
     } catch (error) {
-      console.error('Registration Step 2 Error:', error);
-      alert(error.response?.data?.message || error.message || 'Registration failed.');
+      const serverMsg = error.response?.data?.message || error.message || 'Registration failed.';
+      console.error('Registration Step 2 Error:', serverMsg);
+      Alert.alert('Registration Failed', typeof serverMsg === 'string' ? serverMsg : JSON.stringify(serverMsg));
     } finally {
       setIsSubmitting(false);
     }
@@ -132,11 +131,11 @@ export default function RegisterStepTwoScreen({ navigation, route }) {
 
   const isFormComplete = () => {
     return (
-      firstName.trim() && 
-      lastName.trim() && 
-      email.trim() && 
-      password && 
-      confirmPassword && 
+      firstName.trim() &&
+      lastName.trim() &&
+      email.trim() &&
+      password &&
+      confirmPassword &&
       city
     );
   };
@@ -150,12 +149,12 @@ export default function RegisterStepTwoScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <ScrollView 
+        <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
@@ -177,17 +176,17 @@ export default function RegisterStepTwoScreen({ navigation, route }) {
                 <Text style={styles.sectionCardTitle}>Owner Information</Text>
 
                 <View style={showTwoColumns ? styles.rowFields : styles.colFields}>
-                  <FormField 
-                    label="First Name *" 
-                    icon={User} 
+                  <FormField
+                    label="First Name *"
+                    icon={User}
                     placeholder="John"
                     value={firstName}
                     onChangeText={(val) => { setFirstName(val); clearError('firstName'); }}
                     error={errors.firstName}
                     containerStyle={showTwoColumns ? { flex: 1, marginRight: 6, marginBottom: 0 } : { marginBottom: 12 }}
                   />
-                  <FormField 
-                    label="Last Name *" 
+                  <FormField
+                    label="Last Name *"
                     placeholder="Doe"
                     value={lastName}
                     onChangeText={(val) => { setLastName(val); clearError('lastName'); }}
@@ -196,9 +195,9 @@ export default function RegisterStepTwoScreen({ navigation, route }) {
                   />
                 </View>
 
-                <FormField 
-                  label="Email Address *" 
-                  icon={Mail} 
+                <FormField
+                  label="Email Address *"
+                  icon={Mail}
                   placeholder="admin@company.com"
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -207,23 +206,15 @@ export default function RegisterStepTwoScreen({ navigation, route }) {
                   error={errors.email}
                 />
 
-                <SelectField 
-                  label="Operational Headquarters City *"
-                  icon={MapPin}
-                  options={CITIES}
-                  searchable
-                  value={city}
-                  onSelect={(val) => { setCity(val); clearError('city'); }}
-                  error={errors.city}
-                />
+
               </View>
 
               {/* Section 2: Account Security */}
               <View style={styles.sectionCard}>
                 <Text style={styles.sectionCardTitle}>Account Security</Text>
 
-                <PasswordField 
-                  label="Password *" 
+                <PasswordField
+                  label="Password *"
                   placeholder="••••••••"
                   value={password}
                   onChangeText={(val) => { setPassword(val); clearError('password'); }}
@@ -231,8 +222,8 @@ export default function RegisterStepTwoScreen({ navigation, route }) {
                   showChecklist={false}
                 />
 
-                <PasswordField 
-                  label="Confirm Password *" 
+                <PasswordField
+                  label="Confirm Password *"
                   placeholder="••••••••"
                   value={confirmPassword}
                   onChangeText={(val) => { setConfirmPassword(val); clearError('confirmPassword'); }}
@@ -256,8 +247,8 @@ export default function RegisterStepTwoScreen({ navigation, route }) {
 
               {/* Section 3: Business Summary Review */}
               <View style={styles.sectionCard}>
-                <TouchableOpacity 
-                  style={styles.summaryHeader} 
+                <TouchableOpacity
+                  style={styles.summaryHeader}
                   onPress={toggleSummary}
                   activeOpacity={0.7}
                   accessibilityRole="button"
@@ -305,18 +296,18 @@ export default function RegisterStepTwoScreen({ navigation, route }) {
                   </View>
                 )}
 
-                <TouchableOpacity 
-                  style={styles.editDetailsBtn} 
-                  onPress={() => navigation.navigate('RegisterStepOne', { 
-                    registrationData: { 
-                      ...existingState, 
-                      firstName, 
-                      lastName, 
-                      email, 
-                      city, 
-                      password, 
-                      confirmPassword 
-                    } 
+                <TouchableOpacity
+                  style={styles.editDetailsBtn}
+                  onPress={() => navigation.navigate('RegisterStepOne', {
+                    registrationData: {
+                      ...existingState,
+                      firstName,
+                      lastName,
+                      email,
+                      city,
+                      password,
+                      confirmPassword
+                    }
                   })}
                   activeOpacity={0.7}
                   accessibilityRole="button"
@@ -325,39 +316,40 @@ export default function RegisterStepTwoScreen({ navigation, route }) {
                 </TouchableOpacity>
               </View>
             </AuthCard>
+
+            {/* Scrollable Button Container */}
+            <View style={[styles.footerScroll, { width: '100%', flexDirection: 'row', gap: 12, alignItems: 'center' }]}>
+              <TouchableOpacity
+                style={styles.backBtn}
+                onPress={() => navigation.navigate('RegisterStepOne', {
+                  registrationData: {
+                    ...existingState,
+                    firstName,
+                    lastName,
+                    email,
+                    city,
+                    password,
+                    confirmPassword
+                  }
+                })}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+              >
+                <Text style={styles.backBtnText}>Back</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.nextBtn, (!isFormComplete() || isSubmitting) && styles.nextBtnDisabled]}
+                onPress={handleNext}
+                disabled={isSubmitting}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+              >
+                <Text style={styles.nextBtnText}>{isSubmitting ? "Registering..." : "Next: Verify Account"}</Text>
+                <ArrowRight size={18} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
           </View>
         </ScrollView>
-
-        <View style={[styles.footerSticky, { width: contentWidth, alignSelf: 'center' }]}>
-          <TouchableOpacity 
-            style={styles.backBtn} 
-            onPress={() => navigation.navigate('RegisterStepOne', { 
-              registrationData: { 
-                ...existingState, 
-                firstName, 
-                lastName, 
-                email, 
-                city, 
-                password, 
-                confirmPassword 
-              } 
-            })}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-          >
-            <Text style={styles.backBtnText}>Back</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.nextBtn, (!isFormComplete() || isSubmitting) && styles.nextBtnDisabled]} 
-            onPress={handleNext}
-            disabled={isSubmitting}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-          >
-            <Text style={styles.nextBtnText}>{isSubmitting ? "Registering..." : "Next: Verify Account"}</Text>
-            <ArrowRight size={18} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -367,11 +359,11 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: AUTH_COLORS.background },
   keyboardView: { flex: 1 },
   scrollView: { flex: 1 },
-  scrollContent: { 
-    flexGrow: 1, 
-    justifyContent: 'center', 
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 16 
+    paddingVertical: 16
   },
   contentWrapper: {
     alignSelf: 'center',
@@ -492,15 +484,9 @@ const styles = StyleSheet.create({
     color: AUTH_COLORS.primary
   },
 
-  footerSticky: {
-    borderTopWidth: 1,
-    borderTopColor: AUTH_COLORS.border,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
-    flexDirection: 'row',
-    gap: 12,
-    alignItems: 'center'
+  footerScroll: {
+    paddingVertical: 20,
+    width: '100%',
   },
   backBtn: {
     borderWidth: 1.5,

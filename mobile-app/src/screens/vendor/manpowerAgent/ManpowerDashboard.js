@@ -201,8 +201,8 @@ export default function ManpowerDashboard({ initialTab = "dashboard" }) {
                 <View style={styles.mobileNotificationDot} />
               </TouchableOpacity>
               <TouchableOpacity style={styles.mobileAvatarBtn} onPress={() => navigateTo('profile')}>
-                {(user?.profilePhoto || user?.profileImage) ? (
-                  <Image source={{ uri: user?.profilePhoto || user?.profileImage }} style={{ width: 28, height: 28, borderRadius: 14 }} />
+                {(user?.profilePhoto || user?.profileImage || user?.registration?.profilePhoto || user?.vendorRegistration?.profilePhoto) ? (
+                  <Image source={{ uri: user?.profilePhoto || user?.profileImage || user?.registration?.profilePhoto || user?.vendorRegistration?.profilePhoto }} style={{ width: 28, height: 28, borderRadius: 14 }} />
                 ) : (
                   <User size={16} color={PRIMARY} />
                 )}

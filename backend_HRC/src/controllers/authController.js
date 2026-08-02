@@ -9,7 +9,7 @@ const {
 } = require('../services/authService');
 const { getUserProfileService } = require('../services/userService');
 const { Document, User, PasswordReset } = require('../models');
-const { sendOTPEmail } = require('../utils/emailService');
+const { sendOTPEmail, sendForgotPasswordOtpEmail } = require('../utils/emailService');
 const bcrypt = require('bcryptjs');
 
 // Register User
@@ -240,7 +240,7 @@ exports.forgotPassword = async (req, res) => {
     });
 
     try {
-      await sendOTPEmail(email, otpCode);
+      await sendForgotPasswordOtpEmail(email, otpCode, user?.firstName || 'User');
     } catch (mailErr) {
       console.warn('Mail sending failed, but OTP stored:', mailErr.message);
     }

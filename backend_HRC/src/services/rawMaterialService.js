@@ -80,7 +80,7 @@ exports.getSuppliersService = async () => {
 };
 
 exports.createProductService = async (productData) => {
-  const { supplierId, name, category, stock, unit, price, sku, moq, expiry } = productData;
+  const { supplierId, name, category, stock, unit, price, sku, moq, expiry, imageUrl } = productData;
 
   const transaction = await sequelize.transaction();
 
@@ -109,6 +109,7 @@ exports.createProductService = async (productData) => {
       sku: sku || null,
       moq: moq || 1,
       expiry: expiry || null,
+      imageUrl: imageUrl || null,
     }, { transaction });
 
     await transaction.commit();

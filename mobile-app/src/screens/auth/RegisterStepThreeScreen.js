@@ -15,12 +15,12 @@ export default function RegisterStepThreeScreen({ navigation, route }) {
   const { login } = useContext(AuthContext);
   const registrationData = route.params?.registrationData || {};
   const token = route.params?.token;
-  
+
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resendTimer, setResendTimer] = useState(30);
-  
+
   const inputRefs = useRef([]);
 
   useEffect(() => {
@@ -67,7 +67,7 @@ export default function RegisterStepThreeScreen({ navigation, route }) {
 
   const handleCompleteRegistration = async () => {
     if (!isOtpComplete) return;
-    
+
     setIsSubmitting(true);
     try {
       const otpCode = otp.join('');
@@ -131,7 +131,7 @@ export default function RegisterStepThreeScreen({ navigation, route }) {
 
         <View style={styles.resendContainer}>
           <Text style={styles.resendText}>Didn't receive the code?</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.resendBtn, resendTimer > 0 && styles.resendBtnDisabled]}
             onPress={handleResend}
             disabled={resendTimer > 0}
@@ -159,18 +159,18 @@ export default function RegisterStepThreeScreen({ navigation, route }) {
         </View>
 
         <View style={styles.footerAction}>
-          <TouchableOpacity 
-            style={styles.backBtn} 
+          <TouchableOpacity
+            style={styles.backBtn}
             onPress={() => navigation.goBack()}
             activeOpacity={0.7}
             disabled={isSubmitting}
           >
             <Text style={styles.backBtnText}>Back to Executive Details</Text>
           </TouchableOpacity>
-          <PrimaryButton 
-            title={isSubmitting ? "VERIFYING..." : "ACTIVATE BUSINESS PROFILE"} 
-            icon={isSubmitting ? null : Lock} 
-            onPress={handleCompleteRegistration} 
+          <PrimaryButton
+            title={isSubmitting ? "VERIFYING..." : "ACTIVATE BUSINESS PROFILE"}
+            icon={isSubmitting ? null : Lock}
+            onPress={handleCompleteRegistration}
             disabled={!isOtpComplete || isSubmitting}
             loading={isSubmitting}
           />
@@ -187,23 +187,26 @@ const styles = StyleSheet.create({
   heading: { fontSize: 26, fontWeight: 'bold', color: AUTH_COLORS.primary, marginBottom: 6, lineHeight: 30 },
   subtitle: { fontSize: 14, color: AUTH_COLORS.muted, lineHeight: 22 },
 
-  securityNotice: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#D1FAE5', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, marginBottom: 32 },
-  securityText: { fontSize: 13, fontWeight: '600', color: '#065F46', marginLeft: 10 },
+  securityNotice: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#D1FAE5', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, marginBottom: 24 },
+  securityText: { fontSize: 13, fontWeight: '600', color: '#065F46', marginLeft: 8, flex: 1 },
 
-  otpSection: { alignItems: 'center', marginBottom: 32 },
-  otpLabel: { fontSize: 11, fontWeight: '600', color: AUTH_COLORS.primary, letterSpacing: 0.5, marginBottom: 16 },
-  otpContainer: { flexDirection: 'row', justifyContent: 'center', gap: 10, width: '100%' },
+  otpSection: { alignItems: 'center', marginBottom: 24, width: '100%' },
+  otpLabel: { fontSize: 11, fontWeight: '600', color: AUTH_COLORS.primary, letterSpacing: 0.5, marginBottom: 14 },
+  otpContainer: { flexDirection: 'row', justifyContent: 'center', gap: 6, width: '100%', maxWidth: 340, alignSelf: 'center' },
   otpBox: {
-    width: 48,
-    height: 56,
-    borderRadius: 14,
+    flex: 1,
+    maxWidth: 46,
+    minWidth: 36,
+    height: 52,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: AUTH_COLORS.border,
     backgroundColor: AUTH_COLORS.input,
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: AUTH_COLORS.text
+    color: AUTH_COLORS.text,
+    paddingHorizontal: 0
   },
   otpBoxActive: {
     borderColor: AUTH_COLORS.primary,

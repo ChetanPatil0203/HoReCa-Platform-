@@ -17,7 +17,7 @@ export default function ProductDetailsPage({ product, cartItems = [], onCartUpda
   const handleDecrease = () => {
     if (qty > product.moq) setQty(qty - 1);
   };
-  
+
   const handleIncrease = () => {
     setQty(qty + 1);
   };
@@ -40,7 +40,7 @@ export default function ProductDetailsPage({ product, cartItems = [], onCartUpda
         <TouchableOpacity style={styles.iconBtn} onPress={onBack}>
           <ArrowLeft size={20} color="#0F172A" />
         </TouchableOpacity>
-        
+
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.iconBtn} onPress={() => setIsFav(!isFav)}>
             <Heart size={20} color={isFav ? '#EF4444' : '#0F172A'} fill={isFav ? '#EF4444' : 'transparent'} />
@@ -106,8 +106,8 @@ export default function ProductDetailsPage({ product, cartItems = [], onCartUpda
       {/* Bottom Action Bar */}
       <View style={styles.bottomBar}>
         <View style={styles.qtySelector}>
-          <TouchableOpacity 
-            style={[styles.qtyBtn, qty <= product.moq && styles.qtyBtnDisabled]} 
+          <TouchableOpacity
+            style={[styles.qtyBtn, qty <= product.moq && styles.qtyBtnDisabled]}
             onPress={handleDecrease}
             disabled={qty <= product.moq}
           >
@@ -130,7 +130,8 @@ export default function ProductDetailsPage({ product, cartItems = [], onCartUpda
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
-  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16, 
+  header: {
+    minHeight: 90, paddingTop: 40, paddingBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -174,7 +175,7 @@ const styles = StyleSheet.create({
 
   imageContainer: { width: '100%', height: 280, backgroundColor: '#E2E8F0' },
   productImage: { width: '100%', height: '100%', resizeMode: 'cover' },
-  
+
   content: { padding: 20 },
   supplierBadge: {
     flexDirection: 'row',
@@ -190,7 +191,7 @@ const styles = StyleSheet.create({
     borderColor: '#BAE6FD',
   },
   supplierText: { fontSize: 12, fontWeight: '600', color: '#0369A1' },
-  
+
   productName: { fontSize: 24, fontWeight: '900', color: '#0F172A', marginBottom: 8 },
   priceText: { fontSize: 22, fontWeight: '800', color: '#D97706', marginBottom: 24 },
   unitText: { fontSize: 14, fontWeight: '500', color: '#64748B' },
@@ -242,7 +243,7 @@ const styles = StyleSheet.create({
   qtyBtn: { width: 44, height: 48, alignItems: 'center', justifyContent: 'center' },
   qtyBtnDisabled: { opacity: 0.5 },
   qtyText: { fontSize: 16, fontWeight: '700', color: '#0F172A', minWidth: 32, textAlign: 'center' },
-  
+
   addToCartBtn: {
     flex: 1,
     height: 48,

@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity , Alert} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity, Alert, useWindowDimensions } from 'react-native';
 import { Truck, TrendingUp, Star, Zap, Package, Users, Wrench, Megaphone } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 
@@ -64,7 +64,7 @@ export default function VendorDashboardHome() {
   const type = vendorType || 'raw-material';
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
-  
+
   const activeMeta = CAT[type] || CAT["raw-material"];
   const kpiData = KPI_DATA[type] || KPI_DATA["raw-material"];
   const revenueData = REVENUE_DATA[type] || REVENUE_DATA["raw-material"];
@@ -83,10 +83,10 @@ export default function VendorDashboardHome() {
 
   const filteredOrders = orders.filter(o => o.category === type);
   const displayOrders = filteredOrders.length > 0 ? filteredOrders : recentOrders;
-  
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      
+
       {/* Welcome Banner */}
       <View style={[styles.welcomeBanner, { backgroundColor: activeMeta.bg, borderColor: activeMeta.border }]}>
         <View style={[styles.bannerIconBox, { backgroundColor: activeMeta.bg }]}>
@@ -133,7 +133,7 @@ export default function VendorDashboardHome() {
             </View>
             <TouchableOpacity onPress={() => Alert.alert('Coming Soon', 'This feature is under development.')}><Text style={[styles.viewAllText, { color: activeMeta.color }]}>View All →</Text></TouchableOpacity>
           </View>
-          
+
           <View style={styles.chartBars}>
             {revenueData.map((d, i) => {
               const pct = (d.revenue / maxRev) * 100;

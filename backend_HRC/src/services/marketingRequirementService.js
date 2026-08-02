@@ -3,6 +3,10 @@ const {
   MarketingRequirement,
   HorecaRegistration,
   VendorRegistration,
+  MarketingProposal,
+  MarketingCreative,
+  MarketingTeamMember,
+  MarketingCampaignMetric,
 } = require('../models');
 
 const isUuid = (id) => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
@@ -216,3 +220,170 @@ exports.getMarketingDashboardSummary = async (ownerId) => {
     recentProposals
   };
 };
+
+// --- Marketing Proposals ---
+exports.createMarketingProposalService = async (data) => {
+  const supplierId = await resolveVendorId(data.supplierId);
+  const proposal = await MarketingProposal.create({
+    requirementId: data.requirementId || null,
+    supplierId,
+    amount: String(data.amount || '0'),
+    strategy: data.strategy,
+    services: data.services,
+    deliverables: data.deliverables,
+    duration: data.duration,
+    startDate: data.startDate,
+    completionDate: data.completionDate,
+    teamSize: data.teamSize,
+    paymentTerms: data.paymentTerms,
+    revisionLimit: data.revisionLimit,
+    notes: data.notes,
+    onlineFields: typeof data.onlineFields === 'object' ? JSON.stringify(data.onlineFields) : data.onlineFields,
+    offlineFields: typeof data.offlineFields === 'object' ? JSON.stringify(data.offlineFields) : data.offlineFields,
+    status: 'submitted',
+  });
+
+  if (data.requirementId) {
+    await MarketingRequirement.update({ status: 'proposal_received', supplierId }, { where: { id: data.requirementId } });
+  }
+
+  return proposal;
+};
+
+exports.getRequirementProposalsService = async (requirementId) => {
+  return await MarketingProposal.findAll({
+    where: { requirementId },
+    include: [{ model: VendorRegistration, as: 'supplier', attributes: ['id', 'bizName', 'city', 'mobile'] }],
+    order: [['createdAt', 'DESC']],
+  });
+};
+
+exports.acceptMarketingProposalService = async (proposalId) => {
+  const proposal = await MarketingProposal.findByPk(proposalId);
+  if (!proposal) throw new Error('Proposal not found');
+
+  proposal.status = 'accepted';
+  await proposal.save();
+
+  if (proposal.requirementId) {
+    await MarketingRequirement.update(
+      { status: 'active', supplierId: proposal.supplierId },
+      { where: { id: proposal.requirementId } }
+    );
+  }
+
+  return proposal;
+};
+
+// --- Marketing Creatives & Approvals ---
+exports.createMarketingCreativeService = async (data) => {
+  const supplierId = await resolveVendorId(data.supplierId);
+  return await MarketingCreative.create({
+    requirementId: data.requirementId || null,
+    supplierId,
+    title: data.title,
+    type: data.type || 'Social Post',
+    version: data.version || 'v1.0',
+    description: data.description,
+    fileUrl: data.fileUrl,
+    notes: data.notes,
+    status: 'pending',
+  });
+};
+
+exports.getRequirementCreativesService = async (requirementId) => {
+  return await MarketingCreative.findAll({
+    where: { requirementId },
+    order: [['createdAt', 'DESC']],
+  });
+};
+
+exports.updateCreativeStatusService = async (creativeId, { status, clientFeedback }) => {
+  const creative = await MarketingCreative.findByPk(creativeId);
+  if (!creative) throw new Error('Creative not found');
+
+  if (status) creative.status = status;
+  if (clientFeedback !== undefined) creative.clientFeedback = clientFeedback;
+  await creative.save();
+
+  return creative;
+};
+
+// --- Agency Team Roster ---
+exports.createTeamMemberService = async (data) => {
+  const supplierId = await resolveVendorId(data.supplierId);
+  return await MarketingTeamMember.create({
+    supplierId,
+    name: data.name,
+    role: data.role,
+    email: data.email,
+    phone: data.phone,
+    avatar: data.avatar,
+    activeCampaigns: typeof data.activeCampaigns === 'object' ? JSON.stringify(data.activeCampaigns) : data.activeCampaigns,
+    status: data.status || 'Active',
+  });
+};
+
+exports.getVendorTeamMembersService = async (supplierId) => {
+  const vendorId = await resolveVendorId(supplierId);
+  const searchIds = [supplierId, vendorId].filter(id => isUuid(id));
+  if (searchIds.length === 0) return [];
+  return await MarketingTeamMember.findAll({
+    where: { supplierId: { [Op.in]: searchIds } },
+    order: [['createdAt', 'DESC']],
+  });
+};
+
+exports.updateTeamMemberService = async (id, updateData) => {
+  const member = await MarketingTeamMember.findByPk(id);
+  if (!member) throw new Error('Team member not found');
+  if (updateData.activeCampaigns && typeof updateData.activeCampaigns === 'object') {
+    updateData.activeCampaigns = JSON.stringify(updateData.activeCampaigns);
+  }
+  await member.update(updateData);
+  return member;
+};
+
+exports.deleteTeamMemberService = async (id) => {
+  const member = await MarketingTeamMember.findByPk(id);
+  if (!member) throw new Error('Team member not found');
+  await member.destroy();
+  return { success: true };
+};
+
+// --- Revenue Analytics & Metrics ---
+exports.getVendorRevenueAnalyticsService = async (supplierId) => {
+  const vendorId = await resolveVendorId(supplierId);
+  const searchIds = [supplierId, vendorId].filter(id => isUuid(id));
+  
+  if (searchIds.length === 0) {
+    return {
+      totalRevenue: 0,
+      activeRetainersCount: 0,
+      acceptedProposalsCount: 0,
+      recentEarnings: [],
+    };
+  }
+
+  const acceptedProposals = await MarketingProposal.findAll({
+    where: {
+      supplierId: { [Op.in]: searchIds },
+      status: 'accepted',
+    },
+  });
+
+  const totalRevenue = acceptedProposals.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+  const activeRetainersCount = acceptedProposals.filter(p => p.duration && p.duration.toLowerCase().includes('month')).length;
+
+  return {
+    totalRevenue,
+    activeRetainersCount,
+    acceptedProposalsCount: acceptedProposals.length,
+    recentEarnings: acceptedProposals.map(p => ({
+      proposalId: p.id,
+      amount: p.amount,
+      date: p.updatedAt,
+    })),
+  };
+};
+

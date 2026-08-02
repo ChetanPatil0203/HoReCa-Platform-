@@ -37,7 +37,8 @@ export default function CustomInput({
         )}
         
         <TextInput
-          style={[styles.input, Icon && { paddingLeft: 42 }, suffix && { paddingRight: 42 }]}
+          key={secureTextEntry ? 'password' : 'text'}
+          style={styles.input}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
@@ -89,7 +90,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 16,
     height: 48,
-    position: 'relative',
+    paddingHorizontal: 16,
   },
   inputContainerFocused: {
     borderColor: colors.primary,
@@ -104,16 +105,15 @@ const styles = StyleSheet.create({
     borderColor: colors.error,
   },
   iconWrapper: {
-    position: 'absolute',
-    left: 16,
-    zIndex: 1,
+    marginRight: 8,
   },
   input: {
     flex: 1,
     height: '100%',
-    paddingHorizontal: 16,
     color: colors.dark,
     fontSize: 14,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
     // Add outline: 'none' for React Native Web
     ...Platform.select({
       web: {
@@ -122,9 +122,7 @@ const styles = StyleSheet.create({
     }),
   },
   suffixWrapper: {
-    position: 'absolute',
-    right: 16,
-    zIndex: 1,
+    marginLeft: 8,
   },
   hint: {
     ...typography.caption,

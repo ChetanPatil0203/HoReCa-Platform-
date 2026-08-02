@@ -256,7 +256,7 @@ export default function AuthScreen({ navigation }) {
       </View>
       <CustomInput label="Email Address" value={loginEmail} onChangeText={setLoginEmail} placeholder="name@company.com" icon={Mail} required />
       <CustomInput label="Password" value={loginPass} onChangeText={setLoginPass} placeholder="••••••••••••" icon={Lock} secureTextEntry={!showPass} required suffix={
-        <TouchableOpacity onPress={() => setShowPass(!showPass)}>
+        <TouchableOpacity onPress={() => setShowPass(!showPass)} style={{ padding: 12 }}>
           {showPass ? <EyeOff size={16} color={colors.muted} /> : <Eye size={16} color={colors.muted} />}
         </TouchableOpacity>
       } />

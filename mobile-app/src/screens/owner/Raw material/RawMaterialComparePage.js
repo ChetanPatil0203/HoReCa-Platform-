@@ -10,7 +10,7 @@ const MOCK_VENDORS = [];
 export default function RawMaterialComparePage({ product, qty = 1, onBack, onAddToCart, onQuote }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
-  
+
   const [selectedVendor, setSelectedVendor] = useState(null);
 
   const handleContinueToCart = () => {
@@ -41,18 +41,18 @@ export default function RawMaterialComparePage({ product, qty = 1, onBack, onAdd
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={isMobile ? { paddingBottom: 100 } : { paddingBottom: 40 }}>
         <View style={[styles.contentLayout, !isMobile && styles.contentLayoutWeb]}>
-          
+
           <View style={isMobile ? styles.cardsContainerMobile : styles.cardsContainerWeb}>
             {MOCK_VENDORS.map((vendor) => {
               const isSelected = selectedVendor?.id === vendor.id;
-              
+
               return (
-                <TouchableOpacity 
+                <TouchableOpacity
                   key={vendor.id}
                   activeOpacity={0.9}
                   onPress={() => setSelectedVendor(vendor)}
                   style={[
-                    styles.vendorCard, 
+                    styles.vendorCard,
                     isSelected && styles.vendorCardSelected,
                     !isMobile && { flex: 1, minWidth: 280 }
                   ]}
@@ -84,7 +84,7 @@ export default function RawMaterialComparePage({ product, qty = 1, onBack, onAdd
                       <View style={styles.detailLabelRow}><Star size={14} color="#64748B" /><Text style={styles.detailLabel}>Rating</Text></View>
                       <Text style={styles.detailValue}>{vendor.rating} ({vendor.reviews})</Text>
                     </View>
-                    
+
                     <View style={styles.detailItem}>
                       <View style={styles.detailLabelRow}><Truck size={14} color="#64748B" /><Text style={styles.detailLabel}>Delivery</Text></View>
                       <Text style={styles.detailValue}>{vendor.deliveryTime}</Text>
@@ -102,7 +102,7 @@ export default function RawMaterialComparePage({ product, qty = 1, onBack, onAdd
                       <Text style={styles.detailValue}>GST: {vendor.gst}</Text>
                       <Text style={styles.detailSubValue}>{vendor.returnPolicy}</Text>
                     </View>
-                    
+
                     <View style={styles.detailItem}>
                       <View style={styles.detailLabelRow}><MapPin size={14} color="#64748B" /><Text style={styles.detailLabel}>Location</Text></View>
                       <Text style={styles.detailValue}>{vendor.location}</Text>
@@ -149,17 +149,17 @@ const styles = StyleSheet.create({
   headerCenter: { alignItems: 'center' },
   headerTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
   headerSub: { fontSize: 13, color: '#64748B', marginTop: 2, fontWeight: '600' },
-  
+
   scroll: { flex: 1 },
   contentLayout: { padding: 16 },
   contentLayoutWeb: { padding: 32, maxWidth: 1200, alignSelf: 'center', width: '100%' },
-  
+
   cardsContainerMobile: { gap: 16 },
   cardsContainerWeb: { flexDirection: 'row', gap: 24, alignItems: 'flex-start' },
 
   vendorCard: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 2, borderColor: colors.border, padding: 20, position: 'relative' },
   vendorCardSelected: { borderColor: GOLD, backgroundColor: '#FFFBEB' },
-  
+
   selectedBadge: { position: 'absolute', top: -10, right: -10, backgroundColor: GOLD, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fff', zIndex: 10 },
 
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16, paddingBottom: Platform.OS === 'ios' ? 32 : 16, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   bottomBarWeb: { paddingBottom: 16 },
   bottomInstruction: { fontSize: 14, fontWeight: '600', color: '#64748B', paddingVertical: 12 },
-  
+
   actionBtns: { flexDirection: 'row', gap: 12, width: '100%', maxWidth: 500 },
   quoteBtn: { flex: 1, height: 48, borderRadius: 12, borderWidth: 1, borderColor: GOLD, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFBEB' },
   quoteText: { fontSize: 15, fontWeight: '700', color: GOLD },

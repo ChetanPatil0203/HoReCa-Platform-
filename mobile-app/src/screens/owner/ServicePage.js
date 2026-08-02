@@ -26,10 +26,12 @@ const LIGHT_BG = '#F8FAFC';
 
 const SummaryCard = ({ title, value, icon: Icon, bgColor, iconColor, customStyle }) => (
   <View style={[styles.summaryCard, customStyle]}>
-    <View style={[styles.summaryIconBox, { backgroundColor: bgColor }]}>
-      <Icon size={20} color={iconColor} />
+    <View style={styles.summaryHeader}>
+      <View style={[styles.summaryIconBox, { backgroundColor: bgColor }]}>
+        <Icon size={20} color={iconColor} />
+      </View>
+      <Text style={styles.summaryValue}>{value}</Text>
     </View>
-    <Text style={styles.summaryValue}>{value}</Text>
     <Text style={styles.summaryLabel}>{title}</Text>
   </View>
 );
@@ -41,12 +43,12 @@ const ServiceRequestCard = ({ request, onView }) => (
         <Text style={styles.requestId}>{request.id}</Text>
         <Text style={styles.requestTitle}>{request.title}</Text>
       </View>
-      <View style={[styles.statusBadge, 
-        request.status === 'Completed' ? styles.statusSuccess : 
+      <View style={[styles.statusBadge,
+      request.status === 'Completed' ? styles.statusSuccess :
         request.status === 'Active' ? styles.statusPrimary : styles.statusWarning
       ]}>
-        <Text style={[styles.statusText, 
-          request.status === 'Completed' ? styles.statusSuccessText : 
+        <Text style={[styles.statusText,
+        request.status === 'Completed' ? styles.statusSuccessText :
           request.status === 'Active' ? styles.statusPrimaryText : styles.statusWarningText
         ]}>{request.status}</Text>
       </View>
@@ -164,16 +166,16 @@ export default function ServicePage() {
 
   if (currentView === 'broadcast') {
     return (
-      <BroadcastRequirementPage 
-        onBack={() => setCurrentView('home')} 
-        onViewRequests={() => setCurrentView('requests')} 
+      <BroadcastRequirementPage
+        onBack={() => setCurrentView('home')}
+        onViewRequests={() => setCurrentView('requests')}
       />
     );
   }
 
   if (currentView === 'requests') {
     return (
-      <MyRequestsPage 
+      <MyRequestsPage
         onBack={() => setCurrentView('home')}
         onViewResponses={(req) => {
           setSelectedRequest(req);
@@ -185,7 +187,7 @@ export default function ServicePage() {
 
   if (currentView === 'providerResponses') {
     return (
-      <ProviderResponsesPage 
+      <ProviderResponsesPage
         request={selectedRequest}
         onBack={() => setCurrentView('requests')}
         onCompare={() => setCurrentView('compareProviders')}
@@ -203,7 +205,7 @@ export default function ServicePage() {
 
   if (currentView === 'compareProviders') {
     return (
-      <CompareProvidersPage 
+      <CompareProvidersPage
         request={selectedRequest}
         onBack={() => setCurrentView('providerResponses')}
         onSelectProvider={(provider) => {
@@ -216,7 +218,7 @@ export default function ServicePage() {
 
   if (currentView === 'serviceScheduling') {
     return (
-      <ServiceSchedulingPage 
+      <ServiceSchedulingPage
         provider={selectedProvider}
         onBack={() => setCurrentView('providerResponses')}
         onHome={() => setCurrentView('home')}
@@ -227,7 +229,7 @@ export default function ServicePage() {
 
   if (currentView === 'trackService') {
     return (
-      <TrackServicePage 
+      <TrackServicePage
         request={selectedRequest}
         onBack={() => setCurrentView('requests')}
         onReview={() => setCurrentView('serviceReview')}
@@ -239,7 +241,7 @@ export default function ServicePage() {
 
   if (currentView === 'serviceReview') {
     return (
-      <ServiceReviewPage 
+      <ServiceReviewPage
         onBack={() => setCurrentView('trackService')}
         onHome={() => setCurrentView('home')}
       />
@@ -248,7 +250,7 @@ export default function ServicePage() {
 
   if (currentView === 'serviceComplaint') {
     return (
-      <ServiceComplaintPage 
+      <ServiceComplaintPage
         onBack={() => setCurrentView('trackService')}
         onHome={() => setCurrentView('home')}
       />
@@ -257,7 +259,7 @@ export default function ServicePage() {
 
   if (currentView === 'browseProviders') {
     return (
-      <BrowseProvidersPage 
+      <BrowseProvidersPage
         onBack={() => setCurrentView('home')}
         onViewProfile={(provider) => {
           setSelectedProvider(provider);
@@ -273,7 +275,7 @@ export default function ServicePage() {
 
   if (currentView === 'providerProfile') {
     return (
-      <ProviderProfilePage 
+      <ProviderProfilePage
         provider={selectedProvider}
         onBack={() => setCurrentView('browseProviders')}
         onSendRequirement={(provider) => {
@@ -286,7 +288,7 @@ export default function ServicePage() {
 
   if (currentView === 'directRequirement') {
     return (
-      <DirectRequirementPage 
+      <DirectRequirementPage
         provider={selectedProvider}
         onBack={() => setCurrentView('browseProviders')}
         onHome={() => setCurrentView('home')}
@@ -321,7 +323,7 @@ export default function ServicePage() {
 
           {/* ── Quick Actions ── */}
           <View style={[styles.actionsRow, isMobile && { flexDirection: 'row' }]}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.primaryActionCard, isMobile && { padding: 16 }]}
               onPress={() => setCurrentView('broadcast')}
             >
@@ -334,7 +336,7 @@ export default function ServicePage() {
               <Text style={[styles.primaryActionTitle, isMobile && { fontSize: 16, marginBottom: 0 }]}>Post Requirement</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.secondaryActionCard, isMobile && { padding: 16 }]}
               onPress={() => setCurrentView('browseProviders')}
             >
@@ -350,7 +352,7 @@ export default function ServicePage() {
 
           {/* ── Single Column Sections ── */}
           <View style={styles.sectionsContainer}>
-            
+
             {/* Recent Service Requests */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
@@ -364,9 +366,9 @@ export default function ServicePage() {
                   </View>
                 ) : (
                   recentRequests.map(req => (
-                    <ServiceRequestCard 
-                      key={req.id} 
-                      request={req} 
+                    <ServiceRequestCard
+                      key={req.id}
+                      request={req}
                       onView={() => {
                         setSelectedRequest(req);
                         setCurrentView('providerResponses');
@@ -428,17 +430,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  
+
   scroll: { flex: 1 },
   contentLayout: { padding: 16, gap: 24 },
   contentLayoutWeb: { padding: 32, maxWidth: 1200, alignSelf: 'center', width: '100%', gap: 32 },
 
-  // Summary Cards
   summaryGrid: { flexDirection: 'row', gap: 16 },
-  summaryCard: { flex: 1, backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border },
-  summaryIconBox: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  summaryValue: { fontSize: 28, fontWeight: '900', color: NAVY, marginBottom: 4 },
-  summaryLabel: { fontSize: 13, color: '#64748B', fontWeight: '500' },
+  summaryCard: { flex: 1, backgroundColor: '#fff', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: colors.border },
+  summaryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  summaryIconBox: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  summaryValue: { fontSize: 24, fontWeight: '900', color: NAVY },
+  summaryLabel: { fontSize: 12, color: '#64748B', fontWeight: '600' },
 
   // Actions
   actionsRow: { flexDirection: 'row', gap: 16 },

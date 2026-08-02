@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useContext } from 'react';
 import {
   View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity,
-  useWindowDimensions, Modal, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Alert
+  useWindowDimensions, Modal, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Alert, Image
 } from 'react-native';
 import { Search, SlidersHorizontal, PackagePlus, Package, EllipsisVertical as MoreVertical, ChevronRight, CircleX as XCircle, Boxes, CircleCheck, TriangleAlert, CircleX, ArrowLeft, Plus, Filter, Pencil as Edit2, Trash2 } from 'lucide-react-native';
-import { createRawMaterialProduct, fetchRawMaterialProducts, updateProductStockApi, deleteRawMaterialProduct } from '../../../services/api.service';
+import { createRawMaterialProduct, fetchRawMaterialProducts, updateProductStockApi, deleteRawMaterialProduct, uploadDocumentApi } from '../../../services/api.service';
 import { AuthContext } from '../../../context/AuthContext';
+import * as DocumentPicker from 'expo-document-picker';
+import { API_BASE_URL } from '../../../config/api';
 
 const NAVY = '#071B3A';
 const GOLD = '#F6B800';
@@ -25,7 +27,37 @@ const MOCK_INVENTORY = [];
 export default function RawMaterialInventoryPage() {
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
-  const { user } = useContext(AuthContext);
+  const { user, userToken } = useContext(AuthContext);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const getProductImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return `${API_BASE_URL}${url}`;
+  };
+
+  const pickImage = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'image/*',
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const file = result.assets[0];
+        setIsUploading(true);
+        const fileUrl = await uploadDocumentApi(file, 'product_image_temp', userToken);
+        if (fileUrl) {
+          setProductForm(prev => ({ ...prev, imageUrl: fileUrl }));
+        }
+        setIsUploading(false);
+      }
+    } catch (error) {
+      setIsUploading(false);
+      console.error('Pick image error:', error);
+      alert('Failed to pick or upload image.');
+    }
+  };
 
   const [activeFilter, setActiveFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,6 +85,7 @@ export default function RawMaterialInventoryPage() {
             wholesalePrice: p.price,
             moq: p.moq || 1,
             expiry: p.expiry || null,
+            imageUrl: p.imageUrl || null,
             status: p.stock === 0 ? 'Out of Stock' : (p.stock <= 20 ? 'Low Stock' : 'In Stock'),
             history: [], created: "Today", updated: "Today"
           }));
@@ -76,7 +109,7 @@ export default function RawMaterialInventoryPage() {
   const [stockUpdateForm, setStockUpdateForm] = useState({ type: 'Add Stock', qty: '', reason: '', expiry: '', note: '' });
 
   // Add Product Form
-  const [productForm, setProductForm] = useState({ name: '', category: user?.subCategory || '', unit: '', price: '', moq: '', openingStock: '', minStock: '', expiry: '' });
+  const [productForm, setProductForm] = useState({ name: '', category: user?.subCategory || '', unit: '', price: '', moq: '', openingStock: '', minStock: '', expiry: '', imageUrl: '' });
   const [isSaving, setIsSaving] = useState(false);
   const [catDropdownOpen, setCatDropdownOpen] = useState(false);
   const [unitDropdownOpen, setUnitDropdownOpen] = useState(false);
@@ -193,6 +226,7 @@ export default function RawMaterialInventoryPage() {
         price: parseFloat(productForm.price) || 0,
         moq: parseInt(productForm.moq, 10) || 1,
         expiry: productForm.expiry || null,
+        imageUrl: productForm.imageUrl || null,
         supplierId: user?.id || '0949abbd-1002-4d8d-9984-9bd97e559ca8' // Use active vendor ID
       };
 
@@ -211,12 +245,13 @@ export default function RawMaterialInventoryPage() {
           wholesalePrice: res.data.price,
           moq: productForm.moq,
           expiry: productForm.expiry || null,
+          imageUrl: res.data.imageUrl || null,
           status: newStatus,
           history: [], created: "Today", updated: "Today"
         };
         setProducts(prev => [newProduct, ...prev]);
         setAddProductModalVisible(false);
-        setProductForm({ name: '', category: user?.subCategory || '', unit: '', price: '', moq: '', openingStock: '', minStock: '', expiry: '' });
+        setProductForm({ name: '', category: user?.subCategory || '', unit: '', price: '', moq: '', openingStock: '', minStock: '', expiry: '', imageUrl: '' });
         alert('Product added successfully.');
       } else {
         alert(res?.message || 'Failed to add product');
@@ -245,7 +280,11 @@ export default function RawMaterialInventoryPage() {
         <View style={[styles.cardTop, isMenuOpen && { zIndex: 999 }]}>
           <View style={styles.cardHeaderLeft}>
             <View style={styles.productIconBox}>
-              <Package size={20} color="#3B82F6" />
+              {item.imageUrl ? (
+                <Image source={{ uri: getProductImageUrl(item.imageUrl) }} style={{ width: '100%', height: '100%', borderRadius: 6 }} />
+              ) : (
+                <Package size={20} color="#3B82F6" />
+              )}
             </View>
             <View style={{flex: 1}}>
               <Text style={styles.productName} numberOfLines={1}>{item.name}</Text>
@@ -615,6 +654,48 @@ export default function RawMaterialInventoryPage() {
                         <TextInput style={styles.input} placeholder="Optional" value={productForm.expiry} onChangeText={t => setProductForm({...productForm, expiry: t})} />
                       </View>
                     )}
+
+                    <View style={{marginTop: 12}}>
+                      <Text style={styles.inputLabel}>Product Image</Text>
+                      {productForm.imageUrl ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#F0FDF4', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: '#DCFCE7', marginTop: 4 }}>
+                          <Image source={{ uri: getProductImageUrl(productForm.imageUrl) }} style={{ width: 50, height: 50, borderRadius: 6 }} />
+                          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <CircleCheck size={16} color="#15803D" />
+                            <Text style={{ fontSize: 13, color: '#15803D', fontWeight: '700' }} numberOfLines={1}>Upload Successful!</Text>
+                          </View>
+                          <TouchableOpacity 
+                            onPress={() => setProductForm(prev => ({ ...prev, imageUrl: '' }))}
+                            style={{ padding: 6, backgroundColor: '#FEE2E2', borderRadius: 6 }}
+                          >
+                            <Trash2 size={16} color="#EF4444" />
+                          </TouchableOpacity>
+                        </View>
+                      ) : (
+                        <TouchableOpacity 
+                          style={{ 
+                            height: 48, 
+                            borderRadius: 8, 
+                            borderWidth: 1, 
+                            borderStyle: 'dashed', 
+                            borderColor: '#CBD5E1', 
+                            justifyContent: 'center', 
+                            alignItems: 'center', 
+                            flexDirection: 'row', 
+                            gap: 8,
+                            backgroundColor: '#F8FAFC',
+                            marginTop: 4
+                          }}
+                          onPress={pickImage}
+                          disabled={isUploading}
+                        >
+                          <Plus size={16} color={MUTED} />
+                          <Text style={{ fontSize: 13, color: MUTED, fontWeight: '600' }}>
+                            {isUploading ? 'Uploading Image...' : 'Upload Product Photo'}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
                     <View style={{height: 20}} />
                   </ScrollView>
                   <View style={styles.modalFooterActions}>

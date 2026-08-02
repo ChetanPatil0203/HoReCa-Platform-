@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, UIManager, LayoutAnimation, Modal, Image, Linking, Alert } from 'react-native';
-import { FileText, Upload, Trash2, CircleCheck as CheckCircle2, FileUp, CircleHelp as HelpCircle, X } from 'lucide-react-native';
+import { FileText, Upload, Trash2, CircleCheck as CheckCircle2, FileUp, CircleHelp as HelpCircle, X, Eye } from 'lucide-react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { AUTH_COLORS } from './AuthTheme';
 
@@ -90,6 +90,9 @@ export default function DocumentUploadRow({ document, selectedFile, onFileSelect
               <TouchableOpacity onPress={handlePickDocument} style={styles.actionIconBtn} accessibilityRole="button">
                 <FileUp size={16} color={AUTH_COLORS.primary} />
               </TouchableOpacity>
+              <TouchableOpacity onPress={() => setIsPreviewVisible(true)} style={styles.actionIconBtn} accessibilityRole="button">
+                <Eye size={16} color={AUTH_COLORS.primary} />
+              </TouchableOpacity>
               <TouchableOpacity onPress={onFileRemove} style={[styles.actionIconBtn, styles.removeBtn]} accessibilityRole="button">
                 <Trash2 size={16} color={AUTH_COLORS.error} />
               </TouchableOpacity>
@@ -101,19 +104,6 @@ export default function DocumentUploadRow({ document, selectedFile, onFileSelect
           )}
         </View>
       </View>
-
-      {isSelected && (
-        <View style={styles.actionsFooter}>
-          <TouchableOpacity style={styles.replaceBtn} onPress={handlePickDocument}>
-            <FileUp size={14} color={AUTH_COLORS.muted} style={{ marginRight: 6 }} />
-            <Text style={styles.replaceText}>Replace</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.removeBtn} onPress={onFileRemove}>
-            <Trash2 size={14} color={AUTH_COLORS.error} style={{ marginRight: 6 }} />
-            <Text style={styles.removeText}>Remove</Text>
-          </TouchableOpacity>
-        </View>
-      )}
 
       <Modal
         visible={isPreviewVisible}
@@ -181,7 +171,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: AUTH_COLORS.border,
     borderRadius: 14,
-    height: 68,
+    minHeight: 68,
+    paddingVertical: 8,
     paddingHorizontal: 12,
   },
   containerSelected: {
@@ -200,14 +191,17 @@ const styles = StyleSheet.create({
   },
   infoArea: {
     flex: 1,
-    marginLeft: 12,
+    minWidth: 0,
+    marginLeft: 10,
     justifyContent: 'center',
     paddingRight: 6,
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     marginBottom: 2,
+    rowGap: 2,
   },
   name: {
     fontSize: 13,
@@ -241,12 +235,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    flexWrap: 'wrap',
   },
   fileName: {
     fontSize: 11,
     fontWeight: '600',
     color: AUTH_COLORS.text,
-    maxWidth: '70%',
+    flexShrink: 1,
+    maxWidth: '65%',
   },
   fileSize: {
     fontSize: 10,
@@ -302,5 +298,81 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: AUTH_COLORS.error
-  }
+  },
+
+  /* ── PREVIEW MODAL ─────────────────────────────── */
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    overflow: 'hidden',
+    maxHeight: '85%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: AUTH_COLORS.border,
+  },
+  modalTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: AUTH_COLORS.text,
+    flex: 1,
+    marginRight: 8,
+  },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalBody: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  previewImage: {
+    width: '100%',
+    height: 320,
+    borderRadius: 10,
+  },
+  pdfPreviewContainer: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  pdfName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: AUTH_COLORS.text,
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  pdfSize: {
+    fontSize: 12,
+    color: AUTH_COLORS.muted,
+    marginBottom: 20,
+  },
+  openSystemBtn: {
+    backgroundColor: AUTH_COLORS.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  openSystemBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
 });

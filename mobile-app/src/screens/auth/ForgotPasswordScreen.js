@@ -134,18 +134,18 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginTop: 5,
   },
-  heading: { 
-    fontSize: 26, 
-    fontWeight: 'bold', 
-    color: AUTH_COLORS.primary, 
-    marginBottom: 8, 
-    marginTop: 10 
+  heading: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: AUTH_COLORS.primary,
+    marginBottom: 8,
+    marginTop: 10
   },
-  subtitle: { 
-    fontSize: 14, 
-    color: AUTH_COLORS.muted, 
-    marginBottom: 24, 
-    lineHeight: 20 
+  subtitle: {
+    fontSize: 14,
+    color: AUTH_COLORS.muted,
+    marginBottom: 24,
+    lineHeight: 20
   },
   helperText: {
     fontSize: 13,

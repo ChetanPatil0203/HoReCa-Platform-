@@ -17,7 +17,7 @@ const STATUS_COLORS = {
 export default function RawMaterialOrdersPage({ user, onBack, onTrackOrder, onQuickReorder }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
-  
+
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [orders, setOrders] = useState([]);
@@ -72,8 +72,8 @@ export default function RawMaterialOrdersPage({ user, onBack, onTrackOrder, onQu
   };
 
   const filteredOrders = orders.filter(order => {
-    const matchesSearch = 
-      order.displayId.toLowerCase().includes(searchText.toLowerCase()) || 
+    const matchesSearch =
+      order.displayId.toLowerCase().includes(searchText.toLowerCase()) ||
       order.vendor.toLowerCase().includes(searchText.toLowerCase());
     const matchesStatus = statusFilter === 'All' || order.status === statusFilter;
     return matchesSearch && matchesStatus;
@@ -94,12 +94,12 @@ export default function RawMaterialOrdersPage({ user, onBack, onTrackOrder, onQu
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={[styles.contentLayout, !isMobile && styles.contentLayoutWeb]}>
-          
+
           {/* Filters */}
           <View style={styles.filtersRow}>
             <View style={styles.searchBox}>
               <Search size={18} color="#94A3B8" />
-              <TextInput 
+              <TextInput
                 style={styles.searchInput}
                 placeholder="Search by Order ID or Vendor..."
                 placeholderTextColor="#94A3B8"
@@ -111,8 +111,8 @@ export default function RawMaterialOrdersPage({ user, onBack, onTrackOrder, onQu
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statusScroll} contentContainerStyle={styles.statusTabs}>
             {['All', 'pending', 'confirmed', 'shipped', 'delivered', 'cancelled'].map(status => (
-              <TouchableOpacity 
-                key={status} 
+              <TouchableOpacity
+                key={status}
                 style={[styles.statusTab, statusFilter === status && styles.statusTabActive]}
                 onPress={() => setStatusFilter(status)}
               >
@@ -144,18 +144,18 @@ export default function RawMaterialOrdersPage({ user, onBack, onTrackOrder, onQu
                 <Package size={48} color="#CBD5E1" style={{ marginBottom: 16 }} />
                 <Text style={styles.emptyTitle}>No Orders Found</Text>
                 <Text style={styles.emptySub}>
-                  {orders.length === 0 
-                    ? 'You haven\'t placed any orders yet. Start shopping!' 
+                  {orders.length === 0
+                    ? 'You haven\'t placed any orders yet. Start shopping!'
                     : 'Try adjusting your filters or search term.'}
                 </Text>
               </View>
             ) : (
               filteredOrders.map(order => {
                 const sColor = STATUS_COLORS[order.status] || STATUS_COLORS['pending'];
-                
+
                 return (
                   <View key={order.id} style={styles.orderCard}>
-                    
+
                     <View style={styles.cardHeader}>
                       <View>
                         <Text style={styles.orderId}>{order.displayId}</Text>
@@ -188,7 +188,7 @@ export default function RawMaterialOrdersPage({ user, onBack, onTrackOrder, onQu
                         <Text style={styles.actionBtnText}>View Details</Text>
                       </TouchableOpacity>
                       {order.status !== 'cancelled' && (
-                        <TouchableOpacity 
+                        <TouchableOpacity
                           style={[styles.actionBtn, { backgroundColor: '#FFFBEB', borderColor: GOLD }]}
                           onPress={() => onQuickReorder && onQuickReorder(order)}
                         >
@@ -216,15 +216,15 @@ const styles = StyleSheet.create({
   topBarMobile: { paddingHorizontal: 16, paddingVertical: 12 },
   backBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
-  
+
   scroll: { flex: 1 },
   contentLayout: { padding: 16 },
   contentLayoutWeb: { padding: 32, maxWidth: 1000, alignSelf: 'center', width: '100%' },
-  
+
   filtersRow: { marginBottom: 16 },
   searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 12, height: 44 },
   searchInput: { flex: 1, marginLeft: 8, fontSize: 14, color: '#0F172A', outlineStyle: 'none' },
-  
+
   statusScroll: { flexGrow: 0, marginBottom: 20 },
   statusTabs: { flexDirection: 'row', gap: 8, paddingRight: 16 },
   statusTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border },
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
   statusTabTextActive: { color: '#fff' },
 
   ordersContainer: { gap: 16 },
-  
+
   emptyState: { alignItems: 'center', justifyContent: 'center', padding: 40, backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: colors.border },
   emptyTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A', marginBottom: 4 },
   emptySub: { fontSize: 13, color: '#64748B', textAlign: 'center', marginTop: 8 },
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
   orderId: { fontSize: 15, fontWeight: '800', color: '#0F172A', marginBottom: 4 },
   dateRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   orderDate: { fontSize: 12, color: '#64748B', fontWeight: '500' },
-  
+
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   statusText: { fontSize: 11, fontWeight: '800' },
 

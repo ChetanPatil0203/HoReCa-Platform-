@@ -249,17 +249,31 @@ export default function ProviderClientsPage() {
 
         {/* Summary Cards */}
         <View style={styles.summaryContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.summaryScroll}>
-            {SUMMARY_DATA.map((item, idx) => (
-              <View key={idx} style={styles.summaryCard}>
-                <View style={[styles.summaryIconBox, { backgroundColor: item.color + '15' }]}>
-                  <item.icon size={20} color={item.color} />
+          {width >= 768 ? (
+            <View style={styles.summaryGridDesktop}>
+              {SUMMARY_DATA.map((item, idx) => (
+                <View key={idx} style={styles.summaryCardDesktop}>
+                  <View style={[styles.summaryIconBox, { backgroundColor: item.color + '15' }]}>
+                    <item.icon size={20} color={item.color} />
+                  </View>
+                  <Text style={styles.summaryValue}>{item.value}</Text>
+                  <Text style={styles.summaryLabel} numberOfLines={1}>{item.label}</Text>
                 </View>
-                <Text style={styles.summaryValue}>{item.value}</Text>
-                <Text style={styles.summaryLabel}>{item.label}</Text>
-              </View>
-            ))}
-          </ScrollView>
+              ))}
+            </View>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.summaryScroll}>
+              {SUMMARY_DATA.map((item, idx) => (
+                <View key={idx} style={styles.summaryCard}>
+                  <View style={[styles.summaryIconBox, { backgroundColor: item.color + '15' }]}>
+                    <item.icon size={20} color={item.color} />
+                  </View>
+                  <Text style={styles.summaryValue}>{item.value}</Text>
+                  <Text style={styles.summaryLabel} numberOfLines={1}>{item.label}</Text>
+                </View>
+              ))}
+            </ScrollView>
+          )}
         </View>
 
         {/* Tab Switcher */}
@@ -506,12 +520,22 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F1F5F9',
   },
   summaryScroll: { paddingHorizontal: 16 },
-  summaryCard: {
+  summaryGridDesktop: { flexDirection: 'row', paddingHorizontal: 16, gap: 12 },
+  summaryCardDesktop: {
+    flex: 1,
     backgroundColor: '#F8FAFC',
     padding: 16,
     borderRadius: 12,
-    marginRight: 12,
-    width: 140,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  summaryCard: {
+    backgroundColor: '#F8FAFC',
+    padding: 14,
+    borderRadius: 12,
+    marginRight: 10,
+    minWidth: 135,
+    maxWidth: 160,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },

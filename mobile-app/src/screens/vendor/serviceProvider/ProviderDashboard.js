@@ -32,6 +32,17 @@ export default function ProviderDashboard() {
   const [activePage, setActivePage] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const [imgError, setImgError] = useState(false);
+  const userPhoto = user?.profilePhoto || 
+                    user?.profileImage || 
+                    user?.registration?.profilePhoto || 
+                    user?.vendorRegistration?.profilePhoto || 
+                    (typeof window !== 'undefined' && window.localStorage ? JSON.parse(window.localStorage.getItem('hrc_user') || '{}').profilePhoto : null);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [userPhoto]);
+
   // Radial Menu State
   const [isPlusMenuOpen, setIsPlusMenuOpen] = useState(false);
   const animation = useRef(new Animated.Value(0)).current;
@@ -156,7 +167,15 @@ export default function ProviderDashboard() {
                 <View style={styles.mobileNotificationDot} />
               </TouchableOpacity>
               <TouchableOpacity style={styles.mobileAvatarBtn} onPress={() => navigateTo('profile')}>
-                <User size={16} color={PRIMARY} />
+                {userPhoto && !imgError ? (
+                  <Image 
+                    source={{ uri: userPhoto }} 
+                    style={{ width: 28, height: 28, borderRadius: 14 }} 
+                    onError={() => setImgError(true)} 
+                  />
+                ) : (
+                  <User size={16} color={PRIMARY} />
+                )}
               </TouchableOpacity>
             </View>
           </View>

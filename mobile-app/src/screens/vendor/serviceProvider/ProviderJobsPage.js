@@ -1,10 +1,13 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useContext, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   SafeAreaView, useWindowDimensions, Modal, TextInput,
   ScrollView, KeyboardAvoidingView, Platform, Pressable, Alert
 } from 'react-native';
 import { Search, SlidersHorizontal, ChevronRight, EllipsisVertical as MoreVertical, UserRound, Users, CircleX as XCircle, CircleCheck as CheckCircle, MapPin, CircleCheck, BadgeCheck, Wrench, FileText } from 'lucide-react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorRequirements, updateServiceProviderRequirementStatusApi } from '../../../services/api.service';
 
 const NAVY = '#071B3A';
 const GOLD = '#F6B800';
@@ -12,7 +15,6 @@ const GREEN = '#10B981';
 const BG = '#F8FAFC';
 const WHITE = '#FFFFFF';
 
-const INITIAL_JOBS = [];
 const TABS = ['Scheduled', 'In Progress', 'Completed', 'On Hold', 'Cancelled'];
 const MOCK_TEAM_MEMBERS = [];
 
@@ -22,9 +24,13 @@ const TOOLS_EQUIPMENT = ['AC Cleaning Kit', 'Pressure Washer', 'Vacuum Machine',
 export default function ProviderJobsPage() {
   const { width } = useWindowDimensions();
   const isLargeScreen = width >= 768;
+  const { user } = useContext(AuthContext);
+
+  const userRef = useRef(user);
+  userRef.current = user;
 
   const [activeTab, setActiveTab] = useState('Scheduled');
-  const [jobs, setJobs] = useState(INITIAL_JOBS);
+  const [jobs, setJobs] = useState([]);
   const [search, setSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
 
@@ -51,6 +57,58 @@ export default function ProviderJobsPage() {
   const [progressForm, setProgressForm] = useState({ percent: '', stage: '', update: '', nextStep: '' });
   const [completeForm, setCompleteForm] = useState({ note: '', summary: '', amount: '' });
 
+  const loadJobs = async () => {
+    const currentSupplierId = userRef.current?.registration?.id || userRef.current?.id;
+    if (!currentSupplierId) return;
+
+    try {
+      const res = await fetchVendorRequirements(currentSupplierId);
+      const list = res?.data || res || [];
+      if (Array.isArray(list)) {
+        const mapped = list.map(r => {
+          let jobStatus = 'Scheduled';
+          if (r.status === 'in_progress' || r.status === 'In Progress') jobStatus = 'In Progress';
+          else if (r.status === 'completed' || r.status === 'Completed') jobStatus = 'Completed';
+          else if (r.status === 'on_hold' || r.status === 'On Hold') jobStatus = 'On Hold';
+          else if (r.status === 'cancelled' || r.status === 'Cancelled' || r.status === 'rejected') jobStatus = 'Cancelled';
+          else if (r.status === 'approved' || r.status === 'accepted' || r.status === 'scheduled' || r.status === 'Quote Sent' || r.status === 'pending') jobStatus = 'Scheduled';
+
+          return {
+            id: `JOB-${r.id ? r.id.substring(0, 5).toUpperCase() : '101'}`,
+            rawId: r.id,
+            service: r.title || 'Service Job',
+            client: r.owner?.bizName || 'HoReCa Owner',
+            location: r.location || 'Location Specified',
+            scheduledDate: r.extraData?.date || 'As scheduled',
+            status: jobStatus,
+            currentStage: r.extraData?.currentStage || (jobStatus === 'Completed' ? 'Service Completed' : 'Scheduled'),
+            progress: r.extraData?.progress || (jobStatus === 'Completed' ? 100 : (jobStatus === 'In Progress' ? 50 : 0)),
+            assignedTeam: r.extraData?.assignedTeam || 'Assigned',
+            quoteData: r.quoteData,
+            raw: r,
+          };
+        });
+        setJobs(mapped);
+      }
+    } catch (err) {
+      console.warn('Error loading jobs for vendor:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadJobs();
+    const interval = setInterval(loadJobs, 3000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadJobs();
+      const interval = setInterval(loadJobs, 3000);
+      return () => clearInterval(interval);
+    }, [user])
+  );
+
   const showToast = (msg) => {
     if (Platform.OS === 'web') { window.alert(msg); }
     else { Alert.alert('Success', msg); }
@@ -74,7 +132,7 @@ export default function ProviderJobsPage() {
   }, [jobs]);
 
   // Modal handlers
-  const handleAssignTeam = () => {
+  const handleAssignTeam = async () => {
     if (!assignForm.lead) {
       if (Platform.OS === 'web') { window.alert('Please select a team lead.'); } else { Alert.alert('Required', 'Please select a team lead.'); }
       return;
@@ -84,46 +142,68 @@ export default function ProviderJobsPage() {
       return;
     }
 
-    // Mock conflict check
-    const selectedMembers = MOCK_TEAM_MEMBERS.filter(m => m.id === assignForm.lead || assignForm.members.includes(m.id));
-    const hasConflict = selectedMembers.find(m => m.availability === 'Busy');
-    if (hasConflict) {
-      setAssignConflictError(`${hasConflict.name} is assigned to another service work (${hasConflict.conflictTime}).`);
-      return;
-    }
-
     setIsAssigning(true);
-    setTimeout(() => {
-      const leadMember = MOCK_TEAM_MEMBERS.find(m => m.id === assignForm.lead);
-      setJobs(prev => prev.map(j => j.id === selectedJob.id ? { ...j, status: 'Team Assigned', assignedTeam: leadMember ? leadMember.name : assignForm.lead } : j));
+    try {
+      if (selectedJob?.rawId) {
+        await updateServiceProviderRequirementStatusApi(selectedJob.rawId, 'scheduled', { assignedTeam: assignForm.lead });
+      }
+      setJobs(prev => prev.map(j => j.id === selectedJob.id ? { ...j, status: 'Scheduled', assignedTeam: assignForm.lead } : j));
       setIsAssigning(false);
       setAssignModalVisible(false);
       showToast('Team assigned successfully.');
-    }, 800);
+      loadJobs();
+    } catch (err) {
+      setIsAssigning(false);
+      console.error('Error assigning team:', err);
+    }
   };
 
-  const handleStartWork = () => {
-    setJobs(prev => prev.map(j => j.id === selectedJob.id ? { ...j, status: 'In Progress', currentStage: 'Inspection Started', progress: 10 } : j));
-    setStartModalVisible(false);
-    showToast('Service work started successfully.');
+  const handleStartWork = async () => {
+    try {
+      if (selectedJob?.rawId) {
+        await updateServiceProviderRequirementStatusApi(selectedJob.rawId, 'in_progress', { currentStage: 'Inspection Started', progress: 10 });
+      }
+      setJobs(prev => prev.map(j => j.id === selectedJob.id ? { ...j, status: 'In Progress', currentStage: 'Inspection Started', progress: 10 } : j));
+      setStartModalVisible(false);
+      showToast('Service work started successfully.');
+      loadJobs();
+    } catch (err) {
+      console.error('Error starting work:', err);
+    }
   };
 
-  const handleUpdateProgress = () => {
+  const handleUpdateProgress = async () => {
     const p = parseInt(progressForm.percent);
     if (isNaN(p) || p < 0 || p > 100) {
       if (Platform.OS === 'web') { window.alert('Progress must be between 0 and 100.'); }
       else { Alert.alert('Invalid', 'Progress must be between 0 and 100.'); }
       return;
     }
-    setJobs(prev => prev.map(j => j.id === selectedJob.id ? { ...j, currentStage: progressForm.stage || j.currentStage, progress: p } : j));
-    setProgressModalVisible(false);
-    showToast('Work progress updated successfully.');
+    try {
+      if (selectedJob?.rawId) {
+        await updateServiceProviderRequirementStatusApi(selectedJob.rawId, p === 100 ? 'completed' : 'in_progress', { currentStage: progressForm.stage || selectedJob.currentStage, progress: p });
+      }
+      setJobs(prev => prev.map(j => j.id === selectedJob.id ? { ...j, currentStage: progressForm.stage || j.currentStage, progress: p, status: p === 100 ? 'Completed' : 'In Progress' } : j));
+      setProgressModalVisible(false);
+      showToast('Work progress updated successfully.');
+      loadJobs();
+    } catch (err) {
+      console.error('Error updating progress:', err);
+    }
   };
 
-  const handleMarkCompleted = () => {
-    setJobs(prev => prev.map(j => j.id === selectedJob.id ? { ...j, status: 'Awaiting Confirmation', progress: 100, currentStage: 'Pending Client Confirmation' } : j));
-    setCompleteModalVisible(false);
-    showToast('Work completion submitted for client confirmation.');
+  const handleMarkCompleted = async () => {
+    try {
+      if (selectedJob?.rawId) {
+        await updateServiceProviderRequirementStatusApi(selectedJob.rawId, 'completed', { currentStage: 'Service Completed', progress: 100 });
+      }
+      setJobs(prev => prev.map(j => j.id === selectedJob.id ? { ...j, status: 'Completed', progress: 100, currentStage: 'Service Completed' } : j));
+      setCompleteModalVisible(false);
+      showToast('Work completion submitted successfully.');
+      loadJobs();
+    } catch (err) {
+      console.error('Error completing work:', err);
+    }
   };
 
   const renderBadge = (status) => {

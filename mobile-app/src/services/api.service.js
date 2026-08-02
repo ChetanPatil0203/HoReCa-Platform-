@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Platform } from 'react-native';
 import { API_BASE_URL } from '../config/api';
 
 const api = axios.create({
@@ -191,11 +192,26 @@ export const loginApi = async (email, password) => {
  */
 export const uploadDocumentApi = async (file, docKey, token) => {
   const formData = new FormData();
-  formData.append('file', {
-    uri: file.uri,
-    name: file.name || `${docKey}.pdf`,
-    type: file.mimeType || 'application/pdf',
-  });
+  if (Platform.OS === 'web') {
+    if (file.file) {
+      formData.append('file', file.file);
+    } else {
+      try {
+        const response = await fetch(file.uri);
+        const blob = await response.blob();
+        formData.append('file', blob, file.name || `${docKey}.jpg`);
+      } catch (err) {
+        console.error('Failed to resolve local web file blob:', err);
+        throw err;
+      }
+    }
+  } else {
+    formData.append('file', {
+      uri: file.uri,
+      name: file.name || `${docKey}.pdf`,
+      type: file.mimeType || 'application/pdf',
+    });
+  }
   formData.append('docKey', docKey);
   formData.append('docName', file.name || docKey);
 
@@ -456,6 +472,133 @@ export const saveComplianceDocument = async (docData) => {
 
 export const deleteComplianceDocument = async (id) => {
   const response = await api.delete(`/documents/${id}`);
+  return response.data;
+};
+
+export const fetchOwnerMainDashboardSummary = async (ownerId) => {
+  try {
+    const response = await api.get(`/users/owner-dashboard/${ownerId || ''}`);
+    return response.data;
+  } catch (error) {
+    console.warn('Failed to fetch owner main dashboard summary:', error?.message);
+    return { success: false, data: null };
+  }
+};
+
+export const submitServiceProviderQuoteApi = async (requirementId, quoteData) => {
+  const response = await api.post(`/service-provider-requirements/${requirementId}/quote`, quoteData);
+  return response.data;
+};
+
+export const declineServiceProviderRequirementApi = async (requirementId, declineReason) => {
+  const response = await api.post(`/service-provider-requirements/${requirementId}/decline`, { declineReason });
+  return response.data;
+};
+
+// Vendor Offered Services APIs
+export const fetchVendorServicesApi = async (vendorId) => {
+  try {
+    const response = await api.get(`/vendors/services/${vendorId || ''}`);
+    return response.data;
+  } catch (error) {
+    console.warn('Failed to fetch vendor services:', error?.message);
+    return { success: false, data: [] };
+  }
+};
+
+export const saveVendorServiceApi = async (serviceData) => {
+  const response = await api.post('/vendors/services', serviceData);
+  return response.data;
+};
+
+export const updateVendorServiceApi = async (id, serviceData) => {
+  const response = await api.put(`/vendors/services/${id}`, serviceData);
+  return response.data;
+};
+
+export const deleteVendorServiceApi = async (id) => {
+  const response = await api.delete(`/vendors/services/${id}`);
+  return response.data;
+};
+
+export const fetchPublicServiceProviderRequirementsApi = async () => {
+  try {
+    const response = await api.get('/service-provider-requirements/public');
+    return response.data;
+  } catch (error) {
+    console.warn('Failed to fetch public service provider requirements:', error?.message);
+    return { success: false, data: [] };
+  }
+};
+
+export const updateServiceProviderRequirementStatusApi = async (requirementId, status, extraFields = {}) => {
+  const response = await api.patch(`/service-provider-requirements/${requirementId}/status`, { status, extraFields });
+  return response.data;
+};
+
+export const registerPushTokenApi = async (pushToken, userId) => {
+  try {
+    const response = await api.post('/users/push-token', { pushToken, userId });
+    return response.data;
+  } catch (error) {
+    console.warn('Failed to register push token:', error?.message);
+    return { success: false, message: error?.message };
+  }
+};
+
+// --- Marketing Agency Vendor APIs ---
+export const submitMarketingProposalApi = async (proposalData) => {
+  const response = await api.post('/requirements/marketing/proposals', proposalData);
+  return response.data;
+};
+
+export const fetchMarketingProposalsApi = async (requirementId) => {
+  const response = await api.get(`/requirements/marketing/proposals/${requirementId}`);
+  return response.data;
+};
+
+export const acceptMarketingProposalApi = async (proposalId) => {
+  const response = await api.patch(`/requirements/marketing/proposals/${proposalId}/accept`);
+  return response.data;
+};
+
+export const submitMarketingCreativeApi = async (creativeData) => {
+  const response = await api.post('/requirements/marketing/creatives', creativeData);
+  return response.data;
+};
+
+export const fetchMarketingCreativesApi = async (requirementId) => {
+  const response = await api.get(`/requirements/marketing/creatives/${requirementId}`);
+  return response.data;
+};
+
+export const updateMarketingCreativeStatusApi = async (creativeId, statusData) => {
+  const response = await api.patch(`/requirements/marketing/creatives/${creativeId}/status`, statusData);
+  return response.data;
+};
+
+export const fetchMarketingTeamApi = async (supplierId) => {
+  const response = await api.get(`/requirements/marketing/team/${supplierId}`);
+  return response.data;
+};
+
+export const saveMarketingTeamMemberApi = async (memberData) => {
+  if (memberData.id) {
+    const response = await api.put(`/requirements/marketing/team/${memberData.id}`, memberData);
+    return response.data;
+  } else {
+    const response = await api.post('/requirements/marketing/team', memberData);
+    return response.data;
+  }
+};
+
+export const deleteMarketingTeamMemberApi = async (id) => {
+  const response = await api.delete(`/requirements/marketing/team/${id}`);
+  return response.data;
+};
+
+export const fetchMarketingRevenueAnalyticsApi = async (supplierId) => {
+  const response = await api.get(`/requirements/marketing/revenue/${supplierId}`);
   return response.data;
 };
 

@@ -313,10 +313,10 @@ export default function RawMaterialPage({ onNavigate }) {
         <SectionHeader title="Top Rated Vendors" action="View All" />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hScroll} contentContainerStyle={styles.hScrollContent}>
           {vendors.map(vendor => (
-            <VendorCard key={vendor.id} vendor={vendor} onPress={() => { 
+            <VendorCard key={vendor.id} vendor={vendor} onPress={() => {
               setSelectedSupplier(vendor);
               setCurrentView('supplierStore');
-             }} />
+            }} />
           ))}
         </ScrollView>
 
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  pageHeaderMobile: { paddingHorizontal: 16, paddingTop: 12 },
+  pageHeaderMobile: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12 },
   pageTitle: { fontSize: 20, fontWeight: '900', color: '#0F172A' },
   pageSubtitle: { fontSize: 12, color: '#64748B', marginTop: 2 },
   headerIcons: { flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -359,12 +359,14 @@ const styles = StyleSheet.create({
   },
   cartBadge: { position: 'absolute', top: -4, right: -4, backgroundColor: '#EF4444', minWidth: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   cartBadgeText: { fontSize: 10, fontWeight: '900', color: '#fff' },
-
-  searchWrap: { paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: colors.border },
+ 
+  searchWrap: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 6, backgroundColor: '#F8FAFC' },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     borderRadius: 12,
     paddingHorizontal: 14,
     height: 44,

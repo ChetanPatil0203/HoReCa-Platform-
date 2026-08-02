@@ -33,7 +33,7 @@ const getProductEmojiAndBg = (name) => {
 export default function SupplierStorePage({ supplier, cartItems, onCartUpdate, onBack, onViewCart, onProductPress }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
-  
+
   const [activeTab, setActiveTab] = useState('All');
   const [search, setSearch] = useState('');
   const [supplierProducts, setSupplierProducts] = useState([]);
@@ -87,7 +87,7 @@ export default function SupplierStorePage({ supplier, cartItems, onCartUpdate, o
     onCartUpdate(prev => {
       const existing = prev.find(item => item.id === product.id);
       let newQty = 0;
-      
+
       if (existing) {
         newQty = existing.qty + change;
       } else if (change > 0) {
@@ -125,7 +125,7 @@ export default function SupplierStorePage({ supplier, cartItems, onCartUpdate, o
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        
+
         {/* ── Supplier Hero Card ── */}
         <View style={styles.heroCard}>
           <View style={styles.heroHeader}>
@@ -145,7 +145,7 @@ export default function SupplierStorePage({ supplier, cartItems, onCartUpdate, o
                 )}
                 <View style={styles.ratingBadge}>
                   <Star size={12} color={GOLD} fill={GOLD} />
-                  <Text style={styles.ratingText}><Text style={{fontWeight: '700'}}>{supplier.rating}</Text> ({supplier.reviews})</Text>
+                  <Text style={styles.ratingText}><Text style={{ fontWeight: '700' }}>{supplier.rating}</Text> ({supplier.reviews})</Text>
                 </View>
               </View>
             </View>
@@ -180,7 +180,7 @@ export default function SupplierStorePage({ supplier, cartItems, onCartUpdate, o
         {/* ── Search Bar ── */}
         <View style={styles.searchWrap}>
           <Search size={18} color="#94A3B8" />
-          <TextInput 
+          <TextInput
             style={styles.searchInput}
             placeholder="Search products..."
             placeholderTextColor="#94A3B8"
@@ -192,8 +192,8 @@ export default function SupplierStorePage({ supplier, cartItems, onCartUpdate, o
         {/* ── Category Chips ── */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll} contentContainerStyle={styles.tabsContainer}>
           {categories.map(cat => (
-            <TouchableOpacity 
-              key={cat} 
+            <TouchableOpacity
+              key={cat}
               style={[styles.tab, activeTab === cat && styles.activeTab]}
               onPress={() => setActiveTab(cat)}
             >
@@ -208,10 +208,10 @@ export default function SupplierStorePage({ supplier, cartItems, onCartUpdate, o
             const qty = getProductQtyInCart(product.id);
             const inStock = product.stock > 0;
             const styleInfo = getProductEmojiAndBg(product.name);
-            
+
             return (
-              <TouchableOpacity 
-                key={product.id} 
+              <TouchableOpacity
+                key={product.id}
                 style={styles.rowCard}
                 activeOpacity={0.9}
                 onPress={() => onProductPress(product)}
@@ -253,7 +253,7 @@ export default function SupplierStorePage({ supplier, cartItems, onCartUpdate, o
                         </View>
                       )}
                       {inStock && qty === 0 && (
-                        <TouchableOpacity 
+                        <TouchableOpacity
                           style={styles.cartRowBtn}
                           onPress={(e) => {
                             if (e && e.stopPropagation) e.stopPropagation();
@@ -326,8 +326,9 @@ export default function SupplierStorePage({ supplier, cartItems, onCartUpdate, o
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
-  
-  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16, 
+
+  header: {
+    minHeight: 90, paddingTop: 40, paddingBottom: 16,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16,
     backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: colors.border, zIndex: 10,
@@ -373,7 +374,7 @@ const styles = StyleSheet.create({
   activeTabText: { color: '#fff' },
 
   productGrid: { gap: 12 },
-  
+
   // ── Row Card styling matching the screenshot ──
   rowCard: {
     flexDirection: 'row',

@@ -5,7 +5,9 @@ export const getDocumentRequirements = (businessCategory, specializedCategory, s
     documents.push({ id, name, helperText, requirement });
   };
 
-  const selectedSubcategories = subCategory ? subCategory.split(',').map(s => s.trim()) : [];
+  const selectedSubcategories = subCategory
+    ? (Array.isArray(subCategory) ? subCategory : String(subCategory).split(',').map(s => s.trim()))
+    : [];
   const isFoodSubCategory = selectedSubcategories.some(sub => ['Dairy', 'Vegetables', 'Fruits', 'Grocery', 'Meat', 'Bakery', 'Beverages', 'Spices'].includes(sub));
 
   // 1. Common required documents for all business types (always required)
@@ -16,7 +18,7 @@ export const getDocumentRequirements = (businessCategory, specializedCategory, s
   // 2. Category-specific required document (max 1 per role/category, making total required docs = 4)
   if (businessCategory === 'Hotel') {
     addDoc('fssai', 'FSSAI Licence', 'Required for hotel business operations.', 'Required');
-  } 
+  }
   else if (businessCategory === 'Restaurant') {
     addDoc('fssai', 'FSSAI Licence', 'Food business registration or licence.', 'Required');
   }
@@ -40,20 +42,51 @@ export const getDocumentRequirements = (businessCategory, specializedCategory, s
     }
   }
 
-  // 3. Additional optional documents (collapsed by default, never block registration)
-  addDoc('gst', 'GST Registration Certificate', 'GST certificate if registered.', 'Optional');
-  addDoc('shop_establishment', 'Shop & Establishment Licence', 'Local municipal shop licence.', 'Optional');
-  addDoc('fire_noc', 'Fire Safety NOC', 'Fire safety compliance certificate.', 'Optional');
-  addDoc('liquor_licence', 'Liquor Licence', 'NOC for liquor serving/sale if applicable.', 'Optional');
-  addDoc('pollution_cert', 'Pollution Certificate', 'Pollution Control Board consent.', 'Optional');
-  addDoc('epfo', 'EPFO Registration', 'Employees Provident Fund registration.', 'Optional');
-  addDoc('esic', 'ESIC Registration', 'Employees State Insurance registration.', 'Optional');
-  addDoc('tech_cert', 'Technician Certificate', 'Specialised technical certification.', 'Optional');
-  addDoc('safety_cert', 'Safety Certificate', 'Safety and standards certificate.', 'Optional');
-  addDoc('insurance', 'Business Insurance', 'Business or liability insurance.', 'Optional');
-  addDoc('brand_auth', 'Brand Authorization', 'Authorisation letter from partner brands.', 'Optional');
-  addDoc('distributor_auth', 'Distributor Authorization', 'Distributorship certificate.', 'Optional');
-  addDoc('client_work_cert', 'Client Work Certificate', 'Letter of engagement or completion certificates.', 'Optional');
+  // 3. Optional compliance documents (managed post-registration via Compliance section)
+  // Non-essential compliance documents are omitted from initial registration.
 
   return documents;
+};
+
+// Helper function to return all post-registration compliance document requirements by business role
+export const getComplianceDocumentTypes = (businessCategory, specializedCategory) => {
+  const complianceDocs = [
+    { id: 'gst', name: 'GST Registration Certificate', helperText: 'GST certificate if registered.' },
+  ];
+
+  if (['Hotel', 'Restaurant', 'Cafe'].includes(businessCategory)) {
+    complianceDocs.push(
+      { id: 'shop_establishment', name: 'Shop & Establishment Licence', helperText: 'Local municipal shop licence.' },
+      { id: 'fire_noc', name: 'Fire Safety NOC', helperText: 'Fire safety compliance certificate.' },
+      { id: 'liquor_licence', name: 'Liquor Licence', helperText: 'NOC for liquor serving/sale if applicable.' },
+      { id: 'pollution_cert', name: 'Pollution Certificate', helperText: 'Pollution Control Board consent.' }
+    );
+  } else if (businessCategory === 'Vendor / Supplier') {
+    if (specializedCategory === 'Raw Material') {
+      complianceDocs.push(
+        { id: 'brand_auth', name: 'Brand Authorization', helperText: 'Authorisation letter from partner brands.' },
+        { id: 'distributor_auth', name: 'Distributor Authorization', helperText: 'Distributorship certificate.' }
+      );
+    } else if (specializedCategory === 'Manpower') {
+      complianceDocs.push(
+        { id: 'shop_establishment', name: 'Shop & Establishment Licence', helperText: 'Local municipal shop licence.' },
+        { id: 'epfo', name: 'EPFO Registration', helperText: 'Employees Provident Fund registration.' },
+        { id: 'esic', name: 'ESIC Registration', helperText: 'Employees State Insurance registration.' },
+        { id: 'insurance', name: 'Business Insurance', helperText: 'Business or liability insurance.' }
+      );
+    } else if (specializedCategory === 'Service Provider') {
+      complianceDocs.push(
+        { id: 'tech_cert', name: 'Technician Certificate', helperText: 'Specialised technical certification.' },
+        { id: 'safety_cert', name: 'Safety Certificate', helperText: 'Safety and standards certificate.' },
+        { id: 'insurance', name: 'Business Insurance', helperText: 'Business or liability insurance.' }
+      );
+    } else if (specializedCategory === 'Marketing Agency') {
+      complianceDocs.push(
+        { id: 'client_work_cert', name: 'Client Work Certificate', helperText: 'Letter of engagement or completion certificates.' },
+        { id: 'brand_auth', name: 'Brand Authorization', helperText: 'Authorisation letter from partner brands.' }
+      );
+    }
+  }
+
+  return complianceDocs;
 };

@@ -1,12 +1,12 @@
 import React, { useState, useMemo, useEffect, useContext, useCallback, useRef } from 'react';
 import { 
   View, Text, StyleSheet, FlatList, TouchableOpacity, 
-  useWindowDimensions, Modal, TextInput, ScrollView, KeyboardAvoidingView, Platform, Pressable, Alert, RefreshControl
+  useWindowDimensions, Modal, TextInput, ScrollView, KeyboardAvoidingView, Platform, Pressable, Alert, RefreshControl, Animated
 } from 'react-native';
-import { Search, SlidersHorizontal, ChevronRight, EllipsisVertical as MoreVertical, CircleX as XCircle, Send, CircleCheck as CheckCircle, MapPin, FileText, RefreshCw } from 'lucide-react-native';
+import { Search, SlidersHorizontal, ChevronRight, EllipsisVertical as MoreVertical, CircleX as XCircle, Send, CircleCheck as CheckCircle, MapPin, FileText, RefreshCw, Copy, Phone } from 'lucide-react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from '../../../context/AuthContext';
-import { fetchVendorRequirements } from '../../../services/api.service';
+import { fetchVendorRequirements, submitServiceProviderQuoteApi, declineServiceProviderRequirementApi, fetchPublicServiceProviderRequirementsApi } from '../../../services/api.service';
 
 const NAVY = '#071B3A';
 const GOLD = '#F6B800';
@@ -15,6 +15,64 @@ const WHITE = '#FFFFFF';
 const GREEN = '#10B981';
 
 const TABS = ['New', 'Quote Sent', 'Accepted', 'Declined', 'Closed'];
+
+const FadeInCard = ({ children, index }) => {
+  const animatedValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(animatedValue, {
+      toValue: 1,
+      duration: 350,
+      delay: Math.min(index * 80, 600),
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  const translateY = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [15, 0],
+  });
+
+  return (
+    <Animated.View style={{ opacity: animatedValue, transform: [{ translateY }], flex: 1 }}>
+      {children}
+    </Animated.View>
+  );
+};
+
+const ScalePressable = ({ children, onPress, style }) => {
+  const scaleValue = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleValue, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleValue, {
+      toValue: 1,
+      friction: 4,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  return (
+    <TouchableOpacity
+      activeOpacity={1}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={onPress}
+      style={style}
+    >
+      <Animated.View style={{ transform: [{ scale: scaleValue }], flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+        {children}
+      </Animated.View>
+    </TouchableOpacity>
+  );
+};
 
 export default function ProviderRequestsPage() {
   const { width } = useWindowDimensions();
@@ -26,17 +84,42 @@ export default function ProviderRequestsPage() {
 
   const [activeTab, setActiveTab] = useState('New');
   const [requests, setRequests] = useState([]);
+
+  // Pulsing animation for status indicator dots
+  const pulseAnim = useRef(new Animated.Value(0.4)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.0, duration: 1000, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 0.4, duration: 1000, useNativeDriver: true })
+      ])
+    ).start();
+  }, []);
   const [search, setSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const loadDirectRequests = async () => {
     const currentSupplierId = userRef.current?.registration?.id || userRef.current?.id;
-    if (!currentSupplierId) return;
 
     try {
-      const res = await fetchVendorRequirements(currentSupplierId);
-      const list = res?.data || res || [];
+      let list = [];
+      if (currentSupplierId) {
+        const res = await fetchVendorRequirements(currentSupplierId);
+        const directList = res?.data || res || [];
+        if (Array.isArray(directList)) list = [...directList];
+      }
+
+      const publicRes = await fetchPublicServiceProviderRequirementsApi();
+      const publicList = publicRes?.data || [];
+
+      const existingIds = new Set(list.map(r => r.id));
+      publicList.forEach(pub => {
+        if (!existingIds.has(pub.id)) {
+          list.push(pub);
+        }
+      });
+
       if (Array.isArray(list)) {
         const mapped = list.map(r => ({
           id: `DIR-${r.id ? r.id.substring(0, 5).toUpperCase() : '101'}`,
@@ -51,12 +134,14 @@ export default function ProviderRequestsPage() {
           status: r.status === 'pending' ? 'New' : r.status === 'approved' ? 'Accepted' : r.status === 'rejected' ? 'Declined' : r.status,
           priorityBadge: r.status === 'pending' ? 'New' : r.status,
           description: r.description || 'Direct request from HoReCa owner.',
-          source: 'Direct'
+          source: r.requestType === 'broadcast' ? 'Broadcast' : 'Direct',
+          quoteData: r.quoteData,
+          declineReason: r.declineReason,
         }));
         setRequests(mapped);
       }
     } catch (err) {
-      console.warn('Error fetching direct requests for vendor:', err);
+      console.warn('Error fetching requests for vendor:', err);
     }
   };
 
@@ -119,109 +204,153 @@ export default function ProviderRequestsPage() {
     return counts;
   }, [requests]);
 
-  const handleSendQuote = () => {
+  const handleSendQuote = async () => {
     if (!quoteForm.amount || !quoteForm.date || !quoteForm.compTime || !quoteForm.workIncl || !quoteForm.terms || !quoteForm.validity) {
       if (Platform.OS === 'web') { window.alert('Please fill all required fields.'); }
       else { Alert.alert('Required', 'Please fill all required fields.'); }
       return;
     }
-    setRequests(prev => prev.map(r => r.id === selectedRequest.id ? { ...r, status: 'Quote Sent', priorityBadge: 'Quote Sent' } : r));
-    setQuoteModalVisible(false);
-    showToast('Quotation submitted successfully.');
+
+    try {
+      if (selectedRequest?.rawId) {
+        await submitServiceProviderQuoteApi(selectedRequest.rawId, quoteForm);
+      }
+      setRequests(prev => prev.map(r => r.id === selectedRequest.id ? { ...r, status: 'Quote Sent', priorityBadge: 'Quote Sent', quoteData: quoteForm } : r));
+      setQuoteModalVisible(false);
+      showToast('Quotation submitted successfully.');
+      loadDirectRequests();
+    } catch (err) {
+      console.error('Error submitting quote:', err);
+      showToast('Failed to submit quote to database.');
+    }
   };
 
-  const handleConfirmDecline = () => {
-    if (declineReason === 'Other' && !declineOther.trim()) {
+  const handleConfirmDecline = async () => {
+    const finalReason = declineReason === 'Other' ? declineOther.trim() : declineReason;
+    if (declineReason === 'Other' && !finalReason) {
       if (Platform.OS === 'web') { window.alert('Please specify a reason.'); }
       else { Alert.alert('Required', 'Please specify a reason.'); }
       return;
     }
-    setRequests(prev => prev.map(r => r.id === selectedRequest.id ? { ...r, status: 'Declined', priorityBadge: 'Declined' } : r));
-    setDeclineModalVisible(false);
-    showToast('Direct request declined.');
+
+    try {
+      if (selectedRequest?.rawId) {
+        await declineServiceProviderRequirementApi(selectedRequest.rawId, finalReason);
+      }
+      setRequests(prev => prev.map(r => r.id === selectedRequest.id ? { ...r, status: 'Declined', priorityBadge: 'Declined', declineReason: finalReason } : r));
+      setDeclineModalVisible(false);
+      showToast('Direct request declined.');
+      loadDirectRequests();
+    } catch (err) {
+      console.error('Error declining request:', err);
+      showToast('Failed to decline request.');
+    }
+  };
+
+  const getStatusTheme = (status) => {
+    switch (status) {
+      case 'New': return { bg: '#EFF6FF', text: '#2563EB' };
+      case 'High Priority': return { bg: '#FEF2F2', text: '#EF4444' };
+      case 'Quote Sent': return { bg: '#F5F3FF', text: '#7C3AED' };
+      case 'Accepted': return { bg: '#ECFDF5', text: '#059669' };
+      case 'Declined': return { bg: '#FEF2F2', text: '#DC2626' };
+      case 'Closed': return { bg: '#F1F5F9', text: '#64748B' };
+      default: return { bg: '#F1F5F9', text: '#64748B' };
+    }
   };
 
   const renderBadge = (item) => {
-    // Show one meaningful badge based on status/priority
     let text = item.priorityBadge || item.status;
-    let bg = '#F1F5F9'; let color = '#64748B';
-    
-    if (text === 'New') { bg = '#EFF6FF'; color = '#2563EB'; }
-    else if (text === 'High Priority') { bg = '#FEF2F2'; color = '#EF4444'; }
-    else if (text === 'Quote Sent') { bg = '#F5F3FF'; color = '#7C3AED'; }
-    else if (text === 'Accepted') { bg = '#ECFDF5'; color = '#059669'; }
-    else if (text === 'Declined') { bg = '#FEF2F2'; color = '#DC2626'; }
-    else if (text === 'Closed') { bg = '#F1F5F9'; color = '#64748B'; }
-
+    const theme = getStatusTheme(item.status);
     return (
-      <View style={[styles.statusBadge, { backgroundColor: bg }]}>
-        <Text style={[styles.statusBadgeText, { color }]}>{text.toUpperCase()}</Text>
+      <View style={[styles.statusBadge, { backgroundColor: theme.bg, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+        <Animated.View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: theme.text, opacity: pulseAnim }} />
+        <Text style={[styles.statusBadgeText, { color: theme.text }]}>{text.toUpperCase()}</Text>
       </View>
     );
   };
+  const renderItem = ({ item, index }) => {
+    const theme = getStatusTheme(item.status);
+    return (
+      <FadeInCard index={index}>
+        <View style={[styles.card, { borderLeftColor: theme.text, borderLeftWidth: 5 }]}>
+          {/* Top Row */}
+          <View style={styles.cardHeaderRow}>
+            <View style={{flexDirection: 'row', alignItems: 'center', gap: 6}}>
+              <Text style={styles.reqId}>{item.id}</Text>
+              <TouchableOpacity onPress={() => showToast(`Copied Request ID: ${item.id}`)} style={{ padding: 4 }}>
+                <Copy size={12} color="#64748B" />
+              </TouchableOpacity>
+              <View style={styles.sourceBadge}>
+                <Text style={styles.sourceBadgeText}>{item.source}</Text>
+              </View>
+            </View>
+            {renderBadge(item)}
+          </View>
+          
+          {/* Service & Client */}
+          <Text style={styles.cardTitle} numberOfLines={2}>{item.service}</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+            <View style={{ flex: 1, marginRight: 8 }}>
+              <Text style={styles.clientInfo} numberOfLines={1}>
+                <Text style={{fontWeight: '600', color: NAVY}}>{item.client}</Text> · {item.businessType}
+              </Text>
+              <Text style={styles.locationText} numberOfLines={1}>{item.location}</Text>
+            </View>
+            <TouchableOpacity 
+              onPress={() => Alert.alert('Call Customer', `Dialing ${item.client}...`)}
+              style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Phone size={14} color="#3B82F6" />
+            </TouchableOpacity>
+          </View>
 
-  const renderItem = ({ item }) => (
-    <View style={styles.card}>
-      {/* Top Row */}
-      <View style={styles.cardHeaderRow}>
-        <View style={{flexDirection: 'row', alignItems: 'center'}}>
-          <Text style={styles.reqId}>{item.id}</Text>
-          <View style={styles.sourceBadge}>
-            <Text style={styles.sourceBadgeText}>{item.source}</Text>
+          {/* 2-Column Details */}
+          <View style={styles.infoRow}>
+            <View style={styles.infoCol}>
+              <Text style={styles.infoLabel}>Preferred Date</Text>
+              <Text style={styles.infoValue}>{item.date}</Text>
+            </View>
+            <View style={styles.infoCol}>
+              <Text style={styles.infoLabel}>Budget</Text>
+              <Text style={styles.infoValue}>{item.budget}</Text>
+            </View>
+          </View>
+
+          <Text style={styles.requestedText}>Requested {item.requestedAt}</Text>
+
+          {/* Actions */}
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={styles.detailsBtn} onPress={() => { setSelectedRequest(item); setDetailsModalVisible(true); }}>
+              <Text style={styles.detailsBtnText}>View Details</Text>
+              <ChevronRight size={16} color={NAVY} />
+            </TouchableOpacity>
+            
+            <View style={styles.actionRight}>
+              {item.status === 'New' && (
+                <ScalePressable
+                  style={[styles.primaryBtn, { backgroundColor: NAVY }]}
+                  onPress={() => { setSelectedRequest(item); setQuoteForm({ amount: '', pricingType: 'Fixed', visitCharge: '', date: '', time: '', compTime: '', warranty: '', workIncl: '', terms: '', validity: '' }); setQuoteModalVisible(true); }}
+                >
+                  <Send size={14} color={WHITE} style={{ marginRight: 6 }} />
+                  <Text style={styles.primaryBtnText}>Send Quote</Text>
+                </ScalePressable>
+              )}
+              {item.status === 'Quote Sent' && (
+                <ScalePressable
+                  style={[styles.primaryBtn, { backgroundColor: '#7C3AED' }]}
+                  onPress={() => { setSelectedRequest(item); setViewQuoteModalVisible(true); }}
+                >
+                  <FileText size={14} color={WHITE} style={{ marginRight: 6 }} />
+                  <Text style={styles.primaryBtnText}>View Quote</Text>
+                </ScalePressable>
+              )}
+            </View>
           </View>
         </View>
-        {renderBadge(item)}
-      </View>
-      
-      {/* Service & Client */}
-      <Text style={styles.cardTitle} numberOfLines={2}>{item.service}</Text>
-      <Text style={styles.clientInfo} numberOfLines={1}>
-        <Text style={{fontWeight: '600', color: NAVY}}>{item.client}</Text> · {item.businessType}
-      </Text>
-      <Text style={styles.locationText} numberOfLines={1}>{item.location}</Text>
-
-      {/* 2-Column Details */}
-      <View style={styles.infoRow}>
-        <View style={styles.infoCol}>
-          <Text style={styles.infoLabel}>Preferred Date</Text>
-          <Text style={styles.infoValue}>{item.date}</Text>
-        </View>
-        <View style={styles.infoCol}>
-          <Text style={styles.infoLabel}>Budget</Text>
-          <Text style={styles.infoValue}>{item.budget}</Text>
-        </View>
-      </View>
-
-      <Text style={styles.requestedText}>Requested {item.requestedAt}</Text>
-
-      {/* Actions */}
-      <View style={styles.actionRow}>
-        <TouchableOpacity style={styles.detailsBtn} onPress={() => { setSelectedRequest(item); setDetailsModalVisible(true); }}>
-          <Text style={styles.detailsBtnText}>View Details</Text>
-          <ChevronRight size={16} color={NAVY} />
-        </TouchableOpacity>
-        
-        <View style={styles.actionRight}>
-          {item.status === 'New' && (
-            <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: NAVY }]} onPress={() => { setSelectedRequest(item); setQuoteForm({ amount: '', pricingType: 'Fixed', visitCharge: '', date: '', time: '', compTime: '', warranty: '', workIncl: '', terms: '', validity: '' }); setQuoteModalVisible(true); }}>
-              <Text style={styles.primaryBtnText}>Send Quote</Text>
-            </TouchableOpacity>
-          )}
-          {item.status === 'Quote Sent' && (
-            <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: '#7C3AED' }]} onPress={() => { setSelectedRequest(item); setViewQuoteModalVisible(true); }}>
-              <Text style={styles.primaryBtnText}>View Quote</Text>
-            </TouchableOpacity>
-          )}
-          {item.status === 'Accepted' && (
-            <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: GREEN }]} onPress={() => showToast('Opening work record...')}>
-              <Text style={styles.primaryBtnText}>Open Work</Text>
-            </TouchableOpacity>
-          )}
-
-        </View>
-      </View>
-    </View>
-  );
+      </FadeInCard>
+    );
+  };
 
   return (
     <Pressable style={styles.container} onPress={() => setActiveMenuId(null)}>
@@ -280,7 +409,7 @@ export default function ProviderRequestsPage() {
         <FlatList
           data={filteredRequests}
           keyExtractor={item => item.id}
-          renderItem={renderItem}
+          renderItem={({ item, index }) => renderItem({ item, index })}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -438,14 +567,21 @@ export default function ProviderRequestsPage() {
 
                 <View style={styles.detailBox}>
                   <Text style={styles.boxLabel}>Quoted Amount</Text>
-                  <Text style={styles.boxValue}>₹18,000 (Fixed)</Text>
+                  <Text style={styles.boxValue}>₹{selectedRequest.quoteData?.amount || '18,000'} ({selectedRequest.quoteData?.pricingType || 'Fixed'})</Text>
                   <View style={{height: 12}} />
-                  <Text style={styles.boxLabel}>Availability</Text>
-                  <Text style={styles.boxValue}>24 Jul 2026 (Est. 2 Days)</Text>
+                  <Text style={styles.boxLabel}>Availability & Completion</Text>
+                  <Text style={styles.boxValue}>{selectedRequest.quoteData?.date || selectedRequest.date} (Est. {selectedRequest.quoteData?.compTime || '2 Days'})</Text>
                 </View>
                 
+                {selectedRequest.quoteData?.workIncl ? (
+                  <View style={{ marginBottom: 12 }}>
+                    <Text style={styles.boxLabel}>Work Included</Text>
+                    <Text style={styles.boxValue}>{selectedRequest.quoteData.workIncl}</Text>
+                  </View>
+                ) : null}
+
                 <Text style={styles.boxLabel}>Payment Terms</Text>
-                <Text style={styles.boxValue}>50% Advance, 50% on completion</Text>
+                <Text style={styles.boxValue}>{selectedRequest.quoteData?.terms || '50% Advance, 50% on completion'}</Text>
                 <View style={{height: 12}} />
                 <Text style={styles.boxLabel}>Quote Status</Text>
                 <Text style={[styles.boxValue, {color: '#7C3AED'}]}>Awaiting Client Response</Text>
@@ -541,7 +677,7 @@ const styles = StyleSheet.create({
 
   listContent: { padding: 16, paddingBottom: 120 },
 
-  card: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
+  card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 12, shadowColor: '#0F172A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2 },
   cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   reqId: { fontSize: 14, fontWeight: 'bold', color: '#64748B', marginRight: 8 },
   sourceBadge: { backgroundColor: '#F1F5F9', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },

@@ -31,31 +31,34 @@ export default function ProviderResponsesPage({ request, onBack, onProviderProfi
         return;
       }
 
-      const count = request.responseCount || (request.supplierId || request.raw?.supplierId ? 1 : 0);
+      const rawReq = request.raw || request;
+      let rawQuote = rawReq?.quoteData;
+      if (typeof rawQuote === 'string') {
+        try { rawQuote = JSON.parse(rawQuote); } catch (e) { rawQuote = null; }
+      }
+
+      const count = request.responseCount || (rawQuote || rawReq?.supplierId ? 1 : 0);
       if (count > 0) {
-        const sampleProviders = [
-          { name: 'Apex Pro Services', rating: '4.9', jobs: '45+', verified: true },
-          { name: 'CleanTech Solutions', rating: '4.8', jobs: '32+', verified: true },
-          { name: 'ProCare Maintenance', rating: '4.7', jobs: '18+', verified: false },
-        ];
+        const supplierName = rawReq?.supplier?.bizName || request.supplierName || 'Verified Service Provider';
         const generated = [];
+
         for (let i = 0; i < count; i++) {
-          const prov = sampleProviders[i % sampleProviders.length];
           generated.push({
             id: `resp-${reqId}-${i}`,
-            providerName: request.raw?.supplierName || request.supplierName || prov.name,
-            rating: prov.rating,
-            jobs: prov.jobs,
-            verified: prov.verified,
-            quotedPrice: reqBudget !== '—' ? reqBudget : '₹2,500',
-            availability: 'Tomorrow, 10:00 AM',
-            estimatedTime: '2 - 3 Hours',
-            visitCharge: 'Included',
-            warranty: '30 Days Warranty',
-            paymentTerms: '50% Advance, 50% Post Completion',
-            included: 'Complete service inspection, standard materials and labor',
+            providerName: supplierName,
+            rating: '4.9',
+            jobs: '35+',
+            verified: true,
+            quotedPrice: rawQuote?.amount ? `₹${rawQuote.amount} (${rawQuote.pricingType || 'Fixed'})` : (reqBudget !== '—' ? reqBudget : '₹2,500'),
+            availability: rawQuote?.date || 'As scheduled',
+            estimatedTime: rawQuote?.compTime || '2 - 3 Hours',
+            visitCharge: rawQuote?.visitCharge ? `₹${rawQuote.visitCharge}` : 'Included',
+            warranty: rawQuote?.warranty || '30 Days Warranty',
+            paymentTerms: rawQuote?.terms || '50% Advance, 50% Post Completion',
+            included: rawQuote?.workIncl || 'Complete service inspection, standard materials and labor',
             excluded: 'Major structural repairs or replacement parts',
-            status: request.status === 'accepted' || request.status === 'Completed' || request.status === 'Scheduled' ? 'Accepted' : 'New'
+            status: request.status === 'accepted' || request.status === 'Completed' || request.status === 'Scheduled' ? 'Accepted' : 'New',
+            rawQuote: rawQuote
           });
         }
         setResponses(generated);

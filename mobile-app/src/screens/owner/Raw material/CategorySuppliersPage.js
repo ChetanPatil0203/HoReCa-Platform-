@@ -48,7 +48,7 @@ export default function CategorySuppliersPage({ category, onBack, onSupplierPres
   }, []);
 
   const filteredSuppliers = useMemo(() => {
-    let list = suppliers.filter(s => 
+    let list = suppliers.filter(s =>
       s.categories.includes(category.label) &&
       s.name.toLowerCase().includes(search.toLowerCase())
     );
@@ -95,7 +95,7 @@ export default function CategorySuppliersPage({ category, onBack, onSupplierPres
       <View style={styles.searchSection}>
         <View style={styles.searchContainer}>
           <Search size={18} color="#94A3B8" />
-          <TextInput 
+          <TextInput
             style={styles.searchInput}
             placeholder="Search suppliers..."
             placeholderTextColor="#94A3B8"
@@ -103,11 +103,11 @@ export default function CategorySuppliersPage({ category, onBack, onSupplierPres
             onChangeText={setSearch}
           />
         </View>
-        
+
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterContent}>
           {FILTERS.map(filter => (
-            <TouchableOpacity 
-              key={filter} 
+            <TouchableOpacity
+              key={filter}
               style={[styles.filterChip, activeFilter === filter && styles.filterChipActive]}
               onPress={() => setActiveFilter(filter)}
             >
@@ -129,8 +129,8 @@ export default function CategorySuppliersPage({ category, onBack, onSupplierPres
           filteredSuppliers.map(supplier => {
             const tags = getTagsForSupplier(supplier.id);
             return (
-              <TouchableOpacity 
-                key={supplier.id} 
+              <TouchableOpacity
+                key={supplier.id}
                 style={styles.supplierCard}
                 activeOpacity={0.7}
                 onPress={() => onSupplierPress(supplier)}
@@ -199,8 +199,9 @@ export default function CategorySuppliersPage({ category, onBack, onSupplierPres
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
-  
-  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16, 
+
+  header: {
+    minHeight: 90, paddingTop: 40, paddingBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
@@ -244,17 +245,17 @@ const styles = StyleSheet.create({
     color: NAVY,
     ...Platform.select({ web: { outlineStyle: 'none' } }),
   },
-  
+
   filterScroll: { marginTop: 12 },
   filterContent: { paddingHorizontal: 16, gap: 8 },
   filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' },
   filterChipActive: { backgroundColor: '#F5F3FF', borderColor: PURPLE },
   filterText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
   filterTextActive: { color: PURPLE, fontWeight: '700' },
-  
+
   listContent: { padding: 16, paddingBottom: 40, gap: 16 },
   listContentWeb: { maxWidth: 800, alignSelf: 'center', width: '100%', paddingTop: 24 },
-  
+
   supplierCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
@@ -273,20 +274,20 @@ const styles = StyleSheet.create({
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   ratingText: { fontSize: 13, color: '#64748B' },
   ratingBold: { fontWeight: '700', color: NAVY },
-  
+
   wholesaleBadge: { backgroundColor: '#F0FDF4', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#BBF7D0' },
   wholesaleText: { fontSize: 11, fontWeight: '800', color: GREEN },
-  
+
   detailsRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', backgroundColor: '#F8FAFC', padding: 12, borderRadius: 12, marginBottom: 16 },
   detailItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   detailText: { fontSize: 13, fontWeight: '600', color: '#475569' },
   detailDivider: { width: 1, height: 12, backgroundColor: '#CBD5E1', marginHorizontal: 12 },
   minOrderText: { fontSize: 13, fontWeight: '700', color: NAVY },
-  
+
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
   tag: { backgroundColor: '#F1F5F9', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
   tagText: { fontSize: 11, fontWeight: '600', color: '#475569' },
-  
+
   cardFooter: { borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 16 },
   ctaBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: PURPLE, height: 44, borderRadius: 10 },
   ctaText: { fontSize: 14, fontWeight: '700', color: '#fff' },

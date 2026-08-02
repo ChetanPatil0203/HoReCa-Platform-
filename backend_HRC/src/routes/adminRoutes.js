@@ -15,4 +15,8 @@ router.get('/login-logs', adminController.getUserLoginLogs);
 router.get('/dashboard-stats', adminController.getDashboardStats);
 router.get('/team', adminController.getTeam);
 
+// System Limits & Quotas Endpoints
+router.get('/limits', adminController.getSystemLimits);
+router.put('/limits', adminController.updateSystemLimits);
+
 module.exports = router;

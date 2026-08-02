@@ -2,9 +2,9 @@ import React, { useState, useEffect, useContext, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity,
   useWindowDimensions, Modal, SafeAreaView, TextInput, KeyboardAvoidingView, 
-  Platform, TouchableWithoutFeedback, ActivityIndicator, Alert
+  Platform, TouchableWithoutFeedback, ActivityIndicator, Alert, Animated
 } from 'react-native';
-import { Search, SlidersHorizontal, Package, ChevronRight, X, CircleCheck as CheckCircle, Truck, User, Home, ClipboardList, Plus, CalendarDays, RefreshCw, EllipsisVertical as MoreVertical, CircleAlert as AlertCircle, Eye, Calendar, PackageCheck, Info, UserCheck, ShieldCheck, CircleHelp as HelpCircle } from 'lucide-react-native';
+import { Search, SlidersHorizontal, Package, ChevronRight, X, CircleCheck as CheckCircle, Truck, User, Home, ClipboardList, Plus, CalendarDays, RefreshCw, EllipsisVertical as MoreVertical, CircleAlert as AlertCircle, Eye, Calendar, PackageCheck, Info, UserCheck, ShieldCheck, CircleHelp as HelpCircle, Copy, Phone } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
 import { fetchVendorOrders, vendorRespondOrder, updateOrderStatusApi } from '../../../services/api.service';
 
@@ -77,6 +77,87 @@ const mapOrder = (o) => {
   };
 };
 
+const FadeInCard = ({ children, index }) => {
+  const animatedValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(animatedValue, {
+      toValue: 1,
+      duration: 350,
+      delay: Math.min(index * 80, 600),
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  const translateY = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [15, 0],
+  });
+
+  return (
+    <Animated.View style={{ opacity: animatedValue, transform: [{ translateY }], flex: 1 }}>
+      {children}
+    </Animated.View>
+  );
+};
+
+const ScalePressable = ({ children, onPress, style }) => {
+  const scaleValue = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleValue, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleValue, {
+      toValue: 1,
+      friction: 4,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  return (
+    <TouchableOpacity
+      activeOpacity={1}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={onPress}
+      style={style}
+    >
+      <Animated.View style={{ transform: [{ scale: scaleValue }], flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+        {children}
+      </Animated.View>
+    </TouchableOpacity>
+  );
+};
+
+const AnimatedProgressBar = ({ progress, barBgStyle, barFillStyle }) => {
+  const animatedWidth = useRef(new Animated.Value(progress)).current;
+
+  useEffect(() => {
+    Animated.timing(animatedWidth, {
+      toValue: progress,
+      duration: 500,
+      useNativeDriver: false,
+    }).start();
+  }, [progress]);
+
+  const widthPercent = animatedWidth.interpolate({
+    inputRange: [0, 100],
+    outputRange: ['0%', '100%'],
+  });
+
+  return (
+    <View style={barBgStyle}>
+      <Animated.View style={[barFillStyle, { width: widthPercent }]} />
+    </View>
+  );
+};
+
 export default function RawMaterialOrdersPage() {
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
@@ -89,6 +170,17 @@ export default function RawMaterialOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+
+  // Pulsing animation for status indicator dots
+  const pulseAnim = useRef(new Animated.Value(0.4)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.0, duration: 1000, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 0.4, duration: 1000, useNativeDriver: true })
+      ])
+    ).start();
+  }, []);
 
   const [selectedOrder, setSelectedOrder] = useState(null);
   const orderRef = useRef(null);
@@ -127,12 +219,27 @@ export default function RawMaterialOrdersPage() {
 
   // Toast feedback simulation
   const [toastMessage, setToastMessage] = useState(null);
+  const toastAnim = useRef(new Animated.Value(0)).current;
 
   const showToast = (msg) => {
     setToastMessage(msg);
+    toastAnim.setValue(0);
+    Animated.spring(toastAnim, {
+      toValue: 1,
+      tension: 40,
+      friction: 8,
+      useNativeDriver: true,
+    }).start();
+
     setTimeout(() => {
-      setToastMessage(null);
-    }, 3000);
+      Animated.timing(toastAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start(() => {
+        setToastMessage(null);
+      });
+    }, 2800);
   };
 
   const loadOrders = async (silent = false) => {
@@ -201,14 +308,14 @@ export default function RawMaterialOrdersPage() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'New': return { bg: '#EFF6FF', text: '#3B82F6', border: '#BFDBFE' }; // Blue
-      case 'Confirmed': return { bg: '#EEF2FF', text: '#6366F1', border: '#C7D2FE' }; // Indigo
-      case 'Preparing': return { bg: '#FFF7ED', text: '#F97316', border: '#FFEDD5' }; // Orange
-      case 'Ready to Dispatch': return { bg: '#FAF5FF', text: '#9333EA', border: '#F3E8FF' }; // Purple
-      case 'Out for Delivery': return { bg: '#F0FDFA', text: '#0D9488', border: '#CCFBF1' }; // Teal
-      case 'Delivered': return { bg: '#F0FDF4', text: '#16A34A', border: '#DCFCE7' }; // Green
-      case 'Cancelled': return { bg: '#FEF2F2', text: '#DC2626', border: '#FEE2E2' }; // Red
-      default: return { bg: '#F1F5F9', text: '#64748B', border: '#E2E8F0' };
+      case 'New': return { bg: '#EFF6FF', text: '#3B82F6', border: '#BFDBFE', accent: '#3B82F6' }; // Blue
+      case 'Confirmed': return { bg: '#EEF2FF', text: '#6366F1', border: '#C7D2FE', accent: '#6366F1' }; // Indigo
+      case 'Preparing': return { bg: '#FFF7ED', text: '#F97316', border: '#FFEDD5', accent: '#F97316' }; // Orange
+      case 'Ready to Dispatch': return { bg: '#FAF5FF', text: '#9333EA', border: '#F3E8FF', accent: '#9333EA' }; // Purple
+      case 'Out for Delivery': return { bg: '#F0FDFA', text: '#0D9488', border: '#CCFBF1', accent: '#0D9488' }; // Teal
+      case 'Delivered': return { bg: '#F0FDF4', text: '#16A34A', border: '#DCFCE7', accent: '#16A34A' }; // Green
+      case 'Cancelled': return { bg: '#FEF2F2', text: '#DC2626', border: '#FEE2E2', accent: '#DC2626' }; // Red
+      default: return { bg: '#F1F5F9', text: '#64748B', border: '#E2E8F0', accent: '#64748B' };
     }
   };
 
@@ -329,6 +436,17 @@ export default function RawMaterialOrdersPage() {
     }
   };
 
+  const getPrimaryActionIcon = (status) => {
+    switch (status) {
+      case 'New': return CheckCircle;
+      case 'Confirmed': return Package;
+      case 'Preparing': return PackageCheck;
+      case 'Ready to Dispatch': return Truck;
+      case 'Out for Delivery': return Truck;
+      default: return null;
+    }
+  };
+
   const handleUpdateItemStatus = (idx, newStatus) => {
     const updated = [...prepItems];
     updated[idx].status = newStatus;
@@ -374,147 +492,172 @@ export default function RawMaterialOrdersPage() {
     showToast('Delivery arranged successfully.');
   };
 
-  const renderOrderCard = ({ item }) => {
+  const renderOrderCard = ({ item, index }) => {
     const statusStyle = getStatusColor(item.status);
     const primaryText = getPrimaryActionText(item.status);
+    const PrimaryIcon = getPrimaryActionIcon(item.status);
     const moreOptions = renderMoreMenuOptions(item);
     const isMenuOpen = activeMenuId === item.id;
     const paymentBadge = getPaymentBadge(item.paymentStatus);
 
     return (
-      <View style={[styles.card, !isMobile && styles.cardDesktop]}>
-        {/* Top bar with Order ID and Status Badge */}
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardId}>{item.id}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, borderColor: statusStyle.border, borderWidth: 1 }]}>
-            <Text style={[styles.statusText, { color: statusStyle.text }]}>{item.status.toUpperCase()}</Text>
-          </View>
-        </View>
-
-        {/* Customer Basic Info */}
-        <View style={styles.customerInfo}>
-          <Text style={styles.customerName} numberOfLines={1}>{item.client}</Text>
-          <Text style={styles.customerMeta}>{item.businessType} · {item.location}</Text>
-        </View>
-
-        {/* Summarised product layout */}
-        <View style={styles.productRow}>
-          <View style={styles.productIconBox}>
-            <Package size={16} color="#D97706" />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.productName} numberOfLines={1}>
-              {item.product}
-            </Text>
-            <Text style={styles.productQty}>
-              {item.qty} {item.itemsCount > 1 ? `+${item.itemsCount - 1} more items` : ''}
-            </Text>
-          </View>
-        </View>
-
-        {/* Preparing Progress Bar */}
-        {item.status === 'Preparing' && (
-          <View style={styles.progressContainer}>
-            <View style={styles.progressHeader}>
-              <Text style={styles.progressLabel}>Preparation</Text>
-              <Text style={styles.progressValue}>{item.preparationProgress}%</Text>
-            </View>
-            <View style={styles.progressBarBg}>
-              <View style={[styles.progressBarFill, { width: `${item.preparationProgress}%` }]} />
-            </View>
-          </View>
-        )}
-
-        {/* Ready assignment status */}
-        {item.status === 'Ready to Dispatch' && (
-          <View style={styles.driverStatusBox}>
-            <Truck size={14} color={MUTED} />
-            <Text style={styles.driverStatusText}>Driver: <Text style={{ fontWeight: '700', color: NAVY }}>Not Assigned</Text></Text>
-          </View>
-        )}
-
-        {/* Out for delivery status */}
-        {item.status === 'Out for Delivery' && (
-          <View style={styles.driverStatusBox}>
-            <UserCheck size={14} color={MUTED} />
-            <Text style={styles.driverStatusText}>Driver: <Text style={{ fontWeight: '700', color: NAVY }}>{item.driver}</Text></Text>
-          </View>
-        )}
-
-        {/* Amount & Date split row */}
-        <View style={styles.metaRow}>
-          <View style={styles.metaCol}>
-            <Text style={styles.metaLabel}>Order Total</Text>
-            <Text style={styles.metaValue}>{item.amount}</Text>
-          </View>
-          <View style={styles.metaCol}>
-            <Text style={styles.metaLabel}>Requested Delivery</Text>
-            <Text style={styles.metaValue}>{item.deliveryDate}</Text>
-          </View>
-        </View>
-
-        {/* Payment and action row */}
-        <View style={styles.cardFooter}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={[styles.paymentBadge, { backgroundColor: paymentBadge.bg }]}>
-              <Text style={[styles.paymentBadgeText, { color: paymentBadge.text }]}>{item.paymentStatus}</Text>
-            </View>
-            <TouchableOpacity style={styles.viewDetailsBtn} onPress={() => { orderRef.current = item; setSelectedOrder(item); setDetailsModalVisible(true); }}>
-              <Text style={styles.viewDetailsText}>View Details</Text>
-              <ChevronRight size={14} color={NAVY} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            {primaryText && (
-              <TouchableOpacity
-                style={[styles.primaryActionBtn, item.status === 'New' && { backgroundColor: GOLD }]}
-                onPress={() => handlePrimaryAction(item)}
-              >
-                <Text style={[styles.primaryActionText, item.status === 'New' && { color: WHITE }]}>{primaryText}</Text>
+      <FadeInCard index={index}>
+        <View style={[styles.card, { borderLeftColor: statusStyle.accent || statusStyle.text, borderLeftWidth: 5 }, !isMobile && styles.cardDesktop]}>
+          {/* Top bar with Order ID and Status Badge */}
+          <View style={styles.cardHeader}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={styles.cardId}>{item.id}</Text>
+              <TouchableOpacity onPress={() => showToast(`Copied Order ID: ${item.id}`)} style={{ padding: 4 }}>
+                <Copy size={12} color={MUTED} />
               </TouchableOpacity>
-            )}
+            </View>
+            <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, borderColor: statusStyle.border, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+              <Animated.View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: statusStyle.accent || statusStyle.text, opacity: pulseAnim }} />
+              <Text style={[styles.statusText, { color: statusStyle.text }]}>{item.status.toUpperCase()}</Text>
+            </View>
+          </View>
 
-            {moreOptions.length > 0 && (
-              <View style={{ position: 'relative' }}>
-                <TouchableOpacity style={styles.moreBtn} onPress={() => setActiveMenuId(isMenuOpen ? null : item.id)}>
-                  <MoreVertical size={16} color={NAVY} />
-                </TouchableOpacity>
-
-                {isMenuOpen && (
-                  <View style={styles.dropdownMenu}>
-                    {moreOptions.map((opt, oIdx) => (
-                      <TouchableOpacity
-                        key={oIdx}
-                        style={styles.dropdownItem}
-                        onPress={() => {
-                          setActiveMenuId(null);
-                          opt.action();
-                        }}
-                      >
-                        <Text style={[styles.dropdownText, { color: opt.color }]}>{opt.label}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
+          {/* Customer Basic Info */}
+          <View style={styles.customerInfo}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                <Text style={styles.customerName} numberOfLines={1}>{item.client}</Text>
+                <Text style={styles.customerMeta}>{item.businessType} · {item.location}</Text>
               </View>
-            )}
+              <TouchableOpacity 
+                onPress={() => Alert.alert('Call Customer', `Dialing ${item.client}...`)}
+                style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Phone size={14} color="#3B82F6" />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Summarised product layout */}
+          <View style={styles.productRow}>
+            <View style={styles.productIconBox}>
+              <Package size={16} color="#D97706" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.productName} numberOfLines={1}>
+                {item.product}
+              </Text>
+              <Text style={styles.productQty}>
+                {item.qty} {item.itemsCount > 1 ? `+${item.itemsCount - 1} more items` : ''}
+              </Text>
+            </View>
+          </View>
+
+          {/* Preparing Progress Bar */}
+          {item.status === 'Preparing' && (
+            <View style={styles.progressContainer}>
+              <View style={styles.progressHeader}>
+                <Text style={styles.progressLabel}>Preparation</Text>
+                <Text style={styles.progressValue}>{item.preparationProgress}%</Text>
+              </View>
+              <AnimatedProgressBar
+                progress={item.preparationProgress}
+                barBgStyle={styles.progressBarBg}
+                barFillStyle={styles.progressBarFill}
+              />
+            </View>
+          )}
+
+          {/* Ready assignment status */}
+          {item.status === 'Ready to Dispatch' && (
+            <View style={styles.driverStatusBox}>
+              <Truck size={14} color={MUTED} />
+              <Text style={styles.driverStatusText}>Driver: <Text style={{ fontWeight: '700', color: NAVY }}>Not Assigned</Text></Text>
+            </View>
+          )}
+
+          {/* Out for delivery status */}
+          {item.status === 'Out for Delivery' && (
+            <View style={styles.driverStatusBox}>
+              <UserCheck size={14} color={MUTED} />
+              <Text style={styles.driverStatusText}>Driver: <Text style={{ fontWeight: '700', color: NAVY }}>{item.driver}</Text></Text>
+            </View>
+          )}
+
+          {/* Amount & Date split row */}
+          <View style={styles.metaRow}>
+            <View style={styles.metaCol}>
+              <Text style={styles.metaLabel}>Order Total</Text>
+              <Text style={styles.metaValue}>{item.amount}</Text>
+            </View>
+            <View style={styles.metaCol}>
+              <Text style={styles.metaLabel}>Requested Delivery</Text>
+              <Text style={styles.metaValue}>{item.deliveryDate}</Text>
+            </View>
+          </View>
+
+          {/* Payment and action row */}
+          <View style={[styles.cardFooter, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <TouchableOpacity style={styles.viewDetailsBtn} onPress={() => { orderRef.current = item; setSelectedOrder(item); setDetailsModalVisible(true); }}>
+                <Text style={styles.viewDetailsText}>View Details</Text>
+                <ChevronRight size={14} color={NAVY} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              {primaryText && (
+                <ScalePressable
+                  style={styles.primaryActionBtn}
+                  onPress={() => handlePrimaryAction(item)}
+                >
+                  {PrimaryIcon && <PrimaryIcon size={14} color={WHITE} style={{ marginRight: 6 }} />}
+                  <Text style={styles.primaryActionText}>{primaryText}</Text>
+                </ScalePressable>
+              )}
+
+              {moreOptions.length > 0 && (
+                <View style={{ position: 'relative', zIndex: 100 }}>
+                  <TouchableOpacity
+                    style={styles.moreBtn}
+                    onPress={() => setActiveMenuId(isMenuOpen ? null : item.id)}
+                  >
+                    <MoreVertical size={16} color={NAVY} />
+                  </TouchableOpacity>
+                  {isMenuOpen && (
+                    <View style={styles.dropdownMenu}>
+                      {moreOptions.map((opt, idx) => (
+                        <TouchableOpacity
+                          key={idx}
+                          style={styles.dropdownItem}
+                          onPress={() => {
+                            setActiveMenuId(null);
+                            opt.action();
+                          }}
+                        >
+                          <Text style={[styles.dropdownText, { color: opt.color }]}>{opt.label}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              )}
+            </View>
           </View>
         </View>
-      </View>
+      </FadeInCard>
     );
   };
+
+  const translateY = toastAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-80, 0],
+  });
 
   return (
     <SafeAreaView style={styles.safeArea}>
       {toastMessage && (
-        <View style={styles.toast}>
+        <Animated.View style={[styles.toast, { opacity: toastAnim, transform: [{ translateY }] }]}>
           <Text style={styles.toastText}>{toastMessage}</Text>
-        </View>
+        </Animated.View>
       )}
 
-      <TouchableWithoutFeedback onPress={() => setActiveMenuId(null)}>
-        <View style={styles.container}>
+      <View style={styles.container}>
           {/* Header section */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
@@ -577,7 +720,7 @@ export default function RawMaterialOrdersPage() {
             <FlatList
               data={filteredOrders}
               keyExtractor={item => item.id}
-              renderItem={renderOrderCard}
+              renderItem={({ item, index }) => renderOrderCard({ item, index })}
               numColumns={isMobile ? 1 : 2}
               key={isMobile ? 'mobile-list' : 'desktop-grid'}
               contentContainerStyle={styles.cardsGridContent}
@@ -601,20 +744,7 @@ export default function RawMaterialOrdersPage() {
             />
           )}
 
-          {/* Bottom mobile-only tab navigation */}
-          {isMobile && (
-            <View style={styles.bottomNav}>
-              <TouchableOpacity style={styles.navItem}><Home size={20} color={MUTED} /><Text style={styles.navLabel}>Home</Text></TouchableOpacity>
-              <TouchableOpacity style={styles.navItem}><ClipboardList size={20} color={NAVY} /><Text style={[styles.navLabel, { color: NAVY, fontWeight: '700' }]}>Orders</Text></TouchableOpacity>
-              <View style={styles.navPlusWrap}>
-                <TouchableOpacity style={styles.navPlusBtn}><Plus size={20} color={WHITE} /></TouchableOpacity>
-              </View>
-              <TouchableOpacity style={styles.navItem}><Truck size={20} color={MUTED} /><Text style={styles.navLabel}>Deliveries</Text></TouchableOpacity>
-              <TouchableOpacity style={styles.navItem}><User size={20} color={MUTED} /><Text style={styles.navLabel}>Profile</Text></TouchableOpacity>
-            </View>
-          )}
         </View>
-      </TouchableWithoutFeedback>
 
       {/* ================================================================= */}
       {/* MODALS IMPLEMENTATION */}
@@ -1173,10 +1303,11 @@ const styles = StyleSheet.create({
   primaryActionBtn: {
     backgroundColor: NAVY,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 8,
     borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center'
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   primaryActionText: { fontSize: 12, fontWeight: '700', color: WHITE },
   moreBtn: { padding: 6, marginLeft: 4, borderRadius: 6, backgroundColor: BG },
@@ -1210,39 +1341,6 @@ const styles = StyleSheet.create({
   refreshBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#CBD5E1', backgroundColor: WHITE },
   refreshBtnText: { fontSize: 12, fontWeight: '700', color: NAVY },
 
-  // Fixed bottom navigation mobile-only
-  bottomNav: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: WHITE,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'flex-end',
-    paddingBottom: Platform.OS === 'ios' ? 24 : 12,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
-    zIndex: 50
-  },
-  navItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  navLabel: { fontSize: 9, color: MUTED, marginTop: 2 },
-  navPlusWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  navPlusBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: NAVY,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3
-  },
 
   // Modals generic popup overlay
   modalOverlay: { flex: 1, backgroundColor: 'rgba(7, 27, 58, 0.4)', justifyContent: 'center', alignItems: 'center', padding: 16 },

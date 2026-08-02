@@ -35,6 +35,9 @@ export default function MarketingDashboard() {
   const [selectedRequirement, setSelectedRequirement] = useState(null);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
 
+  const [imgError, setImgError] = useState(false);
+  const userPhoto = user?.profilePhoto || user?.profileImage || user?.registration?.profilePhoto || user?.vendorRegistration?.profilePhoto;
+
   const [plusMenuOpen, setPlusMenuOpen] = useState(false);
 
   const handleSendProposal = (req) => {
@@ -133,7 +136,11 @@ export default function MarketingDashboard() {
                   <View style={styles.mobileNotificationDot} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.mobileAvatarBtn} onPress={() => setActivePage('profile')}>
-                  <Text style={{ fontSize: 10, fontWeight: 'bold', color: NAVY }}>BC</Text>
+                  {userPhoto && !imgError ? (
+                    <Image source={{ uri: userPhoto }} style={{ width: 28, height: 28, borderRadius: 14 }} onError={() => setImgError(true)} />
+                  ) : (
+                    <Text style={{ fontSize: 10, fontWeight: 'bold', color: NAVY }}>{user?.name ? user.name.substring(0, 2).toUpperCase() : 'MP'}</Text>
+                  )}
                 </TouchableOpacity>
               </View>
             </View>

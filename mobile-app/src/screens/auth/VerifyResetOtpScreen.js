@@ -61,7 +61,7 @@ export default function VerifyResetOtpScreen({ route, navigation }) {
     setSuccessMsg('');
     const cleanText = text.replace(/[^0-9]/g, '');
     const newOtp = [...otp];
-    
+
     if (cleanText.length > 1) {
       // Support paste
       const pastedData = cleanText.slice(0, 6).split('');
@@ -124,7 +124,7 @@ export default function VerifyResetOtpScreen({ route, navigation }) {
 
   const handleResend = async () => {
     if (resendTimer > 0) return;
-    
+
     setIsLoading(true);
     setError('');
     setSuccessMsg('');
@@ -164,7 +164,7 @@ export default function VerifyResetOtpScreen({ route, navigation }) {
           <Text style={styles.subtitle}>Enter the 6-digit code sent to </Text>
           <View style={styles.emailEditContainer}>
             <Text style={styles.emailText}>{maskedEmail || 'your email'}</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => navigation.navigate('ForgotPassword', { initialEmail: email })}
               style={styles.editBtn}
             >
@@ -256,20 +256,20 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginTop: 5,
   },
-  heading: { 
-    fontSize: 26, 
-    fontWeight: 'bold', 
-    color: AUTH_COLORS.primary, 
-    marginBottom: 8, 
-    marginTop: 10 
+  heading: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: AUTH_COLORS.primary,
+    marginBottom: 8,
+    marginTop: 10
   },
   subtitleRow: {
     marginBottom: 24,
   },
-  subtitle: { 
-    fontSize: 14, 
-    color: AUTH_COLORS.muted, 
-    lineHeight: 20 
+  subtitle: {
+    fontSize: 14,
+    color: AUTH_COLORS.muted,
+    lineHeight: 20
   },
   emailEditContainer: {
     flexDirection: 'row',
@@ -356,37 +356,37 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: AUTH_COLORS.primary,
   },
-  errorBanner: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#FFF5F5', 
-    padding: 12, 
-    borderRadius: 12, 
-    marginBottom: 16, 
-    borderWidth: 1, 
-    borderColor: '#FEE2E2' 
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF5F5',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#FEE2E2'
   },
-  errorBannerText: { 
-    fontSize: 13, 
-    color: AUTH_COLORS.error, 
-    fontWeight: '500', 
-    flex: 1 
+  errorBannerText: {
+    fontSize: 13,
+    color: AUTH_COLORS.error,
+    fontWeight: '500',
+    flex: 1
   },
-  successBanner: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#EBFDF5', 
-    padding: 12, 
-    borderRadius: 12, 
-    marginBottom: 16, 
-    borderWidth: 1, 
-    borderColor: '#D1FAE5' 
+  successBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EBFDF5',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#D1FAE5'
   },
-  successBannerText: { 
-    fontSize: 13, 
-    color: AUTH_COLORS.success, 
-    fontWeight: '500', 
-    flex: 1 
+  successBannerText: {
+    fontSize: 13,
+    color: AUTH_COLORS.success,
+    fontWeight: '500',
+    flex: 1
   },
   actionBtn: {
     marginBottom: 20,

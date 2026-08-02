@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, LayoutAnimation, UIManager, Platform, useWindowDimensions, ScrollView, SafeAreaView, KeyboardAvoidingView } from 'react-native';
-import { Building2, Phone, ArrowRight, Briefcase, FileText, ChevronDown, ChevronUp, CircleAlert as AlertCircle, MapPin, ShieldCheck, CreditCard, CircleCheck as CheckCircle, Check } from 'lucide-react-native';
+import { View, Text, StyleSheet, TouchableOpacity, LayoutAnimation, UIManager, Platform, useWindowDimensions, ScrollView, SafeAreaView, KeyboardAvoidingView, TextInput } from 'react-native';
+import { Building2, Phone, ArrowRight, Briefcase, FileText, CircleAlert as AlertCircle, MapPin, ShieldCheck, CreditCard, CircleCheck as CheckCircle, Check } from 'lucide-react-native';
 
 import AuthCard from '../../components/auth/AuthCard';
 import AuthTabs from '../../components/auth/AuthTabs';
@@ -30,10 +30,10 @@ const STATES = ['Maharashtra', 'Delhi', 'Karnataka', 'Telangana', 'Tamil Nadu', 
 export default function RegisterStepOneScreen({ navigation, route }) {
   const existingState = route.params?.registrationData || {};
   const { width } = useWindowDimensions();
-  
+
   const isWeb = Platform.OS === 'web';
-  const contentWidth = isWeb ? Math.min(width * 0.92, 540) : width * 0.92;
-  const showTwoColumns = width >= 360;
+  const contentWidth = isWeb ? Math.min(width * 0.94, 520) : Math.min(width * 0.96, 520);
+  const showTwoColumns = width >= 480;
 
   // Form State
   const [bizName, setBizName] = useState(existingState.bizName || '');
@@ -42,7 +42,6 @@ export default function RegisterStepOneScreen({ navigation, route }) {
   const [subCategory, setSubCategory] = useState(existingState.subCategory || '');
   const [panNo, setPanNo] = useState(existingState.panNo || '');
   const [gstin, setGstin] = useState(existingState.gstin || '');
-  const [brn, setBrn] = useState(existingState.brn || '');
   const [fssaiNo, setFssaiNo] = useState(existingState.fssaiNo || '');
   const [mobile, setMobile] = useState(existingState.mobile || '');
   const [address, setAddress] = useState(existingState.address || '');
@@ -53,25 +52,29 @@ export default function RegisterStepOneScreen({ navigation, route }) {
 
   // Documents Config
   const [requiredDocs, setRequiredDocs] = useState([]);
-  const [additionalExpanded, setAdditionalExpanded] = useState(false);
 
   // Validation State
   const [showValidationSummary, setShowValidationSummary] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
 
+  // Array of subcategories for calculations
+  const selectedSubcategories = subCategory
+    ? (Array.isArray(subCategory) ? subCategory : String(subCategory).split(',').map(s => s.trim()))
+    : [];
+
   // Auto determine FSSAI requirement
-  const isFssaiRequired = 
+  const isFssaiRequired =
     bizCategory === 'Hotel' ||
     bizCategory === 'Restaurant' ||
     bizCategory === 'Cafe' ||
-    (bizCategory === 'Vendor / Supplier' && specialized === 'Raw Material' && 
-     (subCategory ? subCategory.split(',').map(s => s.trim()).some(sub => ['Dairy', 'Vegetables', 'Fruits', 'Grocery', 'Meat', 'Bakery', 'Beverages', 'Spices'].includes(sub)) : false));
+    (bizCategory === 'Vendor / Supplier' && specialized === 'Raw Material' &&
+      selectedSubcategories.some(sub => ['Dairy', 'Vegetables', 'Fruits', 'Grocery', 'Meat', 'Bakery', 'Beverages', 'Spices'].includes(sub)));
 
   useEffect(() => {
     if (bizCategory) {
       const docs = getDocumentRequirements(bizCategory, specialized, subCategory);
       setRequiredDocs(docs);
-      
+
       // Clean up documents that are no longer part of requirements when category changes
       setDocuments(prev => {
         const next = { ...prev };
@@ -136,13 +139,12 @@ export default function RegisterStepOneScreen({ navigation, route }) {
   };
 
   const reqList = requiredDocs.filter(d => d.requirement === 'Required');
-  const optList = requiredDocs.filter(d => d.requirement === 'Optional');
   const reqUploaded = reqList.filter(d => documents[d.id]).length;
   const totalReq = reqList.length;
 
   const handleNext = () => {
     const errorsList = [];
-    
+
     if (!bizName.trim()) errorsList.push('Enter Business Name');
     if (!bizCategory) errorsList.push('Select Business Category');
     if (!panNo.trim()) {
@@ -150,11 +152,11 @@ export default function RegisterStepOneScreen({ navigation, route }) {
     } else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(panNo.toUpperCase())) {
       errorsList.push('Enter valid 10-character PAN (e.g. ABCDE1234F)');
     }
-    
+
     if (gstin.trim() && gstin.trim().length !== 15) {
       errorsList.push('GST Number must be 15 characters');
     }
-    
+
     if (isFssaiRequired) {
       if (!fssaiNo.trim()) {
         errorsList.push('Enter FSSAI License Number');
@@ -162,29 +164,31 @@ export default function RegisterStepOneScreen({ navigation, route }) {
         errorsList.push('FSSAI License must be 14 digits');
       }
     }
-    
+
     if (bizCategory === 'Vendor / Supplier') {
       if (!specialized) errorsList.push('Select Specialized Category');
-      if (specialized && !subCategory) errorsList.push('Select Subcategory');
+      if (specialized && (!subCategory || (Array.isArray(subCategory) && subCategory.length === 0))) {
+        errorsList.push('Select at least one Subcategory');
+      }
     }
-    
+
     if (!mobile.trim()) {
       errorsList.push('Enter Mobile Number');
     } else if (mobile.replace(/[^0-9]/g, '').length !== 10) {
       errorsList.push('Enter valid 10-digit Mobile Number');
     }
-    
+
     if (!address.trim()) errorsList.push('Enter Business Address');
     if (!city) errorsList.push('Select City');
     if (!state) errorsList.push('Select State');
-    
+
     if (!pincode.trim()) {
       errorsList.push('Enter Pincode');
     } else if (pincode.replace(/[^0-9]/g, '').length !== 6) {
       errorsList.push('Pincode must be 6 digits');
     }
 
-    // Check required documents
+    // Validate only visible required documents
     const missingDocs = reqList.filter(d => !documents[d.id]);
     if (missingDocs.length > 0) {
       missingDocs.forEach(d => {
@@ -199,15 +203,15 @@ export default function RegisterStepOneScreen({ navigation, route }) {
     }
 
     setShowValidationSummary(false);
+    const subCategoryPayload = Array.isArray(subCategory) ? subCategory.join(', ') : subCategory;
     const registrationData = {
       ...existingState,
       bizName: bizName.trim(),
       bizCategory,
       specialized,
-      subCategory,
+      subCategory: subCategoryPayload,
       panNo: panNo.toUpperCase().trim(),
       gstin: gstin.toUpperCase().trim(),
-      brn: brn.trim(),
       fssaiNo: isFssaiRequired ? fssaiNo.trim() : '',
       mobile: mobile.replace(/[^0-9]/g, ''),
       address: address.trim(),
@@ -219,14 +223,16 @@ export default function RegisterStepOneScreen({ navigation, route }) {
     navigation.navigate('RegisterStepTwo', { registrationData });
   };
 
+  const subCategoryDisplayText = Array.isArray(subCategory) ? subCategory.join(', ') : subCategory;
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <ScrollView 
+        <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
@@ -237,184 +243,217 @@ export default function RegisterStepOneScreen({ navigation, route }) {
               <AuthTabs activeTab="register" onTabChange={(tab) => tab === 'login' && navigation.navigate('Login')} />
               <RegistrationStepIndicator currentStep={1} />
 
-        <View style={styles.headerBlock}>
-          <Text style={styles.stepHeader}>STEP 1 OF 3</Text>
-          <Text style={styles.heading}>Business Verification</Text>
-          <Text style={styles.subtitle}>Establish your business identity and upload verification documents.</Text>
-        </View>
+              <View style={styles.headerBlock}>
 
-        <View style={styles.sectionCard}>
-          <View style={styles.sectionHeader}>
-            <Building2 size={16} color={AUTH_COLORS.primary} style={{ marginRight: 8 }} />
-            <Text style={styles.sectionTitle}>Business Identity</Text>
-          </View>
+                <Text style={styles.heading}>Business Verification</Text>
 
-          <FormField 
-            label="CORPORATE BUSINESS NAME *" 
-            icon={Building2} 
-            placeholder="e.g. The Meridian Hotel"
-            value={bizName}
-            onChangeText={setBizName}
-          />
-
-          <SelectField 
-            label="Business Operation Category *"
-            icon={Briefcase}
-            options={BIZ_CATEGORIES}
-            value={bizCategory}
-            onSelect={handleCategoryChange}
-          />
-
-          <FormField 
-            label="PAN Number *" 
-            icon={CreditCard} 
-            placeholder="ABCDE1234F"
-            maxLength={10}
-            autoCapitalize="characters"
-            value={panNo}
-            onChangeText={(val) => handlePanChange(val)}
-          />
-
-          <FormField 
-            label="GST Number" 
-            icon={FileText} 
-            placeholder="27AAAAA0000A1Z5"
-            maxLength={15}
-            autoCapitalize="characters"
-            value={gstin}
-            onChangeText={(val) => handleGstinChange(val)}
-            helperText="Optional if your business is not GST registered."
-          />
-
-          {isFssaiRequired && (
-            <FormField 
-              label="FSSAI License Number *" 
-              icon={ShieldCheck} 
-              placeholder="14-digit FSSAI License No."
-              keyboardType="numeric"
-              maxLength={14}
-              value={fssaiNo}
-              onChangeText={(val) => { setFssaiNo(val.replace(/[^0-9]/g, '')); clearValidationState(); }}
-            />
-          )}
-
-          <FormField 
-            label="Business Registration Number" 
-            icon={ShieldCheck} 
-            placeholder="BRN-27-00012345"
-            value={brn}
-            onChangeText={setBrn}
-          />
-        </View>
-
-        {/* Section 2: Vendor Specialization (conditional) */}
-        {bizCategory === 'Vendor / Supplier' && (
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionCardTitle}>Vendor Specialization</Text>
-            
-            <SelectField 
-              label="Specialized Category *"
-              options={SPECIALIZED_CATEGORIES}
-              value={specialized}
-              onSelect={handleSpecializedChange}
-            />
-
-            {specialized ? (
-              <SelectField 
-                label="Subcategory *"
-                searchable
-                options={SUB_CATEGORIES[specialized] || []}
-                value={subCategory}
-                onSelect={(val) => { setSubCategory(val); clearValidationState(); }}
-                isMultiSelect={true}
-              />
-            ) : null}
-
-            {specialized && subCategory ? (
-              <View style={styles.specializationSummary}>
-                <Check size={14} color={AUTH_COLORS.success} style={{ marginRight: 6 }} />
-                <Text style={styles.specializationSummaryText}>
-                  Selected: <Text style={{ fontWeight: 'bold' }}>{`${specialized} • ${subCategory}`}</Text>
-                </Text>
               </View>
-            ) : null}
-          </View>
-        )}
 
-        {requiredDocs.length > 0 && (
-          <View style={styles.docSectionContainer}>
-            <View style={styles.sectionHeader}>
-              <FileText size={16} color={AUTH_COLORS.primary} style={{ marginRight: 8 }} />
-              <View>
-                <Text style={styles.sectionTitle}>Verification Documents</Text>
-                <Text style={styles.sectionSub}>Upload the documents required for your selected business profile.</Text>
+              {/* Section 1: Business Identity */}
+              <View style={styles.sectionCard}>
+                <View style={styles.sectionHeader}>
+                  <Building2 size={16} color={AUTH_COLORS.primary} style={{ marginRight: 8 }} />
+                  <Text style={styles.sectionTitle}>Business Identity</Text>
+                </View>
+
+                <FormField
+                  label="CORPORATE BUSINESS NAME *"
+                  icon={Building2}
+                  placeholder="e.g. The Meridian Hotel"
+                  value={bizName}
+                  onChangeText={setBizName}
+                />
+
+                <SelectField
+                  label="Business Operation Category *"
+                  icon={Briefcase}
+                  options={BIZ_CATEGORIES}
+                  value={bizCategory}
+                  onSelect={handleCategoryChange}
+                />
+
+                <FormField
+                  label="PAN Number *"
+                  icon={CreditCard}
+                  placeholder="ABCDE1234F"
+                  maxLength={10}
+                  autoCapitalize="characters"
+                  value={panNo}
+                  onChangeText={(val) => handlePanChange(val)}
+                />
+
+                <FormField
+                  label="GST Number"
+                  icon={FileText}
+                  placeholder="27AAAAA0000A1Z5"
+                  maxLength={15}
+                  autoCapitalize="characters"
+                  value={gstin}
+                  onChangeText={(val) => handleGstinChange(val)}
+                  helperText="Optional if your business is not GST registered."
+                />
+
+                {isFssaiRequired && (
+                  <FormField
+                    label="FSSAI License Number *"
+                    icon={ShieldCheck}
+                    placeholder="14-digit FSSAI License No."
+                    keyboardType="numeric"
+                    maxLength={14}
+                    value={fssaiNo}
+                    onChangeText={(val) => { setFssaiNo(val.replace(/[^0-9]/g, '')); clearValidationState(); }}
+                  />
+                )}
               </View>
-            </View>
 
-                  <View style={styles.progressContainer}>
-                    <Text style={styles.progressText}>
-                      {reqUploaded} of {totalReq} required documents uploaded
-                    </Text>
-                    <View style={styles.progressBarBg}>
-                      <View 
-                        style={{
-                          height: '100%',
-                          backgroundColor: reqUploaded === totalReq ? AUTH_COLORS.success : AUTH_COLORS.primary,
-                          borderRadius: 3,
-                          width: `${totalReq > 0 ? (reqUploaded / totalReq) * 100 : 0}%`
-                        }} 
-                      />
+              {/* Section 2: Vendor Specialization (conditional for Vendor / Supplier) */}
+              {bizCategory === 'Vendor / Supplier' && (
+                <View style={styles.sectionCard}>
+                  <Text style={styles.sectionCardTitle}>Vendor Specialization</Text>
+
+                  <SelectField
+                    label="Specialized Category *"
+                    options={SPECIALIZED_CATEGORIES}
+                    value={specialized}
+                    onSelect={handleSpecializedChange}
+                  />
+
+                  {specialized ? (
+                    <SelectField
+                      label="Subcategory *"
+                      searchable
+                      options={SUB_CATEGORIES[specialized] || []}
+                      value={subCategory}
+                      onSelect={(val) => { setSubCategory(val); clearValidationState(); }}
+                      isMultiSelect={true}
+                    />
+                  ) : null}
+
+                  {specialized && subCategoryDisplayText ? (
+                    <View style={styles.specializationSummary}>
+                      <Check size={14} color={AUTH_COLORS.success} style={{ marginRight: 6 }} />
+                      <Text style={styles.specializationSummaryText}>
+                        Selected: <Text style={{ fontWeight: 'bold' }}>{`${specialized} • ${subCategoryDisplayText}`}</Text>
+                      </Text>
                     </View>
-                  </View>
-
-                  <View style={styles.docsList}>
-                    {reqList.map(doc => (
-                      <DocumentUploadRow 
-                        key={doc.id} 
-                        document={doc} 
-                        selectedFile={documents[doc.id]} 
-                        onFileSelect={(f) => handleFileSelect(doc.id, f)} 
-                        onFileRemove={() => handleFileRemove(doc.id)} 
-                      />
-                    ))}
-                  </View>
-
-                  {/* Collapsible Additional Documents */}
-                  {optList.length > 0 && (
-                    <View style={styles.additionalDocsSection}>
-                      <TouchableOpacity 
-                        style={styles.additionalHeader} 
-                        onPress={() => {
-                          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                          setAdditionalExpanded(!additionalExpanded);
-                        }}
-                        activeOpacity={0.7}
-                        accessibilityRole="button"
-                      >
-                        <Text style={styles.additionalTitle}>Additional Documents</Text>
-                        <View style={styles.additionalRight}>
-                          <Text style={styles.additionalBadge}>Optional</Text>
-                          {additionalExpanded ? <ChevronUp size={16} color={AUTH_COLORS.muted} /> : <ChevronDown size={16} color={AUTH_COLORS.muted} />}
-                        </View>
-                      </TouchableOpacity>
-
-                      {additionalExpanded && (
-                        <View style={styles.additionalBody}>
-                          {optList.map(doc => (
-                            <DocumentUploadRow 
-                              key={doc.id} 
-                              document={doc} 
-                              selectedFile={documents[doc.id]} 
-                              onFileSelect={(f) => handleFileSelect(doc.id, f)} 
-                              onFileRemove={() => handleFileRemove(doc.id)} 
-                            />
-                          ))}
-                        </View>
-                      )}
-                    </View>
-                  )}
+                  ) : null}
                 </View>
               )}
+
+              {/* Section 3: Contact & Address (Always Rendered) */}
+              <View style={styles.sectionCard}>
+                <View style={styles.sectionHeader}>
+                  <MapPin size={16} color={AUTH_COLORS.primary} style={{ marginRight: 8 }} />
+                  <Text style={styles.sectionTitle}>Contact & Address</Text>
+                </View>
+
+                {/* Mobile Number */}
+                <View style={styles.mobileFieldContainer}>
+                  <Text style={styles.mobileLabel}>CONTACT MOBILE *</Text>
+                  <View style={styles.mobileInputRow}>
+                    <View style={styles.mobilePrefix}>
+                      <Text style={styles.mobilePrefixText}>+91</Text>
+                    </View>
+                    <TextInput
+                      placeholder="10-digit mobile number"
+                      keyboardType="numeric"
+                      maxLength={10}
+                      value={mobile}
+                      onChangeText={(val) => { setMobile(val.replace(/[^0-9]/g, '')); clearValidationState(); }}
+                      placeholderTextColor={AUTH_COLORS.muted}
+                      style={styles.mobileInput}
+                    />
+                  </View>
+                </View>
+
+                {/* Address */}
+                <FormField
+                  label="REGISTERED BUSINESS ADDRESS *"
+                  icon={MapPin}
+                  placeholder="Street address, building, suite, unit, floor"
+                  value={address}
+                  onChangeText={(val) => { setAddress(val); clearValidationState(); }}
+                />
+
+                {/* City & State */}
+                <View style={styles.rowFields}>
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <SelectField
+                      label="City *"
+                      searchable
+                      options={CITIES}
+                      value={city}
+                      onSelect={(val) => { setCity(val); clearValidationState(); }}
+                    />
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 8 }}>
+                    <SelectField
+                      label="State *"
+                      searchable
+                      options={STATES}
+                      value={state}
+                      onSelect={(val) => { setState(val); clearValidationState(); }}
+                    />
+                  </View>
+                </View>
+
+                {/* Pincode */}
+                <FormField
+                  label="Pincode *"
+                  placeholder="6-digit PIN code"
+                  keyboardType="numeric"
+                  maxLength={6}
+                  value={pincode}
+                  onChangeText={(val) => { setPincode(val.replace(/[^0-9]/g, '')); clearValidationState(); }}
+                />
+              </View>
+
+              {/* Section 4: Required Documents (Always Rendered - Max 4 required rows) */}
+              <View style={styles.docSectionContainer}>
+                <View style={styles.sectionHeader}>
+                  <FileText size={16} color={AUTH_COLORS.primary} style={{ marginRight: 8, marginTop: 2 }} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.sectionTitle}>Required Documents</Text>
+                    <Text style={styles.sectionSub}>Upload the minimum required documents for account verification.</Text>
+                  </View>
+                </View>
+
+                <View style={styles.progressContainer}>
+                  <Text style={styles.progressText}>
+                    {reqUploaded} of {totalReq} required documents uploaded
+                  </Text>
+                  <View style={styles.progressBarBg}>
+                    <View
+                      style={{
+                        height: '100%',
+                        backgroundColor: reqUploaded === totalReq && totalReq > 0 ? AUTH_COLORS.success : AUTH_COLORS.primary,
+                        borderRadius: 3,
+                        width: `${totalReq > 0 ? (reqUploaded / totalReq) * 100 : 0}%`
+                      }}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.docsList}>
+                  {reqList.map(doc => (
+                    <DocumentUploadRow
+                      key={doc.id}
+                      document={doc}
+                      selectedFile={documents[doc.id]}
+                      onFileSelect={(f) => handleFileSelect(doc.id, f)}
+                      onFileRemove={() => handleFileRemove(doc.id)}
+                    />
+                  ))}
+                </View>
+              </View>
+
+              {/* Post-Registration Compliance Information Strip */}
+              <View style={styles.infoNoticeStrip}>
+                <AlertCircle size={15} color={AUTH_COLORS.primary} style={{ marginRight: 8 }} />
+                <Text style={styles.infoNoticeText}>
+                  Additional compliance documents can be uploaded after account verification.
+                </Text>
+              </View>
 
               {/* Compact Validation Summary */}
               {showValidationSummary && validationErrors.length > 0 && (
@@ -434,20 +473,21 @@ export default function RegisterStepOneScreen({ navigation, route }) {
                 </View>
               )}
             </AuthCard>
+
+            {/* Scrollable Button Container */}
+            <View style={styles.footerScroll}>
+              <TouchableOpacity
+                style={styles.nextBtn}
+                onPress={handleNext}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+              >
+                <Text style={styles.nextBtnText}>Next: Owner Details</Text>
+                <ArrowRight size={18} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
           </View>
         </ScrollView>
-
-        <View style={styles.footerSticky}>
-          <TouchableOpacity 
-            style={styles.nextBtn} 
-            onPress={handleNext}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-          >
-            <Text style={styles.nextBtnText}>Next: Owner Details</Text>
-            <ArrowRight size={18} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -457,11 +497,12 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: AUTH_COLORS.background },
   keyboardView: { flex: 1 },
   scrollView: { flex: 1 },
-  scrollContent: { 
-    flexGrow: 1, 
-    justifyContent: 'center', 
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 16 
+    paddingVertical: 16,
+    paddingBottom: 40
   },
   contentWrapper: {
     alignSelf: 'center',
@@ -486,19 +527,26 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 1
   },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: AUTH_COLORS.primary,
+  },
+  sectionSub: {
+    fontSize: 11,
+    color: AUTH_COLORS.muted,
+    marginTop: 2
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14
+  },
   sectionCardTitle: {
     fontSize: 15,
     fontWeight: '800',
     color: AUTH_COLORS.primary,
     marginBottom: 14
-  },
-  sectionCardHeader: {
-    marginBottom: 14
-  },
-  sectionCardSubtitle: {
-    fontSize: 11,
-    color: AUTH_COLORS.muted,
-    marginTop: 2
   },
 
   specializationSummary: {
@@ -522,36 +570,47 @@ const styles = StyleSheet.create({
   mobileInputRow: { flexDirection: 'row', alignItems: 'center' },
   mobilePrefix: { backgroundColor: AUTH_COLORS.border, borderWidth: 1, borderColor: AUTH_COLORS.border, borderRightWidth: 0, borderTopLeftRadius: 14, borderBottomLeftRadius: 14, height: 52, paddingHorizontal: 14, justifyContent: 'center' },
   mobilePrefixText: { fontSize: 14, fontWeight: '700', color: AUTH_COLORS.primary },
-  mobileHelperText: { fontSize: 11, color: AUTH_COLORS.muted, marginTop: 4 },
+  mobileInput: { flex: 1, backgroundColor: AUTH_COLORS.input, borderWidth: 1, borderColor: AUTH_COLORS.border, borderLeftWidth: 0, borderTopRightRadius: 14, borderBottomRightRadius: 14, height: 52, paddingHorizontal: 14, fontSize: 15, color: AUTH_COLORS.text },
 
   rowFields: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
   colFields: { flexDirection: 'column', marginBottom: 0 },
 
+  docSectionContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: AUTH_COLORS.border,
+    shadowColor: '#071B3A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 6,
+    elevation: 1
+  },
   progressContainer: { marginBottom: 16 },
   progressText: { fontSize: 11, fontWeight: '700', color: AUTH_COLORS.primary, marginBottom: 6 },
   progressBarBg: { height: 6, backgroundColor: AUTH_COLORS.border, borderRadius: 3, overflow: 'hidden' },
 
-  docsList: { marginBottom: 8 },
+  docsList: { marginBottom: 0 },
 
-  additionalDocsSection: {
-    marginTop: 6,
-    borderWidth: 1,
-    borderColor: AUTH_COLORS.border,
-    borderRadius: 12,
-    backgroundColor: '#F8FAFD',
-    overflow: 'hidden'
-  },
-  additionalHeader: {
+  infoNoticeStrip: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16
   },
-  additionalTitle: { fontSize: 13, fontWeight: '700', color: AUTH_COLORS.primary },
-  additionalRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  additionalBadge: { fontSize: 10, fontWeight: '700', color: AUTH_COLORS.muted, backgroundColor: '#E2E8F0', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
-  additionalBody: { padding: 12, borderTopWidth: 1, borderTopColor: AUTH_COLORS.border, backgroundColor: '#FFFFFF' },
+  infoNoticeText: {
+    fontSize: 12,
+    color: AUTH_COLORS.primary,
+    flex: 1,
+    lineHeight: 16
+  },
 
   validationBox: {
     backgroundColor: '#FFFBEB',
@@ -568,12 +627,9 @@ const styles = StyleSheet.create({
   valItem: { fontSize: 12, color: '#B45309', marginBottom: 3 },
   valMoreText: { fontSize: 11, color: '#B45309', fontStyle: 'italic', marginTop: 2 },
 
-  footerSticky: {
-    borderTopWidth: 1,
-    borderTopColor: AUTH_COLORS.border,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+  footerScroll: {
+    paddingVertical: 20,
+    width: '100%',
   },
   nextBtn: {
     backgroundColor: AUTH_COLORS.primary,

@@ -65,6 +65,14 @@ const ServiceProviderRequirement = sequelize.define('ServiceProviderRequirement'
     allowNull: false,
     defaultValue: 'pending',
   },
+  quoteData: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  declineReason: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
 }, {
   timestamps: true,
   tableName: 'service_provider_requirements',

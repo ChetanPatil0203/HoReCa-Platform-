@@ -59,26 +59,36 @@ exports.getOwnerServiceProviderRequirements = async (ownerId) => {
     order: [['createdAt', 'DESC']],
   });
 
-  return list.map((r) => ({
-    id: r.id,
-    ownerId: r.ownerId,
-    supplierId: r.supplierId,
-    type: 'serviceProvider',
-    requestType: r.requestType,
-    title: r.serviceType,
-    description: r.description,
-    budget: r.budget,
-    location: r.location,
-    status: r.status,
-    createdAt: r.createdAt,
-    extraData: {
-      category: r.category,
-      date: r.date,
-      time: r.time,
-      urgency: r.urgency,
-    },
-    supplier: r.supplier,
-  }));
+  return list.map((r) => {
+    let parsedQuote = null;
+    if (r.quoteData) {
+      try { parsedQuote = typeof r.quoteData === 'string' ? JSON.parse(r.quoteData) : r.quoteData; }
+      catch (e) { parsedQuote = null; }
+    }
+    return {
+      id: r.id,
+      ownerId: r.ownerId,
+      supplierId: r.supplierId,
+      type: 'serviceProvider',
+      requestType: r.requestType,
+      title: r.serviceType,
+      description: r.description,
+      budget: r.budget,
+      location: r.location,
+      status: r.status,
+      quoteData: parsedQuote,
+      declineReason: r.declineReason,
+      createdAt: r.createdAt,
+      extraData: {
+        category: r.category,
+        date: r.date,
+        time: r.time,
+        urgency: r.urgency,
+        responseCount: parsedQuote ? 1 : 0,
+      },
+      supplier: r.supplier,
+    };
+  });
 };
 
 exports.getVendorServiceProviderRequirements = async (supplierId) => {
@@ -96,18 +106,27 @@ exports.getVendorServiceProviderRequirements = async (supplierId) => {
     order: [['createdAt', 'DESC']],
   });
 
-  return list.map((r) => ({
-    id: r.id,
-    type: 'serviceProvider',
-    title: r.serviceType,
-    description: r.description,
-    budget: r.budget,
-    location: r.location,
-    status: r.status,
-    createdAt: r.createdAt,
-    extraData: { category: r.category, date: r.date },
-    owner: r.owner,
-  }));
+  return list.map((r) => {
+    let parsedQuote = null;
+    if (r.quoteData) {
+      try { parsedQuote = typeof r.quoteData === 'string' ? JSON.parse(r.quoteData) : r.quoteData; }
+      catch (e) { parsedQuote = null; }
+    }
+    return {
+      id: r.id,
+      type: 'serviceProvider',
+      title: r.serviceType,
+      description: r.description,
+      budget: r.budget,
+      location: r.location,
+      status: r.status,
+      declineReason: r.declineReason,
+      quoteData: parsedQuote,
+      createdAt: r.createdAt,
+      extraData: { category: r.category, date: r.date, time: r.time, urgency: r.urgency },
+      owner: r.owner,
+    };
+  });
 };
 
 exports.getPublicServiceProviderRequirements = async () => {
@@ -121,24 +140,59 @@ exports.getPublicServiceProviderRequirements = async () => {
     order: [['createdAt', 'DESC']],
   });
 
-  return list.map((r) => ({
-    id: r.id,
-    type: 'serviceProvider',
-    title: r.serviceType,
-    description: r.description,
-    budget: r.budget,
-    location: r.location,
-    status: r.status,
-    createdAt: r.createdAt,
-    extraData: { category: r.category, date: r.date, urgency: r.urgency },
-    owner: r.owner,
-  }));
+  return list.map((r) => {
+    let parsedQuote = null;
+    if (r.quoteData) {
+      try { parsedQuote = typeof r.quoteData === 'string' ? JSON.parse(r.quoteData) : r.quoteData; }
+      catch (e) { parsedQuote = null; }
+    }
+    return {
+      id: r.id,
+      type: 'serviceProvider',
+      title: r.serviceType,
+      description: r.description,
+      budget: r.budget,
+      location: r.location,
+      status: r.status,
+      declineReason: r.declineReason,
+      quoteData: parsedQuote,
+      createdAt: r.createdAt,
+      extraData: { category: r.category, date: r.date, urgency: r.urgency },
+      owner: r.owner,
+    };
+  });
 };
 
-exports.updateServiceProviderRequirementStatus = async (requirementId, status) => {
+exports.updateServiceProviderRequirementStatus = async (requirementId, status, extraFields = {}) => {
   const record = await ServiceProviderRequirement.findByPk(requirementId);
   if (!record) throw new Error('Service Provider requirement not found');
   record.status = status;
+  if (extraFields && Object.keys(extraFields).length > 0) {
+    let currentExtra = {};
+    if (record.extraData) {
+      try { currentExtra = typeof record.extraData === 'string' ? JSON.parse(record.extraData) : record.extraData; }
+      catch (e) { currentExtra = {}; }
+    }
+    record.extraData = { ...currentExtra, ...extraFields };
+  }
+  await record.save();
+  return record;
+};
+
+exports.submitServiceProviderQuote = async (requirementId, quoteData) => {
+  const record = await ServiceProviderRequirement.findByPk(requirementId);
+  if (!record) throw new Error('Service Provider requirement not found');
+  record.quoteData = typeof quoteData === 'object' ? JSON.stringify(quoteData) : quoteData;
+  record.status = 'Quote Sent';
+  await record.save();
+  return record;
+};
+
+exports.declineServiceProviderRequirement = async (requirementId, declineReason) => {
+  const record = await ServiceProviderRequirement.findByPk(requirementId);
+  if (!record) throw new Error('Service Provider requirement not found');
+  record.declineReason = declineReason;
+  record.status = 'Declined';
   await record.save();
   return record;
 };

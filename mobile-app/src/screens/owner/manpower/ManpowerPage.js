@@ -21,6 +21,7 @@ import ReplacementRequestPage from './ReplacementRequestPage';
 
 const GOLD = '#D97706';
 const BLUE = '#2563EB';
+const NAVY = '#071B3A';
 
 export default function ManpowerPage() {
   const { width } = useWindowDimensions();
@@ -232,37 +233,45 @@ export default function ManpowerPage() {
 
           {/* ── Top Summary Cards ── */}
           <View style={[styles.summaryGrid, isMobile && { flexWrap: 'wrap' }]}>
-            <TouchableOpacity style={styles.summaryCard} onPress={() => setCurrentView('requirements')}>
-              <View style={styles.summaryIconBox}>
-                <FileText size={20} color={GOLD} />
+            <View style={styles.summaryCard}>
+              <View style={styles.summaryHeader}>
+                <View style={styles.summaryIconBox}>
+                  <FileText size={20} color={GOLD} />
+                </View>
+                <Text style={styles.summaryValue}>{summary.activeRequirements}</Text>
               </View>
-              <Text style={styles.summaryValue}>{summary.activeRequirements}</Text>
               <Text style={styles.summaryLabel}>Active Requirements</Text>
-            </TouchableOpacity>
+            </View>
 
-            <TouchableOpacity style={styles.summaryCard} onPress={() => setCurrentView('requirements')}>
-              <View style={[styles.summaryIconBox, { backgroundColor: '#EFF6FF' }]}>
-                <MessageSquare size={20} color={BLUE} />
+            <View style={styles.summaryCard}>
+              <View style={styles.summaryHeader}>
+                <View style={[styles.summaryIconBox, { backgroundColor: '#EFF6FF' }]}>
+                  <MessageSquare size={20} color={BLUE} />
+                </View>
+                <Text style={styles.summaryValue}>{summary.agencyResponses}</Text>
               </View>
-              <Text style={styles.summaryValue}>{summary.agencyResponses}</Text>
               <Text style={styles.summaryLabel}>Agency Responses</Text>
-            </TouchableOpacity>
+            </View>
 
-            <TouchableOpacity style={styles.summaryCard} onPress={() => setCurrentView('requirements')}>
-              <View style={[styles.summaryIconBox, { backgroundColor: '#F3E8FF' }]}>
-                <Users size={20} color="#9333EA" />
+            <View style={styles.summaryCard}>
+              <View style={styles.summaryHeader}>
+                <View style={[styles.summaryIconBox, { backgroundColor: '#F3E8FF' }]}>
+                  <Users size={20} color="#9333EA" />
+                </View>
+                <Text style={styles.summaryValue}>{summary.shortlistedCandidates}</Text>
               </View>
-              <Text style={styles.summaryValue}>{summary.shortlistedCandidates}</Text>
               <Text style={styles.summaryLabel}>Shortlisted Candidates</Text>
-            </TouchableOpacity>
+            </View>
 
-            <TouchableOpacity style={styles.summaryCard} onPress={() => setCurrentView('selectedStaff')}>
-              <View style={[styles.summaryIconBox, { backgroundColor: '#DCFCE7' }]}>
-                <Users size={20} color="#16A34A" />
+            <View style={styles.summaryCard}>
+              <View style={styles.summaryHeader}>
+                <View style={[styles.summaryIconBox, { backgroundColor: '#DCFCE7' }]}>
+                  <Users size={20} color="#16A34A" />
+                </View>
+                <Text style={styles.summaryValue}>{summary.selectedStaff}</Text>
               </View>
-              <Text style={styles.summaryValue}>{summary.selectedStaff}</Text>
               <Text style={styles.summaryLabel}>Selected Staff</Text>
-            </TouchableOpacity>
+            </View>
           </View>
 
           {/* ── Quick Actions ── */}
@@ -358,28 +367,22 @@ export default function ManpowerPage() {
                 <View style={styles.emptyCard}>
                   <Text style={styles.emptyTitle}>No requirements posted yet</Text>
                   <Text style={styles.emptySubtitle}>Post your staffing needs to get applications from top agencies.</Text>
-                  <TouchableOpacity
-                    style={styles.emptyBtn}
-                    onPress={() => setCurrentView('postRequirement')}
-                  >
-                    <Text style={styles.emptyBtnText}>Post Requirement</Text>
-                  </TouchableOpacity>
                 </View>
               )}
             </View>
           </View>
 
           {/* ── Top Rated Agencies ── */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Top Rated Agencies</Text>
-              <TouchableOpacity onPress={() => setCurrentView('browseAgencies')}>
-                <Text style={styles.viewAllText}>View All</Text>
-              </TouchableOpacity>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.agenciesScroll}>
-              {topAgencies.length > 0 ? (
-                topAgencies.map(agency => (
+          {topAgencies.length > 0 && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Top Rated Agencies</Text>
+                <TouchableOpacity onPress={() => setCurrentView('browseAgencies')}>
+                  <Text style={styles.viewAllText}>View All</Text>
+                </TouchableOpacity>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.agenciesScroll}>
+                {topAgencies.map(agency => (
                   <View key={agency.id} style={styles.agencyCard}>
                     <View style={styles.agencyHeader}>
                       <View style={styles.agencyLogo}>
@@ -416,15 +419,10 @@ export default function ManpowerPage() {
                       <Text style={styles.agencyBtnText}>View Agency</Text>
                     </TouchableOpacity>
                   </View>
-                ))
-              ) : (
-                <TouchableOpacity style={styles.agencyCard} onPress={() => setCurrentView('browseAgencies')}>
-                  <Text style={styles.agencyName}>Browse Manpower Agencies</Text>
-                  <Text style={styles.agencyLocation}>Find verified staffing partners</Text>
-                </TouchableOpacity>
-              )}
-            </ScrollView>
-          </View>
+                ))}
+              </ScrollView>
+            </View>
+          )}
 
         </View>
       </ScrollView>
@@ -464,15 +462,16 @@ const styles = StyleSheet.create({
   urgentBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
 
   // Summary
-  summaryGrid: { flexDirection: 'row', gap: 16 },
-  summaryCard: { flex: 1, minWidth: '46%', backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border },
-  summaryIconBox: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#FFFBEB', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  summaryValue: { fontSize: 28, fontWeight: '900', color: '#0F172A', marginBottom: 4 },
-  summaryLabel: { fontSize: 13, color: '#64748B', fontWeight: '500' },
+  summaryGrid: { flexDirection: 'row', gap: 12 },
+  summaryCard: { flex: 1, minWidth: '46%', backgroundColor: '#fff', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: colors.border },
+  summaryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  summaryIconBox: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#FFFBEB', alignItems: 'center', justifyContent: 'center' },
+  summaryValue: { fontSize: 24, fontWeight: '900', color: '#0F172A' },
+  summaryLabel: { fontSize: 12, color: '#64748B', fontWeight: '600' },
 
   // Actions
   actionsRow: { flexDirection: 'row', gap: 16 },
-  primaryActionCard: { flex: 1, backgroundColor: GOLD, borderRadius: 16, padding: 24, overflow: 'hidden' },
+  primaryActionCard: { flex: 1, backgroundColor: NAVY, borderRadius: 16, padding: 24, overflow: 'hidden' },
   primaryActionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
   primaryActionIconBox: { width: 48, height: 48, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
   primaryActionTitle: { fontSize: 20, fontWeight: '800', color: '#fff', marginBottom: 8 },

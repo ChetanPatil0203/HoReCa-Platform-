@@ -1,14 +1,15 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { 
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, 
-  Platform, useWindowDimensions, SafeAreaView, Modal 
+import React, { useState, useMemo, useEffect, useContext } from 'react';
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
+  Platform, useWindowDimensions, SafeAreaView, Modal
 } from 'react-native';
-import { 
-  Truck, Search, CircleCheck as CheckCircle, Clock, MapPin, MessageSquare, 
-  Package, ArrowLeft, UsersRound, Wrench, Megaphone, ChevronRight, X, 
+import {
+  Truck, Search, CircleCheck as CheckCircle, Clock, MapPin, MessageSquare,
+  Package, ArrowLeft, UsersRound, Wrench, Megaphone, ChevronRight, X,
   RotateCcw, Activity, ShieldCheck, CircleAlert, Phone, User, SlidersHorizontal
 } from 'lucide-react-native';
 import { fetchOwnerActivityHistoryApi, fetchOwnerTrackingApi } from '../../../services/api.service';
+import { AuthContext } from '../../../context/AuthContext';
 
 const NAVY = '#0E2042';
 const GOLD = '#D97706';
@@ -41,7 +42,7 @@ const STATUS_STYLES = {
   'Ready': { bg: '#F3E8FF', text: '#9333EA' },
   'On the Way': { bg: '#EFF6FF', text: '#2563EB' },
   'Delivered': { bg: '#DCFCE7', text: '#15803D' },
-  
+
   // Manpower
   'Responses': { bg: '#FFFBEB', text: '#D97706' },
   'Candidate Selected': { bg: '#EFF6FF', text: '#2563EB' },
@@ -68,6 +69,8 @@ const INITIAL_RECORDS = [];
 export default function OrderTrackingPage() {
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
+  const auth = useContext(AuthContext);
+  const user = auth?.user || {};
 
   const [records, setRecords] = useState([]);
   const [selectedPillar, setSelectedPillar] = useState('all');
@@ -93,7 +96,7 @@ export default function OrderTrackingPage() {
     let isMounted = true;
     const loadTrackingRecords = async () => {
       try {
-        const ownerId = 'OWNER-DEMO-001';
+        const ownerId = user?.id || user?.registrationId || 'OWNER-DEMO-001';
         const res = await fetchOwnerTrackingApi(ownerId);
         if (res && res.success && res.data) {
           const { orders = [], requirements = [] } = res.data;
@@ -226,7 +229,7 @@ export default function OrderTrackingPage() {
       // Search query
       const q = searchQuery.toLowerCase().trim();
       if (q) {
-        const matches = 
+        const matches =
           rec.id.toLowerCase().includes(q) ||
           rec.title.toLowerCase().includes(q) ||
           rec.vendor.toLowerCase().includes(q) ||
@@ -255,7 +258,7 @@ export default function OrderTrackingPage() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      
+
       {/* Toast Notification */}
       {toastMsg ? (
         <View style={styles.toastContainer}>
@@ -264,7 +267,7 @@ export default function OrderTrackingPage() {
         </View>
       ) : null}
 
-      <ScrollView 
+      <ScrollView
         style={styles.container}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -299,7 +302,7 @@ export default function OrderTrackingPage() {
                 <X size={16} color="#64748B" />
               </TouchableOpacity>
             ) : null}
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.filterIconButton, selectedPillar !== 'all' && styles.filterIconButtonActive]}
               onPress={() => setFilterModalVisible(true)}
               activeOpacity={0.7}
@@ -311,8 +314,8 @@ export default function OrderTrackingPage() {
 
           {/* ── Dynamic Status Filter Pills ── */}
           {showStatusFilters ? (
-            <ScrollView 
-              horizontal 
+            <ScrollView
+              horizontal
               showsHorizontalScrollIndicator={false}
               style={styles.statusScroll}
               contentContainerStyle={styles.statusContainer}
@@ -352,17 +355,17 @@ export default function OrderTrackingPage() {
 
               <Text style={styles.emptyTitle}>
                 {selectedPillar === 'raw-material' ? 'No active material orders' :
-                 selectedPillar === 'manpower' ? 'No active staffing requirements' :
-                 selectedPillar === 'service' ? 'No scheduled service work' :
-                 selectedPillar === 'marketing' ? 'No active marketing campaigns' :
-                 'No active tracking records'}
+                  selectedPillar === 'manpower' ? 'No active staffing requirements' :
+                    selectedPillar === 'service' ? 'No scheduled service work' :
+                      selectedPillar === 'marketing' ? 'No active marketing campaigns' :
+                        'No active tracking records'}
               </Text>
               <Text style={styles.emptySub}>
                 Your active orders, staffing, services and campaigns will appear here.
               </Text>
 
               {(searchQuery || selectedStatus !== 'All') ? (
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.clearFiltersBtn}
                   onPress={() => { setSearchQuery(''); setSelectedStatus('All'); }}
                 >
@@ -379,7 +382,7 @@ export default function OrderTrackingPage() {
 
               return (
                 <View key={rec.id} style={styles.trackingCard}>
-                  
+
                   {/* Top Row: Record ID + Pillar Badge + Status Badge */}
                   <View style={styles.cardTopRow}>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -564,14 +567,14 @@ export default function OrderTrackingPage() {
             )}
 
             <View style={styles.modalFooter}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.modalCloseFooterBtn}
                 onPress={() => setDetailModalVisible(false)}
               >
                 <Text style={styles.modalCloseFooterText}>Close</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={styles.modalContactFooterBtn}
                 onPress={() => {
                   setDetailModalVisible(false);
@@ -593,7 +596,7 @@ export default function OrderTrackingPage() {
         animationType="fade"
         onRequestClose={() => setFilterModalVisible(false)}
       >
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.filterModalOverlay}
           activeOpacity={1}
           onPress={() => setFilterModalVisible(false)}
@@ -800,7 +803,7 @@ const styles = StyleSheet.create({
 
   /* Tracking Card */
   trackingCard: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: BORDER, padding: 14, marginBottom: 12, position: 'relative', ...Platform.select({ web: { boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }, ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 6 }, android: { elevation: 2 } }) },
-  
+
   cardTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   recordIdText: { fontSize: 12, fontWeight: '700', color: '#64748B', marginRight: 8 },
   pillarTag: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },

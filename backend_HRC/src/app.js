@@ -35,6 +35,7 @@ app.use('/api/vendors', vendorRoutes);
 app.use('/api/requirements/manpower', manpowerRequirementRoutes);
 app.use('/api/requirements/marketing', marketingRequirementRoutes);
 app.use('/api/requirements/service-provider', serviceProviderRequirementRoutes);
+app.use('/api/service-provider-requirements', serviceProviderRequirementRoutes);
 app.use('/api/requirements', requirementRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/candidates', candidateRoutes);
