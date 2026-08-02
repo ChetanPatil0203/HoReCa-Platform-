@@ -1,5 +1,5 @@
-import React, { useState, useContext, useEffect } from 'react';
-import { View, StyleSheet, SafeAreaView, useWindowDimensions, ScrollView, TouchableOpacity, Text, Platform, Image, Modal, TouchableWithoutFeedback, Alert, FlatList } from 'react-native';
+import React, { useState, useContext, useEffect, useRef } from 'react';
+import { View, StyleSheet, SafeAreaView, useWindowDimensions, ScrollView, TouchableOpacity, Text, Platform, Image, Modal, TouchableWithoutFeedback, Alert, FlatList, Animated } from 'react-native';
 import { Menu, ArrowLeft, Bell, ChefHat, LayoutDashboard, Package, Users, Wrench, Megaphone, BarChart2, Clock, Truck, Settings, CircleHelp as HelpCircle, ChevronDown, LogOut, User, ShieldCheck, X, CircleCheck as CheckCircle2 } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors } from '../../theme/colors';
@@ -63,10 +63,28 @@ export default function OwnerDashboard() {
   const [imageError, setImageError] = useState(false);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const [chatbotOpen, setChatbotOpen] = useState(false);
+  const floatAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     setImageError(false);
   }, [user?.profilePhoto]);
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, {
+          toValue: -6,
+          duration: 1500,
+          useNativeDriver: true
+        }),
+        Animated.timing(floatAnim, {
+          toValue: 0,
+          duration: 1500,
+          useNativeDriver: true
+        })
+      ])
+    ).start();
+  }, []);
 
   useEffect(() => {
     const loadLiveNotifications = async () => {
@@ -417,21 +435,33 @@ export default function OwnerDashboard() {
           )}
  
           {/* Floating Chatbot FAB */}
-          <TouchableOpacity 
-            style={styles.chatbotFab} 
-            onPress={() => setChatbotOpen(true)}
-            activeOpacity={0.85}
+          <Animated.View 
+            style={[
+              styles.chatbotFabContainer,
+              { transform: [{ translateY: floatAnim }] }
+            ]}
           >
-            <Image 
-              source={require('../../../assets/Chatbot.png')} 
-              style={styles.chatbotFabImage} 
-            />
-          </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.chatbotFab} 
+              onPress={() => setChatbotOpen(true)}
+              activeOpacity={0.85}
+            >
+              <Image 
+                source={require('../../../assets/Chatbot.png')} 
+                style={styles.chatbotFabImage} 
+              />
+            </TouchableOpacity>
+          </Animated.View>
  
           {/* Chatbot Modal */}
           <HRCSupportBot 
             visible={chatbotOpen} 
             onClose={() => setChatbotOpen(false)}
+            user={user}
+            onNavigate={(page) => {
+              setChatbotOpen(false);
+              setActivePage(page);
+            }}
           />
         </View>
 
@@ -714,23 +744,22 @@ const styles = StyleSheet.create({
   },
  
   /* Floating Chatbot FAB Styles */
-  chatbotFab: {
+  chatbotFabContainer: {
     position: 'absolute',
     right: 20,
     bottom: 95,
+    zIndex: 99,
+  },
+  chatbotFab: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#071B3A',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 99,
-    borderWidth: 2,
-    borderColor: '#F6B800',
     overflow: 'hidden',
     ...Platform.select({
-      web: { boxShadow: '0 4px 16px rgba(7, 27, 58, 0.25)' },
-      ios: { shadowColor: '#071B3A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8 },
+      web: { boxShadow: '0 6px 20px rgba(7, 27, 58, 0.2)' },
+      ios: { shadowColor: '#071B3A', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.2, shadowRadius: 10 },
       android: { elevation: 6 }
     })
   },
