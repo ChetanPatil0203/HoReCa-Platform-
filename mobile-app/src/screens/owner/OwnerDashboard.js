@@ -24,6 +24,7 @@ import ProfileSettingsPage from './ProfileSettingsPage';
 import CompliancePage from './compliance/CompliancePage';
 import HelpAndSupportScreen from '../../components/common/HelpAndSupportScreen';
 import DocumentsKycScreen from '../common/DocumentsKycScreen';
+import HRCSupportBot from '../../components/owner/chatbot/HRCSupportBot';
 
 // Placeholder for missing pages
 const PlaceholderPage = ({ title }) => (
@@ -61,6 +62,7 @@ export default function OwnerDashboard() {
   const [notifications, setNotifications] = useState([]);
   const [imageError, setImageError] = useState(false);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
+  const [chatbotOpen, setChatbotOpen] = useState(false);
 
   useEffect(() => {
     setImageError(false);
@@ -413,6 +415,24 @@ export default function OwnerDashboard() {
               onNavigate={setActivePage}
             />
           )}
+ 
+          {/* Floating Chatbot FAB */}
+          <TouchableOpacity 
+            style={styles.chatbotFab} 
+            onPress={() => setChatbotOpen(true)}
+            activeOpacity={0.85}
+          >
+            <Image 
+              source={require('../../../assets/Chatbot.png')} 
+              style={styles.chatbotFabImage} 
+            />
+          </TouchableOpacity>
+ 
+          {/* Chatbot Modal */}
+          <HRCSupportBot 
+            visible={chatbotOpen} 
+            onClose={() => setChatbotOpen(false)}
+          />
         </View>
 
       </View>
@@ -692,4 +712,32 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF',
   },
+ 
+  /* Floating Chatbot FAB Styles */
+  chatbotFab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 95,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#071B3A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 99,
+    borderWidth: 2,
+    borderColor: '#F6B800',
+    overflow: 'hidden',
+    ...Platform.select({
+      web: { boxShadow: '0 4px 16px rgba(7, 27, 58, 0.25)' },
+      ios: { shadowColor: '#071B3A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8 },
+      android: { elevation: 6 }
+    })
+  },
+  chatbotFabImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 28,
+    resizeMode: 'cover'
+  }
 });
