@@ -7,8 +7,8 @@ import { TrendingUp, Package, Users, Truck, CircleAlert as AlertCircle, ChevronR
 import { AuthContext } from '../../../context/AuthContext';
 import { fetchVendorOrders } from '../../../services/api.service';
 
-const PRIMARY = '#071B3A';
-const NAVY = '#071B3A';
+const PRIMARY = '#081A3A';
+const NAVY = '#081A3A';
 const GOLD = '#F6B800';
 const BG = '#F8FAFC';
 const WHITE = '#FFFFFF';
@@ -126,10 +126,10 @@ export default function RawMaterialDashboardHome({ onNavigate, setActivePage }) 
                 >
                   <View style={styles.overviewTop}>
                     <View style={[styles.iconBox, { backgroundColor: card.bg }]}>
-                      <card.icon size={20} color={card.iconColor} />
+                      <card.icon size={18} color={card.iconColor} />
                     </View>
+                    <Text style={styles.overviewValue}>{card.value}</Text>
                   </View>
-                  <Text style={styles.overviewValue}>{card.value}</Text>
                   <Text style={styles.overviewLabel}>{card.label}</Text>
                 </TouchableOpacity>
               ))}
@@ -156,7 +156,7 @@ export default function RawMaterialDashboardHome({ onNavigate, setActivePage }) 
               ) : recentOrders.map(order => (
                 <TouchableOpacity 
                   key={order.id} 
-                  style={[styles.card, { borderLeftColor: order.statusColor, borderLeftWidth: 5 }]}
+                  style={styles.card}
                   onPress={() => onNavigate && onNavigate('requests')}
                   activeOpacity={0.7}
                 >
@@ -233,30 +233,33 @@ const styles = StyleSheet.create({
   
   overviewGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12 },
   overviewCard: { 
-    backgroundColor: WHITE, borderRadius: 16, padding: 16, marginBottom: 4, 
-    shadowColor: '#0F172A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2, 
+    backgroundColor: WHITE, borderRadius: 14, padding: 14, marginBottom: 4, 
+    borderWidth: 1, borderColor: '#E8EDF4',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2, 
+    display: 'flex', flexDirection: 'column',
   },
-  overviewTop: { flexDirection: 'row', marginBottom: 12 },
+  overviewTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   iconBox: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  overviewValue: { fontSize: 24, fontWeight: 'bold', color: NAVY, marginBottom: 2 },
-  overviewLabel: { fontSize: 12, color: MUTED, fontWeight: '500' },
+  overviewValue: { fontSize: 24, fontWeight: '900', color: NAVY },
+  overviewLabel: { fontSize: 12, color: MUTED, fontWeight: '600' },
   
   card: { 
-    backgroundColor: WHITE, borderRadius: 16, padding: 16, marginBottom: 12, 
-    shadowColor: '#0F172A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2, 
+    backgroundColor: WHITE, borderRadius: 14, padding: 12, marginBottom: 10, 
+    borderWidth: 1, borderColor: '#E2E8F0',
+    shadowColor: '#0F172A', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1, 
   },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   idText: { fontSize: 13, fontWeight: 'bold', color: NAVY },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  statusText: { fontSize: 10, fontWeight: 'bold' },
+  statusBadge: { paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6 },
+  statusText: { fontSize: 9, fontWeight: 'bold' },
   
-  cardBody: { marginBottom: 14 },
-  primaryText: { fontSize: 15, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
-  secondaryText: { fontSize: 13, color: MUTED },
+  cardBody: { marginBottom: 10 },
+  primaryText: { fontSize: 14, fontWeight: 'bold', color: NAVY, marginBottom: 2 },
+  secondaryText: { fontSize: 12, color: MUTED },
   
-  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 14 },
-  amountText: { fontSize: 16, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
-  dateText: { fontSize: 12, color: MUTED },
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 10 },
+  amountText: { fontSize: 15, fontWeight: 'bold', color: NAVY, marginBottom: 2 },
+  dateText: { fontSize: 11, color: MUTED },
   viewOrderAction: { flexDirection: 'row', alignItems: 'center' },
   viewOrderText: { fontSize: 12, fontWeight: 'bold', color: NAVY, marginRight: 2 },
   

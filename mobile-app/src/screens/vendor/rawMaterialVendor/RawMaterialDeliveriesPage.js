@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
 import {
   View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity,
-  useWindowDimensions, Modal, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, ActivityIndicator
+  useWindowDimensions, Modal, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, ActivityIndicator, Image
 } from 'react-native';
-import { Search, SlidersHorizontal, Package, ChevronRight, X, CircleX as XCircle, CircleCheck as CheckCircle, Truck, User, Home, ClipboardList, Plus, MapPin, CalendarDays, UserRound, RefreshCw } from 'lucide-react-native';
+import { Search, SlidersHorizontal, Package, ChevronRight, X, CircleX as XCircle, CircleCheck as CheckCircle, Truck, User, Home, ClipboardList, Plus, MapPin, CalendarDays, UserRound, RefreshCw, Copy, Phone, EllipsisVertical as MoreVertical, UserCheck } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
 import { fetchVendorOrders } from '../../../services/api.service';
+import { API_BASE_URL } from '../../../config/api';
 
 const NAVY = '#071B3A';
 const GOLD = '#071B3A';
@@ -14,6 +15,13 @@ const WHITE = '#FFFFFF';
 const MUTED = '#64748B';
 
 const STATUS_CHIPS = ['All', 'Scheduled', 'Out for Delivery', 'Delivered', 'Cancelled'];
+
+const getProductImageUrl = (url) => {
+  if (!url) return null;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const baseUrl = API_BASE_URL.endsWith('/api') ? API_BASE_URL.substring(0, API_BASE_URL.length - 4) : API_BASE_URL;
+  return `${baseUrl}${url}`;
+};
 
 // Map a vendor order (status=shipped/delivered) to a delivery card shape
 const mapDelivery = (o) => {
@@ -24,6 +32,8 @@ const mapDelivery = (o) => {
     confirmed: 'Scheduled',
     cancelled: 'Cancelled',
   };
+  const productImage = firstItem?.product?.imageUrl || firstItem?.product?.image || null;
+
   return {
     id: `#${o.id.slice(0, 8).toUpperCase()}`,
     _rawId: o.id,
@@ -32,12 +42,13 @@ const mapDelivery = (o) => {
     location: o.owner?.city || o.deliveryAddress || '—',
     product: firstItem?.product?.name || 'Mixed Items',
     qty: `${(o.items || []).reduce((s, i) => s + (i.quantity || 0), 0)} ${firstItem?.product?.unit || ''}`.trim(),
-    amount: `₹${parseFloat(o.totalAmount || 0).toFixed(0)}`,
-    date: new Date(o.createdAt).toLocaleDateString('en-IN'),
+    productImage: productImage ? getProductImageUrl(productImage) : null,
+    amount: `₹${parseFloat(o.totalAmount || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`,
+    date: o.createdAt ? new Date(o.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—',
     status: dbToUiStatus[o.status] || o.status,
-    driver: null,
-    driverMobile: null,
-    vehicleNo: null,
+    driver: o.driverName || null,
+    driverMobile: o.driverMobile || null,
+    vehicleNo: o.vehicleNo || null,
   };
 };
 
@@ -135,11 +146,9 @@ export default function RawMaterialDeliveriesPage() {
 
   const getPrimaryAction = (status) => {
     switch (status) {
-      case 'Scheduled': return 'Prepare Order';
       case 'Packed': return 'Assign Driver';
       case 'Assigned': return 'Dispatch Order';
       case 'Out for Delivery': return 'Track Delivery';
-      case 'Delivered': return 'View Proof';
       case 'Delayed': return 'Update Delivery';
       default: return null;
     }
@@ -192,136 +201,169 @@ export default function RawMaterialDeliveriesPage() {
 
   const renderDeliveryCard = ({ item }) => {
     const sStyle = getStatusStyle(item.status);
-    const dStyle = getDriverStyle(item.driver);
     const primaryAction = getPrimaryAction(item.status);
-    const isMenuOpen = activeMenuId === item.id;
-    const menuOptions = getMoreMenuOptions(item.status);
 
     return (
-      <View style={[styles.card, isMenuOpen && { zIndex: 999, elevation: 10 }]}>
-        {/* Top Row */}
-        <View style={[styles.cardTop, isMenuOpen && { zIndex: 999 }]}>
-          <View>
-            <Text style={styles.deliveryId}>{item.id}</Text>
-            <Text style={styles.orderRef}>Ref: {item.orderId}</Text>
-          </View>
-          <View style={{flexDirection: 'row', alignItems: 'center'}}>
-            <View style={[styles.statusBadge, { backgroundColor: sStyle.bg }]}>
-              <Text style={[styles.statusText, { color: sStyle.text }]}>{item.status.toUpperCase()}</Text>
-            </View>
-            
-
-          </View>
-        </View>
-
-        {/* Customer Box */}
-        <View style={styles.customerBox}>
-          <Text style={styles.customerName}>{item.client}</Text>
-          <View style={styles.customerMetaRow}>
-            <MapPin size={14} color={MUTED} style={{marginRight: 6}} />
-            <Text style={styles.customerMetaText} numberOfLines={1}>{item.address}</Text>
-          </View>
-        </View>
-
-        {/* Product Box */}
-        <View style={styles.productBox}>
-          <View style={styles.productIconBox}>
-            <Package size={18} color="#D4AF37" />
-          </View>
-          <View style={{flex: 1}}>
-            <Text style={styles.productName} numberOfLines={1}>{item.product} · <Text style={{fontWeight: 'bold'}}>{item.orderedQty} {item.unit}</Text></Text>
-            {item.additionalItems > 0 && <Text style={styles.productSub}>+{item.additionalItems} more items</Text>}
-          </View>
-        </View>
-
-        {/* Time and Driver Row */}
-        <View style={styles.infoRow}>
-          <View style={styles.infoCol}>
-            <CalendarDays size={16} color={MUTED} style={{marginRight: 6}} />
-            <Text style={styles.infoText}>{item.date} · {item.time}</Text>
-          </View>
-          <View style={[styles.driverBadge, {backgroundColor: dStyle.bg}]}>
-            {dStyle.icon}
-            <Text style={[styles.driverBadgeText, {color: dStyle.text}]}>Driver: {item.driver ? item.driver : 'Unassigned'}</Text>
-          </View>
-        </View>
-
-        {/* Footer */}
-        <View style={styles.cardFooter}>
-          <TouchableOpacity style={styles.textActionBtn} onPress={() => handleAction(item, 'details')}>
-            <Text style={styles.textActionText}>View Details</Text>
-            <ChevronRight size={16} color={NAVY} />
-          </TouchableOpacity>
-          {primaryAction && (
-            <TouchableOpacity style={styles.primaryActionBtn} onPress={() => handleAction(item, primaryAction)}>
-              <Text style={styles.primaryActionText}>{primaryAction}</Text>
+      <View style={[styles.card, !isMobile && styles.cardDesktop]}>
+        {/* Top row with Order ID and Status Badge */}
+        <View style={styles.cardHeader}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text style={styles.cardId}>{item.id}</Text>
+            <TouchableOpacity onPress={() => Alert.alert('Copied ID', `Copied Order ID: ${item.id}`)} style={{ padding: 4 }}>
+              <Copy size={11} color={MUTED} />
             </TouchableOpacity>
-          )}
+          </View>
+          
+          <View style={[styles.statusBadge, { backgroundColor: sStyle.bg, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+            <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: sStyle.text }} />
+            <Text style={[styles.statusText, { color: sStyle.text }]}>{item.status.toUpperCase()}</Text>
+          </View>
         </View>
+
+        {/* Customer Row */}
+        <View style={styles.customerRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.customerName}>{item.client}</Text>
+            <Text style={styles.customerMeta}>{item.location}</Text>
+          </View>
+        </View>
+
+        {/* Product Row (Compact) */}
+        <View style={styles.productRowCompact}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+            <View style={styles.productIconBoxCompact}>
+              {item.productImage ? (
+                <Image source={{ uri: item.productImage }} style={styles.productImageActual} />
+              ) : (
+                <Package size={13} color="#D97706" />
+              )}
+            </View>
+            <Text style={styles.productNameCompact} numberOfLines={1}>
+              {item.product}
+            </Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={styles.productQtyCompact}>{item.qty}</Text>
+            <Text style={styles.productAmountCompact}>{item.amount}</Text>
+          </View>
+        </View>
+
+        {/* Driver info box */}
+        <View style={styles.driverStatusBox}>
+          <Truck size={12} color={MUTED} />
+          <Text style={styles.driverStatusText}>
+            Driver: <Text style={{ fontWeight: '700', color: NAVY }}>{item.driver || 'Not Assigned'}</Text>
+          </Text>
+        </View>
+
+        {/* Card Footer (Delivery Date & Action Buttons) */}
+        <View style={styles.cardFooterCompact}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.deliveryLabelCompact}>Delivery Date</Text>
+            <Text style={styles.deliveryValCompact} numberOfLines={1}>{item.date}</Text>
+          </View>
+          
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity
+              style={styles.viewDetailsBtnCompact}
+              onPress={() => handleAction(item, 'details')}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.viewDetailsTextCompact}>Details</Text>
+            </TouchableOpacity>
+
+            {primaryAction && (
+              <TouchableOpacity
+                style={styles.primaryActionBtnCompact}
+                onPress={() => handleAction(item, primaryAction)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.primaryActionTextCompact}>{primaryAction}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
       </View>
     );
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={{ flex: 1, backgroundColor: BG }}>
       <TouchableWithoutFeedback onPress={() => setActiveMenuId(null)}>
         <View style={styles.container}>
-          
-          <View style={styles.pageHeader}>
-            <View style={styles.pageHeaderLeft}>
-              <Text style={styles.pageTitle}>Deliveries</Text>
-              <Text style={styles.pageSubtitle}>Manage scheduled and active order deliveries</Text>
-            </View>
-            <View style={styles.pageHeaderActions}>
-              <TouchableOpacity style={styles.iconBtn} onPress={() => setSearchActive(!searchActive)}><Search size={22} color={NAVY} /></TouchableOpacity>
-              <TouchableOpacity style={styles.iconBtn} onPress={() => setFilterVisible(true)}><SlidersHorizontal size={22} color={NAVY} /></TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Search bar */}
-          {searchActive && (
-            <View style={styles.searchFilterContainer}>
-              <View style={styles.searchBox}>
-                <Search size={18} color={MUTED} style={{marginRight: 8}} />
-                <TextInput 
-                  style={styles.searchInput} 
-                  placeholder="Search by ID, order, client, product or driver..." 
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                />
-                {searchQuery !== '' && (
-                  <TouchableOpacity onPress={() => setSearchQuery('')}><XCircle size={18} color={MUTED} /></TouchableOpacity>
-                )}
-              </View>
-            </View>
-          )}
-
-          <View style={styles.tabsContainer}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsScroll}>
-              {STATUS_CHIPS.map(chip => (
-                <TouchableOpacity
-                  key={chip}
-                  style={[styles.tab, activeFilter === chip && styles.activeTab]}
-                  onPress={() => setActiveFilter(chip)}
-                >
-                  <Text style={[styles.tabText, activeFilter === chip && styles.activeTabText]}>
-                    {chip} {counts[chip] > 0 ? counts[chip] : ''}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
 
           <FlatList
+            ListHeaderComponent={
+              <View>
+                <View style={styles.pageHeader}>
+                  <View style={styles.pageHeaderLeft}>
+                    <Text style={styles.pageTitle}>Deliveries</Text>
+                  </View>
+                </View>
+
+                {/* Search and Filters */}
+                <View style={styles.searchFilterContainer}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                    <View style={[styles.searchBox, { flex: 1, marginBottom: 0 }]}>
+                      <Search size={18} color={MUTED} style={{ marginRight: 8 }} />
+                      <TextInput 
+                        style={styles.searchInput} 
+                        placeholder="Search deliveries..." 
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                      />
+                      {searchQuery !== '' && (
+                        <TouchableOpacity onPress={() => setSearchQuery('')}><XCircle size={16} color={MUTED} /></TouchableOpacity>
+                      )}
+                    </View>
+                    <TouchableOpacity 
+                      style={{ 
+                        marginLeft: 12, 
+                        width: 44, 
+                        height: 44, 
+                        borderRadius: 12, 
+                        backgroundColor: WHITE, 
+                        borderWidth: 1, 
+                        borderColor: '#E2E8F0', 
+                        justifyContent: 'center', 
+                        alignItems: 'center' 
+                      }} 
+                      onPress={() => setFilterVisible(true)}
+                    >
+                      <SlidersHorizontal size={20} color={NAVY} />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.tabsContainer}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsScroll}>
+                      {STATUS_CHIPS.map(chip => (
+                        <TouchableOpacity
+                          key={chip}
+                          style={[styles.tab, activeFilter === chip && styles.activeTab]}
+                          onPress={() => setActiveFilter(chip)}
+                        >
+                          <Text style={[styles.tabText, activeFilter === chip && styles.activeTabText]}>
+                            {chip} {counts[chip] > 0 ? counts[chip] : ''}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                </View>
+              </View>
+            }
             data={filteredDeliveries}
             keyExtractor={item => item.id}
+            numColumns={isMobile ? 1 : 2}
+            key={isMobile ? 'one-col' : 'two-col'}
             renderItem={renderDeliveryCard}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <View style={styles.emptyState}>
                 <Truck size={32} color="#CBD5E1" />
-                <Text style={styles.emptyText}>No {activeFilter.toLowerCase()} deliveries</Text>
+                <Text style={styles.emptyTextTitle}>No {activeFilter.toLowerCase()} deliveries</Text>
+                <Text style={styles.emptyTextSub}>Active delivery schedules will show up here.</Text>
               </View>
             }
           />
@@ -420,7 +462,37 @@ export default function RawMaterialDeliveriesPage() {
               <View style={[styles.centerModalContent, isMobile ? {width: '95%'} : {maxWidth: 560, width: '100%'}, {maxHeight: '85%'}]}>
                 <View style={styles.modalHeader}>
                   <Text style={styles.modalTitle}>Delivery Details</Text>
-                  <TouchableOpacity onPress={() => setDetailsModalVisible(false)}><XCircle size={24} color={MUTED} /></TouchableOpacity>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    {selectedDelivery && getMoreMenuOptions(selectedDelivery.status).length > 0 && (
+                      <View style={{ position: 'relative', zIndex: 1001, marginRight: 12 }}>
+                        <TouchableOpacity
+                          style={{ padding: 6 }}
+                          onPress={() => setActiveMenuId(activeMenuId === selectedDelivery.id ? null : selectedDelivery.id)}
+                        >
+                          <MoreVertical size={18} color={NAVY} />
+                        </TouchableOpacity>
+                        {activeMenuId === selectedDelivery.id && (
+                          <View style={[styles.dropdownMenu, { top: 32, right: 0 }]}>
+                            {getMoreMenuOptions(selectedDelivery.status).map((opt, idx) => (
+                              <TouchableOpacity
+                                key={idx}
+                                style={styles.dropdownItem}
+                                onPress={() => {
+                                  setActiveMenuId(null);
+                                  handleAction(selectedDelivery, opt);
+                                }}
+                              >
+                                <Text style={[styles.dropdownText]}>{opt}</Text>
+                              </TouchableOpacity>
+                            ))}
+                          </View>
+                        )}
+                      </View>
+                    )}
+                    <TouchableOpacity onPress={() => setDetailsModalVisible(false)}>
+                      <XCircle size={24} color={MUTED} />
+                    </TouchableOpacity>
+                  </View>
                 </View>
                 {selectedDelivery && (
                   <ScrollView style={styles.modalBody}>
@@ -506,7 +578,7 @@ export default function RawMaterialDeliveriesPage() {
         </View>
       </Modal>
 
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -514,97 +586,220 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: BG },
   container: { flex: 1, backgroundColor: BG, maxWidth: 1200, width: '100%', alignSelf: 'center' },
   
-  pageHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16 },
-  pageTitle: { fontSize: 24, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
+  pageHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 18, backgroundColor: WHITE, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  pageTitle: { fontSize: 22, fontWeight: '900', color: '#0F172A', letterSpacing: -0.5 },
   pageSubtitle: { fontSize: 14, color: MUTED },
   pageHeaderActions: { flexDirection: 'row', alignItems: 'center' },
   iconBtn: { padding: 8, marginLeft: 8 },
 
   tabsContainer: { paddingBottom: 16 },
-  tabsScroll: { paddingHorizontal: 16, gap: 12 },
-  tab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: WHITE, borderWidth: 1, borderColor: '#E2E8F0' },
-  activeTab: { backgroundColor: NAVY, borderColor: NAVY, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
-  tabText: { fontSize: 14, fontWeight: '600', color: MUTED },
-  activeTabText: { color: WHITE },
+  tabsScroll: { paddingHorizontal: 16, gap: 8 },
+  tab: { 
+    paddingHorizontal: 16, 
+    paddingVertical: 8, 
+    borderRadius: 24, 
+    backgroundColor: WHITE, 
+    borderWidth: 1, 
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.01,
+    shadowRadius: 2,
+    elevation: 1
+  },
+  activeTab: { 
+    backgroundColor: '#0F172A', 
+    borderColor: '#0F172A', 
+    shadowColor: '#0F172A', 
+    shadowOffset: { width: 0, height: 3 }, 
+    shadowOpacity: 0.15, 
+    shadowRadius: 6, 
+    elevation: 3 
+  },
+  tabText: { fontSize: 13, fontWeight: '600', color: MUTED },
+  activeTabText: { color: WHITE, fontWeight: '700' },
 
-  listContent: { paddingHorizontal: 16, paddingBottom: 115 },
+  listContent: { paddingBottom: 115 },
   
-  card: { backgroundColor: WHITE, borderRadius: 16, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1, borderWidth: 1, borderColor: '#E6EBF2' },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12, zIndex: 10 },
-  deliveryId: { fontSize: 15, fontWeight: 'bold', color: NAVY },
-  orderRef: { fontSize: 13, color: MUTED, marginTop: 2 },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  statusText: { fontSize: 10, fontWeight: 'bold' },
-  moreBtn: { padding: 4, marginRight: -4 },
-  dropdownMenu: { position: 'absolute', top: 30, right: 0, backgroundColor: WHITE, borderRadius: 12, width: 170, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5, zIndex: 100, borderWidth: 1, borderColor: '#E8EDF4', paddingVertical: 4 },
-  dropdownItem: { paddingVertical: 12, paddingHorizontal: 16 },
-  dropdownText: { fontSize: 13, fontWeight: '600', color: NAVY },
-  
-  customerBox: { marginBottom: 12 },
-  customerName: { fontSize: 16, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
-  customerMetaRow: { flexDirection: 'row', alignItems: 'center' },
-  customerMetaText: { fontSize: 13, color: MUTED, fontWeight: '500', flex: 1 },
-  
-  productBox: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  productIconBox: { width: 32, height: 32, borderRadius: 8, backgroundColor: '#FFFBEB', justifyContent: 'center', alignItems: 'center', marginRight: 10 },
-  productName: { fontSize: 14, color: NAVY },
-  productSub: { fontSize: 12, color: MUTED, marginTop: 2 },
-  
-  infoRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  infoCol: { flexDirection: 'row', alignItems: 'center' },
-  infoText: { fontSize: 13, color: NAVY, fontWeight: '500' },
-  
-  driverBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  driverBadgeText: { fontSize: 12, fontWeight: '600', marginLeft: 4 },
-  
-  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 14 },
-  textActionBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingRight: 16 },
-  textActionText: { fontSize: 14, fontWeight: 'bold', color: NAVY, marginRight: 4 },
-  primaryActionBtn: { backgroundColor: GOLD, paddingHorizontal: 16, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  primaryActionText: { fontSize: 14, fontWeight: 'bold', color: WHITE },
+  card: {
+    backgroundColor: WHITE,
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E3E9F1',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 6,
+    elevation: 1,
+    flex: 1,
+    marginVertical: 6,
+    marginHorizontal: 16
+  },
+  cardDesktop: {
+    maxWidth: '48.8%',
+  },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  cardId: { fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase' },
+  statusBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  statusText: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
+  moreBtn: { padding: 4, borderRadius: 6, backgroundColor: '#F1F5F9' },
 
-  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
-  emptyText: { fontSize: 14, color: MUTED, marginTop: 12 },
+  customerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  customerName: { fontSize: 15, fontWeight: '800', color: NAVY, marginBottom: 2 },
+  customerMeta: { fontSize: 12, color: MUTED, fontWeight: '500' },
+
+  productRowCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFBEB',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    height: 44,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#FEF3C7'
+  },
+  productIconBoxCompact: {
+    width: 24,
+    height: 24,
+    borderRadius: 5,
+    backgroundColor: '#FEF3C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden'
+  },
+  productImageActual: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover'
+  },
+  productNameCompact: { fontSize: 12, fontWeight: '700', color: NAVY, flex: 1 },
+  productQtyCompact: { fontSize: 11, color: MUTED, fontWeight: '600', marginRight: 4 },
+  productAmountCompact: { fontSize: 12, color: NAVY, fontWeight: '800' },
+
+  driverStatusBox: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10, backgroundColor: '#F8FAFC', paddingVertical: 6, paddingHorizontal: 8, borderRadius: 6 },
+  driverStatusText: { fontSize: 11, color: MUTED },
+
+  cardFooterCompact: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    paddingTop: 10,
+    marginTop: 2
+  },
+  deliveryLabelCompact: { fontSize: 9, color: MUTED, fontWeight: '700', textTransform: 'uppercase', marginBottom: 1 },
+  deliveryValCompact: { fontSize: 12, color: NAVY, fontWeight: '600' },
+
+  actionsContainer: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  viewDetailsBtnCompact: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, borderWidth: 1, borderColor: '#CBD5E1', backgroundColor: WHITE },
+  viewDetailsTextCompact: { fontSize: 11, fontWeight: '700', color: NAVY },
+
+  primaryActionBtnCompact: {
+    backgroundColor: NAVY,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 80
+  },
+  primaryActionTextCompact: { fontSize: 11, fontWeight: '700', color: WHITE },
+
+  dropdownMenu: {
+    position: 'absolute',
+    top: 24,
+    right: 0,
+    backgroundColor: WHITE,
+    borderRadius: 8,
+    width: 150,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingVertical: 4,
+    zIndex: 1000
+  },
+  dropdownItem: { paddingVertical: 8, paddingHorizontal: 12 },
+  dropdownText: { fontSize: 11, fontWeight: '600' },
+
+  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 32 },
+  emptyTextTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A', marginTop: 16, marginBottom: 6 },
+  emptyTextSub: { fontSize: 13, color: MUTED, textAlign: 'center', lineHeight: 18 },
 
   // Modals
-  modalOverlayCenter: { flex: 1, backgroundColor: 'rgba(3, 15, 38, 0.55)', justifyContent: 'center', alignItems: 'center', padding: 16 },
-  centerModalContent: { backgroundColor: WHITE, borderRadius: 20, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  modalTitle: { fontSize: 16, fontWeight: 'bold', color: NAVY },
-  modalBody: { padding: 20 },
+  modalOverlayCenter: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.45)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  centerModalContent: { backgroundColor: WHITE, borderRadius: 24, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 24, elevation: 8, width: '100%', maxWidth: 400 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  modalTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
+  modalBody: { padding: 24 },
   
-  confirmTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY, marginBottom: 16 },
-  confirmDetailsBox: { backgroundColor: '#F8FAFC', padding: 16, borderRadius: 12, gap: 10 },
+  confirmTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A', marginBottom: 16 },
+  confirmDetailsBox: { backgroundColor: '#F8FAFC', padding: 16, borderRadius: 14, gap: 10, borderWidth: 1, borderColor: '#F1F5F9' },
   confirmRow: { flexDirection: 'row', justifyContent: 'space-between' },
   confirmLabel: { fontSize: 13, color: MUTED, fontWeight: '500' },
-  confirmValue: { fontSize: 13, color: NAVY, fontWeight: 'bold' },
+  confirmValue: { fontSize: 13, color: '#0F172A', fontWeight: '700' },
 
-  contextBox: { backgroundColor: '#F8FAFC', padding: 12, borderRadius: 10, marginBottom: 16 },
-  contextTitle: { fontSize: 14, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
-  contextSub: { fontSize: 12, color: MUTED },
+  contextBox: { backgroundColor: '#F8FAFC', padding: 14, borderRadius: 12, marginBottom: 18, borderWidth: 1, borderColor: '#F1F5F9' },
+  contextTitle: { fontSize: 14, fontWeight: '800', color: '#0F172A', marginBottom: 4 },
+  contextSub: { fontSize: 12, color: MUTED, fontWeight: '500' },
   
-  inputLabel: { fontSize: 13, fontWeight: '600', color: NAVY, marginBottom: 6, marginTop: 12 },
-  input: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 12, height: 44, fontSize: 14, color: NAVY },
+  inputLabel: { fontSize: 13, fontWeight: '700', color: '#0F172A', marginBottom: 8, marginTop: 14 },
+  input: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 14, height: 46, fontSize: 14, color: '#0F172A' },
   
-  modalFooterActions: { flexDirection: 'row', padding: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9', gap: 12 },
-  btnModalOutline: { flex: 1, height: 44, justifyContent: 'center', alignItems: 'center', borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0' },
-  btnModalOutlineText: { fontSize: 14, fontWeight: '600', color: NAVY },
-  btnModalPrimary: { flex: 1, height: 44, backgroundColor: NAVY, justifyContent: 'center', alignItems: 'center', borderRadius: 10 },
-  btnModalPrimaryText: { fontSize: 14, fontWeight: 'bold', color: WHITE },
+  modalFooterActions: { flexDirection: 'row', padding: 20, borderTopWidth: 1, borderTopColor: '#F1F5F9', gap: 12 },
+  btnModalOutline: { flex: 1, height: 46, justifyContent: 'center', alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0' },
+  btnModalOutlineText: { fontSize: 14, fontWeight: '700', color: '#0F172A' },
+  btnModalPrimary: { 
+    flex: 1, 
+    height: 46, 
+    backgroundColor: '#0F172A', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    borderRadius: 12,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3
+  },
+  btnModalPrimaryText: { fontSize: 14, fontWeight: '800', color: WHITE },
   
-  detailBlock: { paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  detailLabel: { fontSize: 11, fontWeight: 'bold', color: MUTED, marginBottom: 8, textTransform: 'uppercase' },
-  detailValue: { fontSize: 15, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
-  detailSubValue: { fontSize: 14, color: MUTED },
-  searchFilterContainer: { paddingHorizontal: 16, paddingBottom: 16 },
-  searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: WHITE, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 12, height: 44, marginBottom: 12 },
-  searchInput: { flex: 1, fontSize: 14, color: NAVY },
-  modalOverlayBottom: { flex: 1, backgroundColor: 'rgba(3, 15, 38, 0.55)', justifyContent: 'flex-end' },
-  bottomSheet: { backgroundColor: WHITE, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' },
+  detailBlock: { paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  detailLabel: { fontSize: 11, fontWeight: '800', color: MUTED, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
+  detailValue: { fontSize: 16, fontWeight: '800', color: '#0F172A', marginBottom: 4 },
+  detailSubValue: { fontSize: 14, color: MUTED, fontWeight: '500' },
+  searchFilterContainer: { paddingHorizontal: 16, paddingBottom: 16, paddingTop: 16 },
+  searchBox: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: WHITE, 
+    borderWidth: 1, 
+    borderColor: '#E2E8F0', 
+    borderRadius: 14, 
+    paddingHorizontal: 16, 
+    height: 48, 
+    marginBottom: 0,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
+    elevation: 1
+  },
+  searchInput: { flex: 1, fontSize: 14, color: '#0F172A' },
+  modalOverlayBottom: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.45)', justifyContent: 'flex-end' },
+  bottomSheet: { backgroundColor: WHITE, borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 },
   sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  sheetTitle: { fontSize: 16, fontWeight: '800', color: NAVY },
+  sheetTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
   sheetBody: { padding: 20 },
-  filterChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', marginRight: 8, marginBottom: 8 },
-  filterChipActive: { backgroundColor: NAVY, borderColor: NAVY },
-  filterChipTextActive: { color: WHITE },
+  filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 24, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', marginRight: 8, marginBottom: 8 },
+  filterChipActive: { backgroundColor: '#0F172A', borderColor: '#0F172A' },
+  filterChipTextActive: { color: WHITE, fontWeight: '700' },
 });

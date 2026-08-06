@@ -18,6 +18,7 @@ import ProviderHistoryPage from './ProviderHistoryPage';
 import ProviderClientsPage from './ProviderClientsPage';
 import CompliancePage from '../../owner/compliance/CompliancePage';
 import DocumentsKycScreen from '../../common/DocumentsKycScreen';
+import HRCSupportBot from '../../../components/owner/chatbot/HRCSupportBot';
 
 const PRIMARY = '#081A3A';
 const ACCENT = '#081A3A';
@@ -31,6 +32,17 @@ export default function ProviderDashboard() {
 
   const [activePage, setActivePage] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [chatbotOpen, setChatbotOpen] = useState(false);
+  const floatAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, { toValue: -6, duration: 1500, useNativeDriver: true }),
+        Animated.timing(floatAnim, { toValue: 0, duration: 1500, useNativeDriver: true })
+      ])
+    ).start();
+  }, []);
 
   const [imgError, setImgError] = useState(false);
   const userPhoto = user?.profilePhoto || 
@@ -260,6 +272,20 @@ export default function ProviderDashboard() {
             </TouchableOpacity>
           </View>
         )}
+        {/* Floating Chatbot FAB */}
+        <Animated.View style={[styles.chatbotFabContainer, { transform: [{ translateY: floatAnim }] }]}>
+          <TouchableOpacity style={styles.chatbotFab} onPress={() => setChatbotOpen(true)} activeOpacity={0.85}>
+            <Image source={require('../../../../assets/Chatbot.png')} style={styles.chatbotFabImage} />
+          </TouchableOpacity>
+        </Animated.View>
+
+        {/* Chatbot Modal */}
+        <HRCSupportBot
+          visible={chatbotOpen}
+          onClose={() => setChatbotOpen(false)}
+          user={user}
+          onNavigate={(page) => { setChatbotOpen(false); setActivePage(page); }}
+        />
       </View>
     </View>
   );
@@ -302,4 +328,7 @@ const styles = StyleSheet.create({
   requestsBadgeText: { color: '#fff', fontSize: 9, fontWeight: 'bold' },
   centerButtonSpacer: { width: 60 },
   centerPlusButton: { position: 'absolute', bottom: Platform.OS === 'ios' ? 25 : 15, left: '50%', marginLeft: -28, width: 56, height: 56, borderRadius: 28, backgroundColor: PRIMARY, alignItems: 'center', justifyContent: 'center', shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 8 },
+  chatbotFabContainer: { position: 'absolute', right: 20, bottom: 95, zIndex: 99 },
+  chatbotFab: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', ...Platform.select({ web: { boxShadow: '0 6px 20px rgba(7,27,58,0.2)' }, ios: { shadowColor: '#071B3A', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.2, shadowRadius: 10 }, android: { elevation: 6 } }) },
+  chatbotFabImage: { width: '100%', height: '100%', borderRadius: 28, resizeMode: 'cover' },
 });

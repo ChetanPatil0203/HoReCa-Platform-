@@ -62,6 +62,50 @@ const Product = sequelize.define('Product', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  cloudinaryPublicId: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  cloudinaryAssetId: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  secureUrl: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  resourceType: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  deliveryType: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  format: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  mimeType: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  fileSize: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
+  width: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
+  height: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
+  originalName: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
 }, {
   timestamps: true,
   tableName: 'products',

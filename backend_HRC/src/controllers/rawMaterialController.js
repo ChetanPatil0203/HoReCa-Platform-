@@ -15,6 +15,7 @@ const {
   updateOrderStatusService,
   cancelOrderService
 } = require('../services/rawMaterialService');
+const cloudinaryService = require('../services/cloudinary.service');
 
 exports.getCategories = async (req, res) => {
   try {
@@ -132,15 +133,19 @@ exports.vendorRespondOrder = async (req, res) => {
 exports.getOrderById = async (req, res) => {
   try {
     const { orderId } = req.params;
+    console.log(`\n[ORDER TRACKING LOG] 📦 Fetching tracking details for Order ID: ${orderId}`);
 
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!orderId || !uuidRegex.test(orderId)) {
+      console.log(`[ORDER TRACKING LOG] ❌ Invalid Order ID format: ${orderId}`);
       return res.status(400).json({ success: false, message: 'Invalid orderId format. Must be a UUID.' });
     }
 
     const order = await getOrderByIdService(orderId);
+    console.log(`[ORDER TRACKING LOG] ✅ Order details fetched successfully! Status: ${order.status}`);
     res.status(200).json({ success: true, data: order });
   } catch (error) {
+    console.error(`[ORDER TRACKING LOG] ❌ Error fetching order:`, error.message);
     if (error.message === 'Order not found') {
       return res.status(404).json({ success: false, message: error.message });
     }
@@ -153,14 +158,17 @@ exports.updateOrderStatus = async (req, res) => {
   try {
     const { orderId } = req.params;
     const { status } = req.body;
+    console.log(`\n[ORDER TRACKING LOG] 🔄 Request to update Order ID: ${orderId} -> Target Status: '${status}'`);
 
     if (!status) {
       return res.status(400).json({ success: false, message: 'Status is required' });
     }
 
     const order = await updateOrderStatusService(orderId, status);
+    console.log(`[ORDER TRACKING LOG] ✅ Order status updated successfully to '${status}'`);
     res.status(200).json({ success: true, message: `Order status updated to '${status}'`, data: order });
   } catch (error) {
+    console.error(`[ORDER TRACKING LOG] ❌ Status update error:`, error.message);
     if (error.message.includes('not found')) {
       return res.status(404).json({ success: false, message: error.message });
     }
@@ -233,4 +241,53 @@ exports.getVendorAnalytics = async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
+};
+
+// POST /api/raw-material/products/upload-image — Upload product image to Cloudinary (Public delivery)
+exports.uploadProductImage = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No file uploaded.' });
+  }
+  if (req.file.size > 5 * 1024 * 1024) {
+    return res.status(400).json({ success: false, message: 'File size must be 5MB or smaller.' });
+  }
+
+  const userId = req.user.id;
+  const folder = `hrc-hub/products`;
+
+  let cloudinaryResult;
+  try {
+    cloudinaryResult = await cloudinaryService.uploadImage(
+      req.file.buffer,
+      req.file.originalname,
+      folder
+    );
+  } catch (uploadError) {
+    console.error('Product image Cloudinary upload error:', uploadError);
+    return res.status(500).json({ success: false, message: 'Image upload to storage failed.' });
+  }
+
+  const publicUrl = cloudinaryService.getPublicImageUrl(
+    cloudinaryResult.cloudinaryPublicId,
+    cloudinaryResult.format
+  );
+
+  return res.status(200).json({
+    success: true,
+    message: 'Product image uploaded successfully.',
+    data: {
+      imageUrl: publicUrl || cloudinaryResult.secureUrl,
+      cloudinaryPublicId: cloudinaryResult.cloudinaryPublicId,
+      cloudinaryAssetId: cloudinaryResult.cloudinaryAssetId,
+      secureUrl: cloudinaryResult.secureUrl,
+      resourceType: cloudinaryResult.resourceType,
+      deliveryType: cloudinaryResult.deliveryType,
+      format: cloudinaryResult.format,
+      mimeType: cloudinaryResult.mimeType,
+      fileSize: cloudinaryResult.fileSize,
+      width: cloudinaryResult.width,
+      height: cloudinaryResult.height,
+      originalName: cloudinaryResult.originalName,
+    },
+  });
 };

@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform,
-  TextInput, ActivityIndicator, Alert
+  TextInput, ActivityIndicator, Alert, FlatList, useWindowDimensions
 } from 'react-native';
 import { Activity, Clock, Search, CircleCheck as CheckCircle, CircleX as XCircle, MapPin, Calendar, Hash, User, CircleAlert as AlertCircle, RefreshCw, Package, Phone } from 'lucide-react-native';
 import { colors } from '../../theme/colors';
@@ -105,280 +105,293 @@ export default function VendorRequestsPage() {
     cancelled: orders.filter(o => o.status === 'cancelled').length,
   };
 
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768;
+
   return (
-    <View style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+    <View style={{ flex: 1, backgroundColor: '#FAFAFA' }}>
+      <View style={styles.container}>
+        <FlatList
+          ListHeaderComponent={
+            <View>
+              {/* Header */}
+              <View style={styles.header}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.pageTitle}>Incoming Orders</Text>
+                  <Text style={styles.pageSubtitle}>
+                    {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                  </Text>
+                </View>
+                <TouchableOpacity style={styles.refreshBtn} onPress={loadOrders}>
+                  <RefreshCw size={18} color="#0F172A" />
+                </TouchableOpacity>
+              </View>
 
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.pageTitle}>Incoming Orders</Text>
-            <Text style={styles.pageSubtitle}>
-              {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-            </Text>
-          </View>
-          <TouchableOpacity style={styles.refreshBtn} onPress={loadOrders}>
-            <RefreshCw size={18} color="#0F172A" />
-          </TouchableOpacity>
-        </View>
+              <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+                {/* Info Banner */}
+                <View style={styles.infoBanner}>
+                  <View style={styles.bannerIconBox}>
+                    <Activity size={24} color="#F59E0B" />
+                  </View>
+                  <View style={styles.bannerTextContainer}>
+                    <Text style={styles.bannerTitle}>Raw Material Requests</Text>
+                    <Text style={styles.bannerSubtitle}>Procurement requests from hotels, restaurants and cafés in your area</Text>
+                  </View>
+                  <View style={styles.liveFeedBadge}>
+                    <View style={styles.liveDot} />
+                    <Text style={styles.liveFeedText}>Live Feed</Text>
+                  </View>
+                </View>
 
-        {/* Info Banner */}
-        <View style={styles.infoBanner}>
-          <View style={styles.bannerIconBox}>
-            <Activity size={24} color="#F59E0B" />
-          </View>
-          <View style={styles.bannerTextContainer}>
-            <Text style={styles.bannerTitle}>Raw Material Requests</Text>
-            <Text style={styles.bannerSubtitle}>Procurement requests from hotels, restaurants and cafés in your area</Text>
-          </View>
-          <View style={styles.liveFeedBadge}>
-            <View style={styles.liveDot} />
-            <Text style={styles.liveFeedText}>Live Feed</Text>
-          </View>
-        </View>
+                {/* Stats */}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+                  <View style={styles.statsContainer}>
+                    <View style={[styles.statCard, { backgroundColor: '#FFFBEB', borderColor: '#FEF3C7', borderTopColor: '#D97706', borderTopWidth: 2 }]}>
+                      <Text style={[styles.statValue, { color: '#D97706' }]}>{stats.total}</Text>
+                      <Text style={styles.statLabel}>Total Orders</Text>
+                    </View>
+                    <View style={[styles.statCard, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE', borderTopColor: '#2563EB', borderTopWidth: 2 }]}>
+                      <Text style={[styles.statValue, { color: '#2563EB' }]}>{stats.pending}</Text>
+                      <Text style={styles.statLabel}>Awaiting Response</Text>
+                    </View>
+                    <View style={[styles.statCard, { backgroundColor: '#F0FDF4', borderColor: '#DCFCE7', borderTopColor: '#16A34A', borderTopWidth: 2 }]}>
+                      <Text style={[styles.statValue, { color: '#16A34A' }]}>{stats.confirmed}</Text>
+                      <Text style={styles.statLabel}>Accepted</Text>
+                    </View>
+                    <View style={[styles.statCard, { backgroundColor: '#FEF2F2', borderColor: '#FEE2E2', borderTopColor: '#EF4444', borderTopWidth: 2 }]}>
+                      <Text style={[styles.statValue, { color: '#EF4444' }]}>{stats.cancelled}</Text>
+                      <Text style={styles.statLabel}>Rejected</Text>
+                    </View>
+                  </View>
+                </ScrollView>
 
-        {/* Stats */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statsContainer}>
-          <View style={[styles.statCard, { backgroundColor: '#FFFBEB', borderColor: '#FEF3C7' }]}>
-            <Text style={[styles.statValue, { color: '#D97706' }]}>{stats.total}</Text>
-            <Text style={styles.statLabel}>Total Orders</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }]}>
-            <Text style={[styles.statValue, { color: '#2563EB' }]}>{stats.pending}</Text>
-            <Text style={styles.statLabel}>Awaiting Response</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: '#F0FDF4', borderColor: '#DCFCE7' }]}>
-            <Text style={[styles.statValue, { color: '#16A34A' }]}>{stats.confirmed}</Text>
-            <Text style={styles.statLabel}>Accepted</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: '#FEF2F2', borderColor: '#FEE2E2' }]}>
-            <Text style={[styles.statValue, { color: '#EF4444' }]}>{stats.cancelled}</Text>
-            <Text style={styles.statLabel}>Rejected</Text>
-          </View>
-        </ScrollView>
-
-        {/* Search & Filter */}
-        <View style={styles.searchFilterContainer}>
-          <View style={styles.searchBox}>
-            <Search size={18} color={colors.muted} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search by client name..."
-              placeholderTextColor={colors.muted}
-              value={searchText}
-              onChangeText={setSearchText}
-            />
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-            {FILTERS.map((filter, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[styles.filterPill, activeFilter === filter && styles.filterPillActive]}
-                onPress={() => setActiveFilter(filter)}
-              >
-                <Text style={[styles.filterText, activeFilter === filter && styles.filterTextActive]}>
-                  {FILTER_LABELS[filter]}
+                {/* Search & Filter */}
+                <View style={styles.searchFilterContainer}>
+                  <View style={styles.searchBox}>
+                    <Search size={18} color="#94A3B8" />
+                    <TextInput
+                      style={styles.searchInput}
+                      placeholder="Search by client name..."
+                      placeholderTextColor="#94A3B8"
+                      value={searchText}
+                      onChangeText={setSearchText}
+                    />
+                  </View>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={{ gap: 8 }}>
+                    {FILTERS.map((filter, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        style={[styles.filterPill, activeFilter === filter && styles.filterPillActive]}
+                        onPress={() => setActiveFilter(filter)}
+                      >
+                        <Text style={[styles.filterText, activeFilter === filter && styles.filterTextActive]}>
+                          {FILTER_LABELS[filter]}
+                        </Text>
+                        {filter !== 'All' && (
+                          <View style={styles.filterCount}>
+                            <Text style={styles.filterCountText}>
+                              {filter === 'pending' ? stats.pending : filter === 'confirmed' ? stats.confirmed : stats.cancelled}
+                            </Text>
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              </View>
+            </View>
+          }
+          data={filteredOrders}
+          keyExtractor={item => item.id}
+          numColumns={isMobile ? 1 : 2}
+          key={isMobile ? 'one-col' : 'two-col'}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            loading ? (
+              <View style={styles.emptyState}>
+                <ActivityIndicator size="large" color="#F59E0B" />
+                <Text style={styles.emptyText}>Loading orders...</Text>
+              </View>
+            ) : error ? (
+              <View style={styles.emptyState}>
+                <Package size={48} color="#CBD5E1" style={{ marginBottom: 16 }} />
+                <Text style={styles.emptyTitle}>Error</Text>
+                <Text style={styles.emptyText}>{error}</Text>
+                <TouchableOpacity style={styles.retryBtn} onPress={loadOrders}>
+                  <Text style={styles.retryText}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.emptyState}>
+                <Package size={48} color="#CBD5E1" style={{ marginBottom: 16 }} />
+                <Text style={styles.emptyTitle}>No Orders Found</Text>
+                <Text style={styles.emptyText}>
+                  {orders.length === 0
+                    ? 'No incoming orders yet. They will appear here when a client places an order.'
+                    : 'Try changing your filter or search term.'}
                 </Text>
-                {filter !== 'All' && (
-                  <View style={styles.filterCount}>
-                    <Text style={styles.filterCountText}>
-                      {filter === 'pending' ? stats.pending : filter === 'confirmed' ? stats.confirmed : stats.cancelled}
-                    </Text>
+              </View>
+            )
+          }
+          renderItem={({ item: req }) => {
+            const isResponding = respondingId === req.id;
+            const itemNames = (req.items || []).map(i => i.product?.name).filter(Boolean).join(', ');
+            const totalQty = (req.items || []).reduce((sum, i) => sum + (i.quantity || 0), 0);
+            const displayId = `#ORD-${req.id.substring(0, 8).toUpperCase()}`;
+
+            return (
+              <View style={[styles.card, !isMobile && { marginHorizontal: 8, flex: 0.5 }]}>
+                {/* Urgency Banner for pending */}
+                {req.status === 'pending' && (
+                  <View style={styles.urgencyBanner}>
+                    <Clock size={14} color="#D97706" />
+                    <Text style={styles.urgencyBannerText}>New Request — Response needed</Text>
                   </View>
                 )}
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
 
-        {/* Content */}
-        {loading ? (
-          <View style={styles.emptyState}>
-            <ActivityIndicator size="large" color="#F59E0B" />
-            <Text style={styles.emptyText}>Loading orders...</Text>
-          </View>
-        ) : error ? (
-          <View style={styles.emptyState}>
-            <Package size={48} color="#CBD5E1" style={{ marginBottom: 16 }} />
-            <Text style={styles.emptyTitle}>Error</Text>
-            <Text style={styles.emptyText}>{error}</Text>
-            <TouchableOpacity style={styles.retryBtn} onPress={loadOrders}>
-              <Text style={styles.retryText}>Retry</Text>
-            </TouchableOpacity>
-          </View>
-        ) : filteredOrders.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Package size={48} color="#CBD5E1" style={{ marginBottom: 16 }} />
-            <Text style={styles.emptyTitle}>No Orders Found</Text>
-            <Text style={styles.emptyText}>
-              {orders.length === 0
-                ? 'No incoming orders yet. They will appear here when a client places an order.'
-                : 'Try changing your filter or search term.'}
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.list}>
-            {filteredOrders.map(req => {
-              const isResponding = respondingId === req.id;
-              const itemNames = (req.items || []).map(i => i.product?.name).filter(Boolean).join(', ');
-              const totalQty = (req.items || []).reduce((sum, i) => sum + (i.quantity || 0), 0);
-              const displayId = `#ORD-${req.id.substring(0, 8).toUpperCase()}`;
+                <View style={styles.cardInner}>
+                  {/* Card Header */}
+                  <View style={styles.cardHeader}>
+                    <View style={styles.idRow}>
+                      <Text style={styles.idText}>{displayId}</Text>
+                      <Text style={styles.dotSeparator}>•</Text>
+                      <Clock size={12} color="#64748B" />
+                      <Text style={styles.timeText}>
+                        {new Date(req.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                      </Text>
+                    </View>
+                    <View style={[
+                      styles.statusBadge,
+                      req.status === 'pending' ? styles.statusNew :
+                        req.status === 'confirmed' ? styles.statusConfirmed :
+                          styles.statusCancelled
+                    ]}>
+                      <Text style={[
+                        styles.statusText,
+                        req.status === 'pending' ? styles.statusTextNew :
+                          req.status === 'confirmed' ? styles.statusTextConfirmed :
+                            styles.statusTextCancelled
+                      ]}>
+                        {req.status === 'pending' ? 'New' : req.status === 'confirmed' ? 'Accepted' : 'Rejected'}
+                      </Text>
+                    </View>
+                  </View>
 
-              return (
-                <View key={req.id} style={styles.card}>
-                  {/* Urgency Banner for pending */}
-                  {req.status === 'pending' && (
-                    <View style={styles.urgencyBanner}>
-                      <AlertCircle size={14} color="#D97706" />
-                      <Text style={styles.urgencyBannerText}>New Request — Response needed</Text>
+                  {/* Product Title */}
+                  <Text style={styles.reqTitle} numberOfLines={2}>
+                    {itemNames || 'Raw Material Order'}
+                  </Text>
+
+                  {/* Details Grid */}
+                  <View style={styles.detailsGrid}>
+                    <View style={styles.detailItem}>
+                      <User size={14} color="#F59E0B" style={styles.detailIcon} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.detailLabel}>Client</Text>
+                        <Text style={styles.detailValue} numberOfLines={1}>{req.owner?.bizName || 'N/A'}</Text>
+                      </View>
+                    </View>
+                    <View style={styles.detailItem}>
+                      <Hash size={14} color="#3B82F6" style={styles.detailIcon} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.detailLabel}>Total Qty</Text>
+                        <Text style={styles.detailValue}>{totalQty} units</Text>
+                      </View>
+                    </View>
+                    <View style={styles.detailItem}>
+                      <MapPin size={14} color="#10B981" style={styles.detailIcon} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.detailLabel}>Delivery</Text>
+                        <Text style={styles.detailValue} numberOfLines={1}>{req.owner?.city || req.deliveryAddress || 'N/A'}</Text>
+                      </View>
+                    </View>
+                    {req.owner?.mobile ? (
+                      <View style={styles.detailItem}>
+                        <Phone size={14} color="#8B5CF6" style={styles.detailIcon} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.detailLabel}>Contact</Text>
+                          <Text style={styles.detailValue}>{req.owner.mobile}</Text>
+                        </View>
+                      </View>
+                    ) : null}
+                  </View>
+
+                  {/* Budget */}
+                  <View style={styles.budgetRow}>
+                    <Text style={styles.budgetLabel}>Order Value</Text>
+                    <Text style={styles.budgetVal}>₹{parseFloat(req.totalAmount || 0).toLocaleString('en-IN')}</Text>
+                  </View>
+
+                  {/* Items breakdown */}
+                  {req.items && req.items.length > 0 && (
+                    <View style={styles.noteBox}>
+                      <Text style={styles.noteLabel}>Items Ordered:</Text>
+                      {(req?.items || []).map((item, idx) => (
+                        <Text key={idx} style={styles.noteText}>
+                          • {item.product?.name || 'Product'} × {item.quantity} {item.product?.unit || 'units'} @ ₹{parseFloat(item.priceAtPurchase || 0).toFixed(0)}/unit
+                        </Text>
+                      ))}
                     </View>
                   )}
 
-                  <View style={styles.cardInner}>
-                    {/* Card Header */}
-                    <View style={styles.cardHeader}>
-                      <View style={styles.idRow}>
-                        <Text style={styles.idText}>{displayId}</Text>
-                        <Text style={styles.dotSeparator}>•</Text>
-                        <Clock size={12} color={colors.muted} />
-                        <Text style={styles.timeText}>
-                          {new Date(req.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                  {/* Notes from owner */}
+                  {req.notes ? (
+                    <View style={[styles.noteBox, { marginTop: 8 }]}>
+                      <Text style={styles.noteLabel}>Client Note:</Text>
+                      <Text style={styles.noteText}>"{req.notes}"</Text>
+                    </View>
+                  ) : null}
+
+                  {/* Actions */}
+                  <View style={styles.cardFooter}>
+                    {req.status === 'pending' ? (
+                      <View style={styles.actions}>
+                        <TouchableOpacity
+                          style={[styles.acceptBtn, isResponding && styles.btnDisabled]}
+                          onPress={() => !isResponding && handleRespond(req.id, 'confirmed')}
+                          disabled={isResponding}
+                        >
+                          {isResponding ? (
+                            <ActivityIndicator size="small" color="#10B981" />
+                          ) : (
+                            <CheckCircle size={16} color="#10B981" />
+                          )}
+                          <Text style={styles.acceptText}>Accept Order</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.rejectBtn, isResponding && styles.btnDisabled]}
+                          onPress={() => !isResponding && handleRespond(req.id, 'cancelled')}
+                          disabled={isResponding}
+                        >
+                          <XCircle size={16} color="#EF4444" />
+                          <Text style={styles.rejectText}>Decline</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      <View style={styles.actions}>
+                        <Text style={{
+                          fontSize: 14, fontWeight: 'bold',
+                          color: req.status === 'confirmed' ? '#10B981' : '#EF4444'
+                        }}>
+                          {req.status === 'confirmed' ? '✓ Order Accepted' : '✕ Order Rejected'}
                         </Text>
-                      </View>
-                      <View style={[
-                        styles.statusBadge,
-                        req.status === 'pending' ? styles.statusNew :
-                        req.status === 'confirmed' ? styles.statusConfirmed :
-                        styles.statusCancelled
-                      ]}>
-                        <Text style={[
-                          styles.statusText,
-                          req.status === 'pending' ? styles.statusTextNew :
-                          req.status === 'confirmed' ? styles.statusTextConfirmed :
-                          styles.statusTextCancelled
-                        ]}>
-                          {req.status === 'pending' ? 'New' : req.status === 'confirmed' ? 'Accepted' : 'Rejected'}
-                        </Text>
-                      </View>
-                    </View>
-
-                    {/* Product Title */}
-                    <Text style={styles.reqTitle} numberOfLines={2}>
-                      {itemNames || 'Raw Material Order'}
-                    </Text>
-
-                    {/* Details Grid */}
-                    <View style={styles.detailsGrid}>
-                      <View style={styles.detailItem}>
-                        <User size={14} color="#F59E0B" style={styles.detailIcon} />
-                        <View>
-                          <Text style={styles.detailLabel}>Client</Text>
-                          <Text style={styles.detailValue}>{req.owner?.bizName || 'N/A'}</Text>
-                        </View>
-                      </View>
-                      <View style={styles.detailItem}>
-                        <Hash size={14} color="#3B82F6" style={styles.detailIcon} />
-                        <View>
-                          <Text style={styles.detailLabel}>Total Qty</Text>
-                          <Text style={styles.detailValue}>{totalQty} units</Text>
-                        </View>
-                      </View>
-                      <View style={styles.detailItem}>
-                        <MapPin size={14} color="#10B981" style={styles.detailIcon} />
-                        <View>
-                          <Text style={styles.detailLabel}>Delivery</Text>
-                          <Text style={styles.detailValue} numberOfLines={1}>{req.owner?.city || req.deliveryAddress || 'N/A'}</Text>
-                        </View>
-                      </View>
-                      {req.owner?.mobile ? (
-                        <View style={styles.detailItem}>
-                          <Phone size={14} color="#8B5CF6" style={styles.detailIcon} />
-                          <View>
-                            <Text style={styles.detailLabel}>Contact</Text>
-                            <Text style={styles.detailValue}>{req.owner.mobile}</Text>
-                          </View>
-                        </View>
-                      ) : null}
-                    </View>
-
-                    {/* Budget */}
-                    <View style={styles.budgetRow}>
-                      <Text style={styles.budgetLabel}>Order Value</Text>
-                      <Text style={styles.budgetVal}>₹{parseFloat(req.totalAmount || 0).toLocaleString('en-IN')}</Text>
-                    </View>
-
-                    {/* Items breakdown */}
-                    {req.items && req.items.length > 0 && (
-                      <View style={styles.noteBox}>
-                        <Text style={styles.noteLabel}>Items Ordered:</Text>
-                        {( req?.items || [] ).map((item, idx) => (
-                          <Text key={idx} style={styles.noteText}>
-                            • {item.product?.name || 'Product'} × {item.quantity} {item.product?.unit || 'units'} @ ₹{parseFloat(item.priceAtPurchase || 0).toFixed(0)}/unit
-                          </Text>
-                        ))}
                       </View>
                     )}
-
-                    {/* Notes from owner */}
-                    {req.notes ? (
-                      <View style={[styles.noteBox, { marginTop: 8 }]}>
-                        <Text style={styles.noteLabel}>Client Note:</Text>
-                        <Text style={styles.noteText}>"{req.notes}"</Text>
-                      </View>
-                    ) : null}
-
-                    {/* Actions */}
-                    <View style={styles.cardFooter}>
-                      {req.status === 'pending' ? (
-                        <View style={styles.actions}>
-                          <TouchableOpacity
-                            style={[styles.acceptBtn, isResponding && styles.btnDisabled]}
-                            onPress={() => !isResponding && handleRespond(req.id, 'confirmed')}
-                            disabled={isResponding}
-                          >
-                            {isResponding ? (
-                              <ActivityIndicator size="small" color="#10B981" />
-                            ) : (
-                              <CheckCircle size={16} color="#10B981" />
-                            )}
-                            <Text style={styles.acceptText}>Accept Order</Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            style={[styles.rejectBtn, isResponding && styles.btnDisabled]}
-                            onPress={() => !isResponding && handleRespond(req.id, 'cancelled')}
-                            disabled={isResponding}
-                          >
-                            <XCircle size={16} color="#EF4444" />
-                            <Text style={styles.rejectText}>Decline</Text>
-                          </TouchableOpacity>
-                        </View>
-                      ) : (
-                        <View style={styles.actions}>
-                          <Text style={{
-                            fontSize: 14, fontWeight: 'bold',
-                            color: req.status === 'confirmed' ? '#10B981' : '#EF4444'
-                          }}>
-                            {req.status === 'confirmed' ? '✓ Order Accepted' : '✕ Order Rejected'}
-                          </Text>
-                        </View>
-                      )}
-                      {req.status === 'pending' && (
-                        <Text style={styles.rankingTip}>Responding within 2 hrs improves your ranking</Text>
-                      )}
-                    </View>
+                    {req.status === 'pending' && (
+                      <Text style={styles.rankingTip}>Responding within 2 hrs improves your ranking</Text>
+                    )}
                   </View>
                 </View>
-              );
-            })}
-          </View>
-        )}
-      </ScrollView>
+              </View>
+            );
+          }}
+        />
+      </View>
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },

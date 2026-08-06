@@ -216,28 +216,37 @@ export default function DashboardHome({ user, onNavigate }) {
         </View>
       </View>
 
-      <View style={{ paddingHorizontal: pagePadding, paddingBottom: 24 }}>
+      <View style={{ paddingBottom: 24 }}>
         {displayedPartners && displayedPartners.length > 0 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-            {displayedPartners.map(partner => (
-              <TouchableOpacity key={partner.id} style={styles.partnerCard} activeOpacity={0.85}>
-                <View style={styles.partnerAvatar}>
-                  <Text style={styles.partnerAvatarText}>
-                    {partner.name ? partner.name.charAt(0).toUpperCase() : 'P'}
-                  </Text>
-                </View>
-                <View style={styles.partnerInfo}>
-                  <Text style={styles.partnerName} numberOfLines={1}>{partner.name}</Text>
-                  <Text style={styles.partnerCat} numberOfLines={1}>{partner.category}</Text>
-                </View>
-                <View style={styles.partnerRight}>
-                  <View style={styles.ratingBadge}>
-                    <Star size={12} color="#D97706" fill="#D97706" />
-                    <Text style={styles.ratingText}>{partner.rating || 4.8}</Text>
+            {displayedPartners.map(partner => {
+              const cardWidth = displayedPartners.length > 1
+                ? width - (pagePadding * 2) - 30
+                : width - (pagePadding * 2);
+              return (
+                <TouchableOpacity
+                  key={partner.id}
+                  style={[styles.partnerCard, { width: cardWidth }]}
+                  activeOpacity={0.85}
+                >
+                  <View style={styles.partnerAvatar}>
+                    <Text style={styles.partnerAvatarText}>
+                      {partner.name ? partner.name.charAt(0).toUpperCase() : 'P'}
+                    </Text>
                   </View>
-                </View>
-              </TouchableOpacity>
-            ))}
+                  <View style={styles.partnerInfo}>
+                    <Text style={styles.partnerName} numberOfLines={1}>{partner.name}</Text>
+                    <Text style={styles.partnerCat} numberOfLines={1}>{partner.category}</Text>
+                  </View>
+                  <View style={styles.partnerRight}>
+                    <View style={styles.ratingBadge}>
+                      <Star size={12} color="#D97706" fill="#D97706" />
+                      <Text style={styles.ratingText}>{partner.rating || 4.8}</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
         ) : (
           <View style={{ padding: 16, backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center' }}>

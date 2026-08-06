@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const rawMaterialController = require('../controllers/rawMaterialController');
+const authMiddleware = require('../middlewares/authMiddleware');
+const upload = require('../middlewares/upload');
 
 // GET all categories
 router.get('/categories', rawMaterialController.getCategories);
@@ -43,5 +45,8 @@ router.patch('/products/:productId/stock', rawMaterialController.updateStock);
 
 // GET vendor analytics summary
 router.get('/analytics/vendor/:supplierId', rawMaterialController.getVendorAnalytics);
+
+// POST upload product image to Cloudinary (Protected)
+router.post('/products/upload-image', authMiddleware, upload.single('file'), rawMaterialController.uploadProductImage);
 
 module.exports = router;

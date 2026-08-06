@@ -79,7 +79,7 @@ export default function RawMaterialCartPage({ cartItems, setCartItems, onBack, o
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={isMobile ? { paddingBottom: 100 } : { paddingBottom: 40 }}>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={[styles.contentLayout, !isMobile && styles.contentLayoutWeb]}>
 
           <View style={styles.leftCol}>
@@ -95,7 +95,13 @@ export default function RawMaterialCartPage({ cartItems, setCartItems, onBack, o
                   return (
                     <View key={item.id} style={styles.cartItem}>
                       <View style={styles.itemImageContainer}>
-                        <Image source={{ uri: item.image }} style={styles.itemImage} />
+                        {item.image ? (
+                          <Image source={{ uri: item.image }} style={styles.itemImage} />
+                        ) : (
+                          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                            <Text style={{ fontSize: 24 }}>📦</Text>
+                          </View>
+                        )}
                       </View>
                       <View style={styles.itemDetails}>
                         <View style={styles.itemRowTop}>
@@ -146,31 +152,16 @@ export default function RawMaterialCartPage({ cartItems, setCartItems, onBack, o
                 <Text style={styles.grandTotalLabel}>Total Amount</Text>
                 <Text style={styles.grandTotalValue}>₹{grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
               </View>
-
-              {!isMobile && (
-                <TouchableOpacity style={styles.checkoutBtn} onPress={onCheckout}>
-                  <Text style={styles.checkoutText}>Proceed to Checkout</Text>
-                  <ChevronRight size={16} color="#fff" />
-                </TouchableOpacity>
-              )}
+              <TouchableOpacity style={styles.checkoutBtn} onPress={onCheckout}>
+                <Text style={styles.checkoutText}>Proceed to Checkout</Text>
+                <ChevronRight size={16} color="#fff" />
+              </TouchableOpacity>
             </View>
           </View>
 
         </View>
+        <View style={{ height: 80 }} />
       </ScrollView>
-
-      {isMobile && (
-        <View style={styles.bottomBar}>
-          <View style={styles.bottomTotal}>
-            <Text style={styles.bottomTotalLabel}>Total</Text>
-            <Text style={styles.bottomTotalValue}>₹{grandTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</Text>
-          </View>
-          <TouchableOpacity style={styles.checkoutBtnMobile} onPress={onCheckout}>
-            <Text style={styles.checkoutText}>Proceed to Checkout</Text>
-            <ChevronRight size={16} color="#fff" />
-          </TouchableOpacity>
-        </View>
-      )}
     </View>
   );
 }

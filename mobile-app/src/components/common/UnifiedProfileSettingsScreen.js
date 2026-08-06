@@ -55,7 +55,7 @@ import {
   Camera
 } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
-import { getUserProfileApi, updateUserProfileApi } from '../../services/api.service';
+import { getUserProfileApi, updateUserProfileApi, uploadDocumentApi } from '../../services/api.service';
 
 const COLORS = {
   navy: '#071B3A',
@@ -141,64 +141,111 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
       input.onchange = (e) => {
         const file = e.target && e.target.files && e.target.files[0];
         if (file) {
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            const photoUri = event.target.result;
-            setProfilePhoto(photoUri);
-            setImgError(false);
+          const photoUri = URL.createObjectURL(file);
+          setProfilePhoto(photoUri);
+          setImgError(false);
 
-            if (auth?.updateUser) {
-              auth.updateUser({ profilePhoto: photoUri });
-            }
-
+          // Upload to Cloudinary via backend (Web)
+          (async () => {
             try {
-              if (typeof window !== 'undefined' && window.localStorage) {
-                const current = window.localStorage.getItem('hrc_user');
-                const parsed = current ? JSON.parse(current) : {};
-                parsed.profilePhoto = photoUri;
-                window.localStorage.setItem('hrc_user', JSON.stringify(parsed));
-              }
-            } catch (err) { }
+              const token = auth?.userToken;
+              const uploadRes = await uploadDocumentApi(
+                { uri: photoUri, name: file.name, type: file.type, file },
+                'profile_photo',
+                token
+              );
+              
+              if (uploadRes?.success && uploadRes?.data?.fileUrl) {
+                const secureUrl = uploadRes.data.fileUrl;
+                const photoMeta = {
+                  profilePhoto: secureUrl,
+                  profilePhotoPublicId: uploadRes.data.cloudinaryPublicId,
+                  profilePhotoAssetId: uploadRes.data.cloudinaryAssetId,
+                  profilePhotoResourceType: uploadRes.data.resourceType,
+                  profilePhotoDeliveryType: uploadRes.data.deliveryType,
+                };
 
-            updateUserProfileApi({ profilePhoto: photoUri }).catch(err => {
-              console.warn('DB photo persist note:', err?.message);
-            });
-          };
-          reader.readAsDataURL(file);
+                setProfilePhoto(secureUrl);
+
+                if (auth?.updateUser) {
+                  auth.updateUser({ profilePhoto: secureUrl });
+                }
+
+                try {
+                  if (typeof window !== 'undefined' && window.localStorage) {
+                    const current = window.localStorage.getItem('hrc_user');
+                    const parsed = current ? JSON.parse(current) : {};
+                    parsed.profilePhoto = secureUrl;
+                    window.localStorage.setItem('hrc_user', JSON.stringify(parsed));
+                  }
+                } catch (err) { }
+
+                updateUserProfileApi(photoMeta).catch(err => {
+                  console.warn('DB photo persist note:', err?.message);
+                });
+              }
+            } catch (uploadErr) {
+              console.warn('[Cloudinary] Web profile photo upload failed, using local URI:', uploadErr?.message);
+              if (auth?.updateUser) auth.updateUser({ profilePhoto: photoUri });
+              updateUserProfileApi({ profilePhoto: photoUri }).catch(() => {});
+            }
+          })();
         }
       };
       input.click();
       return;
     }
 
-    // Mobile fallback (Expo DocumentPicker)
+    // Mobile fallback (Expo DocumentPicker) — upload to Cloudinary via backend
     DocumentPicker.getDocumentAsync({
       type: ['image/*'],
       copyToCacheDirectory: true,
-    }).then(res => {
+    }).then(async (res) => {
       if (!res.canceled && res.assets && res.assets.length > 0) {
         const asset = res.assets[0];
-        const photoUri = asset.uri;
 
-        setProfilePhoto(photoUri);
+        // Show local preview immediately
+        setProfilePhoto(asset.uri);
         setImgError(false);
 
-        if (auth?.updateUser) {
-          auth.updateUser({ profilePhoto: photoUri });
-        }
-
         try {
-          if (typeof window !== 'undefined' && window.localStorage) {
-            const current = window.localStorage.getItem('hrc_user');
-            const parsed = current ? JSON.parse(current) : {};
-            parsed.profilePhoto = photoUri;
-            window.localStorage.setItem('hrc_user', JSON.stringify(parsed));
-          }
-        } catch (err) { }
+          const token = auth?.userToken;
+          const uploadRes = await uploadDocumentApi(asset, 'profile_photo', token);
+          if (uploadRes?.success && uploadRes?.data?.fileUrl) {
+            const secureUrl = uploadRes.data.fileUrl;
+            const photoMeta = {
+              profilePhoto: secureUrl,
+              profilePhotoPublicId: uploadRes.data.cloudinaryPublicId,
+              profilePhotoAssetId: uploadRes.data.cloudinaryAssetId,
+              profilePhotoResourceType: uploadRes.data.resourceType,
+              profilePhotoDeliveryType: uploadRes.data.deliveryType,
+            };
 
-        updateUserProfileApi({ profilePhoto: photoUri }).catch(err => {
-          console.warn('DB photo persist note:', err?.message);
-        });
+            setProfilePhoto(secureUrl);
+
+            if (auth?.updateUser) {
+              auth.updateUser({ profilePhoto: secureUrl });
+            }
+
+            try {
+              if (typeof window !== 'undefined' && window.localStorage) {
+                const current = window.localStorage.getItem('hrc_user');
+                const parsed = current ? JSON.parse(current) : {};
+                parsed.profilePhoto = secureUrl;
+                window.localStorage.setItem('hrc_user', JSON.stringify(parsed));
+              }
+            } catch (err) { }
+
+            updateUserProfileApi(photoMeta).catch(err => {
+              console.warn('DB photo persist note:', err?.message);
+            });
+          }
+        } catch (uploadErr) {
+          console.warn('[Cloudinary] Profile photo upload failed, using local URI:', uploadErr?.message);
+          // Fallback: keep local preview but persist local URI to DB
+          if (auth?.updateUser) auth.updateUser({ profilePhoto: asset.uri });
+          updateUserProfileApi({ profilePhoto: asset.uri }).catch(() => {});
+        }
       }
     }).catch(err => {
       console.log('Error picking profile photo:', err);

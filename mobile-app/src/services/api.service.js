@@ -184,21 +184,23 @@ export const loginApi = async (email, password) => {
 };
 
 /**
- * Upload a single document file to the server.
- * @param {object} file - Expo DocumentPicker asset { uri, name, mimeType }
- * @param {string} docKey - e.g. 'fssai', 'gst', 'pan'
- * @param {string} token - JWT Bearer token
- * @returns {string} fileUrl - the server-hosted file URL
+ * Upload a KYC/registration document or profile photo to Cloudinary via backend.
+ * Works on both web (blob) and mobile (RN file object).
+ * @param {object} file - Expo DocumentPicker asset { uri, name, mimeType, file? }
+ * @param {string} docKey - 'profile_photo' | 'pan' | 'gst' | 'fssai' | etc.
+ * @param {string} token  - JWT Bearer token
+ * @returns {object} Full API response { success, data: { fileUrl, cloudinaryPublicId, ... } }
  */
 export const uploadDocumentApi = async (file, docKey, token) => {
   const formData = new FormData();
   if (Platform.OS === 'web') {
     if (file.file) {
+      // Native File object from web input
       formData.append('file', file.file);
     } else {
       try {
-        const response = await fetch(file.uri);
-        const blob = await response.blob();
+        const res = await fetch(file.uri);
+        const blob = await res.blob();
         formData.append('file', blob, file.name || `${docKey}.jpg`);
       } catch (err) {
         console.error('Failed to resolve local web file blob:', err);
@@ -208,29 +210,26 @@ export const uploadDocumentApi = async (file, docKey, token) => {
   } else {
     formData.append('file', {
       uri: file.uri,
-      name: file.name || `${docKey}.pdf`,
-      type: file.mimeType || 'application/pdf',
+      name: file.name || file.fileName || `${docKey}.jpg`,
+      type: file.mimeType || file.type || 'application/octet-stream',
     });
   }
   formData.append('docKey', docKey);
-  formData.append('docName', file.name || docKey);
+  formData.append('docName', file.name || file.fileName || docKey);
 
   try {
     const currentBaseUrl = api.defaults.baseURL || API_BASE_URL;
     const response = await fetch(`${currentBaseUrl}/auth/upload-document`, {
       method: 'POST',
       body: formData,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     });
-    
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
     const data = await response.json();
-    return data?.data?.fileUrl;
+    // Return the full response so callers can access Cloudinary metadata
+    return data;
   } catch (error) {
     console.error(`Upload error for ${docKey}:`, error);
     throw error;
@@ -258,7 +257,8 @@ export const registerApi = async (registrationData) => {
     for (const [docKey, fileAsset] of Object.entries(documents)) {
       if (fileAsset && fileAsset.uri) {
         try {
-          const fileUrl = await uploadDocumentApi(fileAsset, docKey, token);
+          const uploadRes = await uploadDocumentApi(fileAsset, docKey, token);
+          const fileUrl = uploadRes?.data?.fileUrl;
           if (fileUrl) {
             uploadedDocs[docKey] = { uri: fileUrl, name: fileAsset.name || docKey };
           }
@@ -600,6 +600,108 @@ export const deleteMarketingTeamMemberApi = async (id) => {
 export const fetchMarketingRevenueAnalyticsApi = async (supplierId) => {
   const response = await api.get(`/requirements/marketing/revenue/${supplierId}`);
   return response.data;
+};
+
+// --- Chatbot Backend APIs ---
+export const createChatSessionApi = async (title) => {
+  const response = await api.post('/chat/session', { title });
+  return response.data;
+};
+
+export const fetchChatSessionsApi = async () => {
+  const response = await api.get('/chat/sessions');
+  return response.data;
+};
+
+export const deleteChatSessionApi = async (sessionId) => {
+  const response = await api.delete(`/chat/sessions/${sessionId}`);
+  return response.data;
+};
+
+export const fetchSessionMessagesApi = async (sessionId) => {
+  const response = await api.get(`/chat/sessions/${sessionId}/messages`);
+  return response.data;
+};
+
+export const sendChatMessageApi = async (sessionId, text) => {
+  const response = await api.post('/chat/message', { sessionId, text });
+  return response.data;
+};
+
+// --- Cloudinary Upload APIs ---
+
+/**
+ * Upload product image to Cloudinary via backend (Public delivery).
+ * Works on both web (blob) and mobile (RN file object).
+ */
+export const uploadProductImageApi = async (file, token) => {
+  const formData = new FormData();
+  if (Platform.OS === 'web') {
+    if (file.file) {
+      formData.append('file', file.file);
+    } else {
+      try {
+        const res = await fetch(file.uri);
+        const blob = await res.blob();
+        formData.append('file', blob, file.name || file.fileName || 'product-image.jpg');
+      } catch (err) {
+        console.error('Failed to resolve product image blob:', err);
+        throw err;
+      }
+    }
+  } else {
+    formData.append('file', {
+      uri: file.uri,
+      name: file.name || file.fileName || 'product-image.jpg',
+      type: file.mimeType || file.type || 'image/jpeg',
+    });
+  }
+
+  const currentBaseUrl = api.defaults.baseURL || API_BASE_URL;
+  const response = await fetch(`${currentBaseUrl}/raw-materials/products/upload-image`, {
+    method: 'POST',
+    body: formData,
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  return response.json();
+};
+
+/**
+ * Upload compliance document to Cloudinary via backend (Authenticated/private delivery).
+ * Works on both web (blob) and mobile (RN file object).
+ */
+export const uploadComplianceApi = async (file, token) => {
+  const formData = new FormData();
+  if (Platform.OS === 'web') {
+    if (file.file) {
+      formData.append('file', file.file);
+    } else {
+      try {
+        const res = await fetch(file.uri);
+        const blob = await res.blob();
+        formData.append('file', blob, file.name || file.fileName || 'compliance-doc.pdf');
+      } catch (err) {
+        console.error('Failed to resolve compliance doc blob:', err);
+        throw err;
+      }
+    }
+  } else {
+    formData.append('file', {
+      uri: file.uri,
+      name: file.name || file.fileName || 'compliance-doc.pdf',
+      type: file.mimeType || file.type || 'application/pdf',
+    });
+  }
+
+  const currentBaseUrl = api.defaults.baseURL || API_BASE_URL;
+  const response = await fetch(`${currentBaseUrl}/documents/upload-compliance`, {
+    method: 'POST',
+    body: formData,
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+  return response.json();
 };
 
 export default api;

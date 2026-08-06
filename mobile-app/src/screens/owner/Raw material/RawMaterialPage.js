@@ -1,7 +1,8 @@
-import React, { useState, useContext } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions, Image } from 'react-native';
+import React, { useState, useContext, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions, Image, ImageBackground, Animated } from 'react-native';
 import { Search, Heart, Bell, ShoppingCart, ChevronRight, Package, User } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
+import rawMaterialHero from '../../../assets/images/raw-material-hero.png';
 
 import { colors } from '../../../theme/colors';
 import { CATEGORIES, FEATURES } from '../../../constants/rawMaterialData';
@@ -32,6 +33,24 @@ export default function RawMaterialPage({ onNavigate }) {
 
   const [searchText, setSearchText] = useState('');
   const [cartItems, setCartItems] = useState([]);
+
+  const shopBtnScale = useRef(new Animated.Value(1)).current;
+
+  const handleShopPressIn = () => {
+    Animated.timing(shopBtnScale, {
+      toValue: 0.98,
+      duration: 110,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleShopPressOut = () => {
+    Animated.timing(shopBtnScale, {
+      toValue: 1,
+      duration: 110,
+      useNativeDriver: true,
+    }).start();
+  };
 
   // Navigation State
   const [currentView, setCurrentView] = useState('home'); // home | suppliers | supplierStore | productDetails | cart | checkout | success | orders | orderTracking | orderDetails
@@ -284,14 +303,46 @@ export default function RawMaterialPage({ onNavigate }) {
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, isMobile && { paddingBottom: 100 }]}>
 
         {/* ── Hero Banner ── */}
-        <View style={styles.heroBanner}>
-          <View style={styles.heroContent}>
-            <Text style={styles.heroTitle}>Get the best quality raw materials for your business</Text>
-            <TouchableOpacity style={styles.heroBtn}>
-              <Text style={styles.heroBtnText}>Shop Now</Text>
-            </TouchableOpacity>
+        <ImageBackground
+          source={rawMaterialHero}
+          resizeMode="cover"
+          style={[styles.heroCard, { height: width < 340 ? 180 : (width < 375 ? 190 : 195) }]}
+          imageStyle={[styles.heroImage, { left: null }]}
+        >
+          <View style={[styles.heroOverlay, { paddingHorizontal: width < 340 ? 16 : (width < 375 ? 20 : 22) }]}>
+            <View style={styles.heroContent}>
+              <Text 
+                style={[
+                  styles.heroTitle, 
+                  { 
+                    fontSize: width < 340 ? 17 : (width < 375 ? 19 : 21), 
+                    lineHeight: width < 340 ? 22 : (width < 375 ? 25 : 28) 
+                  }
+                ]} 
+                numberOfLines={3}
+              >
+                Get the best quality raw materials for your business
+              </Text>
+              <TouchableOpacity 
+                onPress={() => {
+                  if (CATEGORIES && CATEGORIES.length > 0) {
+                    setSelectedCategory(CATEGORIES[0]);
+                  }
+                  setCurrentView('suppliers');
+                }}
+                onPressIn={handleShopPressIn}
+                onPressOut={handleShopPressOut}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Browse raw material products"
+              >
+                <Animated.View style={[styles.shopButton, { transform: [{ scale: shopBtnScale }] }]}>
+                  <Text style={styles.shopButtonText}>Shop Now</Text>
+                </Animated.View>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        </ImageBackground>
 
         {/* ── Shop by Category ── */}
         <SectionHeader title="Shop by Category" action="View All" />
@@ -359,7 +410,7 @@ const styles = StyleSheet.create({
   },
   cartBadge: { position: 'absolute', top: -4, right: -4, backgroundColor: '#EF4444', minWidth: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   cartBadgeText: { fontSize: 10, fontWeight: '900', color: '#fff' },
- 
+
   searchWrap: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 6, backgroundColor: '#F8FAFC' },
   searchBar: {
     flexDirection: 'row',
@@ -377,11 +428,46 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { padding: 16, maxWidth: 1200, alignSelf: 'center', width: '100%' },
 
-  heroBanner: { backgroundColor: '#1E293B', borderRadius: 16, padding: 24, marginBottom: 24, overflow: 'hidden' },
-  heroContent: { maxWidth: 300 },
-  heroTitle: { fontSize: 20, fontWeight: '800', color: '#fff', lineHeight: 28, marginBottom: 16 },
-  heroBtn: { backgroundColor: GOLD, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8, alignSelf: 'flex-start' },
-  heroBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  heroCard: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    marginBottom: 24,
+    backgroundColor: '#071B3A',
+  },
+  heroImage: {
+    borderRadius: 20,
+    position: 'absolute',
+    right: 0,
+    height: '100%',
+    aspectRatio: 859 / 369,
+  },
+  heroOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(7, 27, 58, 0.58)',
+  },
+  heroContent: {
+    width: '66%',
+  },
+  heroTitle: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+  },
+  shopButton: {
+    marginTop: 14,
+    minHeight: 44,
+    alignSelf: 'flex-start',
+    justifyContent: 'center',
+    paddingHorizontal: 22,
+    borderRadius: 11,
+    backgroundColor: '#E88700',
+  },
+  shopButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
 
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, marginTop: 8 },
   sectionTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A' },

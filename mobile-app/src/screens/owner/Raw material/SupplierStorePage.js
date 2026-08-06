@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, useWindowD
 import { ArrowLeft, Star, MapPin, Clock, ShieldCheck, ShoppingCart, Plus, Minus, Search, BadgeCheck, CircleCheck as CheckCircle2, Heart, ChevronRight } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 import { fetchRawMaterialProducts } from '../../../services/api.service';
+import { API_BASE_URL } from '../../../config/api';
+
 
 const PRIMARY_BTN = '#D97706'; // Orange/Gold for Add buttons
 const ACTIVE_TAB = '#16A34A'; // Green for active tabs
@@ -30,6 +32,13 @@ const getProductEmojiAndBg = (name) => {
   return { emoji: '📦', bg: '#F1F5F9' };
 };
 
+const getProductImageUrl = (url) => {
+  if (!url) return null;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const baseUrl = API_BASE_URL.endsWith('/api') ? API_BASE_URL.substring(0, API_BASE_URL.length - 4) : API_BASE_URL;
+  return `${baseUrl}${url}`;
+};
+
 export default function SupplierStorePage({ supplier, cartItems, onCartUpdate, onBack, onViewCart, onProductPress }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || Platform.OS !== 'web';
@@ -50,7 +59,7 @@ export default function SupplierStorePage({ supplier, cartItems, onCartUpdate, o
             originalPrice: parseFloat(p.price) * 1.2, // mock original price
             unit: p.unit || 'kg',
             category: p.category?.name || 'General',
-            image: null,
+            image: p.imageUrl ? getProductImageUrl(p.imageUrl) : null,
             rating: 4.5,
             stock: p.stock,
             moq: p.moq || 1,
@@ -217,7 +226,11 @@ export default function SupplierStorePage({ supplier, cartItems, onCartUpdate, o
                 onPress={() => onProductPress(product)}
               >
                 <View style={[styles.rowImage, { backgroundColor: styleInfo.bg }]}>
-                  <Text style={styles.rowEmoji}>{styleInfo.emoji}</Text>
+                  {product.image ? (
+                    <Image source={{ uri: product.image }} style={styles.rowImageActual} />
+                  ) : (
+                    <Text style={styles.rowEmoji}>{styleInfo.emoji}</Text>
+                  )}
                 </View>
 
                 <View style={styles.rowInfo}>
@@ -395,6 +408,12 @@ const styles = StyleSheet.create({
   },
   rowEmoji: {
     fontSize: 32,
+  },
+  rowImageActual: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 10,
+    resizeMode: 'cover',
   },
   rowInfo: {
     flex: 1,

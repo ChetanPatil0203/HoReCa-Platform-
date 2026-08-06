@@ -2,11 +2,12 @@ import React, { useState, useEffect, useContext, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity,
   useWindowDimensions, Modal, SafeAreaView, TextInput, KeyboardAvoidingView, 
-  Platform, TouchableWithoutFeedback, ActivityIndicator, Alert, Animated
+  Platform, TouchableWithoutFeedback, ActivityIndicator, Alert, Animated, Image
 } from 'react-native';
 import { Search, SlidersHorizontal, Package, ChevronRight, X, CircleCheck as CheckCircle, Truck, User, Home, ClipboardList, Plus, CalendarDays, RefreshCw, EllipsisVertical as MoreVertical, CircleAlert as AlertCircle, Eye, Calendar, PackageCheck, Info, UserCheck, ShieldCheck, CircleHelp as HelpCircle, Copy, Phone } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
 import { fetchVendorOrders, vendorRespondOrder, updateOrderStatusApi } from '../../../services/api.service';
+import { API_BASE_URL } from '../../../config/api';
 
 const NAVY = '#071B3A';
 const GOLD = '#D4AF37';
@@ -39,12 +40,20 @@ const UI_TO_DB_STATUS = {
   'Cancelled': 'cancelled',
 };
 
+const getProductImageUrl = (url) => {
+  if (!url) return null;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const baseUrl = API_BASE_URL.endsWith('/api') ? API_BASE_URL.substring(0, API_BASE_URL.length - 4) : API_BASE_URL;
+  return `${baseUrl}${url}`;
+};
+
 const mapOrder = (o) => {
   const items = o.items || [];
   const firstItem = items[0];
   const productName = firstItem?.product?.name || 'Mixed Items';
   const unit = firstItem?.product?.unit || '';
   const totalQty = items.reduce((sum, it) => sum + (it.quantity || 0), 0);
+  const productImage = firstItem?.product?.imageUrl || firstItem?.product?.image || null;
 
   return {
     id: `#${o.id.slice(0, 8).toUpperCase()}`,
@@ -56,6 +65,7 @@ const mapOrder = (o) => {
     address: o.owner?.address || o.deliveryAddress || '',
     product: productName,
     qty: `${totalQty} ${unit}`.trim(),
+    productImage: productImage ? getProductImageUrl(productImage) : null,
     itemsCount: items.length,
     amount: `₹${parseFloat(o.totalAmount || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`,
     deliveryDate: o.createdAt ? new Date(o.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—',
@@ -74,6 +84,8 @@ const mapOrder = (o) => {
     preparationProgress: o.preparationProgress || 0,
     supplierId: o.supplierId,
     _dbStatus: o.status,
+    _rawDate: o.createdAt,
+    paymentMethod: o.paymentMethod || 'cod',
   };
 };
 
@@ -192,6 +204,8 @@ export default function RawMaterialOrdersPage() {
   const [filterVisible, setFilterVisible] = useState(false);
   const [selectedCustomerType, setSelectedCustomerType] = useState('All');
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState('All');
+  const [selectedDeliverySchedule, setSelectedDeliverySchedule] = useState('All');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('All');
 
   // Modals Visibility
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
@@ -297,7 +311,26 @@ export default function RawMaterialOrdersPage() {
     const custTypeMatch = selectedCustomerType === 'All' || o.businessType === selectedCustomerType;
     const payStatusMatch = selectedPaymentStatus === 'All' || o.paymentStatus === selectedPaymentStatus;
 
-    return statusMatch && searchMatch && custTypeMatch && payStatusMatch;
+    let dateMatch = true;
+    if (selectedDeliverySchedule !== 'All' && o._rawDate) {
+      const orderDate = new Date(o._rawDate);
+      const today = new Date();
+      if (selectedDeliverySchedule === 'Today') {
+        dateMatch = orderDate.getDate() === today.getDate() && orderDate.getMonth() === today.getMonth() && orderDate.getFullYear() === today.getFullYear();
+      } else if (selectedDeliverySchedule === 'Tomorrow') {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        dateMatch = orderDate.getDate() === tomorrow.getDate() && orderDate.getMonth() === tomorrow.getMonth() && orderDate.getFullYear() === tomorrow.getFullYear();
+      } else if (selectedDeliverySchedule === 'This Week') {
+        const diffTime = Math.abs(today - orderDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        dateMatch = diffDays <= 7;
+      }
+    }
+
+    const payMethodMatch = selectedPaymentMethod === 'All' || o.paymentMethod.toLowerCase() === selectedPaymentMethod.toLowerCase();
+
+    return statusMatch && searchMatch && custTypeMatch && payStatusMatch && dateMatch && payMethodMatch;
   });
 
   const counts = TAB_CHIPS.reduce((acc, tab) => {
@@ -498,53 +531,53 @@ export default function RawMaterialOrdersPage() {
     const PrimaryIcon = getPrimaryActionIcon(item.status);
     const moreOptions = renderMoreMenuOptions(item);
     const isMenuOpen = activeMenuId === item.id;
-    const paymentBadge = getPaymentBadge(item.paymentStatus);
 
     return (
       <FadeInCard index={index}>
-        <View style={[styles.card, { borderLeftColor: statusStyle.accent || statusStyle.text, borderLeftWidth: 5 }, !isMobile && styles.cardDesktop]}>
-          {/* Top bar with Order ID and Status Badge */}
+        <View style={[styles.card, !isMobile && styles.cardDesktop]}>
+          {/* Top row with Order ID and Status Badge */}
           <View style={styles.cardHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Text style={styles.cardId}>{item.id}</Text>
               <TouchableOpacity onPress={() => showToast(`Copied Order ID: ${item.id}`)} style={{ padding: 4 }}>
-                <Copy size={12} color={MUTED} />
+                <Copy size={11} color={MUTED} />
               </TouchableOpacity>
             </View>
-            <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, borderColor: statusStyle.border, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
-              <Animated.View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: statusStyle.accent || statusStyle.text, opacity: pulseAnim }} />
-              <Text style={[styles.statusText, { color: statusStyle.text }]}>{item.status.toUpperCase()}</Text>
-            </View>
-          </View>
-
-          {/* Customer Basic Info */}
-          <View style={styles.customerInfo}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <View style={{ flex: 1, marginRight: 8 }}>
-                <Text style={styles.customerName} numberOfLines={1}>{item.client}</Text>
-                <Text style={styles.customerMeta}>{item.businessType} · {item.location}</Text>
+            
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, zIndex: 999 }}>
+              {/* Compact Status Badge */}
+              <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, borderColor: statusStyle.border, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+                <Animated.View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: statusStyle.accent || statusStyle.text, opacity: pulseAnim }} />
+                <Text style={[styles.statusText, { color: statusStyle.text }]}>{item.status.toUpperCase()}</Text>
               </View>
-              <TouchableOpacity 
-                onPress={() => Alert.alert('Call Customer', `Dialing ${item.client}...`)}
-                style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <Phone size={14} color="#3B82F6" />
-              </TouchableOpacity>
             </View>
           </View>
 
-          {/* Summarised product layout */}
-          <View style={styles.productRow}>
-            <View style={styles.productIconBox}>
-              <Package size={16} color="#D97706" />
-            </View>
+          {/* Customer Row */}
+          <View style={styles.customerRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.productName} numberOfLines={1}>
-                {item.product}
+              <Text style={styles.customerName}>{item.client}</Text>
+              <Text style={styles.customerMeta}>{item.businessType} · {item.location}</Text>
+            </View>
+          </View>
+
+          {/* Product Row (Compact) */}
+          <View style={styles.productRowCompact}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+              <View style={styles.productIconBoxCompact}>
+                {item.productImage ? (
+                  <Image source={{ uri: item.productImage }} style={styles.productImageActual} />
+                ) : (
+                  <Package size={13} color="#D97706" />
+                )}
+              </View>
+              <Text style={styles.productNameCompact} numberOfLines={1}>
+                {item.product} {item.itemsCount > 1 ? `+${item.itemsCount - 1} items` : ''}
               </Text>
-              <Text style={styles.productQty}>
-                {item.qty} {item.itemsCount > 1 ? `+${item.itemsCount - 1} more items` : ''}
-              </Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text style={styles.productQtyCompact}>{item.qty}</Text>
+              <Text style={styles.productAmountCompact}>{item.amount}</Text>
             </View>
           </View>
 
@@ -552,7 +585,7 @@ export default function RawMaterialOrdersPage() {
           {item.status === 'Preparing' && (
             <View style={styles.progressContainer}>
               <View style={styles.progressHeader}>
-                <Text style={styles.progressLabel}>Preparation</Text>
+                <Text style={styles.progressLabel}>Preparation Progress</Text>
                 <Text style={styles.progressValue}>{item.preparationProgress}%</Text>
               </View>
               <AnimatedProgressBar
@@ -563,10 +596,10 @@ export default function RawMaterialOrdersPage() {
             </View>
           )}
 
-          {/* Ready assignment status */}
+          {/* Ready / Driver assignment status */}
           {item.status === 'Ready to Dispatch' && (
             <View style={styles.driverStatusBox}>
-              <Truck size={14} color={MUTED} />
+              <Truck size={12} color={MUTED} />
               <Text style={styles.driverStatusText}>Driver: <Text style={{ fontWeight: '700', color: NAVY }}>Not Assigned</Text></Text>
             </View>
           )}
@@ -574,71 +607,38 @@ export default function RawMaterialOrdersPage() {
           {/* Out for delivery status */}
           {item.status === 'Out for Delivery' && (
             <View style={styles.driverStatusBox}>
-              <UserCheck size={14} color={MUTED} />
+              <UserCheck size={12} color={MUTED} />
               <Text style={styles.driverStatusText}>Driver: <Text style={{ fontWeight: '700', color: NAVY }}>{item.driver}</Text></Text>
             </View>
           )}
 
-          {/* Amount & Date split row */}
-          <View style={styles.metaRow}>
-            <View style={styles.metaCol}>
-              <Text style={styles.metaLabel}>Order Total</Text>
-              <Text style={styles.metaValue}>{item.amount}</Text>
+          {/* Card Footer (Delivery Date & Main Action Buttons) */}
+          <View style={styles.cardFooterCompact}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.deliveryLabelCompact}>Requested Delivery</Text>
+              <Text style={styles.deliveryValCompact} numberOfLines={1}>{item.deliveryDate}</Text>
             </View>
-            <View style={styles.metaCol}>
-              <Text style={styles.metaLabel}>Requested Delivery</Text>
-              <Text style={styles.metaValue}>{item.deliveryDate}</Text>
-            </View>
-          </View>
-
-          {/* Payment and action row */}
-          <View style={[styles.cardFooter, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }]}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <TouchableOpacity style={styles.viewDetailsBtn} onPress={() => { orderRef.current = item; setSelectedOrder(item); setDetailsModalVisible(true); }}>
-                <Text style={styles.viewDetailsText}>View Details</Text>
-                <ChevronRight size={14} color={NAVY} />
+            
+            <View style={styles.actionsContainer}>
+              <TouchableOpacity
+                style={styles.viewDetailsBtnCompact}
+                onPress={() => { orderRef.current = item; setSelectedOrder(item); setDetailsModalVisible(true); }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.viewDetailsTextCompact}>Details</Text>
               </TouchableOpacity>
-            </View>
 
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               {primaryText && (
                 <ScalePressable
-                  style={styles.primaryActionBtn}
+                  style={styles.primaryActionBtnCompact}
                   onPress={() => handlePrimaryAction(item)}
                 >
-                  {PrimaryIcon && <PrimaryIcon size={14} color={WHITE} style={{ marginRight: 6 }} />}
-                  <Text style={styles.primaryActionText}>{primaryText}</Text>
+                  <Text style={styles.primaryActionTextCompact}>{primaryText}</Text>
                 </ScalePressable>
-              )}
-
-              {moreOptions.length > 0 && (
-                <View style={{ position: 'relative', zIndex: 100 }}>
-                  <TouchableOpacity
-                    style={styles.moreBtn}
-                    onPress={() => setActiveMenuId(isMenuOpen ? null : item.id)}
-                  >
-                    <MoreVertical size={16} color={NAVY} />
-                  </TouchableOpacity>
-                  {isMenuOpen && (
-                    <View style={styles.dropdownMenu}>
-                      {moreOptions.map((opt, idx) => (
-                        <TouchableOpacity
-                          key={idx}
-                          style={styles.dropdownItem}
-                          onPress={() => {
-                            setActiveMenuId(null);
-                            opt.action();
-                          }}
-                        >
-                          <Text style={[styles.dropdownText, { color: opt.color }]}>{opt.label}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  )}
-                </View>
               )}
             </View>
           </View>
+
         </View>
       </FadeInCard>
     );
@@ -995,9 +995,47 @@ export default function RawMaterialOrdersPage() {
               <View style={styles.detailsCard}>
                 <View style={styles.detailsHeader}>
                   <Text style={styles.detailsHeaderTitle}>Order Details</Text>
-                  <TouchableOpacity onPress={closeAllModals}>
-                    <X size={20} color={MUTED} />
-                  </TouchableOpacity>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    {orderRef.current && (
+                      <TouchableOpacity 
+                        onPress={() => Alert.alert('Call Customer', `Dialing ${orderRef.current.client}...`)}
+                        style={{ padding: 6, marginRight: 8 }}
+                      >
+                        <Phone size={18} color="#3B82F6" />
+                      </TouchableOpacity>
+                    )}
+
+                    {selectedOrder && renderMoreMenuOptions(selectedOrder).length > 0 && (
+                      <View style={{ position: 'relative', zIndex: 1001, marginRight: 8 }}>
+                        <TouchableOpacity
+                          style={{ padding: 6 }}
+                          onPress={() => setActiveMenuId(activeMenuId === selectedOrder.id ? null : selectedOrder.id)}
+                        >
+                          <MoreVertical size={18} color={NAVY} />
+                        </TouchableOpacity>
+                        {activeMenuId === selectedOrder.id && (
+                          <View style={[styles.dropdownMenu, { top: 32, right: 0 }]}>
+                            {renderMoreMenuOptions(selectedOrder).map((opt, idx) => (
+                              <TouchableOpacity
+                                key={idx}
+                                style={styles.dropdownItem}
+                                onPress={() => {
+                                  setActiveMenuId(null);
+                                  opt.action();
+                                }}
+                              >
+                                <Text style={[styles.dropdownText, { color: opt.color }]}>{opt.label}</Text>
+                              </TouchableOpacity>
+                            ))}
+                          </View>
+                        )}
+                      </View>
+                    )}
+
+                    <TouchableOpacity onPress={closeAllModals} style={{ padding: 6 }}>
+                      <X size={20} color={MUTED} />
+                    </TouchableOpacity>
+                  </View>
                 </View>
 
                 {orderRef.current && (
@@ -1093,9 +1131,9 @@ export default function RawMaterialOrdersPage() {
       </Modal>
 
       {/* 8. Filters Overlay Modal */}
-      <Modal visible={filterVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlayBottom}>
-          <View style={styles.filterBottomSheet}>
+      <Modal visible={filterVisible} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCenterCard, { maxHeight: '85%' }]}>
             <View style={styles.filterHeader}>
               <Text style={styles.filterTitle}>Filter Options</Text>
               <TouchableOpacity onPress={() => setFilterVisible(false)}>
@@ -1104,6 +1142,32 @@ export default function RawMaterialOrdersPage() {
             </View>
 
             <ScrollView style={{ padding: 16 }}>
+              <Text style={styles.filterLabel}>Delivery Schedule</Text>
+              <View style={styles.filterChipsRow}>
+                {['All', 'Today', 'Tomorrow', 'This Week'].map(sched => (
+                  <TouchableOpacity
+                    key={sched}
+                    style={[styles.filterChipPill, selectedDeliverySchedule === sched && styles.filterChipPillActive]}
+                    onPress={() => setSelectedDeliverySchedule(sched)}
+                  >
+                    <Text style={[styles.filterChipText, selectedDeliverySchedule === sched && styles.filterChipTextActive]}>{sched}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={styles.filterLabel}>Payment Method</Text>
+              <View style={styles.filterChipsRow}>
+                {['All', 'COD', 'Online', 'Credit'].map(method => (
+                  <TouchableOpacity
+                    key={method}
+                    style={[styles.filterChipPill, selectedPaymentMethod === method && styles.filterChipPillActive]}
+                    onPress={() => setSelectedPaymentMethod(method)}
+                  >
+                    <Text style={[styles.filterChipText, selectedPaymentMethod === method && styles.filterChipTextActive]}>{method}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
               <Text style={styles.filterLabel}>Customer Type</Text>
               <View style={styles.filterChipsRow}>
                 {['All', 'Hotel', 'Restaurant', 'Cafe'].map(type => (
@@ -1130,12 +1194,14 @@ export default function RawMaterialOrdersPage() {
                 ))}
               </View>
 
-              <View style={[styles.modalActionsRow, { marginTop: 24 }]}>
+              <View style={[styles.modalActionsRow, { marginTop: 24, marginBottom: 20 }]}>
                 <TouchableOpacity
                   style={styles.btnSecondary}
                   onPress={() => {
                     setSelectedCustomerType('All');
                     setSelectedPaymentStatus('All');
+                    setSelectedDeliverySchedule('All');
+                    setSelectedPaymentMethod('All');
                     setFilterVisible(false);
                   }}
                 >
@@ -1226,100 +1292,106 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: WHITE,
     borderRadius: 16,
-    padding: 16,
+    padding: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
+    borderColor: '#E3E9F1',
+    shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
+    shadowOpacity: 0.02,
+    shadowRadius: 6,
     elevation: 1,
     flex: 1,
-    marginVertical: 4,
+    marginVertical: 6,
   },
   cardDesktop: {
     maxWidth: '48.8%',
   },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  cardId: { fontSize: 12, fontWeight: '700', color: MUTED, textTransform: 'uppercase' },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  cardId: { fontSize: 11, fontWeight: '700', color: MUTED, textTransform: 'uppercase' },
+  statusBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
   statusText: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
+  moreBtn: { padding: 4, borderRadius: 6, backgroundColor: '#F1F5F9' },
 
-  customerInfo: { marginBottom: 12 },
+  customerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   customerName: { fontSize: 15, fontWeight: '800', color: NAVY, marginBottom: 2 },
   customerMeta: { fontSize: 12, color: MUTED, fontWeight: '500' },
+  phoneBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' },
 
-  productRow: {
+  productRowCompact: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFDF5',
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 12
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFBEB',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    height: 44,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#FEF3C7'
   },
-  productIconBox: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
-    backgroundColor: '#FFF5D1',
+  productIconBoxCompact: {
+    width: 24,
+    height: 24,
+    borderRadius: 5,
+    backgroundColor: '#FEF3C7',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10
+    overflow: 'hidden'
   },
-  productName: { fontSize: 13, fontWeight: '700', color: NAVY },
-  productQty: { fontSize: 11, color: MUTED },
+  productImageActual: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover'
+  },
+  productNameCompact: { fontSize: 12, fontWeight: '700', color: NAVY, flex: 1 },
+  productQtyCompact: { fontSize: 11, color: MUTED, fontWeight: '600', marginRight: 4 },
+  productAmountCompact: { fontSize: 12, color: NAVY, fontWeight: '800' },
 
-  // Progress Bar for preparation
-  progressContainer: { marginBottom: 12 },
+  progressContainer: { marginBottom: 10 },
   progressHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  progressLabel: { fontSize: 11, fontWeight: '700', color: MUTED },
-  progressValue: { fontSize: 11, fontWeight: '700', color: NAVY },
-  progressBarBg: { height: 6, borderRadius: 3, backgroundColor: '#E2E8F0', overflow: 'hidden' },
-  progressBarFill: { height: '100%', borderRadius: 3, backgroundColor: '#F97316' },
+  progressLabel: { fontSize: 10, fontWeight: '700', color: MUTED },
+  progressValue: { fontSize: 10, fontWeight: '700', color: NAVY },
+  progressBarBg: { height: 4, borderRadius: 2, backgroundColor: '#E2E8F0', overflow: 'hidden' },
+  progressBarFill: { height: '100%', borderRadius: 2, backgroundColor: '#F97316' },
 
-  // Driver Status info
-  driverStatusBox: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12, backgroundColor: '#F8FAFC', padding: 8, borderRadius: 8 },
+  driverStatusBox: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10, backgroundColor: '#F8FAFC', paddingVertical: 6, paddingHorizontal: 8, borderRadius: 6 },
   driverStatusText: { fontSize: 11, color: MUTED },
 
-  metaRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  metaCol: { flex: 1 },
-  metaLabel: { fontSize: 10, color: MUTED, fontWeight: '700', textTransform: 'uppercase', marginBottom: 2 },
-  metaValue: { fontSize: 13, color: NAVY, fontWeight: '600' },
-
-  cardFooter: {
+  cardFooterCompact: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
-    paddingTop: 12
+    paddingTop: 10,
+    marginTop: 2
   },
-  paymentBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-  paymentBadgeText: { fontSize: 10, fontWeight: '700' },
-  
-  viewDetailsBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4 },
-  viewDetailsText: { fontSize: 12, fontWeight: '700', color: NAVY, marginRight: 2 },
+  deliveryLabelCompact: { fontSize: 9, color: MUTED, fontWeight: '700', textTransform: 'uppercase', marginBottom: 1 },
+  deliveryValCompact: { fontSize: 12, color: NAVY, fontWeight: '600' },
 
-  primaryActionBtn: {
+  actionsContainer: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  viewDetailsBtnCompact: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, borderWidth: 1, borderColor: '#CBD5E1', backgroundColor: WHITE },
+  viewDetailsTextCompact: { fontSize: 11, fontWeight: '700', color: NAVY },
+
+  primaryActionBtnCompact: {
     backgroundColor: NAVY,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 6,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    minWidth: 80
   },
-  primaryActionText: { fontSize: 12, fontWeight: '700', color: WHITE },
-  moreBtn: { padding: 6, marginLeft: 4, borderRadius: 6, backgroundColor: BG },
+  primaryActionTextCompact: { fontSize: 11, fontWeight: '700', color: WHITE },
 
-  // Dropdown options popup
   dropdownMenu: {
     position: 'absolute',
-    bottom: 36,
+    top: 24,
     right: 0,
     backgroundColor: WHITE,
     borderRadius: 8,
-    width: 170,
+    width: 150,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -1328,10 +1400,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2E8F0',
     paddingVertical: 4,
-    zIndex: 100
+    zIndex: 1000
   },
   dropdownItem: { paddingVertical: 8, paddingHorizontal: 12 },
-  dropdownText: { fontSize: 12, fontWeight: '600' },
+  dropdownText: { fontSize: 11, fontWeight: '600' },
 
   // Empty state container styles
   emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40, alignSelf: 'center' },

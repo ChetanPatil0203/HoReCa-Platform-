@@ -4,7 +4,15 @@ import { Star, MapPin, Package } from 'lucide-react-native';
 import { CARD } from '../../../theme/cards';
 import { colors } from '../../../theme/colors';
 
-export default function VendorCard({ vendor, onViewProducts }) {
+export default function VendorCard({ vendor, onViewProducts, onPress }) {
+  const handlePress = () => {
+    if (onPress) {
+      onPress(vendor);
+    } else if (onViewProducts) {
+      onViewProducts(vendor);
+    }
+  };
+
   return (
     <View style={styles.card}>
       {/* Avatar + Badge */}
@@ -41,7 +49,7 @@ export default function VendorCard({ vendor, onViewProducts }) {
       {/* CTA */}
       <TouchableOpacity
         style={[styles.viewBtn, { borderColor: vendor.color, backgroundColor: vendor.bg }]}
-        onPress={() => onViewProducts && onViewProducts(vendor)}
+        onPress={handlePress}
         activeOpacity={0.8}
       >
         <Text style={[styles.viewBtnText, { color: vendor.color }]}>View Products</Text>

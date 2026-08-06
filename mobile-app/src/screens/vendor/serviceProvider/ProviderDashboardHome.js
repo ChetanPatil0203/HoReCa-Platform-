@@ -7,7 +7,7 @@ import { Inbox, Clock, Calendar, Wrench, ChevronRight, CircleCheck as CheckCircl
 import { AuthContext } from '../../../context/AuthContext';
 import { fetchVendorRequirements, fetchPublicRequirements } from '../../../services/api.service';
 
-const NAVY = '#071B3A';
+const NAVY = '#081A3A';
 const GOLD = '#F6B800';
 
 export default function ProviderDashboardHome({ onNavigate }) {
@@ -143,10 +143,10 @@ export default function ProviderDashboardHome({ onNavigate }) {
               >
                 <View style={styles.overviewTop}>
                   <View style={[styles.iconBox, { backgroundColor: item.bg }]}>
-                    <item.icon size={20} color={item.color} />
+                    <item.icon size={18} color={item.color} />
                   </View>
+                  <Text style={styles.overviewValue}>{item.value}</Text>
                 </View>
-                <Text style={styles.overviewValue}>{item.value}</Text>
                 <Text style={styles.overviewLabel}>{item.label}</Text>
               </TouchableOpacity>
             ))}
@@ -270,11 +270,11 @@ const styles = StyleSheet.create({
   viewAllText: { fontSize: 13, fontWeight: '600', color: NAVY, marginRight: 2 },
 
   overviewGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12 },
-  overviewCard: { width: '48%', backgroundColor: '#fff', borderRadius: 18, padding: 16, borderWidth: 1, borderColor: '#E8EDF4', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
+  overviewCard: { width: '48%', backgroundColor: '#fff', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: '#E8EDF4', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2, display: 'flex', flexDirection: 'column' },
   overviewTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   iconBox: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  overviewValue: { fontSize: 24, fontWeight: 'bold', color: NAVY, marginBottom: 2 },
-  overviewLabel: { fontSize: 13, color: '#64748B', fontWeight: '500' },
+  overviewValue: { fontSize: 24, fontWeight: '900', color: NAVY },
+  overviewLabel: { fontSize: 12, color: '#64748B', fontWeight: '600' },
 
   emptyFeedBox: { backgroundColor: '#FFFFFF', borderRadius: 18, padding: 32, alignItems: 'center', borderWidth: 1, borderColor: '#F1F5F9' },
   emptyFeedTitle: { fontSize: 15, fontWeight: 'bold', color: NAVY, marginBottom: 6 },

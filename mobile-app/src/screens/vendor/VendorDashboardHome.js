@@ -104,21 +104,16 @@ export default function VendorDashboardHome() {
         </View>
       </View>
 
-      {/* KPI Grid */}
       <View style={styles.kpiGrid}>
         {kpiData.map((kpi, idx) => (
           <View key={idx} style={[styles.kpiCard, { borderTopColor: kpi.color }]}>
             <View style={styles.kpiHeader}>
               <View style={[styles.kpiIconBox, { backgroundColor: kpi.color + '14' }]}>
-                <kpi.icon size={16} color={kpi.color} />
+                <kpi.icon size={18} color={kpi.color} strokeWidth={2.5} />
               </View>
-              <View style={styles.kpiTrendPill}>
-                <Text style={styles.kpiTrendText}>↑</Text>
-              </View>
+              <Text style={styles.kpiValue}>{kpi.value}</Text>
             </View>
-            <Text style={styles.kpiValue}>{kpi.value}</Text>
-            <Text style={styles.kpiLabel}>{kpi.label}</Text>
-            <Text style={styles.kpiDelta}>{kpi.delta}</Text>
+            <Text style={styles.kpiLabel} numberOfLines={1}>{kpi.label}</Text>
           </View>
         ))}
       </View>
@@ -236,30 +231,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginBottom: 20,
   },
   kpiCard: {
-    flex: 1, minWidth: 150, backgroundColor: '#fff', borderRadius: 16, padding: 16,
-    borderWidth: 1, borderColor: '#E2E8F0', borderTopWidth: 3,
-    ...Platform.select({ web: { boxShadow: '0 1px 3px rgba(0,0,0,0.04)' } }),
+    flex: 1, minWidth: 150, backgroundColor: '#fff', borderRadius: 14, padding: 14,
+    borderWidth: 1, borderColor: '#E8EDF4', borderTopWidth: 3,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2,
+    display: 'flex', flexDirection: 'column',
   },
   kpiHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12,
   },
   kpiIconBox: {
-    width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
-  },
-  kpiTrendPill: {
-    backgroundColor: '#ECFDF5', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10,
-  },
-  kpiTrendText: {
-    color: '#059669', fontSize: 12, fontWeight: 'bold',
+    width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
   },
   kpiValue: {
-    fontSize: 24, fontWeight: '800', color: '#0F172A',
+    fontSize: 24, fontWeight: '900', color: '#0F172A',
   },
   kpiLabel: {
-    fontSize: 12, color: '#94A3B8', marginTop: 2,
-  },
-  kpiDelta: {
-    fontSize: 12, color: '#059669', fontWeight: '500', marginTop: 8,
+    fontSize: 12, color: '#94A3B8', fontWeight: '600',
   },
   bottomGrid: {
     flexDirection: 'row',

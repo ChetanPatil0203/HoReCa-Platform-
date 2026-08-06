@@ -23,7 +23,7 @@ import {
 } from 'lucide-react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { AuthContext } from '../../../context/AuthContext';
-import { fetchUserComplianceDocuments, saveComplianceDocument } from '../../../services/api.service';
+import { fetchUserComplianceDocuments, saveComplianceDocument, uploadComplianceApi } from '../../../services/api.service';
 
 const NAVY = '#071B3A';
 const SECONDARY_NAVY = '#102A4C';
@@ -50,7 +50,7 @@ export default function CompliancePage() {
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
   const isTinyScreen = width < 340;
-  const { user } = useContext(AuthContext);
+  const { user, userToken } = useContext(AuthContext);
   const userId = user?.id;
 
   const [documents, setDocuments] = useState([]);
@@ -79,7 +79,10 @@ export default function CompliancePage() {
     issueDate: '',
     expiryDate: '',
     notes: '',
-    fileName: ''
+    fileName: '',
+    fileUri: null,
+    fileMime: null,
+    fileAsset: null,
   });
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
 
@@ -132,10 +135,13 @@ export default function CompliancePage() {
           else Alert.alert('File Too Large', 'File size must be 5MB or smaller.');
           return;
         }
+        // Store the selected file asset for later upload on submit
         setAddForm(prev => ({
           ...prev,
           fileName: file.name,
           fileUri: file.uri,
+          fileMime: file.mimeType || file.type,
+          fileAsset: file,
           fileSize: file.size ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : '1.5 MB'
         }));
         showToast(`Selected file: ${file.name}`);
@@ -236,6 +242,34 @@ export default function CompliancePage() {
 
     try {
       showToast(`Saving ${addForm.docType}...`);
+
+      // Upload file to Cloudinary first if a file was selected
+      let cloudinaryMeta = {};
+      if (addForm.fileAsset) {
+        try {
+          const token = userToken;
+          const uploadRes = await uploadComplianceApi(addForm.fileAsset, token);
+          if (uploadRes?.success && uploadRes?.data) {
+            cloudinaryMeta = {
+              fileUrl: uploadRes.data.fileUrl,
+              secureUrl: uploadRes.data.secureUrl,
+              cloudinaryPublicId: uploadRes.data.cloudinaryPublicId,
+              cloudinaryAssetId: uploadRes.data.cloudinaryAssetId,
+              resourceType: uploadRes.data.resourceType,
+              deliveryType: uploadRes.data.deliveryType,
+              format: uploadRes.data.format,
+              mimeType: uploadRes.data.mimeType,
+              fileSize: uploadRes.data.fileSize,
+              width: uploadRes.data.width,
+              height: uploadRes.data.height,
+              originalName: uploadRes.data.originalName,
+            };
+          }
+        } catch (uploadErr) {
+          console.warn('[Cloudinary] Compliance upload failed, saving without file:', uploadErr?.message);
+        }
+      }
+
       await saveComplianceDocument({
         userId,
         docType: addForm.docType,
@@ -243,7 +277,8 @@ export default function CompliancePage() {
         issueDate: addForm.issueDate,
         expiryDate: addForm.expiryDate,
         notes: addForm.notes,
-        fileName: addForm.fileName
+        fileName: addForm.fileName,
+        ...cloudinaryMeta,
       });
       setAddModalVisible(false);
       showToast(`${addForm.docType} submitted successfully for verification.`);

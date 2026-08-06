@@ -84,9 +84,12 @@ export default function RegisterStepThreeScreen({ navigation, route }) {
     }
   };
 
-  const obfuscateMobile = (mobile) => {
-    if (!mobile || mobile.length < 10) return 'your mobile number';
-    return `+91 ••••• •${mobile.slice(-4)}`;
+  const obfuscateEmail = (email) => {
+    if (!email) return 'your email address';
+    const [name, domain] = email.split('@');
+    if (!domain) return email;
+    if (name.length <= 2) return `${name}***@${domain}`;
+    return `${name.slice(0, 2)}***${name.slice(-1)}@${domain}`;
   };
 
   return (
@@ -98,7 +101,7 @@ export default function RegisterStepThreeScreen({ navigation, route }) {
         <View style={styles.headerBlock}>
           <Text style={styles.stepHeader}>STEP 3 OF 3</Text>
           <Text style={styles.heading}>Security Verification</Text>
-          <Text style={styles.subtitle}>Enter the 6-digit verification code sent to {obfuscateMobile(registrationData.mobile)} to activate your business profile.</Text>
+          <Text style={styles.subtitle}>Enter the 6-digit verification code sent to {obfuscateEmail(registrationData.email)} to activate your business profile.</Text>
         </View>
 
         <View style={styles.securityNotice}>

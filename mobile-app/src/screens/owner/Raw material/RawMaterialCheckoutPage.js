@@ -1,75 +1,306 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions, TextInput, Alert, Modal, KeyboardAvoidingView, Animated, Easing } from 'react-native';
-import { ArrowLeft, MapPin, Calendar, Clock, CreditCard, ChevronRight, Check, Plus, Store } from 'lucide-react-native';
+import { ArrowLeft, MapPin, Calendar, Clock, CreditCard, ChevronRight, Check, Plus, Store, Truck, Package } from 'lucide-react-native';
 import { colors } from '../../../theme/colors';
 import { placeRawMaterialOrder } from '../../../services/api.service';
 
 const PURPLE = '#D97706';
 
 function SuccessCheckmark() {
-  const scaleValue = React.useRef(new Animated.Value(0)).current;
-  const line1Anim = React.useRef(new Animated.Value(0)).current;
-  const line2Anim = React.useRef(new Animated.Value(0)).current;
+  const [phase, setPhase] = useState('truck'); // 'truck', 'package', 'success'
+
+  // Truck animations
+  const truckTranslateX = React.useRef(new Animated.Value(-300)).current;
+  const truckBounceY = React.useRef(new Animated.Value(0)).current;
+  const truckScaleY = React.useRef(new Animated.Value(1)).current;
+  const truckOpacity = React.useRef(new Animated.Value(1)).current;
+
+  // Package animations
+  const packageTranslateY = React.useRef(new Animated.Value(20)).current;
+  const packageScale = React.useRef(new Animated.Value(0)).current;
+  const packageRotate = React.useRef(new Animated.Value(0)).current;
+  const packageOpacity = React.useRef(new Animated.Value(0)).current;
+
+  // Success Circle animations
+  const circleScale = React.useRef(new Animated.Value(0)).current;
+  const checkLine1 = React.useRef(new Animated.Value(0)).current;
+  const checkLine2 = React.useRef(new Animated.Value(0)).current;
+
+  // Confetti animations (16 particles)
+  const confettiAnims = React.useRef(
+    Array.from({ length: 16 }, () => ({
+      x: new Animated.Value(0),
+      y: new Animated.Value(0),
+      scale: new Animated.Value(0),
+      opacity: new Animated.Value(1),
+    }))
+  ).current;
 
   React.useEffect(() => {
-    Animated.sequence([
-      Animated.spring(scaleValue, {
-        toValue: 1,
-        tension: 50,
-        friction: 7,
+    // 1. Truck drives in from left
+    Animated.parallel([
+      Animated.timing(truckTranslateX, {
+        toValue: 0,
+        duration: 900,
         useNativeDriver: true,
+        easing: Easing.out(Easing.back(0.8)),
       }),
-      Animated.timing(line1Anim, {
-        toValue: 1,
-        duration: 150,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      }),
-      Animated.timing(line2Anim, {
-        toValue: 1,
-        duration: 250,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    ]).start();
+      // Bounce up and down (bumps on road)
+      Animated.sequence([
+        Animated.timing(truckBounceY, { toValue: -8, duration: 150, useNativeDriver: true }),
+        Animated.timing(truckBounceY, { toValue: 0, duration: 150, useNativeDriver: true }),
+        Animated.timing(truckBounceY, { toValue: -6, duration: 150, useNativeDriver: true }),
+        Animated.timing(truckBounceY, { toValue: 0, duration: 150, useNativeDriver: true }),
+        Animated.timing(truckBounceY, { toValue: -4, duration: 150, useNativeDriver: true }),
+        Animated.timing(truckBounceY, { toValue: 0, duration: 150, useNativeDriver: true }),
+      ]),
+    ]).start(() => {
+      // Truck has arrived in center.
+      // 2. Squish truck slightly as it brakes, then launch package
+      Animated.sequence([
+        Animated.timing(truckScaleY, {
+          toValue: 0.85,
+          duration: 120,
+          useNativeDriver: true,
+        }),
+        Animated.timing(truckScaleY, {
+          toValue: 1,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      // Launch package out of truck
+      setPhase('package');
+      packageOpacity.setValue(1);
+      Animated.parallel([
+        Animated.timing(packageTranslateY, {
+          toValue: -90,
+          duration: 500,
+          useNativeDriver: true,
+          easing: Easing.out(Easing.quad),
+        }),
+        Animated.timing(packageScale, {
+          toValue: 1.5,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(packageRotate, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        // Package reaches the peak height.
+        // 3. Drive truck away to the right, fade package and pop success checkmark circle
+        Animated.parallel([
+          Animated.timing(truckTranslateX, {
+            toValue: 300,
+            duration: 600,
+            useNativeDriver: true,
+            easing: Easing.in(Easing.quad),
+          }),
+          Animated.timing(packageScale, {
+            toValue: 0.5,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(packageOpacity, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ]).start(() => {
+          setPhase('success');
+          // Spring open the success circle
+          Animated.spring(circleScale, {
+            toValue: 1.1,
+            friction: 4,
+            tension: 40,
+            useNativeDriver: true,
+          }).start(() => {
+            Animated.timing(circleScale, {
+              toValue: 1.0,
+              duration: 100,
+              useNativeDriver: true,
+            }).start();
+          });
+
+          // Draw Checkmark lines
+          Animated.sequence([
+            Animated.timing(checkLine1, {
+              toValue: 1,
+              duration: 150,
+              useNativeDriver: true,
+            }),
+            Animated.timing(checkLine2, {
+              toValue: 1,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]).start();
+
+          // Explode Confetti!
+          const confettiAnimations = confettiAnims.map((anim, index) => {
+            const angle = (index / confettiAnims.length) * 2 * Math.PI;
+            const distance = 70 + Math.random() * 70;
+            const targetX = Math.cos(angle) * distance;
+            const targetY = Math.sin(angle) * distance - 20; // center offset
+
+            return Animated.parallel([
+              Animated.timing(anim.x, {
+                toValue: targetX,
+                duration: 650 + Math.random() * 450,
+                easing: Easing.out(Easing.quad),
+                useNativeDriver: true,
+              }),
+              Animated.timing(anim.y, {
+                toValue: targetY,
+                duration: 650 + Math.random() * 450,
+                easing: Easing.out(Easing.quad),
+                useNativeDriver: true,
+              }),
+              Animated.sequence([
+                Animated.timing(anim.scale, {
+                  toValue: 0.8 + Math.random() * 0.6,
+                  duration: 200,
+                  useNativeDriver: true,
+                }),
+                Animated.timing(anim.opacity, {
+                  toValue: 0,
+                  duration: 650 + Math.random() * 250,
+                  useNativeDriver: true,
+                }),
+              ]),
+            ]);
+          });
+          Animated.parallel(confettiAnimations).start();
+        });
+      });
+    });
   }, []);
 
-  const circleScale = scaleValue;
+  const packageRotationInterpolate = packageRotate.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  const confettiColors = ['#F43F5E', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4'];
 
   return (
     <View style={animStyles.container}>
-      <View style={animStyles.outerRing}>
-        <Animated.View style={[animStyles.circle, { transform: [{ scale: circleScale }] }]}>
-          {/* Draw Short Line */}
+      <View style={animStyles.animationCanvas}>
+        {/* Confetti Explosion Layer */}
+        {phase === 'success' &&
+          confettiAnims.map((anim, idx) => {
+            const particleColor = confettiColors[idx % confettiColors.length];
+            const size = idx % 2 === 0 ? 8 : 12;
+            const isRound = idx % 3 === 0;
+
+            return (
+              <Animated.View
+                key={idx}
+                style={[
+                  animStyles.confetti,
+                  {
+                    backgroundColor: particleColor,
+                    width: size,
+                    height: size,
+                    borderRadius: isRound ? size / 2 : 2,
+                    transform: [
+                      { translateX: anim.x },
+                      { translateY: anim.y },
+                      { scale: anim.scale },
+                    ],
+                    opacity: anim.opacity,
+                  },
+                ]}
+              />
+            );
+          })}
+
+        {/* Truck Animation Layer */}
+        {phase !== 'success' && (
           <Animated.View
             style={[
-              animStyles.line,
-              animStyles.lineShort,
+              animStyles.truckWrapper,
               {
                 transform: [
-                  { rotate: '45deg' },
-                  { translateX: -7.5 },
-                  { scaleX: line1Anim },
-                  { translateX: 7.5 },
+                  { translateX: truckTranslateX },
+                  { translateY: truckBounceY },
+                  { scaleY: truckScaleY },
                 ],
+                opacity: truckOpacity,
               },
             ]}
-          />
-          {/* Draw Long Line */}
+          >
+            <View style={animStyles.truckBody}>
+              <Truck size={42} color="#D97706" />
+            </View>
+          </Animated.View>
+        )}
+
+        {/* Package Animation Layer */}
+        {phase === 'package' && (
           <Animated.View
             style={[
-              animStyles.line,
-              animStyles.lineLong,
+              animStyles.packageWrapper,
               {
                 transform: [
-                  { rotate: '-45deg' },
-                  { translateX: -14 },
-                  { scaleX: line2Anim },
-                  { translateX: 14 },
+                  { translateY: packageTranslateY },
+                  { scale: packageScale },
+                  { rotate: packageRotationInterpolate },
                 ],
+                opacity: packageOpacity,
               },
             ]}
-          />
+          >
+            <Package size={24} color="#FFF" />
+          </Animated.View>
+        )}
+
+        {/* Success Circle checkmark Layer */}
+        <Animated.View
+          style={[
+            animStyles.successRing,
+            {
+              transform: [{ scale: circleScale }],
+              opacity: phase === 'success' ? 1 : 0,
+            },
+          ]}
+        >
+          <View style={animStyles.successCircle}>
+            {/* Draw Short Line */}
+            <Animated.View
+              style={[
+                animStyles.line,
+                animStyles.lineShort,
+                {
+                  transform: [
+                    { rotate: '45deg' },
+                    { translateX: -7.5 },
+                    { scaleX: checkLine1 },
+                    { translateX: 7.5 },
+                  ],
+                },
+              ]}
+            />
+            {/* Draw Long Line */}
+            <Animated.View
+              style={[
+                animStyles.line,
+                animStyles.lineLong,
+                {
+                  transform: [
+                    { rotate: '-45deg' },
+                    { translateX: -14 },
+                    { scaleX: checkLine2 },
+                    { translateX: 14 },
+                  ],
+                },
+              ]}
+            />
+          </View>
         </Animated.View>
       </View>
     </View>
@@ -80,27 +311,72 @@ const animStyles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
-    marginTop: 20,
+    marginBottom: 24,
+    marginTop: 24,
   },
-  outerRing: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    backgroundColor: '#FFFFFF',
+  animationCanvas: {
+    width: 240,
+    height: 140,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    overflow: 'visible',
+  },
+  truckWrapper: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  truckBody: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: '#FFFBEB',
+    borderWidth: 2,
+    borderColor: '#FEF3C7',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
-    shadowRadius: 10,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  packageWrapper: {
+    position: 'absolute',
+    zIndex: 15,
+    backgroundColor: '#D97706',
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
     elevation: 3,
   },
-  circle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#54BA67', // matching green
+  successRing: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
+    zIndex: 5,
+  },
+  successCircle: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: '#54BA67', // Green success circle
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
@@ -113,13 +389,17 @@ const animStyles = StyleSheet.create({
   },
   lineShort: {
     width: 15,
-    left: 23,
-    top: 43,
+    left: 21,
+    top: 41,
   },
   lineLong: {
     width: 28,
-    left: 31,
-    top: 48,
+    left: 29,
+    top: 46,
+  },
+  confetti: {
+    position: 'absolute',
+    zIndex: 20,
   },
 });
 
@@ -135,16 +415,12 @@ export default function RawMaterialCheckoutPage({ cartItems, user, onBack, onSuc
 
   // Address modal state
   const [showAddressModal, setShowAddressModal] = useState(false);
-  const [addrName, setAddrName]     = useState(user?.bizName || '');
-  const [addrLine, setAddrLine]     = useState(user?.address || '');
-  const [addrCity, setAddrCity]     = useState(user?.city || '');
-  const [addrState, setAddrState]   = useState('Maharashtra');
-  const [addrPhone, setAddrPhone]   = useState(user?.mobile || '');
-  const [savedAddr, setSavedAddr]   = useState(null);
-
-  // Preserve cartItems and totals locally on mount before parent clears them
-  const [orderedItems] = useState(cartItems);
-  const [savedGrandTotal] = useState(subtotal + gst + delivery);
+  const [addrName, setAddrName] = useState(user?.bizName || '');
+  const [addrLine, setAddrLine] = useState(user?.address || '');
+  const [addrCity, setAddrCity] = useState(user?.city || '');
+  const [addrState, setAddrState] = useState('Maharashtra');
+  const [addrPhone, setAddrPhone] = useState(user?.mobile || '');
+  const [savedAddr, setSavedAddr] = useState(null);
 
   // Group by supplierName
   const groupedCart = useMemo(() => {
@@ -162,14 +438,18 @@ export default function RawMaterialCheckoutPage({ cartItems, user, onBack, onSuc
   const delivery = subtotal > 1000 ? 0 : 50 * Object.keys(groupedCart).length;
   const grandTotal = subtotal + gst + delivery;
 
+  // Preserve cartItems and totals locally on mount before parent clears them
+  const [orderedItems] = useState(cartItems);
+  const [savedGrandTotal] = useState(grandTotal);
+
   const handlePlaceOrder = async () => {
     try {
       const ownerId = user?.id || '';
       const deliveryAddress = savedAddr
         ? `${savedAddr.name}, ${savedAddr.line}, ${savedAddr.city}, ${savedAddr.state}`
         : user?.address
-        ? `${user.bizName || ''}, ${user.address}, ${user.city || ''}`.trim()
-        : `${user?.bizName || 'My Business'}, ${user?.city || 'Mumbai'}`;
+          ? `${user.bizName || ''}, ${user.address}, ${user.city || ''}`.trim()
+          : `${user?.bizName || 'My Business'}, ${user?.city || 'Mumbai'}`;
 
       const orderPromises = Object.keys(groupedCart).map(async (supplierName) => {
         const items = groupedCart[supplierName];
@@ -222,9 +502,9 @@ export default function RawMaterialCheckoutPage({ cartItems, user, onBack, onSuc
           <View style={{ width: 36 }} />
         </View>
 
-        <ScrollView style={styles.confirmScroll} showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.confirmScroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
           <View style={styles.confirmContent}>
-            
+
             {/* Animated Checkmark */}
             <SuccessCheckmark />
 
@@ -247,7 +527,7 @@ export default function RawMaterialCheckoutPage({ cartItems, user, onBack, onSuc
               <View style={styles.confirmDivider} />
 
               <Text style={styles.confirmDetailsTitle}>Order Details</Text>
-              
+
               {orderedItems.map((item, idx) => (
                 <View key={item.id || idx} style={styles.confirmItemRow}>
                   <View style={styles.confirmItemImg}>
@@ -261,45 +541,48 @@ export default function RawMaterialCheckoutPage({ cartItems, user, onBack, onSuc
                 </View>
               ))}
             </View>
+
+            {/* Bottom Actions inside the ScrollView */}
+            <View style={[styles.confirmActionsArea, { width: '100%', maxWidth: 450, paddingHorizontal: 0, marginTop: 24, backgroundColor: 'transparent' }]}>
+              <TouchableOpacity
+                style={styles.confirmTrackBtn}
+                activeOpacity={0.85}
+                onPress={() => {
+                  const orderForTracking = placedOrders[0] || {};
+                  onTrackOrder({
+                    id: orderForTracking.id || '',
+                    displayId: displayOrderId,
+                    items: orderForTracking.items?.map(oi => ({
+                      id: oi.product?.id || oi.productId,
+                      name: oi.product?.name || 'Product',
+                      qty: oi.quantity,
+                      price: parseFloat(oi.priceAtPurchase),
+                      unit: oi.product?.unit || 'kg'
+                    })) || orderedItems,
+                    total: parseFloat(orderForTracking.totalAmount) || savedGrandTotal,
+                    status: orderForTracking.status || 'pending',
+                    supplierName: orderForTracking.supplier?.bizName || '',
+                    deliveryAddress: orderForTracking.deliveryAddress || '',
+                    date: new Date(orderForTracking.createdAt || Date.now()).toLocaleDateString()
+                  });
+                }}
+              >
+                <Text style={styles.confirmTrackBtnText}>Track My Order</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.confirmHomeBtn}
+                activeOpacity={0.85}
+                onPress={onHome}
+              >
+                <Text style={styles.confirmHomeBtnText}>Back to Home</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Spacer to push buttons above chatbot */}
+            <View style={{ height: 80 }} />
           </View>
         </ScrollView>
-
-        {/* Bottom Actions */}
-        <View style={styles.confirmActionsArea}>
-          <TouchableOpacity
-            style={styles.confirmTrackBtn}
-            activeOpacity={0.85}
-            onPress={() => {
-              const orderForTracking = placedOrders[0] || {};
-              onTrackOrder({
-                id: orderForTracking.id || '',
-                displayId: displayOrderId,
-                items: orderForTracking.items?.map(oi => ({
-                  id: oi.product?.id || oi.productId,
-                  name: oi.product?.name || 'Product',
-                  qty: oi.quantity,
-                  price: parseFloat(oi.priceAtPurchase),
-                  unit: oi.product?.unit || 'kg'
-                })) || orderedItems,
-                total: parseFloat(orderForTracking.totalAmount) || savedGrandTotal,
-                status: orderForTracking.status || 'pending',
-                supplierName: orderForTracking.supplier?.bizName || '',
-                deliveryAddress: orderForTracking.deliveryAddress || '',
-                date: new Date(orderForTracking.createdAt || Date.now()).toLocaleDateString()
-              });
-            }}
-          >
-            <Text style={styles.confirmTrackBtnText}>Track My Order</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.confirmHomeBtn}
-            activeOpacity={0.85}
-            onPress={onHome}
-          >
-            <Text style={styles.confirmHomeBtnText}>Back to Home</Text>
-          </TouchableOpacity>
-        </View>
       </View>
     );
   }
@@ -315,7 +598,7 @@ export default function RawMaterialCheckoutPage({ cartItems, user, onBack, onSuc
         <View style={{ width: 36 }} />
       </View>
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={isMobile ? { paddingBottom: 100 } : { paddingBottom: 40 }}>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={[styles.contentLayout, !isMobile && styles.contentLayoutWeb]}>
 
           <View style={styles.leftCol}>
@@ -419,31 +702,15 @@ export default function RawMaterialCheckoutPage({ cartItems, user, onBack, onSuc
                 <Text style={styles.grandTotalLabel}>Total Amount</Text>
                 <Text style={styles.grandTotalValue}>₹{grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
               </View>
-
-              {!isMobile && (
-                <TouchableOpacity style={styles.checkoutBtn} onPress={handlePlaceOrder}>
-                  <Text style={styles.checkoutText}>Place Order</Text>
-                  <ChevronRight size={16} color="#fff" />
-                </TouchableOpacity>
-              )}
+              <TouchableOpacity style={styles.checkoutBtn} onPress={handlePlaceOrder}>
+                <Text style={styles.checkoutText}>Place Order</Text>
+                <ChevronRight size={16} color="#fff" />
+              </TouchableOpacity>
             </View>
           </View>
-
         </View>
+        <View style={{ height: 80 }} />
       </ScrollView>
-
-      {isMobile && !isSuccess && (
-        <View style={styles.bottomBar}>
-          <View style={styles.bottomTotal}>
-            <Text style={styles.bottomTotalLabel}>Total</Text>
-            <Text style={styles.bottomTotalValue}>₹{grandTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</Text>
-          </View>
-          <TouchableOpacity style={styles.checkoutBtnMobile} onPress={handlePlaceOrder}>
-            <Text style={styles.checkoutText}>Place Order</Text>
-            <ChevronRight size={16} color="#fff" />
-          </TouchableOpacity>
-        </View>
-      )}
 
       {/* ── Change Address Modal ── */}
       <Modal

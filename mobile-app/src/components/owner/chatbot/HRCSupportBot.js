@@ -7,10 +7,17 @@ import {
 import { 
   Send, X, Volume2, VolumeX, MoreVertical, 
   Truck, Users, Package, Megaphone, WifiOff, Trash2,
-  Paperclip, FileText, ImageIcon 
+  Paperclip, FileText, ImageIcon, MessageSquarePlus, Clock, ArrowLeft 
 } from 'lucide-react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
+import {
+  createChatSessionApi,
+  fetchChatSessionsApi,
+  deleteChatSessionApi,
+  fetchSessionMessagesApi,
+  sendChatMessageApi
+} from '../../../services/api.service';
 
 const NAVY = '#071B3A';
 const SECONDARY_NAVY = '#102A4C';
@@ -123,6 +130,7 @@ export default function HRCSupportBot({ visible, onClose, user, onNavigate }) {
     time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   };
 
+  const [activeSessionId, setActiveSessionId] = useState(null);
   const [messages, setMessages] = useState([welcomeMessage]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -132,8 +140,36 @@ export default function HRCSupportBot({ visible, onClose, user, onNavigate }) {
   const [isOffline, setIsOffline] = useState(Platform.OS === 'web' ? !navigator.onLine : false);
   const [attachment, setAttachment] = useState(null);
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [chatHistory, setChatHistory] = useState([]);
 
   const scrollViewRef = useRef();
+
+  // Load chat sessions when modal opens
+  useEffect(() => {
+    if (visible) {
+      loadSessions();
+    }
+  }, [visible]);
+
+  const loadSessions = async () => {
+    try {
+      const res = await fetchChatSessionsApi();
+      if (res.success && res.data) {
+        // Format history for display
+        const formatted = res.data.map(session => ({
+          id: session.id,
+          title: session.title,
+          date: new Date(session.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+          time: new Date(session.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          messageCount: session.messageCount || 0
+        }));
+        setChatHistory(formatted);
+      }
+    } catch (err) {
+      console.warn('Failed to load chat sessions:', err);
+    }
+  };
 
   const handlePickDocument = async () => {
     setAttachMenuOpen(false);
@@ -240,44 +276,129 @@ export default function HRCSupportBot({ visible, onClose, user, onNavigate }) {
     }
   }, [messages, isTyping]);
 
-  const handleSend = (textToSend) => {
+  const handleSend = async (textToSend) => {
     const messageText = typeof textToSend === 'string' ? textToSend : inputText;
     if (!messageText.trim()) return;
 
-    // Add user message
-    const userMsg = {
-      id: `user-${Date.now()}`,
-      sender: 'user',
-      type: 'text',
-      text: messageText,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-
-    setMessages(prev => [...prev, userMsg]);
     if (typeof textToSend !== 'string') setInputText('');
-    
-    // Simulate bot reply
-    setIsTyping(true);
-    setTimeout(() => {
-      setIsTyping(false);
-      const response = getBotResponse(messageText);
-      const botMsg = {
-        id: `bot-${Date.now()}`,
-        sender: 'bot',
-        type: response.type,
-        text: response.text,
-        cardType: response.cardType,
-        cardData: response.cardData,
+
+    let currentSessionId = activeSessionId;
+
+    try {
+      // 1. Create a session on the fly if there isn't one active
+      if (!currentSessionId) {
+        const titleText = messageText.length > 30 ? messageText.substring(0, 30) + '...' : messageText;
+        const sessionRes = await createChatSessionApi(titleText);
+        if (sessionRes.success && sessionRes.data) {
+          currentSessionId = sessionRes.data.id;
+          setActiveSessionId(currentSessionId);
+        } else {
+          throw new Error('Could not create chat session');
+        }
+      }
+
+      // Add user message locally first for instant UI response
+      const userMsgLocal = {
+        id: `user-temp-${Date.now()}`,
+        sender: 'user',
+        type: 'text',
+        text: messageText,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
-      setMessages(prev => [...prev, botMsg]);
-    }, 1200);
+      setMessages(prev => [...prev, userMsgLocal]);
+
+      setIsTyping(true);
+
+      // 2. Send message to backend and get response
+      const res = await sendChatMessageApi(currentSessionId, messageText);
+      setIsTyping(false);
+
+      if (res.success && res.data) {
+        const { userMessage, botMessage } = res.data;
+
+        // Replace the local temporary user message and add bot message with final server timestamps
+        const formattedUserMsg = {
+          id: userMessage.id,
+          sender: 'user',
+          type: 'text',
+          text: userMessage.text,
+          time: new Date(userMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+
+        const formattedBotMsg = {
+          id: botMessage.id,
+          sender: 'bot',
+          type: botMessage.type || 'text',
+          text: botMessage.text,
+          cardType: botMessage.cardType,
+          cardData: botMessage.cardData,
+          time: new Date(botMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+
+        setMessages(prev => {
+          // Filter out the temp message and append official server-side user/bot messages
+          const clean = prev.filter(m => m.id !== userMsgLocal.id);
+          return [...clean, formattedUserMsg, formattedBotMsg];
+        });
+      }
+    } catch (err) {
+      setIsTyping(false);
+      console.warn('Error in chat sending:', err);
+    }
   };
 
-  const handleClearChat = () => {
+  const handleClearChat = async () => {
+    if (activeSessionId) {
+      try {
+        await deleteChatSessionApi(activeSessionId);
+        setActiveSessionId(null);
+      } catch (err) {
+        console.warn('Failed to clear chat session on server:', err);
+      }
+    }
     setMessages([welcomeMessage]);
     setConfirmClearOpen(false);
     setMoreMenuOpen(false);
+    loadSessions();
+  };
+
+  const handleNewChat = () => {
+    setActiveSessionId(null);
+    setMessages([{
+      ...welcomeMessage,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }]);
+    setInputText('');
+    setAttachment(null);
+    setMoreMenuOpen(false);
+    loadSessions();
+  };
+
+  const handleLoadChat = async (chatEntry) => {
+    try {
+      setActiveSessionId(chatEntry.id);
+      setShowHistory(false);
+      const res = await fetchSessionMessagesApi(chatEntry.id);
+      if (res.success && res.data) {
+        const formattedMsgs = res.data.map(m => ({
+          id: m.id,
+          sender: m.sender,
+          type: m.type || 'text',
+          text: m.text,
+          cardType: m.cardType,
+          cardData: m.cardData,
+          time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }));
+        // If empty, prepend welcome message
+        if (formattedMsgs.length === 0) {
+          setMessages([welcomeMessage]);
+        } else {
+          setMessages(formattedMsgs);
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to load messages:', err);
+    }
   };
 
   // Check if user has interacted
@@ -406,15 +527,7 @@ export default function HRCSupportBot({ visible, onClose, user, onNavigate }) {
             
             {/* Header Actions */}
             <View style={styles.headerActions}>
-              <TouchableOpacity 
-                style={styles.actionButton} 
-                onPress={() => setIsMuted(!isMuted)}
-                accessibilityRole="button"
-                accessibilityLabel={isMuted ? "Unmute assistant" : "Mute assistant"}
-              >
-                {isMuted ? <VolumeX size={20} color="#FFFFFF" /> : <Volume2 size={20} color="#FFFFFF" />}
-              </TouchableOpacity>
-              
+
               <TouchableOpacity 
                 style={styles.actionButton} 
                 onPress={() => setMoreMenuOpen(!moreMenuOpen)}
@@ -438,6 +551,21 @@ export default function HRCSupportBot({ visible, onClose, user, onNavigate }) {
           {/* More actions dropdown menu */}
           {moreMenuOpen && (
             <View style={styles.dropdownMenu}>
+              <TouchableOpacity 
+                style={styles.dropdownItem}
+                onPress={handleNewChat}
+              >
+                <MessageSquarePlus size={16} color={TEXT_PRIMARY} />
+                <Text style={styles.dropdownItemText}>New Chat</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.dropdownItem}
+                onPress={() => { setShowHistory(true); setMoreMenuOpen(false); }}
+              >
+                <Clock size={16} color={TEXT_PRIMARY} />
+                <Text style={styles.dropdownItemText}>History</Text>
+              </TouchableOpacity>
+              <View style={styles.dropdownDivider} />
               <TouchableOpacity 
                 style={styles.dropdownItem}
                 onPress={() => setConfirmClearOpen(true)}
@@ -521,58 +649,7 @@ export default function HRCSupportBot({ visible, onClose, user, onNavigate }) {
               );
             })}
 
-            {/* Welcome Grid 2x2 State */}
-            {userMessagesCount === 0 && (
-              <View style={styles.gridContainer}>
-                <View style={styles.gridRow}>
-                  <TouchableOpacity 
-                    style={styles.gridCard} 
-                    onPress={() => handleSend('Track my latest order')}
-                  >
-                    <View style={[styles.gridIconCircle, { backgroundColor: '#EFF6FF' }]}>
-                      <Truck size={20} color="#3B82F6" />
-                    </View>
-                    <Text style={styles.gridCardTitle}>Track My Order</Text>
-                    <Text style={styles.gridCardDesc}>Check current order and delivery status</Text>
-                  </TouchableOpacity>
 
-                  <TouchableOpacity 
-                    style={styles.gridCard} 
-                    onPress={() => handleSend('I want to hire staff')}
-                  >
-                    <View style={[styles.gridIconCircle, { backgroundColor: '#EBFDF5' }]}>
-                      <Users size={20} color="#16B77A" />
-                    </View>
-                    <Text style={styles.gridCardTitle}>Hire Staff</Text>
-                    <Text style={styles.gridCardDesc}>Post a requirement or find staff</Text>
-                  </TouchableOpacity>
-                </View>
-
-                <View style={styles.gridRow}>
-                  <TouchableOpacity 
-                    style={styles.gridCard} 
-                    onPress={() => handleSend('Help me find raw material suppliers')}
-                  >
-                    <View style={[styles.gridIconCircle, { backgroundColor: '#F5F3FF' }]}>
-                      <Package size={20} color="#8B5CF6" />
-                    </View>
-                    <Text style={styles.gridCardTitle}>Raw Materials</Text>
-                    <Text style={styles.gridCardDesc}>Find suppliers and compare products</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity 
-                    style={styles.gridCard} 
-                    onPress={() => handleSend('I need help with marketing')}
-                  >
-                    <View style={[styles.gridIconCircle, { backgroundColor: '#FFFBEB' }]}>
-                      <Megaphone size={20} color="#F59E0B" />
-                    </View>
-                    <Text style={styles.gridCardTitle}>Marketing Help</Text>
-                    <Text style={styles.gridCardDesc}>Create a campaign or view proposals</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
 
             {/* Typing Indicator */}
             {isTyping && (
@@ -730,6 +807,54 @@ export default function HRCSupportBot({ visible, onClose, user, onNavigate }) {
             </View>
           </Modal>
         )}
+
+        {/* Chat History Overlay */}
+        {showHistory && (
+          <Modal
+            visible={showHistory}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={() => setShowHistory(false)}
+          >
+            <View style={styles.historyOverlay}>
+              <View style={styles.historyContainer}>
+                <View style={styles.historyHeader}>
+                  <TouchableOpacity onPress={() => setShowHistory(false)} style={styles.historyBackBtn}>
+                    <ArrowLeft size={22} color="#FFFFFF" />
+                  </TouchableOpacity>
+                  <Text style={styles.historyHeaderTitle}>Chat History</Text>
+                  <View style={{ width: 42 }} />
+                </View>
+
+                <ScrollView style={styles.historyList} contentContainerStyle={styles.historyListContent}>
+                  {chatHistory.length === 0 ? (
+                    <View style={styles.historyEmpty}>
+                      <Clock size={48} color={BORDER_COLOR} />
+                      <Text style={styles.historyEmptyTitle}>No chat history</Text>
+                      <Text style={styles.historyEmptyDesc}>Your previous conversations will appear here when you start a new chat.</Text>
+                    </View>
+                  ) : (
+                    chatHistory.map((chat) => (
+                      <TouchableOpacity
+                        key={chat.id}
+                        style={styles.historyItem}
+                        onPress={() => handleLoadChat(chat)}
+                      >
+                        <View style={styles.historyItemIcon}>
+                          <MessageSquarePlus size={20} color={NAVY} />
+                        </View>
+                        <View style={styles.historyItemContent}>
+                          <Text style={styles.historyItemTitle} numberOfLines={1}>{chat.title}</Text>
+                          <Text style={styles.historyItemMeta}>{chat.date} • {chat.time} • {chat.messageCount} messages</Text>
+                        </View>
+                      </TouchableOpacity>
+                    ))
+                  )}
+                </ScrollView>
+              </View>
+            </View>
+          </Modal>
+        )}
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -738,24 +863,34 @@ export default function HRCSupportBot({ visible, onClose, user, onNavigate }) {
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(9, 13, 22, 0.65)',
+    backgroundColor: 'rgba(9, 13, 22, 0.55)',
     justifyContent: 'flex-end',
-    alignItems: 'center'
+    alignItems: 'center',
+    paddingBottom: 20,
+    paddingHorizontal: 12
   },
   chatCard: {
     backgroundColor: BG_COLOR,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderRadius: 24,
     width: '100%',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    ...Platform.select({
+      web: { boxShadow: '0 12px 40px rgba(0,0,0,0.25)' },
+      android: { elevation: 20 },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.25,
+        shadowRadius: 20
+      }
+    })
   },
   chatCardMobile: {
-    height: '94%',
+    height: '75%',
   },
   chatCardLarge: {
     maxWidth: 640,
-    height: '90%',
-    borderRadius: 24,
+    height: '80%',
     marginBottom: '3%'
   },
   chatHeader: {
@@ -851,6 +986,115 @@ const styles = StyleSheet.create({
   dropdownItemText: {
     fontSize: 14,
     fontWeight: '700'
+  },
+  dropdownDivider: {
+    height: 1,
+    backgroundColor: BORDER_COLOR,
+    marginVertical: 4,
+    marginHorizontal: 8
+  },
+  historyOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(9, 13, 22, 0.55)',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingBottom: 20,
+    paddingHorizontal: 12
+  },
+  historyContainer: {
+    backgroundColor: BG_COLOR,
+    borderRadius: 24,
+    width: '100%',
+    height: '75%',
+    overflow: 'hidden',
+    ...Platform.select({
+      web: { boxShadow: '0 12px 40px rgba(0,0,0,0.25)' },
+      android: { elevation: 20 },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.25,
+        shadowRadius: 20
+      }
+    })
+  },
+  historyHeader: {
+    backgroundColor: NAVY,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    height: 70,
+  },
+  historyBackBtn: {
+    width: 42,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 21
+  },
+  historyHeaderTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#FFFFFF'
+  },
+  historyList: {
+    flex: 1
+  },
+  historyListContent: {
+    padding: 16,
+    gap: 10
+  },
+  historyEmpty: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 100,
+    gap: 12
+  },
+  historyEmptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: TEXT_PRIMARY,
+    marginTop: 8
+  },
+  historyEmptyDesc: {
+    fontSize: 14,
+    color: TEXT_MUTED,
+    textAlign: 'center',
+    paddingHorizontal: 40,
+    lineHeight: 20
+  },
+  historyItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: CARD_BG,
+    borderRadius: 14,
+    padding: 16,
+    gap: 14,
+    borderWidth: 1,
+    borderColor: BORDER_COLOR
+  },
+  historyItemIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  historyItemContent: {
+    flex: 1,
+    gap: 4
+  },
+  historyItemTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: TEXT_PRIMARY
+  },
+  historyItemMeta: {
+    fontSize: 12,
+    color: TEXT_MUTED,
+    fontWeight: '500'
   },
   offlineBanner: {
     backgroundColor: '#FFF9E6',

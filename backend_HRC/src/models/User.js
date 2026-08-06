@@ -69,6 +69,22 @@ const User = sequelize.define('User', {
     type: DataTypes.TEXT('long'),
     allowNull: true,
   },
+  profilePhotoPublicId: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  profilePhotoAssetId: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  profilePhotoResourceType: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  profilePhotoDeliveryType: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   bankName: {
     type: DataTypes.STRING,
     allowNull: true,

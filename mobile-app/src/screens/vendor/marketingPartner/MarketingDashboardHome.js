@@ -7,8 +7,8 @@ import {
 import { AuthContext } from '../../../context/AuthContext';
 import { fetchPublicRequirements, fetchVendorRequirements } from '../../../services/api.service';
 
-const NAVY = '#071B3A';
-const PURPLE = '#071B3A';
+const NAVY = '#081A3A';
+const PURPLE = '#081A3A';
 const BLUE = '#3B82F6';
 const GREEN = '#10B981';
 const ORANGE = '#F59E0B';
@@ -90,8 +90,8 @@ export default function MarketingDashboardHome({ setActivePage, handleSendPropos
               <View style={[styles.overviewIconWrap, {backgroundColor: '#F5F3FF'}]}>
                 <Megaphone size={18} color={PURPLE} />
               </View>
+              <Text style={styles.overviewCount}>{publicReqs.length}</Text>
             </View>
-            <Text style={styles.overviewCount}>{publicReqs.length}</Text>
             <Text style={styles.overviewLabel}>Open Opportunities</Text>
           </TouchableOpacity>
 
@@ -100,8 +100,8 @@ export default function MarketingDashboardHome({ setActivePage, handleSendPropos
               <View style={[styles.overviewIconWrap, {backgroundColor: '#EFF6FF'}]}>
                 <Inbox size={18} color={BLUE} />
               </View>
+              <Text style={styles.overviewCount}>{directReqs.length}</Text>
             </View>
-            <Text style={styles.overviewCount}>{directReqs.length}</Text>
             <Text style={styles.overviewLabel}>Direct Requests</Text>
           </TouchableOpacity>
 
@@ -110,8 +110,8 @@ export default function MarketingDashboardHome({ setActivePage, handleSendPropos
               <View style={[styles.overviewIconWrap, {backgroundColor: '#F0FDF4'}]}>
                 <Rocket size={18} color={GREEN} />
               </View>
+              <Text style={styles.overviewCount}>{directReqs.filter(r => r.status === 'accepted' || r.status === 'confirmed').length}</Text>
             </View>
-            <Text style={styles.overviewCount}>{directReqs.filter(r => r.status === 'accepted' || r.status === 'confirmed').length}</Text>
             <Text style={styles.overviewLabel}>Active Campaigns</Text>
           </TouchableOpacity>
 
@@ -120,8 +120,8 @@ export default function MarketingDashboardHome({ setActivePage, handleSendPropos
               <View style={[styles.overviewIconWrap, {backgroundColor: '#FFFBEB'}]}>
                 <FileClock size={18} color={ORANGE} />
               </View>
+              <Text style={styles.overviewCount}>2</Text>
             </View>
-            <Text style={styles.overviewCount}>2</Text>
             <Text style={styles.overviewLabel}>Pending Approvals</Text>
           </View>
         </View>
@@ -293,11 +293,11 @@ const styles = StyleSheet.create({
   actionLink: { fontSize: 12, fontWeight: 'bold', color: PURPLE },
 
   overviewGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  overviewCard: { backgroundColor: WHITE, borderRadius: 16, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 2, elevation: 1 },
+  overviewCard: { backgroundColor: WHITE, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: '#E8EDF4', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2, display: 'flex', flexDirection: 'column' },
   overviewCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   overviewIconWrap: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  overviewCount: { fontSize: 22, fontWeight: 'bold', color: NAVY, marginBottom: 2 },
-  overviewLabel: { fontSize: 12, color: MUTED, fontWeight: '500' },
+  overviewCount: { fontSize: 24, fontWeight: '900', color: NAVY },
+  overviewLabel: { fontSize: 12, color: MUTED, fontWeight: '600' },
 
   // Needs Attention
   attentionContainer: { backgroundColor: WHITE, borderRadius: 18, padding: 8, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 2, elevation: 1 },

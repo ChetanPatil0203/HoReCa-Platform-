@@ -59,7 +59,13 @@ export default function ProductDetailsPage({ product, cartItems = [], onCartUpda
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Product Image */}
         <View style={styles.imageContainer}>
-          <Image source={{ uri: product.image }} style={styles.productImage} />
+          {product.image ? (
+            <Image source={{ uri: product.image }} style={styles.productImage} />
+          ) : (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F1F5F9' }}>
+              <Text style={{ fontSize: 72 }}>📦</Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.content}>

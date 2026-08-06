@@ -1,5 +1,5 @@
-import React, { useState, useContext } from 'react';
-import { View, Text, StyleSheet, Platform, useWindowDimensions, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useContext, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, Platform, useWindowDimensions, TouchableOpacity, Image, Animated } from 'react-native';
 import { Menu, Bell, Search, User, ChefHat, ArrowLeft } from 'lucide-react-native';
 import VendorSidebar from '../../components/vendor/VendorSidebar';
 import { AuthContext } from '../../context/AuthContext';
@@ -12,14 +12,26 @@ import VendorClientsPage from './VendorClientsPage';
 import VendorRevenuePage from './VendorRevenuePage';
 import VendorInventoryPage from './VendorInventoryPage';
 import FeedWallPage from './FeedWallPage';
+import HRCSupportBot from '../../components/owner/chatbot/HRCSupportBot';
 
 export default function VendorDashboard() {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || (Platform.OS !== 'web');
-  const { logout, vendorType } = useContext(AuthContext);
+  const { logout, vendorType, user } = useContext(AuthContext);
 
   const [activePage, setActivePage] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [chatbotOpen, setChatbotOpen] = useState(false);
+  const floatAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, { toValue: -6, duration: 1500, useNativeDriver: true }),
+        Animated.timing(floatAnim, { toValue: 0, duration: 1500, useNativeDriver: true })
+      ])
+    ).start();
+  }, []);
 
   const renderActivePage = () => {
     switch (activePage) {
@@ -92,6 +104,21 @@ export default function VendorDashboard() {
         <View style={styles.pageArea}>
           {renderActivePage()}
         </View>
+
+        {/* Floating Chatbot FAB */}
+        <Animated.View style={[styles.chatbotFabContainer, { transform: [{ translateY: floatAnim }] }]}>
+          <TouchableOpacity style={styles.chatbotFab} onPress={() => setChatbotOpen(true)} activeOpacity={0.85}>
+            <Image source={require('../../../assets/Chatbot.png')} style={styles.chatbotFabImage} />
+          </TouchableOpacity>
+        </Animated.View>
+
+        {/* Chatbot Modal */}
+        <HRCSupportBot
+          visible={chatbotOpen}
+          onClose={() => setChatbotOpen(false)}
+          user={user}
+          onNavigate={(page) => { setChatbotOpen(false); setActivePage(page); }}
+        />
       </View>
     </View>
   );
@@ -101,7 +128,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#F3F4F6', // Light silver canvas for Vendor dashboard
+    backgroundColor: '#F3F4F6',
   },
   mainContent: {
     flex: 1,
@@ -244,4 +271,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  chatbotFabContainer: { position: 'absolute', right: 20, bottom: 95, zIndex: 99 },
+  chatbotFab: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', ...Platform.select({ web: { boxShadow: '0 6px 20px rgba(7,27,58,0.2)' }, ios: { shadowColor: '#071B3A', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.2, shadowRadius: 10 }, android: { elevation: 6 } }) },
+  chatbotFabImage: { width: '100%', height: '100%', borderRadius: 28, resizeMode: 'cover' },
 });

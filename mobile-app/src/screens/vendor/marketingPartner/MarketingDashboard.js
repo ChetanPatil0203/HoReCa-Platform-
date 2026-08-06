@@ -1,5 +1,5 @@
-import React, { useState, useContext } from 'react';
-import { View, Text, StyleSheet, Platform, useWindowDimensions, TouchableOpacity, Image, TouchableWithoutFeedback } from 'react-native';
+import React, { useState, useContext, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, Platform, useWindowDimensions, TouchableOpacity, Image, TouchableWithoutFeedback, Animated } from 'react-native';
 import { Menu, Bell, Search, LayoutDashboard, ClipboardList, Megaphone, FolderOpen, Users, DollarSign, CircleHelp as HelpCircle, Settings, LogOut, Home, Inbox, User, Plus, ImagePlus, UserPlus, FileText, Building2 } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
 import { colors } from '../../../theme/colors';
@@ -21,6 +21,7 @@ import MarketingFeedWallScreen from './MarketingFeedWallScreen';
 import MarketingClientsScreen from './MarketingClientsScreen';
 import CompliancePage from '../../owner/compliance/CompliancePage';
 import DocumentsKycScreen from '../../common/DocumentsKycScreen';
+import HRCSupportBot from '../../../components/owner/chatbot/HRCSupportBot';
 
 const NAVY = '#071B3A';
 const PURPLE = '#071B3A';
@@ -39,6 +40,17 @@ export default function MarketingDashboard() {
   const userPhoto = user?.profilePhoto || user?.profileImage || user?.registration?.profilePhoto || user?.vendorRegistration?.profilePhoto;
 
   const [plusMenuOpen, setPlusMenuOpen] = useState(false);
+  const [chatbotOpen, setChatbotOpen] = useState(false);
+  const floatAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, { toValue: -6, duration: 1500, useNativeDriver: true }),
+        Animated.timing(floatAnim, { toValue: 0, duration: 1500, useNativeDriver: true })
+      ])
+    ).start();
+  }, []);
 
   const handleSendProposal = (req) => {
     setSelectedRequirement(req);
@@ -210,6 +222,21 @@ export default function MarketingDashboard() {
           )}
 
         </View>
+
+        {/* Floating Chatbot FAB */}
+        <Animated.View style={[styles.chatbotFabContainer, { transform: [{ translateY: floatAnim }] }]}>
+          <TouchableOpacity style={styles.chatbotFab} onPress={() => setChatbotOpen(true)} activeOpacity={0.85}>
+            <Image source={require('../../../../assets/Chatbot.png')} style={styles.chatbotFabImage} />
+          </TouchableOpacity>
+        </Animated.View>
+
+        {/* Chatbot Modal */}
+        <HRCSupportBot
+          visible={chatbotOpen}
+          onClose={() => setChatbotOpen(false)}
+          user={user}
+          onNavigate={(page) => { setChatbotOpen(false); setActivePage(page); }}
+        />
       </View>
     </TouchableWithoutFeedback>
   );
@@ -256,4 +283,7 @@ const styles = StyleSheet.create({
   floatingMenuItem: { backgroundColor: '#FFF', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 8 },
   floatingMenuIconBox: { backgroundColor: '#E0F2FE', width: 28, height: 28, borderRadius: 6, justifyContent: 'center', alignItems: 'center', marginRight: 8 },
   floatingMenuText: { fontSize: 13, fontWeight: 'bold', color: NAVY },
+  chatbotFabContainer: { position: 'absolute', right: 20, bottom: 95, zIndex: 99 },
+  chatbotFab: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', ...Platform.select({ web: { boxShadow: '0 6px 20px rgba(7,27,58,0.2)' }, ios: { shadowColor: '#071B3A', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.2, shadowRadius: 10 }, android: { elevation: 6 } }) },
+  chatbotFabImage: { width: '100%', height: '100%', borderRadius: 28, resizeMode: 'cover' },
 });

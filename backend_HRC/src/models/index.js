@@ -21,8 +21,16 @@ const MarketingProposal = require('./MarketingProposal');
 const MarketingCreative = require('./MarketingCreative');
 const MarketingTeamMember = require('./MarketingTeamMember');
 const MarketingCampaignMetric = require('./MarketingCampaignMetric');
+const ChatSession = require('./ChatSession');
+const ChatMessage = require('./ChatMessage');
 
 // Associations
+User.hasMany(ChatSession, { foreignKey: 'userId', as: 'chatSessions', onDelete: 'CASCADE' });
+ChatSession.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+ChatSession.hasMany(ChatMessage, { foreignKey: 'sessionId', as: 'messages', onDelete: 'CASCADE' });
+ChatMessage.belongsTo(ChatSession, { foreignKey: 'sessionId', as: 'session' });
+
 User.hasMany(Document, { foreignKey: 'userId', as: 'documents', onDelete: 'CASCADE' });
 Document.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
@@ -130,4 +138,6 @@ module.exports = {
   MarketingCreative,
   MarketingTeamMember,
   MarketingCampaignMetric,
+  ChatSession,
+  ChatMessage,
 };

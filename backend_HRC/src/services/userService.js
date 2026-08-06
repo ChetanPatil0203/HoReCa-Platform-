@@ -1,5 +1,6 @@
-const { User, Document, HorecaRegistration, VendorRegistration } = require('../models');
+const { User, Document, HorecaRegistration, VendorRegistration, sequelize } = require('../models');
 const { Op } = require('sequelize');
+const cloudinaryService = require('./cloudinary.service');
 
 // Get Current User Profile with Registration and Documents
 exports.getUserProfileService = async (userId) => {
@@ -28,7 +29,7 @@ exports.getUserProfileService = async (userId) => {
   return user;
 };
 
-// Update Profile
+// Update Profile (transactional across User, HorecaRegistration, VendorRegistration)
 exports.updateUserProfileService = async (userId, updateData) => {
   const user = await User.findByPk(userId);
   if (!user) {
@@ -36,90 +37,112 @@ exports.updateUserProfileService = async (userId, updateData) => {
   }
 
   const {
-    firstName,
-    lastName,
-    city,
-    state,
-    pincode,
-    address,
-    bizName,
-    gstin,
-    panNo,
-    fssaiNo,
-    profilePhoto,
-    bankName,
-    accountNumber,
-    ifscCode,
-    accountHolderName,
-    deliveryRadius,
-    minOrderValue,
-    paymentTerms,
-    notificationSettings
+    firstName, lastName, city, state, pincode, address, bizName,
+    gstin, panNo, fssaiNo,
+    profilePhoto, profilePhotoPublicId, profilePhotoAssetId, profilePhotoResourceType, profilePhotoDeliveryType,
+    bankName, accountNumber, ifscCode, accountHolderName,
+    deliveryRadius, minOrderValue, paymentTerms, notificationSettings
   } = updateData;
 
-  if (firstName !== undefined) user.firstName = firstName;
-  if (lastName !== undefined) user.lastName = lastName;
-  if (city !== undefined) user.city = city;
-  if (state !== undefined) user.state = state;
-  if (pincode !== undefined) user.pincode = pincode;
-  if (address !== undefined) user.address = address;
-  if (profilePhoto !== undefined) user.profilePhoto = profilePhoto;
-  if (bankName !== undefined) user.bankName = bankName;
-  if (accountNumber !== undefined) user.accountNumber = accountNumber;
-  if (ifscCode !== undefined) user.ifscCode = ifscCode;
-  if (accountHolderName !== undefined) user.accountHolderName = accountHolderName;
-  if (deliveryRadius !== undefined) user.deliveryRadius = deliveryRadius;
-  if (minOrderValue !== undefined) user.minOrderValue = minOrderValue;
-  if (paymentTerms !== undefined) user.paymentTerms = paymentTerms;
-  if (notificationSettings !== undefined) {
-    user.notificationSettings = typeof notificationSettings === 'object' 
-      ? JSON.stringify(notificationSettings) 
-      : notificationSettings;
+  // Capture old Cloudinary profile photo data for deletion after successful save
+  const oldPhotoPublicId = user.profilePhotoPublicId;
+  const oldPhotoResourceType = user.profilePhotoResourceType || 'image';
+  const oldPhotoDeliveryType = user.profilePhotoDeliveryType || 'upload';
+
+  const transaction = await sequelize.transaction();
+  try {
+    // ── Update User ──
+    if (firstName !== undefined) user.firstName = firstName;
+    if (lastName !== undefined) user.lastName = lastName;
+    if (city !== undefined) user.city = city;
+    if (state !== undefined) user.state = state;
+    if (pincode !== undefined) user.pincode = pincode;
+    if (address !== undefined) user.address = address;
+    if (profilePhoto !== undefined) user.profilePhoto = profilePhoto;
+    if (profilePhotoPublicId !== undefined) user.profilePhotoPublicId = profilePhotoPublicId;
+    if (profilePhotoAssetId !== undefined) user.profilePhotoAssetId = profilePhotoAssetId;
+    if (profilePhotoResourceType !== undefined) user.profilePhotoResourceType = profilePhotoResourceType;
+    if (profilePhotoDeliveryType !== undefined) user.profilePhotoDeliveryType = profilePhotoDeliveryType;
+    if (bankName !== undefined) user.bankName = bankName;
+    if (accountNumber !== undefined) user.accountNumber = accountNumber;
+    if (ifscCode !== undefined) user.ifscCode = ifscCode;
+    if (accountHolderName !== undefined) user.accountHolderName = accountHolderName;
+    if (deliveryRadius !== undefined) user.deliveryRadius = deliveryRadius;
+    if (minOrderValue !== undefined) user.minOrderValue = minOrderValue;
+    if (paymentTerms !== undefined) user.paymentTerms = paymentTerms;
+    if (notificationSettings !== undefined) {
+      user.notificationSettings = typeof notificationSettings === 'object'
+        ? JSON.stringify(notificationSettings)
+        : notificationSettings;
+    }
+    await user.save({ transaction });
+
+    // ── Update HorecaRegistration ──
+    const horeca = await HorecaRegistration.findOne({ where: { userId }, transaction });
+    if (horeca) {
+      if (bizName !== undefined) horeca.bizName = bizName;
+      if (address !== undefined) horeca.address = address;
+      if (city !== undefined) horeca.city = city;
+      if (state !== undefined) horeca.state = state;
+      if (pincode !== undefined) horeca.pincode = pincode;
+      if (gstin !== undefined) horeca.gstin = gstin;
+      if (panNo !== undefined) horeca.panNo = panNo;
+      if (fssaiNo !== undefined) horeca.fssaiNo = fssaiNo;
+      if (profilePhoto !== undefined) horeca.profilePhoto = profilePhoto;
+      if (profilePhotoPublicId !== undefined) horeca.profilePhotoPublicId = profilePhotoPublicId;
+      if (profilePhotoAssetId !== undefined) horeca.profilePhotoAssetId = profilePhotoAssetId;
+      if (profilePhotoResourceType !== undefined) horeca.profilePhotoResourceType = profilePhotoResourceType;
+      if (profilePhotoDeliveryType !== undefined) horeca.profilePhotoDeliveryType = profilePhotoDeliveryType;
+      if (bankName !== undefined) horeca.bankName = bankName;
+      if (accountNumber !== undefined) horeca.accountNumber = accountNumber;
+      if (ifscCode !== undefined) horeca.ifscCode = ifscCode;
+      if (accountHolderName !== undefined) horeca.accountHolderName = accountHolderName;
+      await horeca.save({ transaction });
+    }
+
+    // ── Update VendorRegistration ──
+    const vendor = await VendorRegistration.findOne({ where: { userId }, transaction });
+    if (vendor) {
+      if (bizName !== undefined) vendor.bizName = bizName;
+      if (address !== undefined) vendor.address = address;
+      if (city !== undefined) vendor.city = city;
+      if (state !== undefined) vendor.state = state;
+      if (pincode !== undefined) vendor.pincode = pincode;
+      if (gstin !== undefined) vendor.gstin = gstin;
+      if (panNo !== undefined) vendor.panNo = panNo;
+      if (fssaiNo !== undefined) vendor.fssaiNo = fssaiNo;
+      if (profilePhoto !== undefined) vendor.profilePhoto = profilePhoto;
+      if (profilePhotoPublicId !== undefined) vendor.profilePhotoPublicId = profilePhotoPublicId;
+      if (profilePhotoAssetId !== undefined) vendor.profilePhotoAssetId = profilePhotoAssetId;
+      if (profilePhotoResourceType !== undefined) vendor.profilePhotoResourceType = profilePhotoResourceType;
+      if (profilePhotoDeliveryType !== undefined) vendor.profilePhotoDeliveryType = profilePhotoDeliveryType;
+      if (bankName !== undefined) vendor.bankName = bankName;
+      if (accountNumber !== undefined) vendor.accountNumber = accountNumber;
+      if (ifscCode !== undefined) vendor.ifscCode = ifscCode;
+      if (accountHolderName !== undefined) vendor.accountHolderName = accountHolderName;
+      if (deliveryRadius !== undefined) vendor.deliveryRadius = deliveryRadius;
+      if (minOrderValue !== undefined) vendor.minOrderValue = minOrderValue;
+      if (paymentTerms !== undefined) vendor.paymentTerms = paymentTerms;
+      await vendor.save({ transaction });
+    }
+
+    await transaction.commit();
+
+    // ── Delete old profile photo from Cloudinary AFTER successful DB commit ──
+    if (profilePhotoPublicId && oldPhotoPublicId && oldPhotoPublicId !== profilePhotoPublicId) {
+      try {
+        await cloudinaryService.deleteAsset(oldPhotoPublicId, oldPhotoResourceType, oldPhotoDeliveryType);
+      } catch (delErr) {
+        // Non-critical: log and continue, new photo is already saved
+        console.warn('[Cloudinary] Old profile photo cleanup failed (non-critical):', delErr.message);
+      }
+    }
+
+    return exports.getUserProfileService(userId);
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
   }
-
-  await user.save();
-
-  // Update corresponding registration table if applicable
-  const horeca = await HorecaRegistration.findOne({ where: { userId } });
-  if (horeca) {
-    if (bizName !== undefined) horeca.bizName = bizName;
-    if (address !== undefined) horeca.address = address;
-    if (city !== undefined) horeca.city = city;
-    if (state !== undefined) horeca.state = state;
-    if (pincode !== undefined) horeca.pincode = pincode;
-    if (gstin !== undefined) horeca.gstin = gstin;
-    if (panNo !== undefined) horeca.panNo = panNo;
-    if (fssaiNo !== undefined) horeca.fssaiNo = fssaiNo;
-    if (profilePhoto !== undefined) horeca.profilePhoto = profilePhoto;
-    if (bankName !== undefined) horeca.bankName = bankName;
-    if (accountNumber !== undefined) horeca.accountNumber = accountNumber;
-    if (ifscCode !== undefined) horeca.ifscCode = ifscCode;
-    if (accountHolderName !== undefined) horeca.accountHolderName = accountHolderName;
-    await horeca.save();
-  }
-
-  const vendor = await VendorRegistration.findOne({ where: { userId } });
-  if (vendor) {
-    if (bizName !== undefined) vendor.bizName = bizName;
-    if (address !== undefined) vendor.address = address;
-    if (city !== undefined) vendor.city = city;
-    if (state !== undefined) vendor.state = state;
-    if (pincode !== undefined) vendor.pincode = pincode;
-    if (gstin !== undefined) vendor.gstin = gstin;
-    if (panNo !== undefined) vendor.panNo = panNo;
-    if (fssaiNo !== undefined) vendor.fssaiNo = fssaiNo;
-    if (profilePhoto !== undefined) vendor.profilePhoto = profilePhoto;
-    if (bankName !== undefined) vendor.bankName = bankName;
-    if (accountNumber !== undefined) vendor.accountNumber = accountNumber;
-    if (ifscCode !== undefined) vendor.ifscCode = ifscCode;
-    if (accountHolderName !== undefined) vendor.accountHolderName = accountHolderName;
-    if (deliveryRadius !== undefined) vendor.deliveryRadius = deliveryRadius;
-    if (minOrderValue !== undefined) vendor.minOrderValue = minOrderValue;
-    if (paymentTerms !== undefined) vendor.paymentTerms = paymentTerms;
-    await vendor.save();
-  }
-
-  return exports.getUserProfileService(userId);
 };
 
 const isUuid = (id) => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);

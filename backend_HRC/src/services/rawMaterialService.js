@@ -80,7 +80,12 @@ exports.getSuppliersService = async () => {
 };
 
 exports.createProductService = async (productData) => {
-  const { supplierId, name, category, stock, unit, price, sku, moq, expiry, imageUrl } = productData;
+  const {
+    supplierId, name, category, stock, unit, price, sku, moq, expiry,
+    imageUrl,
+    cloudinaryPublicId, cloudinaryAssetId, secureUrl, resourceType, deliveryType,
+    format, mimeType, fileSize, width, height, originalName
+  } = productData;
 
   const transaction = await sequelize.transaction();
 
@@ -110,6 +115,17 @@ exports.createProductService = async (productData) => {
       moq: moq || 1,
       expiry: expiry || null,
       imageUrl: imageUrl || null,
+      cloudinaryPublicId: cloudinaryPublicId || null,
+      cloudinaryAssetId: cloudinaryAssetId || null,
+      secureUrl: secureUrl || null,
+      resourceType: resourceType || null,
+      deliveryType: deliveryType || null,
+      format: format || null,
+      mimeType: mimeType || null,
+      fileSize: fileSize || null,
+      width: width || null,
+      height: height || null,
+      originalName: originalName || null,
     }, { transaction });
 
     await transaction.commit();
@@ -250,6 +266,7 @@ exports.vendorRespondOrderService = async (orderId, supplierId, action) => {
 
 // ── New: Get single order by ID ──
 exports.getOrderByIdService = async (orderId) => {
+  console.log(`[ORDER SERVICE LOG] Searching DB for Order ID: ${orderId}...`);
   const order = await Order.findByPk(orderId, {
     include: [
       { model: VendorRegistration, as: 'supplier', attributes: ['id', 'bizName', 'city', 'mobile', 'email', 'address'] },
@@ -262,11 +279,14 @@ exports.getOrderByIdService = async (orderId) => {
     ]
   });
   if (!order) throw new Error('Order not found');
+
+  console.log(`[ORDER SERVICE LOG] DB Match Found -> Order #${order.id.slice(0, 8)} | Current Status: ${order.status} | Supplier: ${order.supplier?.bizName || 'N/A'} | Owner: ${order.owner?.bizName || 'N/A'} | Items Count: ${order.items?.length || 0}`);
   return order;
 };
 
 // ── New: Update order status ──
 exports.updateOrderStatusService = async (orderId, newStatus) => {
+  console.log(`[ORDER SERVICE LOG] Validating status transition to '${newStatus}' for Order: ${orderId}`);
   const validStatuses = ['pending', 'confirmed', 'processing', 'packed', 'shipped', 'delivered', 'cancelled'];
   if (!validStatuses.includes(newStatus)) {
     throw new Error(`Invalid status: ${newStatus}. Must be one of: ${validStatuses.join(', ')}`);
@@ -290,11 +310,13 @@ exports.updateOrderStatusService = async (orderId, newStatus) => {
     throw new Error(`Cannot transition from '${order.status}' to '${newStatus}'`);
   }
 
+  console.log(`[ORDER SERVICE LOG] ⚙️ Status Changing: ${order.status} ===> ${newStatus}`);
   order.status = newStatus;
   if (newStatus === 'cancelled') {
     order.cancelledAt = new Date();
   }
   await order.save();
+  console.log(`[ORDER SERVICE LOG] 💾 Status successfully saved to Database!`);
   return order;
 };
 

@@ -7,7 +7,7 @@ import { RadioTower, Inbox, Users, UserCheck, BriefcaseBusiness, UserPlus, Chevr
 import { AuthContext } from '../../../context/AuthContext';
 import { fetchPublicRequirements, fetchVendorRequirements, fetchVendorCandidatesApi } from '../../../services/api.service';
 
-const NAVY = '#071B3A';
+const NAVY = '#081A3A';
 const MUTED = '#64748B';
 const BLUE = '#3B82F6';
 const ORANGE = '#F97316';
@@ -297,10 +297,12 @@ export default function ManpowerDashboardHome({ onNavigate }) {
                 onPress={() => stat.action && onNavigate && onNavigate(stat.action)}
                 activeOpacity={0.8}
               >
-                <View style={[styles.overviewIconBox, { backgroundColor: `${stat.color}15` }]}>
-                  <stat.icon size={20} color={stat.color} strokeWidth={2.5} />
+                <View style={styles.overviewHeader}>
+                  <View style={[styles.overviewIconBox, { backgroundColor: `${stat.color}15` }]}>
+                    <stat.icon size={18} color={stat.color} strokeWidth={2.5} />
+                  </View>
+                  <Text style={styles.overviewValue}>{stat.value}</Text>
                 </View>
-                <Text style={styles.overviewValue}>{stat.value}</Text>
                 <Text style={styles.overviewLabel} numberOfLines={1}>{stat.label}</Text>
               </TouchableOpacity>
             ))}
@@ -731,9 +733,10 @@ const styles = StyleSheet.create({
   
   // Overview Grid
   gridContainer: { flexDirection: 'row', flexWrap: 'wrap' },
-  overviewCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 2, elevation: 1 },
-  overviewIconBox: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  overviewValue: { fontSize: 24, fontWeight: '800', color: NAVY, marginBottom: 2 },
+  overviewCard: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: '#E8EDF4', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2, display: 'flex', flexDirection: 'column' },
+  overviewHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  overviewIconBox: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  overviewValue: { fontSize: 24, fontWeight: '900', color: NAVY },
   overviewLabel: { fontSize: 12, fontWeight: '600', color: MUTED },
   overviewFooter: { marginTop: 12, flexDirection: 'row', alignItems: 'center' },
   overviewLinkText: { fontSize: 12, fontWeight: '600', color: '#94A3B8', marginRight: 2 },

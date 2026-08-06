@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   statusScroll: { flexGrow: 0, marginBottom: 20 },
   statusTabs: { flexDirection: 'row', gap: 8, paddingRight: 16 },
   statusTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border },
-  statusTabActive: { backgroundColor: GOLD, borderColor: GOLD },
+  statusTabActive: { backgroundColor: '#0F172A', borderColor: '#0F172A' },
   statusTabText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
   statusTabTextActive: { color: '#fff' },
 

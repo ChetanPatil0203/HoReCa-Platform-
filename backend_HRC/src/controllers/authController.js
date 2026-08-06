@@ -11,6 +11,7 @@ const { getUserProfileService } = require('../services/userService');
 const { Document, User, PasswordReset } = require('../models');
 const { sendOTPEmail, sendForgotPasswordOtpEmail } = require('../utils/emailService');
 const bcrypt = require('bcryptjs');
+const cloudinaryService = require('../services/cloudinary.service');
 
 // Register User
 exports.register = async (req, res) => {
@@ -160,41 +161,120 @@ exports.getUserLoginLogs = async (req, res) => {
   }
 };
 
-// POST /api/auth/upload-document — Upload a document file for the authenticated user
+// POST /api/auth/upload-document — Upload a KYC/registration document for the authenticated user
 exports.uploadDocument = async (req, res) => {
+  const userId = req.user.id;
+  const { docKey, docName } = req.body;
+
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No file uploaded.' });
+  }
+  if (!docKey) {
+    return res.status(400).json({ success: false, message: 'docKey is required.' });
+  }
+  if (req.file.size > 5 * 1024 * 1024) {
+    return res.status(400).json({ success: false, message: 'File size must be 5MB or smaller.' });
+  }
+
+  // Profile photos are public images; all KYC/registration docs are authenticated (private)
+  const isProfilePhoto = docKey === 'profile_photo';
+  const folder = isProfilePhoto
+    ? `hrc-hub/users/${userId}/profile`
+    : `hrc-hub/users/${userId}/kyc`;
+  const isRawPdf = req.file.mimetype === 'application/pdf' && !isProfilePhoto;
+
+  let cloudinaryResult = null;
   try {
-    const userId = req.user.id;
-    const { docKey, docName } = req.body;
-
-    if (!req.file) {
-      return res.status(400).json({ success: false, message: 'No file uploaded.' });
+    if (isProfilePhoto) {
+      cloudinaryResult = await cloudinaryService.uploadImage(
+        req.file.buffer,
+        req.file.originalname,
+        folder
+      );
+    } else {
+      cloudinaryResult = await cloudinaryService.uploadDocument(
+        req.file.buffer,
+        req.file.originalname,
+        folder,
+        isRawPdf
+      );
     }
-    if (!docKey) {
-      return res.status(400).json({ success: false, message: 'docKey is required.' });
-    }
+  } catch (uploadError) {
+    console.error('Cloudinary upload error:', uploadError);
+    try {
+      require('fs').appendFileSync(
+        require('path').join(__dirname, '../../error.log'),
+        `[${new Date().toISOString()}] [UploadError] ${uploadError.stack}\n\n`
+      );
+    } catch (e) {}
+    return res.status(500).json({ success: false, message: 'File upload to storage failed.' });
+  }
 
-    // Build the public file URL
-    const fileUrl = `/uploads/${req.file.filename}`;
-
-    // Upsert: update existing document record for this user+docKey, or create new
+  // Save to DB — roll back Cloudinary asset on failure
+  try {
     const [docRecord, created] = await Document.findOrCreate({
       where: { userId, docKey },
       defaults: {
         userId,
         docKey,
         docName: docName || docKey,
-        fileUrl,
+        fileUrl: cloudinaryResult.secureUrl,
+        cloudinaryPublicId: cloudinaryResult.cloudinaryPublicId,
+        cloudinaryAssetId: cloudinaryResult.cloudinaryAssetId,
+        secureUrl: cloudinaryResult.secureUrl,
+        resourceType: cloudinaryResult.resourceType,
+        deliveryType: cloudinaryResult.deliveryType,
+        format: cloudinaryResult.format,
+        mimeType: cloudinaryResult.mimeType,
+        fileSize: cloudinaryResult.fileSize,
+        width: cloudinaryResult.width,
+        height: cloudinaryResult.height,
+        originalName: cloudinaryResult.originalName,
         status: 'pending',
       },
     });
 
     if (!created) {
-      // Update existing record
-      docRecord.fileUrl = fileUrl;
-      docRecord.docName = docName || docRecord.docName;
-      docRecord.status = 'pending';
-      await docRecord.save();
+      // Delete old Cloudinary asset if it exists before updating
+      if (docRecord.cloudinaryPublicId) {
+        try {
+          await cloudinaryService.deleteAsset(
+            docRecord.cloudinaryPublicId,
+            docRecord.resourceType || 'image',
+            docRecord.deliveryType || 'authenticated'
+          );
+        } catch (delErr) {
+          console.warn('[Cloudinary] Old asset cleanup warning (non-critical):', delErr.message);
+        }
+      }
+      await docRecord.update({
+        fileUrl: cloudinaryResult.secureUrl,
+        docName: docName || docRecord.docName,
+        cloudinaryPublicId: cloudinaryResult.cloudinaryPublicId,
+        cloudinaryAssetId: cloudinaryResult.cloudinaryAssetId,
+        secureUrl: cloudinaryResult.secureUrl,
+        resourceType: cloudinaryResult.resourceType,
+        deliveryType: cloudinaryResult.deliveryType,
+        format: cloudinaryResult.format,
+        mimeType: cloudinaryResult.mimeType,
+        fileSize: cloudinaryResult.fileSize,
+        width: cloudinaryResult.width,
+        height: cloudinaryResult.height,
+        originalName: cloudinaryResult.originalName,
+        status: 'pending',
+      });
     }
+
+    // Build response — never expose permanent protected secureUrl for private docs
+    const responseFileUrl = isProfilePhoto
+      ? cloudinaryResult.secureUrl
+      : cloudinaryService.getSignedDocumentUrl({
+          publicId: cloudinaryResult.cloudinaryPublicId,
+          resourceType: cloudinaryResult.resourceType,
+          deliveryType: cloudinaryResult.deliveryType,
+          format: cloudinaryResult.format,
+          expiresInSeconds: 3600,
+        });
 
     return res.status(200).json({
       success: true,
@@ -203,15 +283,43 @@ exports.uploadDocument = async (req, res) => {
         id: docRecord.id,
         docKey: docRecord.docKey,
         docName: docRecord.docName,
-        fileUrl: docRecord.fileUrl,
+        fileUrl: responseFileUrl,
+        ...(isProfilePhoto ? {} : { urlExpiresAt: new Date(Date.now() + 3600 * 1000).toISOString() }),
         status: docRecord.status,
+        cloudinaryPublicId: docRecord.cloudinaryPublicId,
+        cloudinaryAssetId: docRecord.cloudinaryAssetId,
+        secureUrl: docRecord.secureUrl,
+        resourceType: docRecord.resourceType,
+        deliveryType: docRecord.deliveryType,
+        format: docRecord.format,
+        mimeType: docRecord.mimeType,
+        fileSize: docRecord.fileSize,
+        width: docRecord.width,
+        height: docRecord.height,
+        originalName: docRecord.originalName,
       },
     });
-  } catch (error) {
-    console.error('Upload document error:', error);
+  } catch (dbError) {
+    // DB failed — roll back Cloudinary upload
+    console.error('Database save failed, rolling back Cloudinary upload:', dbError);
+    try {
+      require('fs').appendFileSync(
+        require('path').join(__dirname, '../../error.log'),
+        `[${new Date().toISOString()}] [DbError] ${dbError.stack}\n\n`
+      );
+    } catch (e) {}
+    try {
+      await cloudinaryService.deleteAsset(
+        cloudinaryResult.cloudinaryPublicId,
+        cloudinaryResult.resourceType,
+        cloudinaryResult.deliveryType
+      );
+    } catch (rollbackErr) {
+      console.error('[Cloudinary] Rollback deletion error:', rollbackErr.message);
+    }
     return res.status(500).json({
       success: false,
-      message: error.message || 'Document upload failed.',
+      message: 'Document save failed. Uploaded file has been cleaned up.',
     });
   }
 };

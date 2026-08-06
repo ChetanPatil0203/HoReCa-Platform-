@@ -1,5 +1,6 @@
 const { Document, User, HorecaRegistration, VendorRegistration } = require('../models');
 const { Op } = require('sequelize');
+const cloudinaryService = require('./cloudinary.service');
 
 const isUuid = (id) => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
@@ -56,6 +57,20 @@ exports.getUserComplianceDocuments = async (userId) => {
 
     const docTypeClean = doc.docName || doc.docKey || 'Document';
 
+    // For private/authenticated documents, generate a signed temporary URL
+    let accessFileUrl = doc.fileUrl || '';
+    let urlExpiresAt = null;
+    if (doc.deliveryType === 'authenticated' && doc.cloudinaryPublicId) {
+      accessFileUrl = cloudinaryService.getSignedDocumentUrl({
+        publicId: doc.cloudinaryPublicId,
+        resourceType: doc.resourceType || 'image',
+        deliveryType: doc.deliveryType,
+        format: doc.format,
+        expiresInSeconds: 3600,
+      });
+      urlExpiresAt = new Date(Date.now() + 3600 * 1000).toISOString();
+    }
+
     return {
       id: doc.id,
       name: docTypeClean,
@@ -64,8 +79,9 @@ exports.getUserComplianceDocuments = async (userId) => {
       status: doc.status && ['Valid', 'Expiring Soon', 'Expired', 'Missing'].includes(doc.status) ? doc.status : computedStatus,
       issueDate: doc.issueDate || '',
       expiryDate: doc.expiryDate || '',
-      uploadedFile: doc.fileUrl ? doc.fileUrl.split('/').pop() : '',
-      fileUrl: doc.fileUrl || '',
+      uploadedFile: doc.originalName || (doc.fileUrl ? doc.fileUrl.split('/').pop() : ''),
+      fileUrl: accessFileUrl,
+      ...(urlExpiresAt ? { urlExpiresAt } : {}),
       notes: doc.notes || '',
       verification: doc.verification || (doc.status === 'approved' ? 'Verified' : 'Pending Verification'),
       uploadedDate: doc.createdAt ? new Date(doc.createdAt).toISOString().split('T')[0] : '',
@@ -171,7 +187,11 @@ exports.getUserComplianceDocuments = async (userId) => {
 };
 
 exports.saveUserComplianceDocument = async (data) => {
-  const { userId, docType, docNumber, issueDate, expiryDate, notes, fileName, fileUrl } = data;
+  const {
+    userId, docType, docNumber, issueDate, expiryDate, notes, fileName, fileUrl,
+    cloudinaryPublicId, cloudinaryAssetId, secureUrl, resourceType, deliveryType,
+    format, mimeType, fileSize, width, height, originalName
+  } = data;
   if (!userId || !isUuid(userId)) {
     throw new Error('Valid userId is required');
   }
@@ -190,6 +210,9 @@ exports.saveUserComplianceDocument = async (data) => {
     }
   }
 
+  // Resolve the stored URL: use Cloudinary secureUrl if available, else fallback
+  const resolvedFileUrl = secureUrl || fileUrl || (fileName ? `/uploads/${fileName}` : null);
+
   const [record, created] = await Document.findOrCreate({
     where: { userId, docKey },
     defaults: {
@@ -197,7 +220,18 @@ exports.saveUserComplianceDocument = async (data) => {
       docKey,
       docName: docType,
       docNumber,
-      fileUrl: fileUrl || (fileName ? `/uploads/${fileName}` : null),
+      fileUrl: resolvedFileUrl,
+      cloudinaryPublicId: cloudinaryPublicId || null,
+      cloudinaryAssetId: cloudinaryAssetId || null,
+      secureUrl: secureUrl || null,
+      resourceType: resourceType || null,
+      deliveryType: deliveryType || null,
+      format: format || null,
+      mimeType: mimeType || null,
+      fileSize: fileSize || null,
+      width: width || null,
+      height: height || null,
+      originalName: originalName || fileName || null,
       issueDate,
       expiryDate,
       notes,
@@ -209,7 +243,32 @@ exports.saveUserComplianceDocument = async (data) => {
   if (!created) {
     record.docName = docType || record.docName;
     record.docNumber = docNumber || record.docNumber;
-    if (fileUrl || fileName) record.fileUrl = fileUrl || `/uploads/${fileName}`;
+    if (resolvedFileUrl) {
+      // Delete old Cloudinary asset if replacing
+      if (cloudinaryPublicId && record.cloudinaryPublicId && record.cloudinaryPublicId !== cloudinaryPublicId) {
+        try {
+          await cloudinaryService.deleteAsset(
+            record.cloudinaryPublicId,
+            record.resourceType || 'image',
+            record.deliveryType || 'authenticated'
+          );
+        } catch (delErr) {
+          console.warn('[Cloudinary] Compliance old asset cleanup warning:', delErr.message);
+        }
+      }
+      record.fileUrl = resolvedFileUrl;
+      record.cloudinaryPublicId = cloudinaryPublicId || record.cloudinaryPublicId;
+      record.cloudinaryAssetId = cloudinaryAssetId || record.cloudinaryAssetId;
+      record.secureUrl = secureUrl || record.secureUrl;
+      record.resourceType = resourceType || record.resourceType;
+      record.deliveryType = deliveryType || record.deliveryType;
+      record.format = format || record.format;
+      record.mimeType = mimeType || record.mimeType;
+      record.fileSize = fileSize || record.fileSize;
+      record.width = width || record.width;
+      record.height = height || record.height;
+      record.originalName = originalName || fileName || record.originalName;
+    }
     if (issueDate) record.issueDate = issueDate;
     if (expiryDate) record.expiryDate = expiryDate;
     if (notes) record.notes = notes;
@@ -224,6 +283,20 @@ exports.saveUserComplianceDocument = async (data) => {
 exports.deleteUserComplianceDocument = async (id) => {
   const record = await Document.findByPk(id);
   if (!record) throw new Error('Document not found');
+
+  // Delete from Cloudinary if applicable
+  if (record.cloudinaryPublicId) {
+    try {
+      await cloudinaryService.deleteAsset(
+        record.cloudinaryPublicId,
+        record.resourceType || 'image',
+        record.deliveryType || 'authenticated'
+      );
+    } catch (delErr) {
+      console.warn('[Cloudinary] Compliance doc Cloudinary delete warning (continuing DB delete):', delErr.message);
+    }
+  }
+
   await record.destroy();
   return { success: true, message: 'Document deleted' };
 };
