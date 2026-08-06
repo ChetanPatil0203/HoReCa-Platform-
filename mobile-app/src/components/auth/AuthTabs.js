@@ -30,34 +30,34 @@ const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: '#F0F3F7',
-    borderRadius: 16,
+    borderRadius: 14,
     padding: 4,
-    marginBottom: 26,
+    marginBottom: 20,
     height: 48,
     borderWidth: 1,
-    borderColor: AUTH_COLORS.border
+    borderColor: '#E2E8F0',
   },
   tabBtn: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 12
+    borderRadius: 10,
   },
   tabActive: {
-    backgroundColor: AUTH_COLORS.primary,
+    backgroundColor: '#071B3A',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    elevation: 2
+    elevation: 2,
   },
   tabText: {
     fontSize: 13,
-    fontWeight: 'bold',
-    color: AUTH_COLORS.primary,
-    letterSpacing: 0.5
+    fontWeight: '700',
+    color: '#071B3A',
+    letterSpacing: 0.5,
   },
   tabTextActive: {
-    color: '#FFFFFF'
-  }
+    color: '#FFFFFF',
+  },
 });

@@ -31,7 +31,7 @@ export default function TrackCampaignPage({ campaign, onBack, onReview, onBookAg
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={styles.pageTitle}>Campaign Tracking</Text>
-          <Text style={styles.pageSubtitle}>Summer Festival Promo • CMP-001</Text>
+          <Text style={styles.pageSubtitle}>{campaign?.title || campaign?.requirementTitle || 'Campaign Details'} • {campaign?.id || campaign?._rawId || 'CMP-001'}</Text>
         </View>
       </View>
 

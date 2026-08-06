@@ -1,6 +1,7 @@
 const {
   registerService,
   loginService,
+  googleLoginService,
   verifyOTPService,
   resendOTPService,
   getHorecaRegistrationsService,
@@ -49,6 +50,29 @@ exports.login = async (req, res) => {
     res.status(401).json({
       success: false,
       message: error.message || 'Invalid credentials.',
+    });
+  }
+};
+
+// Google Login User
+exports.googleLogin = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+    if (!idToken) {
+      return res.status(400).json({ success: false, message: 'ID token is required.' });
+    }
+
+    const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress;
+    const result = await googleLoginService(idToken, clientIp);
+    res.status(200).json({
+      success: true,
+      message: 'Google sign-in successful.',
+      data: result,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message || 'Google sign-in failed.',
     });
   }
 };
@@ -206,7 +230,7 @@ exports.uploadDocument = async (req, res) => {
         require('path').join(__dirname, '../../error.log'),
         `[${new Date().toISOString()}] [UploadError] ${uploadError.stack}\n\n`
       );
-    } catch (e) {}
+    } catch (e) { }
     return res.status(500).json({ success: false, message: 'File upload to storage failed.' });
   }
 
@@ -269,12 +293,12 @@ exports.uploadDocument = async (req, res) => {
     const responseFileUrl = isProfilePhoto
       ? cloudinaryResult.secureUrl
       : cloudinaryService.getSignedDocumentUrl({
-          publicId: cloudinaryResult.cloudinaryPublicId,
-          resourceType: cloudinaryResult.resourceType,
-          deliveryType: cloudinaryResult.deliveryType,
-          format: cloudinaryResult.format,
-          expiresInSeconds: 3600,
-        });
+        publicId: cloudinaryResult.cloudinaryPublicId,
+        resourceType: cloudinaryResult.resourceType,
+        deliveryType: cloudinaryResult.deliveryType,
+        format: cloudinaryResult.format,
+        expiresInSeconds: 3600,
+      });
 
     return res.status(200).json({
       success: true,
@@ -307,7 +331,7 @@ exports.uploadDocument = async (req, res) => {
         require('path').join(__dirname, '../../error.log'),
         `[${new Date().toISOString()}] [DbError] ${dbError.stack}\n\n`
       );
-    } catch (e) {}
+    } catch (e) { }
     try {
       await cloudinaryService.deleteAsset(
         cloudinaryResult.cloudinaryPublicId,

@@ -4,14 +4,7 @@ import { AUTH_COLORS } from './AuthTheme';
 
 export default function BrandHeader() {
   const { width } = useWindowDimensions();
-
-  // Responsive logo size
-  let logoSize = 86; // default standard mobile
-  if (width < 340) {
-    logoSize = 72; // small mobile
-  } else if (width > 768) {
-    logoSize = 100; // tablet / large screen
-  }
+  const logoSize = width < 360 ? 48 : 52;
 
   return (
     <View style={styles.container}>
@@ -34,17 +27,17 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
-    marginTop: 10,
+    marginTop: 20,
+    marginBottom: 24,
     width: '100%',
   },
   logoContainer: {
-    marginBottom: 8,
+    marginBottom: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '900',
     letterSpacing: 0.5,
     marginBottom: 2,
@@ -57,7 +50,7 @@ const styles = StyleSheet.create({
     color: AUTH_COLORS.accent,
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 14,
     color: AUTH_COLORS.muted,
     fontWeight: '500',
     textAlign: 'center',

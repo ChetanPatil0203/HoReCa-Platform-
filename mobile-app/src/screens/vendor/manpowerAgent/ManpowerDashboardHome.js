@@ -96,7 +96,7 @@ export default function ManpowerDashboardHome({ onNavigate }) {
     { id: 'opportunities', label: 'Open Opportunities', value: '0', icon: RadioTower, color: BLUE, action: 'FeedWall' },
     { id: 'direct', label: 'Direct Requests', value: '0', icon: Inbox, color: ORANGE, action: 'DirectRequests' },
     { id: 'available', label: 'Candidates Available', value: '0', icon: Users, color: GREEN, action: 'Candidates' },
-    { id: 'staff', label: 'Active Staff', value: '4', icon: UserCheck, color: PURPLE, action: 'StaffRecords' },
+    { id: 'staff', label: 'Active Staff', value: '0', icon: UserCheck, color: PURPLE, action: 'StaffRecords' },
   ]);
 
   useEffect(() => {
@@ -157,11 +157,13 @@ export default function ManpowerDashboardHome({ onNavigate }) {
 
         setCandidateList(mappedCands);
 
+        const activeStaffCount = mappedCands.filter(c => c.status === 'Deployed' || c.status === 'Working' || c.status === 'Hired').length;
+
         setOverviewStats([
           { id: 'opportunities', label: 'Open Opportunities', value: String(publicList.length), icon: RadioTower, color: BLUE, action: 'FeedWall' },
           { id: 'direct', label: 'Direct Requests', value: String(directList.length), icon: Inbox, color: ORANGE, action: 'DirectRequests' },
           { id: 'available', label: 'Candidates Available', value: String(mappedCands.length), icon: Users, color: GREEN, action: 'Candidates' },
-          { id: 'staff', label: 'Active Staff', value: '4', icon: UserCheck, color: PURPLE, action: 'StaffRecords' },
+          { id: 'staff', label: 'Active Staff', value: String(activeStaffCount), icon: UserCheck, color: PURPLE, action: 'StaffRecords' },
         ]);
       } catch (err) {
         console.warn('Error loading manpower opportunities:', err);

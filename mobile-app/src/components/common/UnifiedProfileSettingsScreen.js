@@ -276,9 +276,9 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
   }, [user, roleOverride]);
 
   // Derived user display details
-  const businessName = user?.businessName || user?.registration?.bizName || (roleKey === 'manpower' ? 'Elite Manpower Agency' : roleKey === 'serviceProvider' ? 'ProCare Facilities' : roleKey === 'rawMaterial' ? 'Vija Supply Hub' : roleKey === 'marketing' ? 'Apex Growth Agency' : 'The Meridian Hotel');
-  const contactName = user?.name ? user.name : (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Chetan Patil');
-  const cityState = user?.city ? `${user.city}${user?.state ? `, ${user.state}` : ''}` : 'Jalgaon, Maharashtra';
+  const businessName = user?.businessName || user?.registration?.bizName || 'My Business';
+  const contactName = user?.name ? user.name : (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : (user?.phone || 'User'));
+  const cityState = user?.city ? `${user.city}${user?.state ? `, ${user.state}` : ''}` : '';
 
   const roleLabelMap = {
     horeca: 'HoReCa Owner',

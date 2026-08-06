@@ -15,6 +15,8 @@ export default function AgencyResponsesPage({ request, onBack, onCompare, onAcce
   const title = request?.title || 'Summer Festival Promo';
   const reqId = request?.id || 'CMP-001';
 
+  const responses = request?.responses || MOCK_RESPONSES;
+
   return (
     <View style={styles.wrapper}>
       {/* ── Header ── */}
@@ -28,7 +30,7 @@ export default function AgencyResponsesPage({ request, onBack, onCompare, onAcce
             <Text style={styles.pageSubtitle}>{title} • {reqId}</Text>
           </View>
         </View>
-        {!isMobile && (
+        {!isMobile && responses.length > 0 && (
           <TouchableOpacity style={styles.compareBtnTop} onPress={onCompare}>
             <Activity size={16} color="#2563EB" style={{ marginRight: 8 }} />
             <Text style={styles.compareBtnTopText}>Compare Agencies</Text>
@@ -36,7 +38,7 @@ export default function AgencyResponsesPage({ request, onBack, onCompare, onAcce
         )}
       </View>
 
-      {isMobile && (
+      {isMobile && responses.length > 0 && (
         <View style={styles.mobileCompareBar}>
           <TouchableOpacity style={styles.compareBtnTop} onPress={onCompare}>
             <Activity size={16} color="#2563EB" style={{ marginRight: 8 }} />
@@ -48,7 +50,14 @@ export default function AgencyResponsesPage({ request, onBack, onCompare, onAcce
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 60 }}>
         <View style={[styles.contentLayout, !isMobile && styles.contentLayoutWeb]}>
           
-          {MOCK_RESPONSES.map(resp => (
+          {responses.length === 0 ? (
+            <View style={{ padding: 40, alignItems: 'center', justifyContent: 'center' }}>
+              <Users size={48} color="#94A3B8" style={{ marginBottom: 12 }} />
+              <Text style={{ fontSize: 16, fontWeight: '600', color: NAVY, marginBottom: 4 }}>No Agency Responses Yet</Text>
+              <Text style={{ fontSize: 13, color: '#64748B', textAlign: 'center' }}>Marketing agencies will submit proposals here once reviewed.</Text>
+            </View>
+          ) : (
+            responses.map(resp => (
             <View key={resp.id} style={styles.responseCard}>
               
               <View style={styles.cardHeader}>
@@ -107,7 +116,7 @@ export default function AgencyResponsesPage({ request, onBack, onCompare, onAcce
               </View>
 
             </View>
-          ))}
+          )))}
 
         </View>
       </ScrollView>

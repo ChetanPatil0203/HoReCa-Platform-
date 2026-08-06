@@ -558,7 +558,7 @@ export default function RawMaterialDeliveriesPage() {
             <View style={styles.sheetBody}>
               <Text style={styles.inputLabel}>Client / Hotel</Text>
               <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20}}>
-                {['All', 'The Meridian Grand', 'Azure Palace Hotel', 'Café Zephyr'].map(cl => (
+                {['All', ...Array.from(new Set(deliveries.map(d => d.client).filter(Boolean)))].map(cl => (
                   <TouchableOpacity 
                     key={cl} 
                     style={[styles.filterChip, tempClientFilter === cl && styles.filterChipActive]} 

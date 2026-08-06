@@ -16,11 +16,11 @@ export default function PrimaryButton({ title, onPress, icon: Icon, disabled, lo
       accessibilityRole="button"
     >
       {loading ? (
-        <ActivityIndicator color="#FFFFFF" />
+        <ActivityIndicator color="#FFFFFF" size="small" />
       ) : (
         <>
           <Text style={[styles.primaryBtnText, disabled && styles.primaryBtnTextDisabled]}>{title}</Text>
-          {Icon && <Icon size={20} color={disabled ? AUTH_COLORS.background : AUTH_COLORS.accent} style={{ marginLeft: 8 }} />}
+          {Icon && <Icon size={20} color="#FFFFFF" style={{ marginLeft: 8 }} />}
         </>
       )}
     </TouchableOpacity>
@@ -30,30 +30,31 @@ export default function PrimaryButton({ title, onPress, icon: Icon, disabled, lo
 const styles = StyleSheet.create({
   primaryBtn: {
     flexDirection: 'row',
-    backgroundColor: AUTH_COLORS.primary,
-    height: 52,
+    backgroundColor: '#071B3A',
+    height: 54,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
   primaryBtnDisabled: {
-    backgroundColor: AUTH_COLORS.muted,
+    backgroundColor: '#A8B4C6',
     shadowOpacity: 0,
-    elevation: 0
+    elevation: 0,
+    opacity: 0.85,
   },
   primaryBtnText: {
     color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: 'bold',
-    letterSpacing: 0.5
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   primaryBtnTextDisabled: {
-    color: AUTH_COLORS.border
-  }
+    color: '#FFFFFF',
+  },
 });

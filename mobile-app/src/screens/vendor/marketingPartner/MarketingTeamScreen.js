@@ -27,7 +27,7 @@ const ROLES = [
   "Performance Marketer", "Web Developer", "Brand Strategist", "Account Manager"
 ];
 
-const ACTIVE_CAMPAIGNS = ["Azure Palace Summer Launch", "Weekend Brunch Influencer Push"];
+const ACTIVE_CAMPAIGNS = [];
 
 export default function MarketingTeamScreen() {
   const [searchQuery, setSearchQuery] = useState('');

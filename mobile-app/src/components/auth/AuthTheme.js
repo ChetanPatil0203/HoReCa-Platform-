@@ -13,4 +13,5 @@ export const AUTH_COLORS = {
   success: '#16B77A',
   error: '#EF4444',
   info: '#2563EB',
+  disabled: '#A8B4C6',
 };

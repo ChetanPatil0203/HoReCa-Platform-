@@ -34,23 +34,7 @@ export default function RawMaterialPage({ onNavigate }) {
   const [searchText, setSearchText] = useState('');
   const [cartItems, setCartItems] = useState([]);
 
-  const shopBtnScale = useRef(new Animated.Value(1)).current;
 
-  const handleShopPressIn = () => {
-    Animated.timing(shopBtnScale, {
-      toValue: 0.98,
-      duration: 110,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handleShopPressOut = () => {
-    Animated.timing(shopBtnScale, {
-      toValue: 1,
-      duration: 110,
-      useNativeDriver: true,
-    }).start();
-  };
 
   // Navigation State
   const [currentView, setCurrentView] = useState('home'); // home | suppliers | supplierStore | productDetails | cart | checkout | success | orders | orderTracking | orderDetails
@@ -303,46 +287,30 @@ export default function RawMaterialPage({ onNavigate }) {
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, isMobile && { paddingBottom: 100 }]}>
 
         {/* ── Hero Banner ── */}
-        <ImageBackground
-          source={rawMaterialHero}
-          resizeMode="cover"
-          style={[styles.heroCard, { height: width < 340 ? 180 : (width < 375 ? 190 : 195) }]}
-          imageStyle={[styles.heroImage, { left: null }]}
-        >
-          <View style={[styles.heroOverlay, { paddingHorizontal: width < 340 ? 16 : (width < 375 ? 20 : 22) }]}>
+        <View style={styles.heroCard}>
+          <Image
+            source={rawMaterialHero}
+            resizeMode="cover"
+            style={styles.heroImage}
+          />
+          <View style={styles.heroOverlay}>
             <View style={styles.heroContent}>
-              <Text 
+              <Text
                 style={[
-                  styles.heroTitle, 
-                  { 
-                    fontSize: width < 340 ? 17 : (width < 375 ? 19 : 21), 
-                    lineHeight: width < 340 ? 22 : (width < 375 ? 25 : 28) 
+                  styles.heroTitle,
+                  {
+                    fontSize: width < 340 ? 20 : (width < 375 ? 23 : 26),
+                    lineHeight: width < 340 ? 26 : (width < 375 ? 30 : 34)
                   }
-                ]} 
+                ]}
                 numberOfLines={3}
               >
                 Get the best quality raw materials for your business
               </Text>
-              <TouchableOpacity 
-                onPress={() => {
-                  if (CATEGORIES && CATEGORIES.length > 0) {
-                    setSelectedCategory(CATEGORIES[0]);
-                  }
-                  setCurrentView('suppliers');
-                }}
-                onPressIn={handleShopPressIn}
-                onPressOut={handleShopPressOut}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel="Browse raw material products"
-              >
-                <Animated.View style={[styles.shopButton, { transform: [{ scale: shopBtnScale }] }]}>
-                  <Text style={styles.shopButtonText}>Shop Now</Text>
-                </Animated.View>
-              </TouchableOpacity>
+
             </View>
           </View>
-        </ImageBackground>
+        </View>
 
         {/* ── Shop by Category ── */}
         <SectionHeader title="Shop by Category" action="View All" />
@@ -429,45 +397,44 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 16, maxWidth: 1200, alignSelf: 'center', width: '100%' },
 
   heroCard: {
+    width: '100%',
+    aspectRatio: 859 / 369,
     borderRadius: 20,
     overflow: 'hidden',
-    justifyContent: 'center',
     marginBottom: 24,
     backgroundColor: '#071B3A',
+    position: 'relative',
+    padding: 0,
   },
   heroImage: {
-    borderRadius: 20,
     position: 'absolute',
-    right: 0,
+    top: 0,
+    bottom: 0,
+    left: '-15%',
+    width: '130%',
     height: '100%',
-    aspectRatio: 859 / 369,
   },
   heroOverlay: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    width: '100%',
+    height: '100%',
     justifyContent: 'center',
-    backgroundColor: 'rgba(7, 27, 58, 0.58)',
+    paddingHorizontal: 20,
+    backgroundColor: 'rgba(7, 27, 58, 0.52)',
   },
   heroContent: {
-    width: '66%',
+    width: '75%',
   },
   heroTitle: {
     color: '#FFFFFF',
     fontWeight: '800',
+    letterSpacing: -0.2,
   },
-  shopButton: {
-    marginTop: 14,
-    minHeight: 44,
-    alignSelf: 'flex-start',
-    justifyContent: 'center',
-    paddingHorizontal: 22,
-    borderRadius: 11,
-    backgroundColor: '#E88700',
-  },
-  shopButtonText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
-  },
+
 
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, marginTop: 8 },
   sectionTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A' },

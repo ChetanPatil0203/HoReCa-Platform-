@@ -24,81 +24,7 @@ const WARNING = '#F59E0B';
 const ERROR = '#EF4444';
 const INFO = '#3B82F6';
 
-const SEEDED_CLIENTS = [
-  {
-    id: 'CLI-101',
-    initials: 'MC',
-    name: 'Meridian Cafe',
-    owner: 'Chetan Patil',
-    type: 'Cafe',
-    city: 'Jalgaon',
-    activeStaff: 4,
-    totalHires: 12,
-    outstanding: 18000,
-    lastActivity: 'Candidate Joined',
-    lastActivityTime: 'Today · 10:30 AM',
-    status: 'Active',
-    clientSince: '15 Jan 2026',
-    phone: '+91 98765 43210',
-    email: 'ops@meridiancafe.com',
-    deployments: [
-      { id: 'DEP-101', role: 'Head Chef', candidate: 'Ramesh Pawar', joiningDate: '28 Jul 2026', status: 'Active' },
-      { id: 'DEP-102', role: 'Mixologist', candidate: 'Vikram Shinde', joiningDate: '20 Jul 2026', status: 'Active' },
-      { id: 'DEP-103', role: 'Commis Chef', candidate: 'Sunil Jadhav', joiningDate: '15 Jun 2026', status: 'Active' }
-    ],
-    transactions: [
-      { id: 'TXN-8801', requirement: 'Head Chef Hiring', amount: 35000, date: '28 Jul 2026', status: 'Paid' },
-      { id: 'TXN-8802', requirement: 'Mixologist Hiring', amount: 18000, date: '20 Jul 2026', status: 'Pending' }
-    ]
-  },
-  {
-    id: 'CLI-102',
-    initials: 'RH',
-    name: 'Royal Palace Hotel',
-    owner: 'Vikramaditya Rao',
-    type: 'Hotel',
-    city: 'Nashik',
-    activeStaff: 3,
-    totalHires: 8,
-    outstanding: 24000,
-    lastActivity: 'Payment Due',
-    lastActivityTime: '26 Jul 2026',
-    status: 'Payment Due',
-    clientSince: '01 Mar 2026',
-    phone: '+91 99221 88334',
-    email: 'hr@royalpalacenashik.com',
-    deployments: [
-      { id: 'DEP-201', role: 'F&B Manager', candidate: 'Amit Deshmukh', joiningDate: '22 Jul 2026', status: 'Active' },
-      { id: 'DEP-202', role: 'Housekeeping Supervisor', candidate: 'Kiran Kulkarni', joiningDate: '10 Jun 2026', status: 'Active' }
-    ],
-    transactions: [
-      { id: 'TXN-8803', requirement: 'F&B Manager Deployment', amount: 24000, date: '22 Jul 2026', status: 'Pending' }
-    ]
-  },
-  {
-    id: 'CLI-103',
-    initials: 'GB',
-    name: 'Grand Spice Restaurant',
-    owner: 'Sanjay Deshmukh',
-    type: 'Restaurant',
-    city: 'Pune',
-    activeStaff: 1,
-    totalHires: 5,
-    outstanding: 0,
-    lastActivity: 'Payment Received',
-    lastActivityTime: '25 Jul 2026',
-    status: 'Active',
-    clientSince: '10 Feb 2026',
-    phone: '+91 98230 11445',
-    email: 'contact@grandspicepune.com',
-    deployments: [
-      { id: 'DEP-301', role: 'Tandoor Master', candidate: 'Rajesh Sharma', joiningDate: '18 Jul 2026', status: 'Active' }
-    ],
-    transactions: [
-      { id: 'TXN-8804', requirement: 'Tandoor Specialist Placement', amount: 28000, date: '18 Jul 2026', status: 'Paid' }
-    ]
-  }
-];
+const SEEDED_CLIENTS = [];
 
 export default function ManpowerClientsPage({ navigation }) {
   const { width } = useWindowDimensions();
@@ -143,36 +69,38 @@ export default function ManpowerClientsPage({ navigation }) {
       } else if (Array.isArray(reqs) && reqs.length > 0) {
         const clientMap = {};
         reqs.forEach((r, idx) => {
-          const bizName = r.businessName || 'Chetan Cafe';
+          const bizName = r.businessName || 'HoReCa Partner';
           if (!clientMap[bizName]) {
             const initials = bizName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase() || 'CC';
             clientMap[bizName] = {
               id: `CLI-10${idx + 1}`,
               initials,
               name: bizName,
-              owner: r.contactPerson || 'Chetan Patil',
+              owner: r.contactPerson || 'Contact Person',
               type: r.businessType || (bizName.toLowerCase().includes('hotel') ? 'Hotel' : bizName.toLowerCase().includes('restaurant') ? 'Restaurant' : 'Cafe'),
-              city: r.location || 'Jalgaon',
+              city: r.location || 'Location',
               activeStaff: r.count || 1,
-              totalHires: (r.count || 1) + 2,
+              totalHires: (r.count || 1),
               outstanding: r.status === 'candidates_sent' ? 15000 : 0,
               lastActivity: r.status === 'candidates_sent' ? 'Candidates Sent' : 'New Requirement',
-              lastActivityTime: 'Today · 10:30 AM',
+              lastActivityTime: 'Recent',
               status: r.status === 'candidates_sent' ? 'Payment Due' : 'Active',
               clientSince: '2026',
-              phone: r.phone || '+91 98765 43210',
+              phone: r.phone || '',
               email: `info@${bizName.toLowerCase().replace(/\s+/g, '')}.com`,
               deployments: [
-                { id: `DEP-${idx}01`, role: r.role || 'Head Chef', candidate: 'Ramesh Pawar', joiningDate: '28 Jul 2026', status: 'Active' }
+                { id: `DEP-${idx}01`, role: r.role || 'Staff', candidate: r.candidateName || 'Assigned Candidate', joiningDate: 'Recent', status: 'Active' }
               ],
               transactions: [
-                { id: `TXN-${idx}901`, requirement: `${r.role || 'Chef'} Hiring`, amount: 15000, date: '28 Jul 2026', status: r.status === 'candidates_sent' ? 'Pending' : 'Paid' }
+                { id: `TXN-${idx}901`, requirement: `${r.role || 'Staff'} Hiring`, amount: 15000, date: 'Recent', status: r.status === 'candidates_sent' ? 'Pending' : 'Paid' }
               ]
             };
           }
         });
         const dynamicClients = Object.values(clientMap);
         if (dynamicClients.length > 0) setClients(dynamicClients);
+      } else {
+        setClients([]);
       }
     } catch (err) {
       console.warn('Load clients note:', err?.message);

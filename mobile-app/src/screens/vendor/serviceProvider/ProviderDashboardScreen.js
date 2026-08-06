@@ -129,7 +129,7 @@ export default function ProviderDashboardScreen() {
                   <View style={[styles.orderItemLine, { backgroundColor: "#10B981" }]} />
                   <View style={styles.orderItemInfo}>
                     <Text style={styles.orderItemTitle}>{o.title}</Text>
-                    <Text style={styles.orderItemSub}>{o.client || 'The Meridian Hotels'} · {o.date}</Text>
+                    <Text style={styles.orderItemSub}>{o.client || 'HoReCa Client'} · {o.date}</Text>
                   </View>
                   <View style={styles.orderItemRight}>
                     <Text style={[styles.orderItemVal, { color: "#10B981" }]}>{o.amount || o.value}</Text>

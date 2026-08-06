@@ -53,11 +53,7 @@ export default function AgencyResponsesPage({ requirement, onBack }) {
         const candRes = await fetchVendorCandidatesApi('all');
         const list = candRes?.data || candRes || [];
         
-        const fallbackCands = [
-          { id: 'C-1001', initials: 'R', name: 'Ramesh Pawar', role: 'Head Chef', exp: '5 Years', loc: 'Jalgaon', salary: '₹35,000 / month', avail: 'Immediate', mobile: '9876543210' },
-          { id: 'C-1002', initials: 'V', name: 'Vikram Shinde', role: 'Mixologist / Barman', exp: '4 Years', loc: 'Mumbai', salary: '₹28,000 / month', avail: 'Immediate', mobile: '9822114455' },
-          { id: 'C-1003', initials: 'S', name: 'Sunil Jadhav', role: 'Head Chef / Cook', exp: '6 Years', loc: 'Jalgaon', salary: '₹38,000 / month', avail: 'Immediate', mobile: '9423556677' },
-        ];
+        const fallbackCands = [];
 
         const mappedCands = (Array.isArray(list) && list.length > 0) ? list.map(c => ({
           id: c.candidateCode || c.id,
@@ -65,32 +61,17 @@ export default function AgencyResponsesPage({ requirement, onBack }) {
           name: c.name,
           role: c.role,
           exp: c.experience || '1-3 Years',
-          loc: c.location || 'Jalgaon',
+          loc: c.location || 'Location',
           salary: c.salary || '₹25,000 / month',
           avail: 'Immediate',
           mobile: c.mobile
-        })) : fallbackCands;
+        })) : [];
 
         setCandidates(mappedCands);
 
-        const agencyName = requirement?.supplier?.bizName || 'Elite Manpower Agency';
-        setResponses([
-          {
-            id: 'RES-101',
-            agencyName: agencyName,
-            initials: agencyName.charAt(0).toUpperCase(),
-            verified: true,
-            rating: '4.9',
-            status: 'Candidates Submitted',
-            candidatesOffered: String(mappedCands.length),
-            serviceFee: '8.33% of Annual CTC',
-            replacementPeriod: '90 Days Guarantee',
-            joiningTime: 'Immediate'
-          }
-        ]);
-
         if (mappedCands.length > 0) {
-          setSelectedAgency({
+          const agencyName = requirement?.supplier?.bizName || 'Manpower Agency';
+          const respObj = {
             id: 'RES-101',
             agencyName: agencyName,
             initials: agencyName.charAt(0).toUpperCase(),
@@ -101,7 +82,12 @@ export default function AgencyResponsesPage({ requirement, onBack }) {
             serviceFee: '8.33% of Annual CTC',
             replacementPeriod: '90 Days Guarantee',
             joiningTime: 'Immediate'
-          });
+          };
+          setResponses([respObj]);
+          setSelectedAgency(respObj);
+        } else {
+          setResponses([]);
+          setSelectedAgency(null);
         }
       } catch (err) {
         console.warn('Error loading candidates for owner review:', err);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Platform } from 'react-native';
 import { AUTH_COLORS } from './AuthTheme';
 
 export default function FormField({
@@ -14,7 +14,7 @@ export default function FormField({
     displayLabel = label.slice(0, -1).trim();
   }
 
-  let iconColor = AUTH_COLORS.muted;
+  let iconColor = '#71829B';
   if (error) iconColor = AUTH_COLORS.error;
   else if (valid) iconColor = AUTH_COLORS.success;
   else if (isFocused) iconColor = AUTH_COLORS.accent;
@@ -28,7 +28,7 @@ export default function FormField({
         </Text>
       )}
       <View style={styles.inputWrapper}>
-        {Icon && <Icon size={20} color={iconColor} style={styles.inputIcon} />}
+        {Icon && <Icon size={21} color={iconColor} style={styles.inputIcon} pointerEvents="none" />}
         <TextInput
           style={[
             styles.input,
@@ -36,7 +36,7 @@ export default function FormField({
             isFocused && styles.inputFocused,
             error && styles.inputError
           ]}
-          placeholderTextColor={AUTH_COLORS.muted}
+          placeholderTextColor="#94A3B8"
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           {...textInputProps}
@@ -48,33 +48,35 @@ export default function FormField({
 }
 
 const styles = StyleSheet.create({
-  fieldBlock: { marginBottom: 16 },
+  fieldBlock: { marginBottom: 14 },
   label: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: AUTH_COLORS.primary,
-    marginBottom: 7,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#071B3A',
+    marginBottom: 6,
+    letterSpacing: 0.2
   },
-  asterisk: { color: AUTH_COLORS.error },
+  asterisk: { color: '#EF4444' },
   inputWrapper: { position: 'relative', justifyContent: 'center' },
   inputIcon: { position: 'absolute', left: 16, zIndex: 1 },
   input: {
-    backgroundColor: AUTH_COLORS.input,
+    backgroundColor: '#F8FAFC',
     borderWidth: 1,
-    borderColor: AUTH_COLORS.border,
+    borderColor: '#DCE3ED',
     borderRadius: 14,
-    height: 52,
-    fontSize: 15,
-    color: AUTH_COLORS.text
+    height: 54,
+    fontSize: 16,
+    color: '#071B3A',
+    ...Platform.select({
+      web: { outlineStyle: 'none' }
+    })
   },
   inputFocused: {
-    borderColor: AUTH_COLORS.primary,
-    backgroundColor: '#F0F4F8' // Very soft navy-tinted background
+    borderColor: '#071B3A',
+    backgroundColor: '#F0F4F8'
   },
-  inputWithIcon: { paddingLeft: 46, paddingRight: 16 },
+  inputWithIcon: { paddingLeft: 48, paddingRight: 16 },
   inputWithoutIcon: { paddingHorizontal: 16 },
-  inputError: { borderColor: AUTH_COLORS.error, backgroundColor: '#FEF2F2' },
-  errorText: { color: AUTH_COLORS.error, fontSize: 12, marginTop: 6, fontWeight: '500' }
+  inputError: { borderColor: '#EF4444', backgroundColor: '#FEF2F2' },
+  errorText: { color: '#EF4444', fontSize: 12, marginTop: 4, fontWeight: '500' }
 });

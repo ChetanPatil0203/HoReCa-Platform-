@@ -183,6 +183,11 @@ export const loginApi = async (email, password) => {
   return response.data;
 };
 
+export const googleLoginApi = async (idToken) => {
+  const response = await api.post('/auth/google', { idToken });
+  return response.data;
+};
+
 /**
  * Upload a KYC/registration document or profile photo to Cloudinary via backend.
  * Works on both web (blob) and mobile (RN file object).

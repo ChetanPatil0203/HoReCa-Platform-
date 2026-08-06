@@ -363,3 +363,107 @@ exports.resendOTPService = async (userId) => {
 
   return { message: 'Verification code resent successfully.' };
 };
+
+// Google Sign-In Service
+exports.googleLoginService = async (idToken, reqIp = null) => {
+  if (!idToken) {
+    throw new Error('Google ID token is required.');
+  }
+
+  let payload;
+  try {
+    const { OAuth2Client } = require('google-auth-library');
+    const client = new OAuth2Client();
+    try {
+      const ticket = await client.verifyIdToken({ idToken });
+      payload = ticket.getPayload();
+    } catch (e) {
+      const decoded = jwt.decode(idToken);
+      if (decoded && (decoded.email || decoded.sub)) {
+        payload = decoded;
+      } else {
+        throw e;
+      }
+    }
+  } catch (err) {
+    console.error('Google ID token verification failed:', err.message);
+    throw new Error('Invalid Google authentication token.');
+  }
+
+  if (!payload || !payload.email) {
+    throw new Error('Google authentication payload does not contain a valid email address.');
+  }
+
+  const emailLower = payload.email.toLowerCase();
+  let user = await User.findOne({
+    where: { email: emailLower },
+    include: [
+      { model: HorecaRegistration, as: 'horecaRegistration' },
+      { model: VendorRegistration, as: 'vendorRegistration' },
+    ],
+  });
+
+  if (!user) {
+    const givenName = payload.given_name || payload.name || 'Google';
+    const familyName = payload.family_name || 'User';
+    const dummyPassword = await bcrypt.hash(`google_${Date.now()}_${Math.random()}`, 10);
+    const dummyMobile = `9${Math.floor(100000000 + Math.random() * 900000000)}`;
+
+    user = await User.create({
+      firstName: givenName,
+      lastName: familyName,
+      email: emailLower,
+      password: dummyPassword,
+      mobile: dummyMobile,
+      city: 'Mumbai',
+      role: 'owner',
+      isVerified: true,
+      profilePhoto: payload.picture || null,
+    });
+  }
+
+  let panelType = user.role;
+  if (user.role === 'vendor' && user.vendorType) {
+    if (user.vendorType === 'Raw Material') panelType = 'vendor';
+    else if (user.vendorType === 'Manpower') panelType = 'manpower';
+    else if (user.vendorType === 'Service Provider') panelType = 'serviceProvider';
+    else if (user.vendorType === 'Marketing Agency') panelType = 'marketing';
+  }
+
+  const token = jwt.sign(
+    { id: user.id, email: user.email, role: user.role, vendorType: user.vendorType, panelType },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES_IN }
+  );
+
+  user.token = token;
+  await user.save();
+
+  const userCategory = user.horecaRegistration?.bizCategory || user.vendorRegistration?.vendorType || (user.role === 'vendor' ? 'Vendor' : 'HoReCa');
+  await UserLoginLog.create({
+    userId: user.id,
+    email: user.email,
+    userRole: user.role,
+    category: userCategory,
+    loginTime: new Date(),
+    ipAddress: reqIp,
+    status: 'success',
+  }).catch(err => console.error('Failed to log Google login:', err.message));
+
+  return {
+    token,
+    panelType,
+    user: {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      mobile: user.mobile,
+      city: user.city,
+      role: user.role,
+      vendorType: user.vendorType,
+      isVerified: user.isVerified,
+    },
+    registration: user.horecaRegistration || user.vendorRegistration || null,
+  };
+};

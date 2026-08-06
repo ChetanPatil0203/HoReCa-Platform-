@@ -129,7 +129,7 @@ export default function MarketingDashboardScreen() {
                   <View style={[styles.orderItemLine, { backgroundColor: "#071B3A" }]} />
                   <View style={styles.orderItemInfo}>
                     <Text style={styles.orderItemTitle}>{o.title}</Text>
-                    <Text style={styles.orderItemSub}>{o.client || 'The Meridian Hotels'} · {o.date}</Text>
+                    <Text style={styles.orderItemSub}>{o.client || 'HoReCa Client'} · {o.date}</Text>
                   </View>
                   <View style={styles.orderItemRight}>
                     <Text style={[styles.orderItemVal, { color: "#071B3A" }]}>{o.amount || o.value}</Text>
