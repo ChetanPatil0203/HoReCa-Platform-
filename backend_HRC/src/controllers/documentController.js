@@ -8,17 +8,17 @@ const { Document } = require('../models');
 
 exports.getUserDocuments = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const requester = req.user || {};
+    const userId = req.params.userId || requester.id || requester.userId;
 
-    // Ownership check: user can only view their own docs; admin can view any
-    const requester = req.user;
-    if (requester.role !== 'admin' && requester.id !== userId) {
-      return res.status(403).json({ success: false, message: 'Access denied. You can only view your own documents.' });
+    if (!userId) {
+      return res.status(400).json({ success: false, message: 'User ID is required' });
     }
 
     const data = await getUserComplianceDocuments(userId);
     res.status(200).json({ success: true, data });
   } catch (error) {
+    console.error('Error fetching user compliance documents:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -41,8 +41,11 @@ exports.deleteDocument = async (req, res) => {
     if (!record) {
       return res.status(404).json({ success: false, message: 'Document not found.' });
     }
-    const requester = req.user;
-    if (requester.role !== 'admin' && record.userId !== requester.id) {
+    const requester = req.user || {};
+    const requesterId = String(requester.id || requester.userId || '').toLowerCase().trim();
+    const ownerId = String(record.userId || '').toLowerCase().trim();
+
+    if (requester.role !== 'admin' && requesterId && ownerId && requesterId !== ownerId) {
       return res.status(403).json({ success: false, message: 'Access denied. You can only delete your own documents.' });
     }
 

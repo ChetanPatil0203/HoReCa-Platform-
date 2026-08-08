@@ -381,46 +381,35 @@ export default function ManpowerPage() {
                   <Text style={styles.viewAllText}>View All</Text>
                 </TouchableOpacity>
               </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.agenciesScroll}>
+              <View style={{ flexDirection: 'column', gap: 12, marginBottom: 24 }}>
                 {topAgencies.map(agency => (
-                  <View key={agency.id} style={styles.agencyCard}>
-                    <View style={styles.agencyHeader}>
-                      <View style={styles.agencyLogo}>
-                        <Text style={styles.agencyLogoText}>{agency.logo}</Text>
-                      </View>
-                      <View style={styles.agencyRatingBox}>
-                        <Star size={12} color={GOLD} fill={GOLD} />
-                        <Text style={styles.agencyRating}>{agency.rating}</Text>
+                  <TouchableOpacity
+                    key={agency.id}
+                    style={styles.agencyRowCard}
+                    onPress={() => {
+                      setSelectedAgency(agency);
+                      setCurrentView('agencyProfile');
+                    }}
+                    activeOpacity={0.85}
+                  >
+                    <View style={styles.agencyAvatar}>
+                      <Text style={styles.agencyAvatarText}>
+                        {agency.logo || (agency.name ? agency.name.charAt(0).toUpperCase() : 'A')}
+                      </Text>
+                    </View>
+                    <View style={styles.agencyInfo}>
+                      <Text style={styles.agencyRowName} numberOfLines={1}>{agency.name}</Text>
+                      <Text style={styles.agencyRowCat} numberOfLines={1}>Manpower</Text>
+                    </View>
+                    <View style={styles.agencyRight}>
+                      <View style={styles.agencyRatingBadge}>
+                        <Star size={12} color="#D97706" fill="#D97706" />
+                        <Text style={styles.agencyRatingText}>{agency.rating || 4.8}</Text>
                       </View>
                     </View>
-                    <View style={styles.agencyNameRow}>
-                      <Text style={styles.agencyName}>{agency.name}</Text>
-                      {agency.verified && <ShieldCheck size={14} color="#16A34A" style={{ marginLeft: 4 }} />}
-                    </View>
-                    <Text style={styles.agencyLocation}>{agency.location} • {agency.experience} Exp</Text>
-                    <View style={styles.agencyStats}>
-                      <View style={styles.agencyStat}>
-                        <Text style={styles.agencyStatVal}>{agency.availableStaff}</Text>
-                        <Text style={styles.agencyStatLbl}>Staff</Text>
-                      </View>
-                      <View style={styles.agencyStatDivider} />
-                      <View style={styles.agencyStat}>
-                        <Text style={styles.agencyStatVal}>{agency.replacementPolicy}</Text>
-                        <Text style={styles.agencyStatLbl}>Replacement</Text>
-                      </View>
-                    </View>
-                    <TouchableOpacity
-                      style={styles.agencyBtn}
-                      onPress={() => {
-                        setSelectedAgency(agency);
-                        setCurrentView('agencyProfile');
-                      }}
-                    >
-                      <Text style={styles.agencyBtnText}>View Agency</Text>
-                    </TouchableOpacity>
-                  </View>
+                  </TouchableOpacity>
                 ))}
-              </ScrollView>
+              </View>
             </View>
           )}
 
@@ -540,6 +529,71 @@ const styles = StyleSheet.create({
   intActionBtnText: { fontSize: 12, fontWeight: '700', color: '#fff' },
 
   // Agency Card
+  agencyRowCard: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E8EDF4',
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  agencyAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  agencyAvatarText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#071B3A',
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
+  },
+  agencyInfo: {
+    flex: 1,
+    paddingRight: 6,
+  },
+  agencyRowName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#071B3A',
+    marginBottom: 2,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
+  },
+  agencyRowCat: {
+    fontSize: 11,
+    color: '#64748B',
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
+  },
+  agencyRight: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  agencyRatingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFBEB',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  agencyRatingText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#D97706',
+    marginLeft: 4,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
+  },
   agenciesScroll: { gap: 16, paddingRight: 16 },
   agencyCard: { width: 260, backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.border },
   agencyHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },

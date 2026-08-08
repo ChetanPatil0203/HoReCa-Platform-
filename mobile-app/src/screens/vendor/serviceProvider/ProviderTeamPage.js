@@ -9,15 +9,6 @@ import { Users, CircleCheck as CheckCircle, Clock, CircleX as XCircle, Briefcase
 const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
 
-const SUMMARY_DATA = [
-  { label: "Total Employees", value: "0", icon: Users, color: "#3B82F6", bg: "#DBEAFE" },
-  { label: "Available", value: "0", icon: CheckCircle, color: "#10B981", bg: "#D1FAE5" },
-  { label: "Busy", value: "0", icon: Clock, color: "#F59E0B", bg: "#FEF3C7" },
-  { label: "On Leave", value: "0", icon: AlertCircle, color: "#94A3B8", bg: "#F1F5F9" },
-  { label: "Inactive", value: "0", icon: XCircle, color: "#EF4444", bg: "#FEE2E2" },
-  { label: "Jobs Assigned Today", value: "0", icon: Briefcase, color: "#8B5CF6", bg: "#F3E8FF" },
-];
-
 const MOCK_TEAM = [];
 
 export default function ProviderTeamPage() {
@@ -30,6 +21,15 @@ export default function ProviderTeamPage() {
 
   const [assignModalVisible, setAssignModalVisible] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState(null);
+
+  const summaryData = [
+    { label: "Total Employees", value: String(team.length), icon: Users, color: "#3B82F6", bg: "#DBEAFE" },
+    { label: "Available", value: String(team.filter(e => e.status === 'Available').length), icon: CheckCircle, color: "#10B981", bg: "#D1FAE5" },
+    { label: "Busy", value: String(team.filter(e => e.status === 'Busy').length), icon: Clock, color: "#F59E0B", bg: "#FEF3C7" },
+    { label: "On Leave", value: String(team.filter(e => e.status === 'On Leave').length), icon: AlertCircle, color: "#94A3B8", bg: "#F1F5F9" },
+    { label: "Inactive", value: String(team.filter(e => e.status === 'Inactive').length), icon: XCircle, color: "#EF4444", bg: "#FEE2E2" },
+    { label: "Jobs Assigned Today", value: String(team.reduce((acc, e) => acc + (Number(e.assignedJobs) || 0), 0)), icon: Briefcase, color: "#8B5CF6", bg: "#F3E8FF" },
+  ];
 
   const [form, setForm] = useState({
     name: '', phone: '', email: '', role: '', skills: '',
@@ -188,7 +188,7 @@ export default function ProviderTeamPage() {
           {/* Scrollable Summary Section */}
           <View style={styles.summarySection}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.summaryScroll}>
-              {SUMMARY_DATA.map(item => (
+              {summaryData.map(item => (
                 <View key={item.label} style={{ marginRight: 12 }}>
                   {renderSummaryCard({ item })}
                 </View>

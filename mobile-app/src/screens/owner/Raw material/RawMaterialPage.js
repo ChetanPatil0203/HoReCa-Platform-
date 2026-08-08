@@ -1,5 +1,5 @@
 import React, { useState, useContext, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions, Image, ImageBackground, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, useWindowDimensions, Image, ImageBackground, Animated, Easing } from 'react-native';
 import { Search, Heart, Bell, ShoppingCart, ChevronRight, Package, User } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
 import rawMaterialHero from '../../../assets/images/raw-material-hero.png';
@@ -25,6 +25,54 @@ import RawMaterialOrderDetailsPage from './RawMaterialOrderDetailsPage';
 
 const GOLD = '#D97706';
 const PURPLE = '#D97706';
+
+function AnimatedCategoryRow({ categories, direction = 'right-to-left', onCategoryPress }) {
+  const translateX = useRef(new Animated.Value(0)).current;
+
+  const CARD_WIDTH = 116; // 100 width + 16 uniform spacing
+  const TOTAL_DISTANCE = CARD_WIDTH * categories.length;
+
+  React.useEffect(() => {
+    const startValue = direction === 'right-to-left' ? 0 : -TOTAL_DISTANCE;
+    const endValue = direction === 'right-to-left' ? -TOTAL_DISTANCE : 0;
+
+    translateX.setValue(startValue);
+
+    const animation = Animated.loop(
+      Animated.timing(translateX, {
+        toValue: endValue,
+        duration: 26000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+
+    animation.start();
+    return () => animation.stop();
+  }, [direction, TOTAL_DISTANCE]);
+
+  const repeatedItems = [...categories, ...categories, ...categories, ...categories];
+
+  return (
+    <View style={{ overflow: 'hidden', width: '100%', paddingVertical: 2 }}>
+      <Animated.View
+        style={{
+          flexDirection: 'row',
+          transform: [{ translateX }],
+          width: CARD_WIDTH * repeatedItems.length,
+        }}
+      >
+        {repeatedItems.map((cat, index) => (
+          <CategoryCard
+            key={`${cat.id}-${index}`}
+            category={cat}
+            onPress={onCategoryPress}
+          />
+        ))}
+      </Animated.View>
+    </View>
+  );
+}
 
 export default function RawMaterialPage({ onNavigate }) {
   const { width } = useWindowDimensions();
@@ -313,31 +361,37 @@ export default function RawMaterialPage({ onNavigate }) {
         </View>
 
         {/* ── Shop by Category ── */}
-        <SectionHeader title="Shop by Category" action="View All" />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hScroll} contentContainerStyle={styles.hScrollContent}>
-          {CATEGORIES.map(cat => (
-            <CategoryCard
-              key={cat.id}
-              category={cat}
-              onPress={() => {
-                setSelectedCategory(cat);
-                setCurrentView('suppliers');
-              }}
-            />
-          ))}
-        </ScrollView>
+        <SectionHeader title="Shop by Category" action="" />
+        <View style={{ marginBottom: 20, gap: 12 }}>
+          <AnimatedCategoryRow
+            categories={CATEGORIES.slice(0, 4)}
+            direction="right-to-left"
+            onCategoryPress={(cat) => {
+              setSelectedCategory(cat);
+              setCurrentView('suppliers');
+            }}
+          />
+          <AnimatedCategoryRow
+            categories={CATEGORIES.slice(4, 8)}
+            direction="left-to-right"
+            onCategoryPress={(cat) => {
+              setSelectedCategory(cat);
+              setCurrentView('suppliers');
+            }}
+          />
+        </View>
 
 
         {/* ── Top Rated Vendors ── */}
         <SectionHeader title="Top Rated Vendors" action="View All" />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hScroll} contentContainerStyle={styles.hScrollContent}>
+        <View style={{ flexDirection: 'column', gap: 12, marginBottom: 24 }}>
           {vendors.map(vendor => (
             <VendorCard key={vendor.id} vendor={vendor} onPress={() => {
               setSelectedSupplier(vendor);
               setCurrentView('supplierStore');
             }} />
           ))}
-        </ScrollView>
+        </View>
 
 
       </ScrollView>

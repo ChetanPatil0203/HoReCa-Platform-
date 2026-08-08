@@ -7,11 +7,11 @@ import { fetchOrderById, cancelRawMaterialOrder } from '../../../services/api.se
 const PURPLE = '#D97706';
 
 const STATUS_COLORS = {
-  'pending': { bg: '#FEF3C7', text: '#D97706', label: 'Pending' },
-  'confirmed': { bg: '#E0F2FE', text: '#0284C7', label: 'Confirmed' },
-  'shipped': { bg: '#FEF3C7', text: '#D97706', label: 'Out for Delivery' },
-  'delivered': { bg: '#DCFCE7', text: '#16A34A', label: 'Delivered' },
-  'cancelled': { bg: '#FEE2E2', text: '#DC2626', label: 'Cancelled' }
+  'pending': { bg: 'transparent', text: '#F59E0B', label: 'Pending' },
+  'confirmed': { bg: 'transparent', text: '#2563EB', label: 'Confirmed' },
+  'shipped': { bg: 'transparent', text: '#8B5CF6', label: 'Out for Delivery' },
+  'delivered': { bg: 'transparent', text: '#10B981', label: 'Delivered' },
+  'cancelled': { bg: 'transparent', text: '#EF4444', label: 'Cancelled' }
 };
 
 export default function RawMaterialOrderDetailsPage({ order, user, onBack, onReorder }) {

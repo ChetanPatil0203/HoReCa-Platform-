@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useEffect, useContext } from 'react';
-import { 
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, 
-  Platform, useWindowDimensions, Modal, SafeAreaView 
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
+  Platform, useWindowDimensions, Modal, SafeAreaView
 } from 'react-native';
-import { 
-  History, Search, SlidersHorizontal, Package, UsersRound, Wrench, Megaphone, 
-  ChevronRight, ListChecks, Clock3, CircleCheck, CircleAlert, EllipsisVertical as MoreVertical, 
+import {
+  History, Search, SlidersHorizontal, Package, UsersRound, Wrench, Megaphone,
+  ChevronRight, ListChecks, Clock3, CircleCheck, CircleAlert, EllipsisVertical as MoreVertical,
   Download, X, RotateCcw, Star, Calendar, FileText, Check, Activity
 } from 'lucide-react-native';
 import { fetchOwnerActivityHistoryApi } from '../../services/api.service';
@@ -35,13 +35,13 @@ const PILLAR_BADGES = {
 };
 
 const STATUS_BADGES = {
-  'Delivered': { bg: '#DCFCE7', text: '#15803D' },
-  'Completed': { bg: '#DCFCE7', text: '#15803D' },
-  'Active': { bg: '#EFF6FF', text: '#2563EB' },
-  'In Progress': { bg: '#FFFBEB', text: '#D97706' },
-  'Running': { bg: '#DCFCE7', text: '#15803D' },
-  'Paused': { bg: '#F3E8FF', text: '#9333EA' },
-  'Cancelled': { bg: '#FEE2E2', text: '#DC2626' }
+  'Delivered': { bg: 'transparent', text: '#10B981' },
+  'Completed': { bg: 'transparent', text: '#10B981' },
+  'Active': { bg: 'transparent', text: '#2563EB' },
+  'In Progress': { bg: 'transparent', text: '#F59E0B' },
+  'Running': { bg: 'transparent', text: '#10B981' },
+  'Paused': { bg: 'transparent', text: '#8B5CF6' },
+  'Cancelled': { bg: 'transparent', text: '#EF4444' }
 };
 
 // Secondary status filter list per pillar
@@ -90,7 +90,7 @@ export default function HistoryPage() {
         const res = await fetchOwnerActivityHistoryApi(ownerId);
         if (res && res.success && res.data) {
           const { orders = [], requirements = [] } = res.data;
-          
+
           if (orders.length > 0 || requirements.length > 0) {
             const mappedOrders = orders.map(ord => ({
               id: `ORD-${(ord.id || '').toString().slice(-4).padStart(4, '0')}`,
@@ -101,7 +101,7 @@ export default function HistoryPage() {
               amount: `₹${parseFloat(ord.totalAmount || 0).toLocaleString('en-IN')}`,
               date: new Date(ord.createdAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
               status: ord.status === 'confirmed' ? 'Delivered' : ord.status ? (ord.status.charAt(0).toUpperCase() + ord.status.slice(1)) : 'In Progress',
-              actionText: 'View Order Summary',
+              actionText: 'View Order',
               timeline: [
                 `Order Status: ${(ord.status || 'pending').toUpperCase()}`,
                 `Delivery Address: ${ord.deliveryAddress || 'Branch Address'}`,
@@ -111,9 +111,9 @@ export default function HistoryPage() {
 
             const mappedReqs = requirements.map(r => {
               let pillar = 'service';
-              let actionText = 'View Service Summary';
-              if (r.type === 'manpower') { pillar = 'manpower'; actionText = 'View Hiring Summary'; }
-              else if (r.type === 'marketing') { pillar = 'marketing'; actionText = 'View Campaign Summary'; }
+              let actionText = 'View Service';
+              if (r.type === 'manpower') { pillar = 'manpower'; actionText = 'View Hiring'; }
+              else if (r.type === 'marketing') { pillar = 'marketing'; actionText = 'View Campaign'; }
 
               let status = 'In Progress';
               if (r.status === 'completed' || r.status === 'accepted') status = 'Completed';
@@ -191,7 +191,7 @@ export default function HistoryPage() {
       // Search Query
       const q = searchQuery.toLowerCase().trim();
       if (q) {
-        const matches = 
+        const matches =
           rec.id.toLowerCase().includes(q) ||
           rec.title.toLowerCase().includes(q) ||
           rec.vendor.toLowerCase().includes(q) ||
@@ -221,8 +221,8 @@ export default function HistoryPage() {
         </View>
       ) : null}
 
-      <ScrollView 
-        style={styles.container} 
+      <ScrollView
+        style={styles.container}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
@@ -235,9 +235,6 @@ export default function HistoryPage() {
                 <History size={22} color={NAVY} style={{ marginRight: 8 }} />
                 <Text style={styles.pageTitle}>Activity History</Text>
               </View>
-              <Text style={styles.pageSubtitle}>
-                Review past orders, hiring, service and marketing activity.
-              </Text>
             </View>
           </View>
 
@@ -247,7 +244,7 @@ export default function HistoryPage() {
 
             <View style={styles.overviewColsRow}>
               {/* Total Records */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.overviewColItem}
                 onPress={() => { setSelectedPillar('all'); setSelectedStatus('All'); }}
                 activeOpacity={0.8}
@@ -262,7 +259,7 @@ export default function HistoryPage() {
               <View style={styles.overviewDividerLine} />
 
               {/* In Progress */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.overviewColItem}
                 onPress={() => setSelectedStatus('In Progress')}
                 activeOpacity={0.8}
@@ -277,7 +274,7 @@ export default function HistoryPage() {
               <View style={styles.overviewDividerLine} />
 
               {/* Completed */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.overviewColItem}
                 onPress={() => setSelectedStatus('Completed')}
                 activeOpacity={0.8}
@@ -306,7 +303,7 @@ export default function HistoryPage() {
                 <X size={16} color="#64748B" />
               </TouchableOpacity>
             ) : null}
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.filterIconButton, selectedPillar !== 'all' && styles.filterIconButtonActive]}
               onPress={() => setFilterModalVisible(true)}
               activeOpacity={0.7}
@@ -318,9 +315,9 @@ export default function HistoryPage() {
 
           {/* ── Secondary Status Filters ── */}
           {showStatusFilters ? (
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false} 
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
               style={styles.statusScroll}
               contentContainerStyle={styles.statusContainer}
             >
@@ -360,7 +357,7 @@ export default function HistoryPage() {
                   <Text style={styles.emptyCardSub}>
                     Try another pillar, status or search term.
                   </Text>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.clearFiltersBtn}
                     onPress={() => { setSearchQuery(''); setSelectedPillar('all'); setSelectedStatus('All'); }}
                   >
@@ -373,7 +370,7 @@ export default function HistoryPage() {
           ) : (
             filteredHistory.map(rec => {
               const pillarBadge = PILLAR_BADGES[rec.pillar] || { label: 'OTHER', color: NAVY, bg: '#F1F5F9' };
-              const statusStyle = STATUS_BADGES[rec.status] || { bg: '#EFF6FF', text: '#2563EB' };
+              const statusStyle = STATUS_BADGES[rec.status] || { bg: 'transparent', text: '#2563EB' };
 
               return (
                 <View key={rec.id} style={styles.historyCard}>
@@ -415,13 +412,12 @@ export default function HistoryPage() {
                       {rec.amount ? <Text style={styles.amountText}>{rec.amount}</Text> : null}
                     </View>
 
-                    <TouchableOpacity 
-                      style={styles.primaryActionBtn} 
+                    <TouchableOpacity
+                      style={styles.primaryActionBtn}
                       onPress={() => handleOpenDetails(rec)}
                       activeOpacity={0.8}
                     >
                       <Text style={styles.primaryActionText}>{rec.actionText}</Text>
-                      <ChevronRight size={15} color="#fff" />
                     </TouchableOpacity>
                   </View>
 
@@ -496,7 +492,7 @@ export default function HistoryPage() {
             )}
 
             <View style={styles.modalFooter}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.modalOutlineBtn}
                 onPress={() => {
                   setDetailsModalVisible(false);
@@ -507,7 +503,7 @@ export default function HistoryPage() {
                 <Text style={styles.modalOutlineText}>Download Invoice</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.modalPrimaryBtn}
                 onPress={() => setDetailsModalVisible(false)}
               >
@@ -525,7 +521,7 @@ export default function HistoryPage() {
         animationType="fade"
         onRequestClose={() => setFilterModalVisible(false)}
       >
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.filterModalOverlay}
           activeOpacity={1}
           onPress={() => setFilterModalVisible(false)}
@@ -549,8 +545,8 @@ export default function HistoryPage() {
               {PILLARS.map(p => {
                 const IconComp = p.icon;
                 const isSelected = selectedPillar === p.id;
-                const count = p.id === 'all' 
-                  ? historyData.length 
+                const count = p.id === 'all'
+                  ? historyData.length
                   : historyData.filter(d => d.pillar === p.id).length;
 
                 return (
@@ -744,7 +740,7 @@ const styles = StyleSheet.create({
 
   /* History Record Card */
   historyCard: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: BORDER, padding: 14, marginBottom: 12, position: 'relative', ...Platform.select({ web: { boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }, ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 6 }, android: { elevation: 2 } }) },
-  
+
   cardTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   recordIdText: { fontSize: 12, fontWeight: '700', color: '#64748B', marginRight: 8 },
   pillarTag: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },

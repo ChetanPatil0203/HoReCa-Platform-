@@ -3,14 +3,14 @@
 // ─────────────────────────────────────────────
 
 export const CATEGORIES = [
-  { id: 'veg-fruits', label: 'Vegetables & Fruits', emoji: '🥦', color: '#16A34A', bg: '#F0FDF4' },
+  { id: 'veg-fruits', label: 'Veg & Fruits', emoji: '🥦', color: '#16A34A', bg: '#F0FDF4' },
   { id: 'dairy', label: 'Dairy Products', emoji: '🥛', color: '#2563EB', bg: '#EFF6FF' },
-  { id: 'grains', label: 'Rice, Flour & Grains', emoji: '🌾', color: '#D97706', bg: '#FFFBEB' },
+  { id: 'grains', label: 'Grains & Flour', emoji: '🌾', color: '#D97706', bg: '#FFFBEB' },
   { id: 'oil-spices', label: 'Oil & Spices', emoji: '🌶️', color: '#DC2626', bg: '#FEF2F2' },
-  { id: 'meat', label: 'Chicken, Meat & Seafood', emoji: '🍗', color: '#7C3AED', bg: '#F5F3FF' },
+  { id: 'meat', label: 'Meat & Seafood', emoji: '🍗', color: '#7C3AED', bg: '#F5F3FF' },
   { id: 'beverages', label: 'Beverages', emoji: '🧃', color: '#0891B2', bg: '#ECFEFF' },
-  { id: 'cleaning', label: 'Cleaning Material', emoji: '🧼', color: '#059669', bg: '#ECFDF5' },
-  { id: 'packaging', label: 'Packaging Material', emoji: '📦', color: '#92400E', bg: '#FEF3C7' },
+  { id: 'cleaning', label: 'Cleaning', emoji: '🧼', color: '#059669', bg: '#ECFDF5' },
+  { id: 'packaging', label: 'Packaging', emoji: '📦', color: '#92400E', bg: '#FEF3C7' },
 ];
 
 export const SUPPLIERS = [];

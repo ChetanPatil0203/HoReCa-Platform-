@@ -211,9 +211,6 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
             <UserPlus size={16} color="#fff" />
             <Text style={styles.primaryBtnText}>Add Candidate</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.moreBtn} onPress={() => setMoreVisible(true)}>
-            <MoreVertical size={20} color={NAVY} />
-          </TouchableOpacity>
         </View>
       </View>
 

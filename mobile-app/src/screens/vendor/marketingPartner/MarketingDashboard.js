@@ -1,5 +1,5 @@
 import React, { useState, useContext, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Platform, useWindowDimensions, TouchableOpacity, Image, TouchableWithoutFeedback, Animated } from 'react-native';
+import { View, Text, StyleSheet, Platform, useWindowDimensions, TouchableOpacity, Image, TouchableWithoutFeedback, Animated, Easing } from 'react-native';
 import { Menu, Bell, Search, LayoutDashboard, ClipboardList, Megaphone, FolderOpen, Users, DollarSign, CircleHelp as HelpCircle, Settings, LogOut, Home, Inbox, User, Plus, ImagePlus, UserPlus, FileText, Building2 } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
 import { colors } from '../../../theme/colors';
@@ -25,6 +25,74 @@ import HRCSupportBot from '../../../components/owner/chatbot/HRCSupportBot';
 
 const NAVY = '#071B3A';
 const PURPLE = '#071B3A';
+
+function NotificationBadge({ count = 3 }) {
+  const pulseAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    let animation;
+    if (count > 0) {
+      animation = Animated.loop(
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1600,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        })
+      );
+      animation.start();
+    } else {
+      pulseAnim.setValue(0);
+    }
+
+    return () => {
+      if (animation) animation.stop();
+    };
+  }, [count]);
+
+  if (!count || count <= 0) return null;
+
+  const displayCount = count > 99 ? '99+' : count;
+
+  const ringScale = pulseAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.85, 1.65],
+  });
+
+  const ringOpacity = pulseAnim.interpolate({
+    inputRange: [0, 0.4, 1],
+    outputRange: [0.75, 0.35, 0],
+  });
+
+  const badgeScale = pulseAnim.interpolate({
+    inputRange: [0, 0.35, 0.7, 1],
+    outputRange: [1, 1.14, 1.06, 1],
+  });
+
+  return (
+    <View style={styles.notifBadgeWrapper}>
+      <Animated.View
+        style={[
+          styles.whitePulseRing,
+          {
+            transform: [{ scale: ringScale }],
+            opacity: ringOpacity,
+          },
+        ]}
+      />
+      <Animated.View
+        style={[
+          styles.notifBadge,
+          {
+            transform: [{ scale: badgeScale }],
+          },
+        ]}
+      >
+        <Text style={styles.notifBadgeText}>{displayCount}</Text>
+      </Animated.View>
+    </View>
+  );
+}
 
 export default function MarketingDashboard() {
   const { width } = useWindowDimensions();
@@ -91,7 +159,6 @@ export default function MarketingDashboard() {
     { key: "clients", label: "Clients", icon: Building2 },
     { key: "campaigns", label: "Campaigns", icon: Megaphone },
     { key: "team", label: "Team", icon: Users },
-    { key: "revenue", label: "Revenue", icon: DollarSign },
     { key: "notifications", label: "Notifications", icon: Bell },
   ];
 
@@ -145,7 +212,7 @@ export default function MarketingDashboard() {
               <View style={styles.mobileRight}>
                 <TouchableOpacity style={styles.mobileIconBtn} onPress={() => setActivePage('notifications')}>
                   <Bell size={18} color="#fff" />
-                  <View style={styles.mobileNotificationDot} />
+                  <NotificationBadge count={3} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.mobileAvatarBtn} onPress={() => setActivePage('profile')}>
                   {userPhoto && !imgError ? (
@@ -165,7 +232,7 @@ export default function MarketingDashboard() {
               <View style={styles.navRight}>
                 <TouchableOpacity style={styles.iconBtn} onPress={() => setActivePage('notifications')}>
                   <Bell size={20} color={colors.sub} />
-                  <View style={styles.notificationDot} />
+                  <NotificationBadge count={3} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -261,6 +328,39 @@ const styles = StyleSheet.create({
   mobileRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   mobileIconBtn: { padding: 4, position: 'relative' },
   mobileNotificationDot: { position: 'absolute', top: 4, right: 4, width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444', borderWidth: 2, borderColor: NAVY },
+  notifBadgeWrapper: {
+    position: 'absolute',
+    top: -5,
+    right: -7,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  whitePulseRing: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  notifBadge: {
+    backgroundColor: '#E11D48',
+    minWidth: 17,
+    height: 17,
+    borderRadius: 8.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  notifBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 9.5,
+    fontWeight: '900',
+    textAlign: 'center',
+    includeFontPadding: false,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
+  },
   mobileAvatarBtn: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#D4AF37', alignItems: 'center', justifyContent: 'center' },
 
   pageArea: { flex: 1 },

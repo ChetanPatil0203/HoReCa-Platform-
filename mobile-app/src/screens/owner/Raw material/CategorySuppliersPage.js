@@ -36,7 +36,7 @@ export default function CategorySuppliersPage({ category, onBack, onSupplierPres
             location: s.city,
             deliveryTime: 'Next Day',
             minOrder: 500,
-            categories: s.categories || []
+            categories: s.categories || s.specialization || (s.products ? s.products.map(p => p.category) : [])
           }));
           setSuppliers(mappedSuppliers);
         }
@@ -48,21 +48,46 @@ export default function CategorySuppliersPage({ category, onBack, onSupplierPres
   }, []);
 
   const filteredSuppliers = useMemo(() => {
-    let list = suppliers.filter(s =>
-      s.categories.includes(category.label) &&
-      s.name.toLowerCase().includes(search.toLowerCase())
-    );
+    let list = suppliers;
+
+    if (category) {
+      const catLabel = (category.label || '').toLowerCase();
+      const catId = (category.id || '').toLowerCase();
+
+      list = list.filter(s => {
+        if (!s.categories || s.categories.length === 0) return true;
+
+        return s.categories.some(c => {
+          if (!c) return false;
+          const str = String(c).toLowerCase();
+          return (
+            str.includes(catLabel) ||
+            catLabel.includes(str) ||
+            str.includes(catId) ||
+            (catId.includes('veg') && (str.includes('veg') || str.includes('fruit'))) ||
+            (catId.includes('dairy') && str.includes('dairy')) ||
+            (catId.includes('grain') && (str.includes('grain') || str.includes('rice') || str.includes('flour'))) ||
+            (catId.includes('meat') && (str.includes('meat') || str.includes('chicken') || str.includes('fish'))) ||
+            (catId.includes('oil') && (str.includes('oil') || str.includes('spice')))
+          );
+        });
+      });
+    }
+
+    if (search) {
+      list = list.filter(s => s.name.toLowerCase().includes(search.toLowerCase()));
+    }
 
     if (activeFilter === 'Fast Delivery') {
-      list = list.sort((a, b) => a.deliveryTime.localeCompare(b.deliveryTime));
+      list = [...list].sort((a, b) => a.deliveryTime.localeCompare(b.deliveryTime));
     } else if (activeFilter === 'Top Rated') {
-      list = list.sort((a, b) => b.rating - a.rating);
+      list = [...list].sort((a, b) => b.rating - a.rating);
     } else if (activeFilter === 'Low Minimum Order') {
-      list = list.sort((a, b) => a.minOrder - b.minOrder);
+      list = [...list].sort((a, b) => a.minOrder - b.minOrder);
     }
 
     return list;
-  }, [search, activeFilter, suppliers]);
+  }, [search, activeFilter, suppliers, category]);
 
   const getTagsForSupplier = (id) => {
     switch (id) {

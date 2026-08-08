@@ -9,7 +9,6 @@ const NAV = [
   { key: "inventory", label: "Inventory", icon: Package, exclusive: true },
   { key: "deliveries", label: "Deliveries", icon: Truck },
   { key: "clients", label: "Clients", icon: Briefcase },
-  { key: "revenue", label: "Revenue", icon: DollarSign },
   { key: "analytics", label: "Analytics", icon: BarChart2 },
 ];
 
@@ -80,11 +79,14 @@ export default function RawMaterialSidebar({ activePage, setActivePage, isMobile
         {/* Luxury Profile Card */}
         <View style={styles.profileCard}>
           <View style={styles.avatarBox}>
-            <Text style={styles.avatarInitials}>{user?.bizName ? user.bizName.substring(0, 2).toUpperCase() : 'MF'}</Text>
+            <Text style={styles.avatarInitials}>
+              {(user?.registration?.bizName || user?.businessName || user?.bizName || 'Vendor').substring(0, 2).toUpperCase()}
+            </Text>
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileThe}>The</Text>
-            <Text style={styles.profileName} numberOfLines={1}>{user?.bizName || 'Metro Fresh'}</Text>
+            <Text style={styles.profileName} numberOfLines={1}>
+              {user?.registration?.bizName || user?.businessName || user?.bizName || 'Vendor Agency'}
+            </Text>
             <Text style={styles.profileRole} numberOfLines={1}>Raw Material Supplier</Text>
           </View>
           <View style={styles.vendorBadge}>
@@ -193,37 +195,34 @@ const styles = StyleSheet.create({
   },
   closeBtn: { padding: 4 },
   profileCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14,
-    backgroundColor: 'rgba(16, 42, 86, 0.45)',
-    borderWidth: 1, borderColor: '#D4AF37', borderRadius: 18,
-    marginTop: 16, marginBottom: 16,
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 10,
+    backgroundColor: 'rgba(16, 42, 86, 0.55)',
+    borderWidth: 1, borderColor: '#D4AF37', borderRadius: 14,
+    marginHorizontal: 12, marginTop: 14, marginBottom: 14,
+    overflow: 'hidden',
   },
   avatarBox: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: '#FDFBF7',
-    alignItems: 'center', justifyContent: 'center',
+    width: 36, height: 36, borderRadius: 18, backgroundColor: '#FDFBF7',
+    alignItems: 'center', justifyContent: 'center', marginRight: 8,
   },
   avatarInitials: {
     color: '#081A3A', fontSize: 12, fontWeight: 'bold',
   },
   profileInfo: {
-    flex: 1, justifyContent: 'center',
-  },
-  profileThe: {
-    color: '#D4AF37', fontSize: 15, fontStyle: 'italic', marginBottom: -2,
-    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+    flex: 1, justifyContent: 'center', marginRight: 4, overflow: 'hidden',
   },
   profileName: {
-    color: '#fff', fontSize: 13, fontWeight: 'bold', marginBottom: 2,
+    color: '#fff', fontSize: 12, fontWeight: 'bold', marginBottom: 1,
   },
   profileRole: {
-    color: '#B8C6E3', fontSize: 9, letterSpacing: 0.5,
+    color: '#B8C6E3', fontSize: 9, fontWeight: '500',
   },
   vendorBadge: {
-    paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, backgroundColor: '#081A3A',
-    borderWidth: 1, borderColor: '#D4AF37',
+    paddingHorizontal: 5, paddingVertical: 2, borderRadius: 5, backgroundColor: '#081A3A',
+    borderWidth: 1, borderColor: '#D4AF37', alignSelf: 'center',
   },
   vendorBadgeText: {
-    color: '#D4AF37', fontSize: 8, fontWeight: 'bold', letterSpacing: 0.8,
+    color: '#D4AF37', fontSize: 8, fontWeight: 'bold', letterSpacing: 0.5,
   },
   scrollArea: {
     flex: 1, marginTop: 8,

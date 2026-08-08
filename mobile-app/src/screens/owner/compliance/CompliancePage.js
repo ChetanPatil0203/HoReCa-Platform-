@@ -15,9 +15,9 @@ import {
   RefreshControl,
   Linking
 } from 'react-native';
-import { 
-  ShieldCheck, FilePlus2, EllipsisVertical as MoreVertical, CircleCheck, Clock3, 
-  CircleAlert, FileQuestion, TriangleAlert, ChevronRight, Search, FileText, X, 
+import {
+  ShieldCheck, FilePlus2, EllipsisVertical as MoreVertical, CircleCheck, Clock3,
+  CircleAlert, FileQuestion, TriangleAlert, ChevronRight, Search, FileText, X,
   CloudUpload as UploadCloud, Download, RotateCcw, Check, Sparkles, Eye, ExternalLink,
   Award, QrCode
 } from 'lucide-react-native';
@@ -180,8 +180,8 @@ export default function CompliancePage() {
   const filteredDocs = useMemo(() => {
     return documents.filter(doc => {
       const q = searchQuery.toLowerCase().trim();
-      const matchesSearch = !q || 
-        doc.name.toLowerCase().includes(q) || 
+      const matchesSearch = !q ||
+        doc.name.toLowerCase().includes(q) ||
         (doc.licenseNumber && doc.licenseNumber.toLowerCase().includes(q)) ||
         (doc.uploadedFile && doc.uploadedFile.toLowerCase().includes(q));
 
@@ -291,7 +291,7 @@ export default function CompliancePage() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      
+
       {/* Toast Notification */}
       {toastMessage ? (
         <View style={styles.toastContainer}>
@@ -300,8 +300,8 @@ export default function CompliancePage() {
         </View>
       ) : null}
 
-      <ScrollView 
-        style={styles.container} 
+      <ScrollView
+        style={styles.container}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -312,14 +312,11 @@ export default function CompliancePage() {
           <View style={styles.pageHeader}>
             <View style={{ flex: 1 }}>
               <Text style={styles.pageTitle}>Compliance</Text>
-              <Text style={styles.pageSubtitle}>
-                Manage licences, renewals and business documents.
-              </Text>
             </View>
 
             {!isTinyScreen && (
-              <TouchableOpacity 
-                style={styles.addDocHeaderBtn} 
+              <TouchableOpacity
+                style={styles.addDocHeaderBtn}
                 onPress={() => {
                   setAddForm({ docType: 'FSSAI Licence', docNumber: '', issueDate: '', expiryDate: '', notes: '', fileName: '' });
                   setAddModalVisible(true);
@@ -334,8 +331,8 @@ export default function CompliancePage() {
 
           {/* Tiny screen fallback for Add Document button */}
           {isTinyScreen && (
-            <TouchableOpacity 
-              style={[styles.addDocHeaderBtn, { width: '100%', marginBottom: 16, justifyContent: 'center' }]} 
+            <TouchableOpacity
+              style={[styles.addDocHeaderBtn, { width: '100%', marginBottom: 16, justifyContent: 'center' }]}
               onPress={() => setAddModalVisible(true)}
             >
               <FilePlus2 size={16} color="#fff" style={{ marginRight: 6 }} />
@@ -346,54 +343,62 @@ export default function CompliancePage() {
           {/* ── Compliance Overview 4 Separate Action Cards ── */}
           <View style={styles.statsGrid}>
             {/* Valid Card */}
-            <TouchableOpacity 
-              style={styles.statCard} 
+            <TouchableOpacity
+              style={styles.statCard}
               onPress={() => setActiveFilter('Valid')}
               activeOpacity={0.8}
             >
-              <View style={[styles.statIconBox, { backgroundColor: '#FFFBEB' }]}>
-                <FileText size={20} color="#D97706" />
+              <View style={styles.statCardHeader}>
+                <View style={[styles.statIconBox, { backgroundColor: '#FFFBEB' }]}>
+                  <FileText size={20} color="#D97706" />
+                </View>
+                <Text style={styles.statNumber}>{counts.valid}</Text>
               </View>
-              <Text style={styles.statNumber}>{counts.valid}</Text>
               <Text style={styles.statLabel}>Valid Documents</Text>
             </TouchableOpacity>
 
             {/* Expiring Soon Card */}
-            <TouchableOpacity 
-              style={styles.statCard} 
+            <TouchableOpacity
+              style={styles.statCard}
               onPress={() => setActiveFilter('Expiring')}
               activeOpacity={0.8}
             >
-              <View style={[styles.statIconBox, { backgroundColor: '#EFF6FF' }]}>
-                <Clock3 size={20} color="#2563EB" />
+              <View style={styles.statCardHeader}>
+                <View style={[styles.statIconBox, { backgroundColor: '#EFF6FF' }]}>
+                  <Clock3 size={20} color="#2563EB" />
+                </View>
+                <Text style={styles.statNumber}>{counts.expiring}</Text>
               </View>
-              <Text style={styles.statNumber}>{counts.expiring}</Text>
               <Text style={styles.statLabel}>Expiring Soon</Text>
             </TouchableOpacity>
 
             {/* Expired Card */}
-            <TouchableOpacity 
-              style={styles.statCard} 
+            <TouchableOpacity
+              style={styles.statCard}
               onPress={() => setActiveFilter('Expired')}
               activeOpacity={0.8}
             >
-              <View style={[styles.statIconBox, { backgroundColor: '#F3E8FF' }]}>
-                <CircleAlert size={20} color="#9333EA" />
+              <View style={styles.statCardHeader}>
+                <View style={[styles.statIconBox, { backgroundColor: '#F3E8FF' }]}>
+                  <CircleAlert size={20} color="#9333EA" />
+                </View>
+                <Text style={styles.statNumber}>{counts.expired}</Text>
               </View>
-              <Text style={styles.statNumber}>{counts.expired}</Text>
               <Text style={styles.statLabel}>Expired Documents</Text>
             </TouchableOpacity>
 
             {/* Missing Card */}
-            <TouchableOpacity 
-              style={styles.statCard} 
+            <TouchableOpacity
+              style={styles.statCard}
               onPress={() => setActiveFilter('Missing')}
               activeOpacity={0.8}
             >
-              <View style={[styles.statIconBox, { backgroundColor: '#DCFCE7' }]}>
-                <FileQuestion size={20} color="#16A34A" />
+              <View style={styles.statCardHeader}>
+                <View style={[styles.statIconBox, { backgroundColor: '#DCFCE7' }]}>
+                  <FileQuestion size={20} color="#16A34A" />
+                </View>
+                <Text style={styles.statNumber}>{counts.missing}</Text>
               </View>
-              <Text style={styles.statNumber}>{counts.missing}</Text>
               <Text style={styles.statLabel}>Missing Documents</Text>
             </TouchableOpacity>
           </View>
@@ -417,9 +422,9 @@ export default function CompliancePage() {
             ) : null}
           </View>
 
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false} 
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
             style={styles.filterScroll}
             contentContainerStyle={styles.filterTabsContainer}
           >
@@ -472,7 +477,7 @@ export default function CompliancePage() {
                   <Text style={styles.emptyCardSub}>
                     Try another search term or document status.
                   </Text>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.clearFiltersBtn}
                     onPress={() => { setSearchQuery(''); setActiveFilter('All'); }}
                   >
@@ -522,13 +527,13 @@ export default function CompliancePage() {
 
               return (
                 <View key={doc.id} style={styles.docCard}>
-                  
+
                   {/* Top Row: Icon + Name + Badge */}
                   <View style={styles.docCardTop}>
                     <View style={styles.docIconBox}>
                       <FileText size={20} color={NAVY} />
                     </View>
-                    
+
                     <View style={styles.docTitleBlock}>
                       <Text style={styles.docNameText} numberOfLines={1}>{doc.name}</Text>
                       {doc.licenseNumber ? (
@@ -559,8 +564,8 @@ export default function CompliancePage() {
 
                   {/* Bottom Row: Action Buttons */}
                   <View style={styles.docCardBottom}>
-                    <TouchableOpacity 
-                      style={[styles.primaryActionBtn, { backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#BFDBFE', marginRight: 8, flex: 1 }]} 
+                    <TouchableOpacity
+                      style={[styles.primaryActionBtn, { backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#BFDBFE', marginRight: 8, flex: 1 }]}
                       onPress={() => handleViewDocument(doc)}
                       activeOpacity={0.8}
                     >
@@ -568,8 +573,8 @@ export default function CompliancePage() {
                       <Text style={[styles.primaryActionText, { color: NAVY, fontSize: 12 }]} numberOfLines={1}>View Document</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity 
-                      style={[styles.primaryActionBtn, { flex: 1.2 }]} 
+                    <TouchableOpacity
+                      style={[styles.primaryActionBtn, { flex: 1.2 }]}
                       onPress={() => handlePrimaryAction(doc)}
                       activeOpacity={0.8}
                     >
@@ -625,7 +630,7 @@ export default function CompliancePage() {
                   <View style={styles.detailsCellFull}>
                     <Text style={styles.detailsLabel}>Uploaded File</Text>
                     {selectedDoc.uploadedFile ? (
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}
                         onPress={() => handleViewDocument(selectedDoc)}
                         activeOpacity={0.7}
@@ -667,7 +672,7 @@ export default function CompliancePage() {
             <View style={[styles.modalFooter, isMobile && { flexDirection: 'column' }]}>
               {/* Secondary Actions Row */}
               <View style={{ flexDirection: 'row', gap: 8, width: '100%', flex: isMobile ? undefined : 1.5 }}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.modalOutlineBtn, { flex: 1 }]}
                   onPress={() => handleViewDocument(selectedDoc)}
                   activeOpacity={0.8}
@@ -677,7 +682,7 @@ export default function CompliancePage() {
                 </TouchableOpacity>
 
                 {selectedDoc?.uploadedFile ? (
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={[styles.modalOutlineBtn, { flex: 1 }]}
                     onPress={() => handleViewDocument(selectedDoc)}
                     activeOpacity={0.8}
@@ -689,7 +694,7 @@ export default function CompliancePage() {
               </View>
 
               {/* Primary Action Button */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.modalPrimaryBtn, isMobile && { width: '100%', flex: undefined }]}
                 onPress={() => {
                   setDetailsModalVisible(false);
@@ -721,7 +726,7 @@ export default function CompliancePage() {
               {/* Document Type Dropdown */}
               <View style={styles.formGroup}>
                 <Text style={styles.inputLabel}>Document Type *</Text>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.dropdownPicker}
                   onPress={() => setShowTypeDropdown(!showTypeDropdown)}
                   activeOpacity={0.8}
@@ -788,7 +793,7 @@ export default function CompliancePage() {
               </View>
 
               {/* File Upload Dropzone */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.uploadDropzone, addForm.fileName ? styles.uploadDropzoneSelected : null]}
                 onPress={handlePickDocument}
                 activeOpacity={0.8}
@@ -823,15 +828,15 @@ export default function CompliancePage() {
             </ScrollView>
 
             <View style={styles.modalFooter}>
-              <TouchableOpacity 
-                style={styles.modalOutlineBtn} 
+              <TouchableOpacity
+                style={styles.modalOutlineBtn}
                 onPress={() => setAddModalVisible(false)}
               >
                 <Text style={styles.modalOutlineText}>Cancel</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
-                style={styles.modalPrimaryBtn} 
+              <TouchableOpacity
+                style={styles.modalPrimaryBtn}
                 onPress={handleAddSubmit}
               >
                 <Text style={styles.modalPrimaryText}>Submit for Verification</Text>
@@ -845,7 +850,7 @@ export default function CompliancePage() {
       <Modal visible={viewModalVisible} animationType="fade" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={[styles.modalCard, { maxHeight: '90%', width: '95%', maxWidth: 580, display: 'flex', flexDirection: 'column' }]}>
-            
+
             {/* Modal Header */}
             <View style={styles.modalHeaderRow}>
               <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
@@ -865,7 +870,7 @@ export default function CompliancePage() {
             <ScrollView style={styles.modalScroll} contentContainerStyle={{ paddingBottom: 20 }}>
               {previewDoc && (
                 <View style={styles.docSheetContainer}>
-                  
+
                   {/* Top Certificate Header Bar */}
                   <View style={styles.docSheetHeader}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -882,7 +887,7 @@ export default function CompliancePage() {
                   <View style={styles.docSheetBody}>
                     <Text style={styles.docSheetDocTitle}>{previewDoc.name}</Text>
                     <Text style={styles.docSheetSubtitle}>Government / Business License Record</Text>
-                    
+
                     <View style={styles.docSheetDivider} />
 
                     <View style={styles.docSheetGrid}>
@@ -925,7 +930,7 @@ export default function CompliancePage() {
                         <QrCode size={44} color={NAVY} />
                         <Text style={{ fontSize: 9, color: TEXT_MUTED, marginTop: 4, fontWeight: '700' }}>SCAN TO VERIFY</Text>
                       </View>
-                      
+
                       <View style={styles.docSheetStamp}>
                         <ShieldCheck size={26} color="#15803D" />
                         <Text style={styles.docSheetStampText}>HRC VERIFIED</Text>
@@ -940,14 +945,14 @@ export default function CompliancePage() {
 
             {/* Modal Footer */}
             <View style={styles.modalFooter}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.modalOutlineBtn}
                 onPress={() => setViewModalVisible(false)}
               >
                 <Text style={styles.modalOutlineText}>Close</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.modalPrimaryBtn}
                 onPress={() => {
                   showToast(`Downloading ${previewDoc?.uploadedFile || 'document'}...`);
@@ -988,8 +993,9 @@ const styles = StyleSheet.create({
   /* 4 Separate Stat Cards Grid */
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 18 },
   statCard: { width: '48%', backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: BORDER, padding: 16, ...Platform.select({ web: { boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }, ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 6 }, android: { elevation: 2 } }) },
-  statIconBox: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
-  statNumber: { fontSize: 24, fontWeight: '900', color: NAVY, marginBottom: 2 },
+  statCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  statIconBox: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 0 },
+  statNumber: { fontSize: 24, fontWeight: '900', color: NAVY, marginBottom: 0 },
   statLabel: { fontSize: 13, fontWeight: '600', color: TEXT_MUTED },
   progressBarFill: { height: '100%', backgroundColor: '#16B77A', borderRadius: 4 },
   healthSubText: { fontSize: 12, color: TEXT_MUTED },
@@ -1032,7 +1038,7 @@ const styles = StyleSheet.create({
 
   /* Document Card */
   docCard: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: BORDER, padding: 14, marginBottom: 12, position: 'relative', ...Platform.select({ web: { boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }, ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 6 }, android: { elevation: 2 } }) },
-  
+
   docCardTop: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 },
   docIconBox: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginRight: 10 },
   docTitleBlock: { flex: 1, paddingRight: 8 },

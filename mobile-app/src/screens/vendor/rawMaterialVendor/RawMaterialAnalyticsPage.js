@@ -89,19 +89,21 @@ export default function RawMaterialAnalyticsPage() {
           {/* Metrics Grid */}
           <View style={styles.metricsGrid}>
             {METRICS.map((item, idx) => (
-              <View key={idx} style={[styles.metricCard, { width: (width - 48) / 2 }]}>
+              <View key={idx} style={[styles.metricCard, { width: width < 768 ? (width - 44) / 2 : (width - 64) / 3 }]}>
                 <View style={styles.metricHeader}>
-                  <View style={[styles.iconBox, { backgroundColor: item.color + '15' }]}>
-                    <item.icon size={16} color={item.color} />
+                  <View style={[styles.iconBox, { backgroundColor: item.color + '18' }]}>
+                    <item.icon size={20} color={item.color} />
                   </View>
+                  <Text style={styles.metricValue}>{item.value}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={styles.metricLabel} numberOfLines={1}>{item.label}</Text>
                   <View style={[styles.trendBadge, {backgroundColor: item.isPositive ? '#D1FAE5' : '#FEE2E2'}]}>
                     <Text style={[styles.trendText, {color: item.isPositive ? '#059669' : '#DC2626'}]}>
                       {item.trend}
                     </Text>
                   </View>
                 </View>
-                <Text style={styles.metricValue}>{item.value}</Text>
-                <Text style={styles.metricLabel} numberOfLines={1}>{item.label}</Text>
               </View>
             ))}
           </View>
@@ -248,17 +250,18 @@ const styles = StyleSheet.create({
   
   scrollContent: { padding: 16 },
   
-  metricsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  metricsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 },
   metricCard: {
-    backgroundColor: '#FFFFFF', padding: 16, borderRadius: 12, marginBottom: 16,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
+    backgroundColor: '#FFFFFF', padding: 16, borderRadius: 16, marginBottom: 4,
+    borderWidth: 1, borderColor: '#E8EDF4',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2,
   },
-  metricHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  iconBox: { width: 32, height: 32, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+  metricHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  iconBox: { width: 42, height: 42, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   trendBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   trendText: { fontSize: 11, fontWeight: 'bold' },
-  metricValue: { fontSize: 18, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
-  metricLabel: { fontSize: 12, color: '#64748B' },
+  metricValue: { fontSize: 22, fontWeight: 'bold', color: NAVY },
+  metricLabel: { fontSize: 13, fontWeight: '600', color: '#64748B', flex: 1, marginRight: 4 },
 
   sectionCard: {
     backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#F1F5F9',

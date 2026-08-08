@@ -1,19 +1,51 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions, SafeAreaView, FlatList } from 'react-native';
+import React, { useState, useEffect, useContext } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions, SafeAreaView, FlatList, ActivityIndicator } from 'react-native';
 import { DollarSign, FileText, CircleCheck as CheckCircle, Clock, CircleAlert as AlertCircle, Plus, Download, Send } from 'lucide-react-native';
 import CreateInvoiceModal from '../../../components/vendor/manpowerAgent/CreateInvoiceModal';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorRequirements } from '../../../services/api.service';
 
 const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
 
-const MOCK_INVOICES = [];
-
 export default function ManpowerRevenuePage() {
-  const [invoices, setInvoices] = useState(MOCK_INVOICES);
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.registration?.id || user?.id;
+
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeDateFilter, setActiveDateFilter] = useState('This Month');
   const [activeTab, setActiveTab] = useState('Invoices'); // Invoices, Pending
   const [createInvVisible, setCreateInvVisible] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
+
+  useEffect(() => {
+    const loadRevenueData = async () => {
+      if (!supplierId) { setLoading(false); return; }
+      try {
+        const res = await fetchVendorRequirements(supplierId);
+        const list = res?.data || res || [];
+        if (Array.isArray(list)) {
+          const mapped = list.map((r, idx) => ({
+            id: `INV-${r.id ? r.id.substring(0, 5).toUpperCase() : 1001 + idx}`,
+            client: r.businessName || r.owner?.bizName || 'HoReCa Client',
+            candidate: r.role || r.title || 'Staff Placement',
+            type: 'Placement Fee',
+            date: r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recent',
+            due: 'As per agreement',
+            amount: Number(r.budget || r.salary || 15000),
+            status: r.status === 'completed' || r.status === 'hired' ? 'Paid' : (r.status === 'candidates_sent' ? 'Sent' : 'Pending')
+          }));
+          setInvoices(mapped);
+        }
+      } catch (err) {
+        console.warn('Error loading manpower revenue:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadRevenueData();
+  }, [supplierId]);
 
   const showToast = (msg) => { setToastMsg(msg); setTimeout(() => setToastMsg(""), 3000); };
 

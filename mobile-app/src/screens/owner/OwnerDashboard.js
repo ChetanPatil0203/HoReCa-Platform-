@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
-import { View, StyleSheet, SafeAreaView, useWindowDimensions, ScrollView, TouchableOpacity, Text, Platform, Image, Modal, TouchableWithoutFeedback, Alert, FlatList, Animated } from 'react-native';
+import { View, StyleSheet, SafeAreaView, useWindowDimensions, ScrollView, TouchableOpacity, Text, Platform, Image, Modal, TouchableWithoutFeedback, Alert, FlatList, Animated, Easing } from 'react-native';
 import { Menu, ArrowLeft, Bell, ChefHat, LayoutDashboard, Package, Users, Wrench, Megaphone, BarChart2, Clock, Truck, Settings, CircleHelp as HelpCircle, ChevronDown, LogOut, User, ShieldCheck, X, CircleCheck as CheckCircle2 } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors } from '../../theme/colors';
@@ -48,6 +48,78 @@ const PAGE_TITLES = {
   "settings": "Account Control Panel",
   "support": "Help & Support Desk",
 };
+
+function NotificationBadge({ count }) {
+  const pulseAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    let animation;
+    if (count > 0) {
+      animation = Animated.loop(
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1600,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        })
+      );
+      animation.start();
+    } else {
+      pulseAnim.setValue(0);
+    }
+
+    return () => {
+      if (animation) animation.stop();
+    };
+  }, [count]);
+
+  if (!count || count <= 0) return null;
+
+  const displayCount = count > 99 ? '99+' : count;
+
+  // Outer expanding white ring interpolation
+  const ringScale = pulseAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.85, 1.65],
+  });
+
+  const ringOpacity = pulseAnim.interpolate({
+    inputRange: [0, 0.4, 1],
+    outputRange: [0.75, 0.35, 0],
+  });
+
+  // Badge subtle scale grow pulse
+  const badgeScale = pulseAnim.interpolate({
+    inputRange: [0, 0.35, 0.7, 1],
+    outputRange: [1, 1.14, 1.06, 1],
+  });
+
+  return (
+    <View style={styles.notifBadgeWrapper}>
+      {/* Outer Growing White Pulse Ring */}
+      <Animated.View
+        style={[
+          styles.whitePulseRing,
+          {
+            transform: [{ scale: ringScale }],
+            opacity: ringOpacity,
+          },
+        ]}
+      />
+      {/* Inner Refined Soft Red Count Badge */}
+      <Animated.View
+        style={[
+          styles.notifBadge,
+          {
+            transform: [{ scale: badgeScale }],
+          },
+        ]}
+      >
+        <Text style={styles.notifBadgeText}>{displayCount}</Text>
+      </Animated.View>
+    </View>
+  );
+}
 
 export default function OwnerDashboard() {
   const { width } = useWindowDimensions();
@@ -253,7 +325,7 @@ export default function OwnerDashboard() {
               <View style={styles.headerRight}>
                 <TouchableOpacity style={styles.headerIconBtn} onPress={() => setNotificationsModalOpen(true)} accessibilityRole="button" accessibilityLabel="Notifications">
                   <Bell size={20} color="#fff" />
-                  {unreadCount > 0 && <View style={styles.headerBadge} />}
+                  <NotificationBadge count={unreadCount} />
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.headerAvatarBtn}
@@ -566,6 +638,39 @@ const styles = StyleSheet.create({
     backgroundColor: '#EF4444',
     borderWidth: 1.5,
     borderColor: '#0A192F',
+  },
+  notifBadgeWrapper: {
+    position: 'absolute',
+    top: -5,
+    right: -7,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  whitePulseRing: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  notifBadge: {
+    backgroundColor: '#E11D48',
+    minWidth: 17,
+    height: 17,
+    borderRadius: 8.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  notifBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 9.5,
+    fontWeight: '900',
+    textAlign: 'center',
+    includeFontPadding: false,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
   },
   headerAvatarBtn: {
     width: 32,

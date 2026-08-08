@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect, useRef, useCallback } from 'react';
-import { 
-  View, Text, StyleSheet, FlatList, TouchableOpacity, 
-  SafeAreaView, useWindowDimensions, Modal, TextInput, 
+import {
+  View, Text, StyleSheet, FlatList, TouchableOpacity,
+  SafeAreaView, useWindowDimensions, Modal, TextInput,
   ScrollView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Alert
 } from 'react-native';
 import { Search, SlidersHorizontal, Plus, Wrench, CircleCheck, CirclePause, EllipsisVertical as MoreVertical, Pencil as Edit, ChevronRight, Clock, CalendarClock, Trash2, Copy, FileText, CircleCheck as CheckCircle2 } from 'lucide-react-native';
@@ -168,15 +168,17 @@ export default function ProviderServicesPage() {
     } else {
       Alert.alert("Deactivate this service?", "This service will no longer appear as available to HoReCa owners.", [
         { text: "Cancel", style: "cancel" },
-        { text: "Deactivate", style: "destructive", onPress: async () => {
-          try {
-            await updateVendorServiceApi(service.id, { status: newStatus });
-            alert("Service deactivated successfully.");
-            loadServices();
-          } catch (err) {
-            console.error('Error updating status:', err);
+        {
+          text: "Deactivate", style: "destructive", onPress: async () => {
+            try {
+              await updateVendorServiceApi(service.id, { status: newStatus });
+              alert("Service deactivated successfully.");
+              loadServices();
+            } catch (err) {
+              console.error('Error updating status:', err);
+            }
           }
-        }}
+        }
       ]);
     }
   };
@@ -185,14 +187,16 @@ export default function ProviderServicesPage() {
     setActiveMenuId(null);
     Alert.alert("Delete this service permanently?", "", [
       { text: "Cancel", style: "cancel" },
-      { text: "Delete Service", style: "destructive", onPress: async () => {
-        try {
-          await deleteVendorServiceApi(service.id);
-          loadServices();
-        } catch (err) {
-          console.error('Error deleting service:', err);
+      {
+        text: "Delete Service", style: "destructive", onPress: async () => {
+          try {
+            await deleteVendorServiceApi(service.id);
+            loadServices();
+          } catch (err) {
+            console.error('Error deleting service:', err);
+          }
         }
-      }}
+      }
     ]);
   };
 
@@ -218,7 +222,7 @@ export default function ProviderServicesPage() {
             <View style={[styles.statusBadge, { backgroundColor: sColor.bg }]}>
               <Text style={[styles.statusText, { color: sColor.text }]}>{displayStatus}</Text>
             </View>
-            <View style={{position: 'relative'}}>
+            <View style={{ position: 'relative' }}>
               <TouchableOpacity style={styles.moreBtn} onPress={() => setActiveMenuId(isMenuOpen ? null : item.id)}>
                 <MoreVertical size={20} color="#64748B" />
               </TouchableOpacity>
@@ -242,7 +246,7 @@ export default function ProviderServicesPage() {
                   <View style={styles.dropdownDivider} />
                   <TouchableOpacity style={styles.dropdownItem} onPress={() => handleDelete(item)}>
                     <Trash2 size={16} color="#EF4444" />
-                    <Text style={[styles.dropdownText, {color: '#EF4444'}]}>Delete Service</Text>
+                    <Text style={[styles.dropdownText, { color: '#EF4444' }]}>Delete Service</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -257,7 +261,7 @@ export default function ProviderServicesPage() {
         <View style={styles.infoRow}>
           <Text style={styles.infoPricing}>{item.price}</Text>
           <View style={styles.infoDot} />
-          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Clock size={12} color="#64748B" />
             <Text style={styles.infoDuration}>Est: {item.duration}</Text>
           </View>
@@ -266,7 +270,7 @@ export default function ProviderServicesPage() {
         {/* Availability */}
         <View style={styles.availRow}>
           <CalendarClock size={14} color={item.availability === 'Temporarily Unavailable' ? '#C2410C' : '#15803D'} />
-          <Text style={[styles.availText, item.availability === 'Temporarily Unavailable' && {color: '#C2410C'}]}>{item.availability}</Text>
+          <Text style={[styles.availText, item.availability === 'Temporarily Unavailable' && { color: '#C2410C' }]}>{item.availability}</Text>
         </View>
 
         {/* Footer */}
@@ -276,7 +280,7 @@ export default function ProviderServicesPage() {
             <ChevronRight size={16} color={NAVY} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.btnEditOutline} onPress={() => handleOpenForm(item)}>
-            <Edit size={14} color={NAVY} style={{marginRight: 6}} />
+            <Edit size={14} color={NAVY} style={{ marginRight: 6 }} />
             <Text style={styles.btnEditOutlineText}>Edit</Text>
           </TouchableOpacity>
         </View>
@@ -290,10 +294,9 @@ export default function ProviderServicesPage() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={styles.headerTitle}>My Services</Text>
-          <Text style={styles.headerSubtitle}>Manage the professional services offered by your business</Text>
         </View>
         <TouchableOpacity style={styles.btnAddService} onPress={() => handleOpenForm()}>
-          <Plus size={18} color={WHITE} style={{marginRight: 4}} />
+          <Plus size={18} color={WHITE} style={{ marginRight: 4 }} />
           <Text style={styles.btnAddServiceText}>Add Service</Text>
         </TouchableOpacity>
       </View>
@@ -332,9 +335,9 @@ export default function ProviderServicesPage() {
       <View style={styles.searchFilterContainer}>
         <View style={styles.searchBox}>
           <Search size={18} color="#64748B" />
-          <TextInput 
-            style={styles.searchInput} 
-            placeholder="Search services by name or category..." 
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search services by name or category..."
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -343,12 +346,12 @@ export default function ProviderServicesPage() {
           <SlidersHorizontal size={18} color={NAVY} />
         </TouchableOpacity>
       </View>
-      
+
       <View style={styles.pillContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap: 8, paddingHorizontal: 16}}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
           {['All', 'Active', 'Inactive'].map(mode => (
-            <TouchableOpacity 
-              key={mode} 
+            <TouchableOpacity
+              key={mode}
               style={[styles.pill, filterMode === mode && styles.pillActive]}
               onPress={() => setFilterMode(mode)}
             >
@@ -364,7 +367,7 @@ export default function ProviderServicesPage() {
     <SafeAreaView style={styles.safeArea}>
       <TouchableWithoutFeedback onPress={() => setActiveMenuId(null)}>
         <View style={styles.container}>
-          
+
           {/* List */}
           <FlatList
             data={filteredServices}
@@ -382,14 +385,9 @@ export default function ProviderServicesPage() {
                 <Text style={styles.emptyText}>
                   {searchQuery ? "Try changing your search or filters." : "Add the professional services your business provides."}
                 </Text>
-                {Boolean(searchQuery) ? (
-                  <TouchableOpacity style={styles.btnOutlineEmpty} onPress={() => {setSearchQuery(''); setFilterMode('All');}}>
+                {Boolean(searchQuery) && (
+                  <TouchableOpacity style={styles.btnOutlineEmpty} onPress={() => { setSearchQuery(''); setFilterMode('All'); }}>
                     <Text style={styles.btnOutlineEmptyText}>Clear Filters</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity style={styles.btnAddServiceEmpty} onPress={() => handleOpenForm()}>
-                    <Plus size={16} color={WHITE} style={{marginRight: 6}} />
-                    <Text style={styles.btnAddServiceEmptyText}>Add Service</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -398,10 +396,10 @@ export default function ProviderServicesPage() {
 
           {/* Add/Edit Modal */}
           <Modal visible={formModalVisible} animationType="fade" transparent={true} onRequestClose={() => setFormModalVisible(false)}>
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{flex: 1}}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
               <TouchableWithoutFeedback onPress={() => setFormModalVisible(false)}>
                 <View style={styles.modalOverlayCenter}>
-                  <TouchableWithoutFeedback onPress={() => {}}>
+                  <TouchableWithoutFeedback onPress={() => { }}>
                     <View style={[styles.centerModalContent, { width: modalWidth, maxHeight: '84%' }]}>
                       <View style={styles.modalHeader}>
                         <View>
@@ -412,60 +410,60 @@ export default function ProviderServicesPage() {
                           <XCircle size={24} color="#64748B" />
                         </TouchableOpacity>
                       </View>
-                      
+
                       <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-                      <Text style={styles.inputLabel}>Service Name *</Text>
-                      <TextInput style={styles.input} placeholder="e.g. AC Deep Cleaning" value={form.name} onChangeText={(t) => setForm({...form, name: t})} />
-                      
-                      <Text style={styles.inputLabel}>Service Category *</Text>
-                      <TextInput style={styles.input} placeholder="e.g. Cleaning Services" value={form.category} onChangeText={(t) => setForm({...form, category: t})} />
-                      
-                      <Text style={styles.inputLabel}>Short Description *</Text>
-                      <TextInput style={styles.textArea} placeholder="Briefly describe what this service includes..." multiline numberOfLines={3} maxLength={250} value={form.description} onChangeText={(t) => setForm({...form, description: t})} />
-                      
-                      <View style={styles.formRow}>
-                        <View style={styles.formCol}>
-                          <Text style={styles.inputLabel}>Pricing Type *</Text>
-                          <TextInput style={styles.input} placeholder="e.g. Starting From" value={form.pricingType} onChangeText={(t) => setForm({...form, pricingType: t})} />
-                        </View>
-                        <View style={styles.formCol}>
-                          <Text style={styles.inputLabel}>Price *</Text>
-                          <TextInput style={styles.input} placeholder="e.g. ₹2,500" value={form.price} onChangeText={(t) => setForm({...form, price: t})} />
-                        </View>
-                      </View>
+                        <Text style={styles.inputLabel}>Service Name *</Text>
+                        <TextInput style={styles.input} placeholder="e.g. AC Deep Cleaning" value={form.name} onChangeText={(t) => setForm({ ...form, name: t })} />
 
-                      <View style={styles.formRow}>
-                        <View style={styles.formCol}>
-                          <Text style={styles.inputLabel}>Est. Duration *</Text>
-                          <TextInput style={styles.input} placeholder="e.g. 2 Hours" value={form.duration} onChangeText={(t) => setForm({...form, duration: t})} />
-                        </View>
-                        <View style={styles.formCol}>
-                          <Text style={styles.inputLabel}>Availability *</Text>
-                          <TextInput style={styles.input} placeholder="e.g. Available Today" value={form.availability} onChangeText={(t) => setForm({...form, availability: t})} />
-                        </View>
-                      </View>
+                        <Text style={styles.inputLabel}>Service Category *</Text>
+                        <TextInput style={styles.input} placeholder="e.g. Cleaning Services" value={form.category} onChangeText={(t) => setForm({ ...form, category: t })} />
 
-                      <Text style={styles.inputLabel}>Included Services (Optional)</Text>
-                      <TextInput style={styles.textArea} placeholder="What's included..." multiline numberOfLines={2} value={form.included} onChangeText={(t) => setForm({...form, included: t})} />
-                      
-                      <Text style={styles.inputLabel}>Supporting Certificate (Optional)</Text>
-                      <View style={styles.uploadBox}>
-                        <FileText size={20} color="#94A3B8" />
-                        <Text style={styles.uploadText}>Upload certificate document</Text>
+                        <Text style={styles.inputLabel}>Short Description *</Text>
+                        <TextInput style={styles.textArea} placeholder="Briefly describe what this service includes..." multiline numberOfLines={3} maxLength={250} value={form.description} onChangeText={(t) => setForm({ ...form, description: t })} />
+
+                        <View style={styles.formRow}>
+                          <View style={styles.formCol}>
+                            <Text style={styles.inputLabel}>Pricing Type *</Text>
+                            <TextInput style={styles.input} placeholder="e.g. Starting From" value={form.pricingType} onChangeText={(t) => setForm({ ...form, pricingType: t })} />
+                          </View>
+                          <View style={styles.formCol}>
+                            <Text style={styles.inputLabel}>Price *</Text>
+                            <TextInput style={styles.input} placeholder="e.g. ₹2,500" value={form.price} onChangeText={(t) => setForm({ ...form, price: t })} />
+                          </View>
+                        </View>
+
+                        <View style={styles.formRow}>
+                          <View style={styles.formCol}>
+                            <Text style={styles.inputLabel}>Est. Duration *</Text>
+                            <TextInput style={styles.input} placeholder="e.g. 2 Hours" value={form.duration} onChangeText={(t) => setForm({ ...form, duration: t })} />
+                          </View>
+                          <View style={styles.formCol}>
+                            <Text style={styles.inputLabel}>Availability *</Text>
+                            <TextInput style={styles.input} placeholder="e.g. Available Today" value={form.availability} onChangeText={(t) => setForm({ ...form, availability: t })} />
+                          </View>
+                        </View>
+
+                        <Text style={styles.inputLabel}>Included Services (Optional)</Text>
+                        <TextInput style={styles.textArea} placeholder="What's included..." multiline numberOfLines={2} value={form.included} onChangeText={(t) => setForm({ ...form, included: t })} />
+
+                        <Text style={styles.inputLabel}>Supporting Certificate (Optional)</Text>
+                        <View style={styles.uploadBox}>
+                          <FileText size={20} color="#94A3B8" />
+                          <Text style={styles.uploadText}>Upload certificate document</Text>
+                        </View>
+
+                        <View style={{ height: 20 }} />
+                      </ScrollView>
+
+                      <View style={styles.modalFooterActions}>
+                        <TouchableOpacity style={styles.btnModalOutline} onPress={() => setFormModalVisible(false)}>
+                          <Text style={styles.btnModalOutlineText}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.btnModalPrimary} onPress={handleSaveService}>
+                          <Text style={styles.btnModalPrimaryText}>{editingService ? 'Save Changes' : 'Save Service'}</Text>
+                        </TouchableOpacity>
                       </View>
-                      
-                      <View style={{height: 20}}/>
-                    </ScrollView>
-                    
-                    <View style={styles.modalFooterActions}>
-                      <TouchableOpacity style={styles.btnModalOutline} onPress={() => setFormModalVisible(false)}>
-                        <Text style={styles.btnModalOutlineText}>Cancel</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity style={styles.btnModalPrimary} onPress={handleSaveService}>
-                        <Text style={styles.btnModalPrimaryText}>{editingService ? 'Save Changes' : 'Save Service'}</Text>
-                      </TouchableOpacity>
                     </View>
-                  </View>
                   </TouchableWithoutFeedback>
                 </View>
               </TouchableWithoutFeedback>
@@ -476,7 +474,7 @@ export default function ProviderServicesPage() {
           <Modal visible={detailsModalVisible} animationType="fade" transparent={true} onRequestClose={() => setDetailsModalVisible(false)}>
             <TouchableWithoutFeedback onPress={() => setDetailsModalVisible(false)}>
               <View style={styles.modalOverlayCenter}>
-                <TouchableWithoutFeedback onPress={() => {}}>
+                <TouchableWithoutFeedback onPress={() => { }}>
                   <View style={[styles.centerModalContent, { width: modalWidth, maxHeight: '82%' }]}>
                     <View style={styles.modalHeader}>
                       <View>
@@ -487,7 +485,7 @@ export default function ProviderServicesPage() {
                         <XCircle size={24} color="#64748B" />
                       </TouchableOpacity>
                     </View>
-                    
+
                     <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
                       {selectedService && (
                         <>
@@ -503,7 +501,7 @@ export default function ProviderServicesPage() {
                             <Text style={styles.modalLabel}>Description</Text>
                             <Text style={styles.modalDescText}>{selectedService.description}</Text>
                           </View>
-                          
+
                           <View style={styles.modalGrid}>
                             <View style={styles.modalGridCol}>
                               <Text style={styles.modalLabel}>Pricing Type</Text>
@@ -525,22 +523,22 @@ export default function ProviderServicesPage() {
                               <Text style={styles.modalValue}>{selectedService.availability}</Text>
                             </View>
                           </View>
-                          
+
                           {selectedService.certificate && (
                             <View style={styles.modalDataBlock}>
                               <Text style={styles.modalLabel}>Certificate</Text>
-                              <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 4}}>
-                                <CheckCircle2 size={14} color="#15803D" style={{marginRight: 4}}/>
-                                <Text style={[styles.modalValue, {color: '#15803D'}]}>{selectedService.certificate} (Verified)</Text>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                                <CheckCircle2 size={14} color="#15803D" style={{ marginRight: 4 }} />
+                                <Text style={[styles.modalValue, { color: '#15803D' }]}>{selectedService.certificate} (Verified)</Text>
                               </View>
                             </View>
                           )}
 
-                          <View style={{height: 20}}/>
+                          <View style={{ height: 20 }} />
                         </>
                       )}
                     </ScrollView>
-                    
+
                     <View style={styles.modalFooterActions}>
                       <TouchableOpacity style={styles.btnModalOutline} onPress={() => { setDetailsModalVisible(false); handleSetAvailability(selectedService); }}>
                         <Text style={styles.btnModalOutlineText}>Set Availability</Text>
@@ -559,7 +557,7 @@ export default function ProviderServicesPage() {
           <Modal visible={availabilityModalVisible} animationType="fade" transparent={true} onRequestClose={() => setAvailabilityModalVisible(false)}>
             <TouchableWithoutFeedback onPress={() => setAvailabilityModalVisible(false)}>
               <View style={styles.modalOverlayCenter}>
-                <TouchableWithoutFeedback onPress={() => {}}>
+                <TouchableWithoutFeedback onPress={() => { }}>
                   <View style={[styles.centerModalContent, { width: Math.min(width * 0.85, 400) }]}>
                     <View style={styles.modalHeader}>
                       <View>
@@ -567,20 +565,20 @@ export default function ProviderServicesPage() {
                         <Text style={styles.modalSubtitle}>{selectedService?.name}</Text>
                       </View>
                     </View>
-                    
+
                     <View style={styles.modalBody}>
                       {['Available Today', 'Available This Week', 'By Appointment', 'Temporarily Unavailable'].map(opt => (
                         <TouchableOpacity key={opt} style={styles.availOptionBtn} onPress={() => {
                           setServices(prev => prev.map(s => s.id === selectedService.id ? { ...s, availability: opt } : s));
                           setAvailabilityModalVisible(false);
                         }}>
-                          <Text style={[styles.availOptionText, opt === 'Temporarily Unavailable' && {color: '#EF4444'}]}>{opt}</Text>
+                          <Text style={[styles.availOptionText, opt === 'Temporarily Unavailable' && { color: '#EF4444' }]}>{opt}</Text>
                         </TouchableOpacity>
                       ))}
                     </View>
-                    
+
                     <View style={styles.modalFooterActions}>
-                      <TouchableOpacity style={[styles.btnModalOutline, {flex: 1}]} onPress={() => setAvailabilityModalVisible(false)}>
+                      <TouchableOpacity style={[styles.btnModalOutline, { flex: 1 }]} onPress={() => setAvailabilityModalVisible(false)}>
                         <Text style={styles.btnModalOutlineText}>Cancel</Text>
                       </TouchableOpacity>
                     </View>
@@ -594,7 +592,7 @@ export default function ProviderServicesPage() {
           <Modal visible={filterModalVisible} animationType="slide" transparent={true} onRequestClose={() => setFilterModalVisible(false)}>
             <TouchableWithoutFeedback onPress={() => setFilterModalVisible(false)}>
               <View style={styles.modalOverlayBottom}>
-                <TouchableWithoutFeedback onPress={() => {}}>
+                <TouchableWithoutFeedback onPress={() => { }}>
                   <View style={[styles.bottomSheet, { width: width }]}>
                     <View style={styles.sheetHeader}>
                       <Text style={styles.sheetTitle}>Filter Services</Text>
@@ -602,13 +600,13 @@ export default function ProviderServicesPage() {
                         <XCircle size={22} color={NAVY} />
                       </TouchableOpacity>
                     </View>
-                    
+
                     <ScrollView style={styles.sheetBody}>
                       <Text style={styles.inputLabel}>Service Category</Text>
                       <View style={styles.chipsContainer}>
                         {['All', 'Cleaning Services', 'Plumbing Services', 'Fire Safety Services'].map(cat => (
-                          <TouchableOpacity 
-                            key={cat} 
+                          <TouchableOpacity
+                            key={cat}
                             style={[styles.filterChip, selectedCategory === cat && styles.filterChipActive]}
                             onPress={() => setSelectedCategory(cat)}
                           >
@@ -617,11 +615,11 @@ export default function ProviderServicesPage() {
                         ))}
                       </View>
 
-                      <Text style={[styles.inputLabel, {marginTop: 16}]}>Pricing Type</Text>
+                      <Text style={[styles.inputLabel, { marginTop: 16 }]}>Pricing Type</Text>
                       <View style={styles.chipsContainer}>
                         {['All', 'Fixed Price', 'Starting From', 'Per Hour', 'Inspection Required'].map(pt => (
-                          <TouchableOpacity 
-                            key={pt} 
+                          <TouchableOpacity
+                            key={pt}
                             style={[styles.filterChip, selectedPricingType === pt && styles.filterChipActive]}
                             onPress={() => setSelectedPricingType(pt)}
                           >
@@ -629,13 +627,13 @@ export default function ProviderServicesPage() {
                           </TouchableOpacity>
                         ))}
                       </View>
-                      
-                      <View style={{height: 30}}/>
+
+                      <View style={{ height: 30 }} />
                     </ScrollView>
-                    
+
                     <View style={styles.modalFooterActions}>
-                      <TouchableOpacity 
-                        style={[styles.btnModalOutline, {flex: 1}]} 
+                      <TouchableOpacity
+                        style={[styles.btnModalOutline, { flex: 1 }]}
                         onPress={() => {
                           setSelectedCategory('All');
                           setSelectedPricingType('All');
@@ -644,8 +642,8 @@ export default function ProviderServicesPage() {
                       >
                         <Text style={styles.btnModalOutlineText}>Clear Filters</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity 
-                        style={[styles.btnModalPrimary, {flex: 1.5}]} 
+                      <TouchableOpacity
+                        style={[styles.btnModalPrimary, { flex: 1.5 }]}
                         onPress={() => setFilterModalVisible(false)}
                       >
                         <Text style={styles.btnModalPrimaryText}>Apply Filters</Text>
@@ -664,33 +662,33 @@ export default function ProviderServicesPage() {
 }
 
 const XCircle = ({ size, color }) => (
-  <View style={{width: size, height: size, borderRadius: size/2, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center'}}>
-    <Text style={{color, fontWeight: 'bold', fontSize: size * 0.5}}>✕</Text>
+  <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' }}>
+    <Text style={{ color, fontWeight: 'bold', fontSize: size * 0.5 }}>✕</Text>
   </View>
 );
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: LIGHT_BG },
-  container: { flex: 1 },
-  
+  safeArea: { flex: 1, backgroundColor: WHITE },
+  container: { flex: 1, backgroundColor: WHITE },
+
   // Header
-  header: { 
-    paddingTop: 30, paddingBottom: 16, 
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', 
+  header: {
+    paddingTop: Platform.OS === 'ios' ? 20 : 16, paddingBottom: 16,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 16, backgroundColor: WHITE,
     borderBottomWidth: 1, borderBottomColor: '#E8EDF4',
   },
-  headerLeft: { flex: 1, paddingRight: 8 },
-  headerTitle: { fontSize: 22, fontWeight: 'bold', color: NAVY, marginBottom: 2 },
+  headerLeft: { flex: 1, paddingRight: 12 },
+  headerTitle: { fontSize: 22, fontWeight: 'bold', color: NAVY },
   headerSubtitle: { fontSize: 13, color: '#64748B', lineHeight: 18 },
-  btnAddService: { backgroundColor: NAVY, flexDirection: 'row', alignItems: 'center', height: 40, paddingHorizontal: 16, borderRadius: 10 },
-  btnAddServiceText: { color: WHITE, fontSize: 13, fontWeight: 'bold' },
+  btnAddService: { backgroundColor: NAVY, flexDirection: 'row', alignItems: 'center', height: 42, paddingHorizontal: 16, borderRadius: 10 },
+  btnAddServiceText: { color: WHITE, fontSize: 14, fontWeight: 'bold' },
 
   // Overview
   overviewContainer: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 16 },
   sectionLabel: { fontSize: 14, fontWeight: 'bold', color: NAVY, marginBottom: 12 },
-  overviewCard: { 
-    flexDirection: 'row', backgroundColor: WHITE, borderRadius: 16, 
+  overviewCard: {
+    flexDirection: 'row', backgroundColor: WHITE, borderRadius: 16,
     borderWidth: 1, borderColor: '#E6EBF2', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2,
     paddingVertical: 16
   },
@@ -705,7 +703,7 @@ const styles = StyleSheet.create({
   searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: WHITE, borderWidth: 1, borderColor: '#E6EBF2', borderRadius: 12, paddingHorizontal: 12, height: 44 },
   searchInput: { flex: 1, fontSize: 14, color: NAVY, marginLeft: 8 },
   filterBtn: { width: 44, height: 44, backgroundColor: WHITE, borderWidth: 1, borderColor: '#E6EBF2', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  
+
   pillContainer: { paddingBottom: 16 },
   pill: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: WHITE, borderWidth: 1, borderColor: '#E2E8F0' },
   pillActive: { backgroundColor: NAVY, borderColor: NAVY },
@@ -713,10 +711,10 @@ const styles = StyleSheet.create({
   pillTextActive: { color: WHITE },
 
   listContent: { paddingHorizontal: 16, paddingBottom: 115 },
-  
+
   // Premium Card
-  card: { 
-    backgroundColor: WHITE, borderRadius: 16, padding: 14, marginBottom: 12, 
+  card: {
+    backgroundColor: WHITE, borderRadius: 16, padding: 14, marginBottom: 12,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2,
     borderWidth: 1, borderColor: '#E6EBF2',
   },
@@ -730,22 +728,22 @@ const styles = StyleSheet.create({
   statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginRight: 8 },
   statusText: { fontSize: 10, fontWeight: 'bold' },
   moreBtn: { padding: 4 },
-  
+
   dropdownMenu: { position: 'absolute', top: 30, right: 0, backgroundColor: WHITE, borderRadius: 12, width: 190, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5, zIndex: 100, borderWidth: 1, borderColor: '#E8EDF4', paddingVertical: 4 },
   dropdownItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16 },
   dropdownDivider: { height: 1, backgroundColor: '#F1F5F9', marginHorizontal: 8 },
   dropdownText: { fontSize: 13, color: NAVY, fontWeight: '500', marginLeft: 10 },
 
   serviceDesc: { fontSize: 13, color: '#475569', lineHeight: 18, marginBottom: 12 },
-  
+
   infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   infoPricing: { fontSize: 14, fontWeight: 'bold', color: NAVY },
   infoDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#CBD5E1', marginHorizontal: 8 },
   infoDuration: { fontSize: 13, color: '#475569', marginLeft: 4 },
-  
+
   availRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', paddingHorizontal: 8, paddingVertical: 6, borderRadius: 8, alignSelf: 'flex-start', marginBottom: 14 },
   availText: { fontSize: 12, fontWeight: '600', color: '#15803D', marginLeft: 6 },
-  
+
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#E8EDF4', paddingTop: 14 },
   btnViewDetails: { flexDirection: 'row', alignItems: 'center' },
   btnViewDetailsText: { fontSize: 13, fontWeight: 'bold', color: NAVY, marginRight: 2 },
@@ -768,7 +766,7 @@ const styles = StyleSheet.create({
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
   modalTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY, marginBottom: 2 },
   modalSubtitle: { fontSize: 13, color: '#64748B', fontWeight: '500' },
-  
+
   modalBody: { flexShrink: 1 },
   modalDataBlock: { marginBottom: 16 },
   modalLabel: { fontSize: 12, color: '#94A3B8', marginBottom: 4, textTransform: 'uppercase', fontWeight: '600' },
@@ -776,7 +774,7 @@ const styles = StyleSheet.create({
   modalDescText: { fontSize: 14, color: '#475569', lineHeight: 22 },
   modalGrid: { flexDirection: 'row', marginBottom: 16 },
   modalGridCol: { flex: 1, paddingRight: 8 },
-  
+
   modalFooterActions: { flexDirection: 'row', gap: 12, marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
   btnModalOutline: { flex: 1, height: 44, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   btnModalOutlineText: { color: '#475569', fontWeight: 'bold', fontSize: 14 },
@@ -794,7 +792,7 @@ const styles = StyleSheet.create({
   textArea: { backgroundColor: WHITE, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: NAVY, minHeight: 80, textAlignVertical: 'top', marginBottom: 16 },
   uploadBox: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderStyle: 'dashed', borderRadius: 10, height: 60, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
   uploadText: { fontSize: 13, color: '#64748B', marginLeft: 8, fontWeight: '500' },
-  
+
   modalOverlayBottom: { flex: 1, backgroundColor: 'rgba(3, 15, 38, 0.55)', justifyContent: 'flex-end' },
   bottomSheet: { backgroundColor: WHITE, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' },
   sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },

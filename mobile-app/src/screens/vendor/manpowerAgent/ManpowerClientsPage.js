@@ -222,10 +222,12 @@ export default function ManpowerClientsPage({ navigation }) {
             
             {/* Card 1: Total Clients */}
             <View style={[styles.metricCard, { width: isDesktop ? '23.5%' : '48%' }]}>
-              <View style={[styles.metricIconBox, { backgroundColor: '#EFF6FF' }]}>
-                <Users size={18} color={INFO} />
+              <View style={styles.metricCardHeader}>
+                <View style={[styles.metricIconBox, { backgroundColor: '#EFF6FF' }]}>
+                  <Users size={18} color={INFO} />
+                </View>
+                <Text style={styles.metricValue}>{totalClients}</Text>
               </View>
-              <Text style={styles.metricValue}>{totalClients}</Text>
               <Text style={styles.metricLabel}>Total Clients</Text>
               <Text style={styles.metricSubtext}>
                 {totalClients === 0 ? 'No clients yet' : 'All registered business clients'}
@@ -234,10 +236,12 @@ export default function ManpowerClientsPage({ navigation }) {
 
             {/* Card 2: Active Deployments */}
             <View style={[styles.metricCard, { width: isDesktop ? '23.5%' : '48%' }]}>
-              <View style={[styles.metricIconBox, { backgroundColor: '#ECFDF5' }]}>
-                <UserCheck size={18} color={SUCCESS} />
+              <View style={styles.metricCardHeader}>
+                <View style={[styles.metricIconBox, { backgroundColor: '#ECFDF5' }]}>
+                  <UserCheck size={18} color={SUCCESS} />
+                </View>
+                <Text style={styles.metricValue}>{activeDeployments}</Text>
               </View>
-              <Text style={styles.metricValue}>{activeDeployments}</Text>
               <Text style={styles.metricLabel}>Active Deployments</Text>
               <Text style={styles.metricSubtext}>
                 {activeDeployments === 0 ? 'No active deployments' : 'Staff currently working'}
@@ -246,10 +250,12 @@ export default function ManpowerClientsPage({ navigation }) {
 
             {/* Card 3: Repeat Partners */}
             <View style={[styles.metricCard, { width: isDesktop ? '23.5%' : '48%' }]}>
-              <View style={[styles.metricIconBox, { backgroundColor: '#F3E8FF' }]}>
-                <Repeat size={18} color="#9333EA" />
+              <View style={styles.metricCardHeader}>
+                <View style={[styles.metricIconBox, { backgroundColor: '#F3E8FF' }]}>
+                  <Repeat size={18} color="#9333EA" />
+                </View>
+                <Text style={styles.metricValue}>{repeatPartners}</Text>
               </View>
-              <Text style={styles.metricValue}>{repeatPartners}</Text>
               <Text style={styles.metricLabel}>Repeat Partners</Text>
               <Text style={styles.metricSubtext}>
                 {repeatPartners === 0 ? 'No repeat clients yet' : 'Clients with multiple hires'}
@@ -258,12 +264,14 @@ export default function ManpowerClientsPage({ navigation }) {
 
             {/* Card 4: Outstanding Payments */}
             <View style={[styles.metricCard, { width: isDesktop ? '23.5%' : '48%' }]}>
-              <View style={[styles.metricIconBox, { backgroundColor: totalOutstanding > 0 ? '#FEF3C7' : '#F1F5F9' }]}>
-                <CreditCard size={18} color={totalOutstanding > 0 ? WARNING : TEXT_MUTED} />
+              <View style={styles.metricCardHeader}>
+                <View style={[styles.metricIconBox, { backgroundColor: totalOutstanding > 0 ? '#FEF3C7' : '#F1F5F9' }]}>
+                  <CreditCard size={18} color={totalOutstanding > 0 ? WARNING : TEXT_MUTED} />
+                </View>
+                <Text style={styles.metricValue}>
+                  {totalOutstanding > 0 ? `₹${totalOutstanding.toLocaleString('en-IN')}` : '₹0'}
+                </Text>
               </View>
-              <Text style={styles.metricValue}>
-                {totalOutstanding > 0 ? `₹${totalOutstanding.toLocaleString('en-IN')}` : '₹0'}
-              </Text>
               <Text style={styles.metricLabel}>Outstanding Payments</Text>
               <Text style={styles.metricSubtext}>
                 {totalOutstanding === 0 ? 'No pending payments' : 'Awaiting settlement'}
@@ -878,7 +886,13 @@ const styles = StyleSheet.create({
     padding: 16,
     minWidth: '45%',
     minHeight: 118,
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+  },
+  metricCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
   metricIconBox: {
     width: 36,
@@ -886,19 +900,16 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
   },
   metricValue: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '800',
     color: NAVY,
-    lineHeight: 26,
   },
   metricLabel: {
     fontSize: 13,
     fontWeight: '700',
     color: TEXT_MAIN,
-    marginTop: 2,
   },
   metricSubtext: {
     fontSize: 11,

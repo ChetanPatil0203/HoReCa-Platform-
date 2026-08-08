@@ -195,6 +195,7 @@ export default function LoginScreen({ navigation }) {
 
         <FormField
           label="Email Address *"
+          labelStyle={styles.fontUi}
           icon={Mail}
           placeholder="business@email.com"
           keyboardType="email-address"
@@ -211,6 +212,7 @@ export default function LoginScreen({ navigation }) {
 
         <PasswordField
           label="Password *"
+          labelStyle={styles.fontUi}
           placeholder="Enter your password"
           secureTextEntry={!showPassword}
           autoCapitalize="none"
@@ -223,8 +225,8 @@ export default function LoginScreen({ navigation }) {
           }}
           error={passwordError}
           rightAction={
-            <TouchableOpacity 
-              onPress={() => navigation.navigate('ForgotPassword')} 
+            <TouchableOpacity
+              onPress={() => navigation.navigate('ForgotPassword')}
               accessibilityRole="button"
               activeOpacity={0.7}
             >
@@ -281,30 +283,37 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  forgotText: { 
-    fontSize: 13, 
-    fontWeight: '600', 
-    color: '#071B3A' 
+  fontUi: {
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#071B3A',
   },
 
-  errorBanner: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#FFF7ED', 
-    padding: 12, 
-    borderRadius: 12, 
-    marginBottom: 16, 
-    borderWidth: 1, 
-    borderColor: '#FFEDD5' 
-  },
-  errorBannerText: { 
-    fontSize: 13, 
-    color: '#C2410C', 
-    fontWeight: '500', 
-    flex: 1 
+  forgotText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#071B3A'
   },
 
-  signInButton: { 
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF7ED',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#FFEDD5'
+  },
+  errorBannerText: {
+    fontSize: 13,
+    color: '#C2410C',
+    fontWeight: '500',
+    flex: 1
+  },
+
+  signInButton: {
     marginTop: 0,
   },
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions, Modal, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions, Modal, TextInput, Image } from 'react-native';
 import { Package, Users, Wrench, Megaphone, ShoppingCart, MessageSquare, CalendarDays, TriangleAlert, ChevronRight, Star, Clock, X, ShieldCheck, Building2, Search } from 'lucide-react-native';
 import { fetchOwnerRequirements, fetchOwnerMainDashboardSummary } from '../../services/api.service';
 
@@ -102,18 +102,18 @@ export default function DashboardHome({ user, onNavigate }) {
   };
 
   return (
-    <ScrollView 
+    <ScrollView
       style={{ flex: 1, backgroundColor: '#F8FAFC' }}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={[styles.container, { paddingHorizontal: pagePadding, paddingBottom: 110, paddingTop: 16 }]}
     >
       {/* 2. Welcome Hero Card */}
       <View style={styles.heroCard}>
-        <View style={styles.heroContent}>
-          <Text style={styles.heroGreeting}>{getGreeting()}{user?.name ? `, ${user.name.split(" ")[0]}` : ''} 👋</Text>
-          <Text style={styles.heroBusiness}>{user?.registration?.bizName || user?.businessName || 'Business Owner'}</Text>
-          <Text style={styles.heroDesc}>Manage all your HoReCa business operations from one place.</Text>
-        </View>
+        <Image
+          source={require('../../assets/bg.png')}
+          style={styles.heroBgImage}
+          resizeMode="cover"
+        />
       </View>
 
       {/* 3. Quick Access */}
@@ -218,36 +218,31 @@ export default function DashboardHome({ user, onNavigate }) {
 
       <View style={{ paddingBottom: 24 }}>
         {displayedPartners && displayedPartners.length > 0 ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-            {displayedPartners.map(partner => {
-              const cardWidth = displayedPartners.length > 1
-                ? width - (pagePadding * 2) - 30
-                : width - (pagePadding * 2);
-              return (
-                <TouchableOpacity
-                  key={partner.id}
-                  style={[styles.partnerCard, { width: cardWidth }]}
-                  activeOpacity={0.85}
-                >
-                  <View style={styles.partnerAvatar}>
-                    <Text style={styles.partnerAvatarText}>
-                      {partner.name ? partner.name.charAt(0).toUpperCase() : 'P'}
-                    </Text>
+          <View style={{ flexDirection: 'column', gap: 12 }}>
+            {displayedPartners.map(partner => (
+              <TouchableOpacity
+                key={partner.id}
+                style={styles.partnerCard}
+                activeOpacity={0.85}
+              >
+                <View style={styles.partnerAvatar}>
+                  <Text style={styles.partnerAvatarText}>
+                    {partner.name ? partner.name.charAt(0).toUpperCase() : 'P'}
+                  </Text>
+                </View>
+                <View style={styles.partnerInfo}>
+                  <Text style={styles.partnerName} numberOfLines={1}>{partner.name}</Text>
+                  <Text style={styles.partnerCat} numberOfLines={1}>{partner.category}</Text>
+                </View>
+                <View style={styles.partnerRight}>
+                  <View style={styles.ratingBadge}>
+                    <Star size={12} color="#D97706" fill="#D97706" />
+                    <Text style={styles.ratingText}>{partner.rating || 4.8}</Text>
                   </View>
-                  <View style={styles.partnerInfo}>
-                    <Text style={styles.partnerName} numberOfLines={1}>{partner.name}</Text>
-                    <Text style={styles.partnerCat} numberOfLines={1}>{partner.category}</Text>
-                  </View>
-                  <View style={styles.partnerRight}>
-                    <View style={styles.ratingBadge}>
-                      <Star size={12} color="#D97706" fill="#D97706" />
-                      <Text style={styles.ratingText}>{partner.rating || 4.8}</Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
         ) : (
           <View style={{ padding: 16, backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center' }}>
             <Text style={{ fontSize: 13, color: MUTED }}>No partners found.</Text>
@@ -347,10 +342,9 @@ const styles = StyleSheet.create({
   },
   heroCard: {
     marginBottom: 24,
-    backgroundColor: NAVY,
+    backgroundColor: '#071B3A',
     borderRadius: 22,
-    padding: 20,
-    minHeight: 145,
+    height: 155,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.12)',
     shadowColor: '#071B3A',
@@ -360,11 +354,17 @@ const styles = StyleSheet.create({
     elevation: 10,
     overflow: 'hidden',
   },
+  heroBgImage: {
+    width: '100%',
+    height: '100%',
+    transform: [{ scale: 1.06 }],
+  },
   heroContent: {
     position: 'relative',
     zIndex: 2,
     flex: 1,
     justifyContent: 'center',
+    maxWidth: '65%',
   },
   heroGreeting: {
     fontSize: 22,
@@ -379,10 +379,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   heroDesc: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
-    lineHeight: 20,
-    maxWidth: '90%',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.85)',
+    lineHeight: 19,
+    maxWidth: '96%',
   },
   sectionContainer: {
     marginBottom: 24,
@@ -397,6 +397,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
     color: NAVY,
+    fontFamily: Platform.OS === 'web' ? 'font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
   },
   viewAllBtn: {
     flexDirection: 'row',
@@ -407,6 +408,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: '#F6B800',
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
   },
   gridContainer: {
     flexDirection: 'row',
@@ -441,11 +443,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: NAVY,
     marginBottom: 2,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
   },
   quickStatus: {
     fontSize: 11,
     color: MUTED,
     fontWeight: '500',
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
   },
   flexSpacer: {
     flex: 1,
@@ -454,6 +458,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     marginTop: 8,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
   },
   watermarkContainer: {
     position: 'absolute',
@@ -492,11 +497,13 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '900',
     color: NAVY,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
   },
   statLabel: {
     fontSize: 12,
     fontWeight: '600',
     color: MUTED,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
   },
   listCardWrapper: {
     backgroundColor: '#FFFFFF',
@@ -523,6 +530,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '800',
     color: NAVY,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
   },
   listCardBody: {
     paddingVertical: 0,
@@ -555,18 +563,21 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: NAVY,
     marginBottom: 2,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
   },
   listSub: {
     fontSize: 11,
     color: MUTED,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
   },
   listTime: {
     fontSize: 11,
     color: '#94A3B8',
     fontWeight: '500',
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
   },
   partnerCard: {
-    width: 250,
+    width: '100%',
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1,
@@ -593,6 +604,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
     color: NAVY,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
   },
   partnerInfo: {
     flex: 1,
@@ -603,10 +615,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: NAVY,
     marginBottom: 2,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
   },
   partnerCat: {
     fontSize: 11,
     color: MUTED,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
   },
   partnerRight: {
     alignItems: 'flex-end',
@@ -626,17 +640,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#D97706',
     marginLeft: 4,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
   },
 
   /* Modals for Full List Views */
   modalOverlay: { flex: 1, backgroundColor: 'rgba(7, 27, 58, 0.6)', justifyContent: 'center', alignItems: 'center', padding: 16 },
   modalCard: { backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden' },
   modalHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
-  modalTitle: { fontSize: 16, fontWeight: '800', color: NAVY },
+  modalTitle: { fontSize: 16, fontWeight: '800', color: NAVY, fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System' },
   modalCloseBtn: { padding: 4, backgroundColor: '#F1F5F9', borderRadius: 14 },
   fullActivityRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   fullPartnerRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   modalFooterRow: { padding: 14, borderTopWidth: 1, borderTopColor: '#E2E8F0', alignItems: 'flex-end' },
   closeFullModalBtn: { backgroundColor: NAVY, paddingHorizontal: 20, paddingVertical: 8, borderRadius: 10 },
-  closeFullModalText: { color: '#fff', fontSize: 13, fontWeight: '700' }
+  closeFullModalText: { color: '#fff', fontSize: 13, fontWeight: '700', fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System' }
 });

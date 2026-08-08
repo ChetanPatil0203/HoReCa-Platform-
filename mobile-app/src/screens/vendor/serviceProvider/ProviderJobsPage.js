@@ -336,7 +336,6 @@ export default function ProviderJobsPage() {
         <View style={styles.pageHeader}>
           <View style={{ flex: 1 }}>
             <Text style={styles.pageTitle}>Work Management</Text>
-            <Text style={styles.pageSubtitle}>Manage scheduled, active and completed service jobs</Text>
           </View>
           <View style={styles.headerActions}>
             <TouchableOpacity style={styles.headerBtn} onPress={() => setShowSearch(!showSearch)}>
@@ -474,12 +473,18 @@ export default function ProviderJobsPage() {
                 </TouchableOpacity>
                 {leadDropdownOpen && (
                   <View style={styles.dropdownMenu}>
-                    {MOCK_TEAM_MEMBERS.filter(m => m.canLead && m.active).map(m => (
-                      <TouchableOpacity key={m.id} style={styles.dropdownItem} onPress={() => { setAssignForm({ ...assignForm, lead: m.id, members: assignForm.members.filter(id => id !== m.id) }); setLeadDropdownOpen(false); }}>
-                        <Text style={styles.dropdownItemTitle}>{m.name} <Text style={{ fontSize: 12, color: '#64748B', fontWeight: 'normal' }}>· {m.role}</Text></Text>
-                        <Text style={styles.dropdownItemSub}>{m.skills[0]} · {m.availability} · {m.workload}</Text>
-                      </TouchableOpacity>
-                    ))}
+                    {MOCK_TEAM_MEMBERS.length === 0 ? (
+                      <View style={{ padding: 12 }}>
+                        <Text style={{ fontSize: 13, color: '#64748B' }}>Primary Provider / Owner (Default Lead)</Text>
+                      </View>
+                    ) : (
+                      MOCK_TEAM_MEMBERS.filter(m => m.canLead && m.active).map(m => (
+                        <TouchableOpacity key={m.id} style={styles.dropdownItem} onPress={() => { setAssignForm({ ...assignForm, lead: m.id, members: assignForm.members.filter(id => id !== m.id) }); setLeadDropdownOpen(false); }}>
+                          <Text style={styles.dropdownItemTitle}>{m.name} <Text style={{ fontSize: 12, color: '#64748B', fontWeight: 'normal' }}>· {m.role}</Text></Text>
+                          <Text style={styles.dropdownItemSub}>{m.skills[0]} · {m.availability} · {m.workload}</Text>
+                        </TouchableOpacity>
+                      ))
+                    )}
                   </View>
                 )}
 

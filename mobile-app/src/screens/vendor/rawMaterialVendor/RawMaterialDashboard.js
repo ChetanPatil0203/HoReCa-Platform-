@@ -22,10 +22,80 @@ import CompliancePage from '../../owner/compliance/CompliancePage';
 import DocumentsKycScreen from '../../common/DocumentsKycScreen';
 import HRCSupportBot from '../../../components/owner/chatbot/HRCSupportBot';
 
+import { fetchVendorOrders } from '../../../services/api.service';
+
 const PRIMARY = '#0B1736';
 const ACCENT = '#0B1736';
 const BG = '#F8FAFC';
 const WHITE = '#FFFFFF';
+
+function NotificationBadge({ count }) {
+  const pulseAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    let animation;
+    if (count > 0) {
+      animation = Animated.loop(
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1600,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        })
+      );
+      animation.start();
+    } else {
+      pulseAnim.setValue(0);
+    }
+
+    return () => {
+      if (animation) animation.stop();
+    };
+  }, [count]);
+
+  if (!count || count <= 0) return null;
+
+  const displayCount = count > 99 ? '99+' : count;
+
+  const ringScale = pulseAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.85, 1.65],
+  });
+
+  const ringOpacity = pulseAnim.interpolate({
+    inputRange: [0, 0.4, 1],
+    outputRange: [0.75, 0.35, 0],
+  });
+
+  const badgeScale = pulseAnim.interpolate({
+    inputRange: [0, 0.35, 0.7, 1],
+    outputRange: [1, 1.14, 1.06, 1],
+  });
+
+  return (
+    <View style={styles.notifBadgeWrapper}>
+      <Animated.View
+        style={[
+          styles.whitePulseRing,
+          {
+            transform: [{ scale: ringScale }],
+            opacity: ringOpacity,
+          },
+        ]}
+      />
+      <Animated.View
+        style={[
+          styles.notifBadge,
+          {
+            transform: [{ scale: badgeScale }],
+          },
+        ]}
+      >
+        <Text style={styles.notifBadgeText}>{displayCount}</Text>
+      </Animated.View>
+    </View>
+  );
+}
 
 export default function RawMaterialDashboard() {
   const { width } = useWindowDimensions();
@@ -47,6 +117,27 @@ export default function RawMaterialDashboard() {
       ])
     ).start();
   }, []);
+
+  const [unreadCount, setUnreadCount] = useState(3);
+
+  useEffect(() => {
+    const loadVendorUnread = async () => {
+      const supplierId = user?.id || user?.registrationId || user?.supplierId || 'VEND-RM-001';
+      try {
+        const res = await fetchVendorOrders(supplierId);
+        if (res?.success && Array.isArray(res.data)) {
+          const pending = res.data.filter(o => o.status === 'pending' || o.status === 'confirmed').length;
+          setUnreadCount(pending > 0 ? pending : 3);
+        }
+      } catch (e) {
+        console.log('Error fetching vendor unread notifications:', e);
+      }
+    };
+
+    loadVendorUnread();
+    const interval = setInterval(loadVendorUnread, 4000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
 
   const [imgError, setImgError] = useState(false);
   const userPhoto = user?.profilePhoto || user?.profileImage || user?.registration?.profilePhoto || user?.vendorRegistration?.profilePhoto;
@@ -196,7 +287,7 @@ export default function RawMaterialDashboard() {
             <View style={styles.mobileRight}>
               <TouchableOpacity style={styles.mobileIconBtn} onPress={() => navigateTo('notifications')}>
                 <Bell size={20} color="#fff" />
-                <View style={styles.mobileNotificationDot} />
+                <NotificationBadge count={unreadCount} />
               </TouchableOpacity>
               <TouchableOpacity style={styles.mobileAvatarBtn} onPress={() => navigateTo('profile')}>
                 {userPhoto && !imgError ? (
@@ -297,6 +388,39 @@ const styles = StyleSheet.create({
   mobileRight: { flexDirection: 'row', alignItems: 'center', gap: 12, zIndex: 10 },
   mobileIconBtn: { padding: 4, position: 'relative' },
   mobileNotificationDot: { position: 'absolute', top: 4, right: 6, width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444', borderWidth: 1, borderColor: PRIMARY },
+  notifBadgeWrapper: {
+    position: 'absolute',
+    top: -5,
+    right: -7,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  whitePulseRing: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  notifBadge: {
+    backgroundColor: '#E11D48',
+    minWidth: 17,
+    height: 17,
+    borderRadius: 8.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  notifBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 9.5,
+    fontWeight: '900',
+    textAlign: 'center',
+    includeFontPadding: false,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
+  },
   mobileAvatarBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: WHITE, alignItems: 'center', justifyContent: 'center', position: 'relative' },
   avatarText: { color: PRIMARY, fontSize: 12, fontWeight: 'bold' },
   onlineIndicator: { position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: 5, backgroundColor: '#10B981', borderWidth: 2, borderColor: WHITE },

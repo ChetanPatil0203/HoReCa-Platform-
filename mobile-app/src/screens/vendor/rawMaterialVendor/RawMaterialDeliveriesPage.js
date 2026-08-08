@@ -128,14 +128,14 @@ export default function RawMaterialDeliveriesPage() {
 
   const getStatusStyle = (status) => {
     switch (status) {
-      case 'Scheduled': return { bg: '#EFF6FF', text: '#3B82F6' };
-      case 'Packed': return { bg: '#FFFBEB', text: '#D97706' };
-      case 'Assigned': return { bg: '#F3E8FF', text: '#A855F7' };
-      case 'Out for Delivery': return { bg: '#EEF2FF', text: '#4F46E5' };
-      case 'Delivered': return { bg: '#F0FDF4', text: '#16A34A' };
-      case 'Delayed': return { bg: '#FEF2F2', text: '#DC2626' };
-      case 'Cancelled': return { bg: '#F1F5F9', text: '#64748B' };
-      default: return { bg: '#F8FAFC', text: '#64748B' };
+      case 'Scheduled': return { bg: 'transparent', text: '#3B82F6' };
+      case 'Packed': return { bg: 'transparent', text: '#D97706' };
+      case 'Assigned': return { bg: 'transparent', text: '#A855F7' };
+      case 'Out for Delivery': return { bg: 'transparent', text: '#4F46E5' };
+      case 'Delivered': return { bg: 'transparent', text: '#16A34A' };
+      case 'Delayed': return { bg: 'transparent', text: '#DC2626' };
+      case 'Cancelled': return { bg: 'transparent', text: '#64748B' };
+      default: return { bg: 'transparent', text: '#64748B' };
     }
   };
 
@@ -214,8 +214,7 @@ export default function RawMaterialDeliveriesPage() {
             </TouchableOpacity>
           </View>
           
-          <View style={[styles.statusBadge, { backgroundColor: sStyle.bg, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
-            <View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: sStyle.text }} />
+          <View style={[styles.statusBadge, { backgroundColor: 'transparent', paddingHorizontal: 0 }]}>
             <Text style={[styles.statusText, { color: sStyle.text }]}>{item.status.toUpperCase()}</Text>
           </View>
         </View>
@@ -590,6 +589,28 @@ const styles = StyleSheet.create({
   pageTitle: { fontSize: 22, fontWeight: '900', color: '#0F172A', letterSpacing: -0.5 },
   pageSubtitle: { fontSize: 14, color: MUTED },
   pageHeaderActions: { flexDirection: 'row', alignItems: 'center' },
+  headerRightBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(22, 183, 122, 0.12)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(22, 183, 122, 0.25)',
+  },
+  livePulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#16B77A',
+    marginRight: 6,
+  },
+  headerRightBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#16B77A',
+  },
   iconBtn: { padding: 8, marginLeft: 8 },
 
   tabsContainer: { paddingBottom: 16 },

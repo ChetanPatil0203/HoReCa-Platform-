@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
-import { Star, MapPin, Package } from 'lucide-react-native';
-import { CARD } from '../../../theme/cards';
-import { colors } from '../../../theme/colors';
+import { Star } from 'lucide-react-native';
+
+const NAVY = '#081A3A';
+const MUTED = '#64748B';
 
 export default function VendorCard({ vendor, onViewProducts, onPress }) {
   const handlePress = () => {
@@ -14,129 +15,94 @@ export default function VendorCard({ vendor, onViewProducts, onPress }) {
   };
 
   return (
-    <View style={styles.card}>
-      {/* Avatar + Badge */}
-      <View style={styles.topRow}>
-        <View style={[styles.avatar, { backgroundColor: vendor.bg }]}>
-          <Text style={[styles.initials, { color: vendor.color }]}>{vendor.initials}</Text>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={handlePress}
+      activeOpacity={0.85}
+    >
+      <View style={[styles.avatar, { backgroundColor: vendor.bg || '#F1F5F9' }]}>
+        <Text style={[styles.avatarText, { color: vendor.color || NAVY }]}>
+          {vendor.initials || (vendor.name ? vendor.name.charAt(0).toUpperCase() : 'V')}
+        </Text>
+      </View>
+
+      <View style={styles.info}>
+        <Text style={styles.name} numberOfLines={1}>{vendor.name}</Text>
+        <Text style={styles.category} numberOfLines={1}>{vendor.category || 'Raw Material'}</Text>
+      </View>
+
+      <View style={styles.right}>
+        <View style={styles.ratingBadge}>
+          <Star size={12} color="#D97706" fill="#D97706" />
+          <Text style={styles.ratingText}>{vendor.rating || 4.5}</Text>
         </View>
-        {vendor.badge && (
-          <View style={[styles.badge, { backgroundColor: vendor.badgeColor + '18', borderColor: vendor.badgeColor + '40' }]}>
-            <Text style={[styles.badgeText, { color: vendor.badgeColor }]}>{vendor.badge}</Text>
-          </View>
-        )}
       </View>
-
-      {/* Name */}
-      <Text style={styles.name} numberOfLines={1}>{vendor.name}</Text>
-
-      {/* Rating */}
-      <View style={styles.ratingRow}>
-        <Star size={12} color="#F59E0B" fill="#F59E0B" />
-        <Text style={styles.ratingText}>{vendor.rating}</Text>
-      </View>
-
-      {/* Meta */}
-      <View style={styles.metaRow}>
-        <MapPin size={10} color={colors.muted} />
-        <Text style={styles.metaText} numberOfLines={1}>{vendor.location}</Text>
-      </View>
-      <View style={styles.metaRow}>
-        <Package size={10} color={colors.muted} />
-        <Text style={styles.metaText}>{vendor.products} products</Text>
-      </View>
-
-      {/* CTA */}
-      <TouchableOpacity
-        style={[styles.viewBtn, { borderColor: vendor.color, backgroundColor: vendor.bg }]}
-        onPress={handlePress}
-        activeOpacity={0.8}
-      >
-        <Text style={[styles.viewBtnText, { color: vendor.color }]}>View Products</Text>
-      </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    width: 180,
+    width: '100%',
     backgroundColor: '#FFFFFF',
-    borderRadius: CARD.borderRadius,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: CARD.border,
-    padding: 16,
-    marginRight: 14,
-    shadowColor: CARD.shadowColor,
-    shadowOffset: CARD.shadowOffset,
-    shadowOpacity: CARD.shadowOpacity,
-    shadowRadius: CARD.shadowRadius,
-    elevation: CARD.elevation,
-  },
-  topRow: {
+    borderColor: '#E8EDF4',
+    padding: 12,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 10,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
   },
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 10,
   },
-  initials: {
-    fontSize: 16,
-    fontWeight: '900',
+  avatarText: {
+    fontSize: 13,
+    fontWeight: '800',
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
   },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  badgeText: {
-    fontSize: 9,
-    fontWeight: '700',
+  info: {
+    flex: 1,
+    paddingRight: 6,
   },
   name: {
     fontSize: 13,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 6,
+    fontWeight: '700',
+    color: NAVY,
+    marginBottom: 2,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
   },
-  ratingRow: {
+  category: {
+    fontSize: 11,
+    color: MUTED,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
+  },
+  right: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  ratingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginBottom: 8,
+    backgroundColor: '#FFFBEB',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
   ratingText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#F59E0B',
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginBottom: 5,
-  },
-  metaText: {
     fontSize: 11,
-    color: '#94A3B8',
-    flex: 1,
-  },
-  viewBtn: {
-    marginTop: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    alignItems: 'center',
-  },
-  viewBtnText: {
-    fontSize: 12,
     fontWeight: '700',
+    color: '#D97706',
+    marginLeft: 4,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
   },
 });

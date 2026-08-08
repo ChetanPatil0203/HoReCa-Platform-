@@ -1,30 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity,
-  useWindowDimensions, Modal, SafeAreaView, Platform, TouchableWithoutFeedback, TextInput
+  useWindowDimensions, Modal, SafeAreaView, Platform, TouchableWithoutFeedback, TextInput, ActivityIndicator
 } from 'react-native';
 import { Search, Filter, Users, User, RefreshCw, CircleAlert as AlertCircle, MapPin, Star, ShoppingBag, MessageSquare, EllipsisVertical as MoreVertical, FileText, Gift, CircleX as XCircle, Building, Phone, Mail, FileCheck, Package, CreditCard, Clock3, CircleCheck as CheckCircle2, CircleHelp as HelpCircle, X } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorClientsApi, fetchVendorRequirements } from '../../../services/api.service';
 
 const NAVY = '#081A3A';
 const GOLD = '#D4AF37';
 
-const SUMMARY_DATA = [
-  { label: 'Total Clients', value: '0', icon: Users, color: '#3B82F6' },
-  { label: 'Active Jobs', value: '0', icon: User, color: '#10B981' },
-  { label: 'Repeat Clients', value: '0', icon: RefreshCw, color: '#8B5CF6' },
-  { label: 'Outstanding Payments', value: '₹0', icon: AlertCircle, color: '#EF4444' },
-];
-
 const CHIPS = ['All', 'Hotel', 'Restaurant', 'Cafe'];
-
-const MOCK_CLIENTS = [];
-
-const TRANSACTIONS = [];
 
 export default function ProviderClientsPage() {
   const { width } = useWindowDimensions();
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.registration?.id || user?.id;
+
   const [activeFilter, setActiveFilter] = useState('All');
-  const [clients, setClients] = useState(MOCK_CLIENTS);
+  const [clients, setClients] = useState([]);
+  const [requirements, setRequirements] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('clients'); // 'clients' or 'transactions'
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -38,6 +34,81 @@ export default function ProviderClientsPage() {
   // Transaction Detail Modal
   const [selectedTxn, setSelectedTxn] = useState(null);
   const [txnModalVisible, setTxnModalVisible] = useState(false);
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (!supplierId) { setLoading(false); return; }
+      try {
+        const [reqsRes, clientsRes] = await Promise.all([
+          fetchVendorRequirements(supplierId),
+          fetchVendorClientsApi(supplierId)
+        ]);
+
+        const reqsList = reqsRes?.data || reqsRes || [];
+        const clientApiList = clientsRes?.data || clientsRes || [];
+
+        setRequirements(Array.isArray(reqsList) ? reqsList : []);
+
+        // Derive clients dynamically from requirements if clients list is empty or merge them
+        const clientMap = new Map();
+
+        if (Array.isArray(clientApiList)) {
+          clientApiList.forEach(c => {
+            if (c.id) clientMap.set(c.id, c);
+          });
+        }
+
+        if (Array.isArray(reqsList)) {
+          reqsList.forEach(r => {
+            const bizName = r.owner?.bizName || r.clientName || 'HoReCa Client';
+            const clientId = r.owner?.id || bizName;
+            if (!clientMap.has(clientId)) {
+              clientMap.set(clientId, {
+                id: clientId,
+                name: bizName,
+                initials: bizName.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase(),
+                type: r.owner?.category || 'Restaurant',
+                location: r.location || 'Location Specified',
+                rating: '5.0',
+                activeServices: 1,
+                ltv: r.budget ? `₹${Number(r.budget || 0).toLocaleString('en-IN')}` : '₹0',
+                outstanding: r.status === 'pending' || r.status === 'in_progress' ? (r.budget ? `₹${Number(r.budget || 0).toLocaleString('en-IN')}` : '₹0') : '₹0',
+                tag: 'Active',
+                business: bizName,
+                city: r.location || 'City',
+                phone: r.owner?.phone || 'N/A',
+                email: r.owner?.email || 'N/A',
+                address: r.location || 'Address Specified',
+                reqCount: 1
+              });
+            } else {
+              const existing = clientMap.get(clientId);
+              existing.reqCount = (existing.reqCount || 1) + 1;
+              existing.activeServices += 1;
+              if (existing.reqCount > 1) existing.tag = 'Repeat';
+            }
+          });
+        }
+
+        setClients(Array.from(clientMap.values()));
+      } catch (err) {
+        console.warn('Error loading provider client data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, [supplierId]);
+
+  const activeJobsCount = requirements.filter(r => r.status === 'in_progress' || r.status === 'pending' || r.status === 'scheduled' || r.status === 'accepted').length;
+  const repeatClientsCount = clients.filter(c => (c.reqCount || 0) > 1 || c.tag === 'Repeat').length;
+  
+  const SUMMARY_DATA = [
+    { label: 'Total Clients', value: String(clients.length), icon: Users, color: '#3B82F6' },
+    { label: 'Active Jobs', value: String(activeJobsCount), icon: User, color: '#10B981' },
+    { label: 'Repeat Clients', value: String(repeatClientsCount), icon: RefreshCw, color: '#8B5CF6' },
+    { label: 'Outstanding Payments', value: `₹${requirements.reduce((acc, r) => acc + (r.status === 'pending' || r.status === 'in_progress' ? Number(r.budget || 0) : 0), 0).toLocaleString('en-IN')}`, icon: AlertCircle, color: '#EF4444' },
+  ];
 
   const filteredClients = clients.filter(c => {
     const matchesFilter = activeFilter === 'All' || c.type === activeFilter;
@@ -247,33 +318,21 @@ export default function ProviderClientsPage() {
           )}
         </View>
 
-        {/* Summary Cards */}
+        {/* Summary Cards Grid (2 cards per row) */}
         <View style={styles.summaryContainer}>
-          {width >= 768 ? (
-            <View style={styles.summaryGridDesktop}>
-              {SUMMARY_DATA.map((item, idx) => (
-                <View key={idx} style={styles.summaryCardDesktop}>
+          <View style={styles.summaryGrid}>
+            {SUMMARY_DATA.map((item, idx) => (
+              <View key={idx} style={styles.summaryCard}>
+                <View style={styles.summaryCardHeader}>
                   <View style={[styles.summaryIconBox, { backgroundColor: item.color + '15' }]}>
-                    <item.icon size={20} color={item.color} />
+                    <item.icon size={18} color={item.color} />
                   </View>
                   <Text style={styles.summaryValue}>{item.value}</Text>
-                  <Text style={styles.summaryLabel} numberOfLines={1}>{item.label}</Text>
                 </View>
-              ))}
-            </View>
-          ) : (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.summaryScroll}>
-              {SUMMARY_DATA.map((item, idx) => (
-                <View key={idx} style={styles.summaryCard}>
-                  <View style={[styles.summaryIconBox, { backgroundColor: item.color + '15' }]}>
-                    <item.icon size={20} color={item.color} />
-                  </View>
-                  <Text style={styles.summaryValue}>{item.value}</Text>
-                  <Text style={styles.summaryLabel} numberOfLines={1}>{item.label}</Text>
-                </View>
-              ))}
-            </ScrollView>
-          )}
+                <Text style={styles.summaryLabel} numberOfLines={1}>{item.label}</Text>
+              </View>
+            ))}
+          </View>
         </View>
 
         {/* Tab Switcher */}
@@ -515,36 +574,48 @@ const styles = StyleSheet.create({
   searchInputHeader: { flex: 1, fontSize: 14, color: NAVY, paddingVertical: 4 },
   summaryContainer: {
     backgroundColor: '#FFFFFF',
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
   },
-  summaryScroll: { paddingHorizontal: 16 },
-  summaryGridDesktop: { flexDirection: 'row', paddingHorizontal: 16, gap: 12 },
-  summaryCardDesktop: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+  summaryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 10,
   },
   summaryCard: {
+    width: '48%',
     backgroundColor: '#F8FAFC',
-    padding: 14,
-    borderRadius: 12,
-    marginRight: 10,
-    minWidth: 135,
-    maxWidth: 160,
+    padding: 12,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
-  summaryIconBox: {
-    width: 40, height: 40, borderRadius: 10,
-    justifyContent: 'center', alignItems: 'center', marginBottom: 12,
+  summaryCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
-  summaryValue: { fontSize: 20, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
-  summaryLabel: { fontSize: 13, color: '#64748B' },
+  summaryIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  summaryValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: NAVY,
+  },
+  summaryLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+  },
   chipsContainer: {
     backgroundColor: '#FFFFFF',
     paddingVertical: 12,

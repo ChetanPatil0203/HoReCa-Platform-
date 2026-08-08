@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Platform } from 'react-native';
 import { ShieldCheck, ArrowRight, Lock, CircleCheck as CheckCircle2, RotateCcw } from 'lucide-react-native';
 
 import AuthScreenWrapper from '../../components/auth/AuthScreenWrapper';
@@ -193,8 +193,14 @@ const styles = StyleSheet.create({
   securityNotice: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#D1FAE5', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, marginBottom: 24 },
   securityText: { fontSize: 13, fontWeight: '600', color: '#065F46', marginLeft: 8, flex: 1 },
 
-  otpSection: { alignItems: 'center', marginBottom: 24, width: '100%' },
-  otpLabel: { fontSize: 11, fontWeight: '600', color: AUTH_COLORS.primary, letterSpacing: 0.5, marginBottom: 14 },
+  otpLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: AUTH_COLORS.primary,
+    letterSpacing: 0.5,
+    marginBottom: 14,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System'
+  },
   otpContainer: { flexDirection: 'row', justifyContent: 'center', gap: 6, width: '100%', maxWidth: 340, alignSelf: 'center' },
   otpBox: {
     flex: 1,

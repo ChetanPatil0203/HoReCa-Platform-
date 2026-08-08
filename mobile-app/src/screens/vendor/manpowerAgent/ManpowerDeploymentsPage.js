@@ -6,45 +6,6 @@ import { fetchVendorRequirements, fetchVendorCandidatesApi, updateRequirementSta
 
 const NAVY = '#081A3A';
 
-const SEEDED_DEPLOYMENTS = [
-  {
-    id: 'DEP-101',
-    candidate: 'Ramesh Pawar',
-    role: 'Head Chef',
-    business: 'Chetan Cafe',
-    location: 'Jalgaon',
-    joiningDate: '28 Jul 2026',
-    salary: '₹35,000 / month',
-    status: 'Working',
-    phone: '+91 98765 43210',
-    experience: '5 Years'
-  },
-  {
-    id: 'DEP-102',
-    candidate: 'Vikram Shinde',
-    role: 'Mixologist',
-    business: 'Chetan Cafe',
-    location: 'Jalgaon',
-    joiningDate: '20 Jul 2026',
-    salary: '₹28,000 / month',
-    status: 'Working',
-    phone: '+91 99221 88334',
-    experience: '4 Years'
-  },
-  {
-    id: 'DEP-103',
-    candidate: 'Sunil Jadhav',
-    role: 'Cook / Commis Chef',
-    business: 'Grand Spice Restaurant',
-    location: 'Pune',
-    joiningDate: '15 Jun 2026',
-    salary: '₹38,000 / month',
-    status: 'Completed',
-    phone: '+91 98230 11445',
-    experience: '6 Years'
-  }
-];
-
 export default function ManpowerDeploymentsPage() {
   const { width } = useWindowDimensions();
   const summaryGridGap = 12;
@@ -54,7 +15,7 @@ export default function ManpowerDeploymentsPage() {
   const supplierId = user?.registration?.id || user?.id;
 
   const [loading, setLoading] = useState(true);
-  const [deployments, setDeployments] = useState(SEEDED_DEPLOYMENTS);
+  const [deployments, setDeployments] = useState([]);
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -76,23 +37,23 @@ export default function ManpowerDeploymentsPage() {
           dynamicDeployments.push({
             id: `DEP-${101 + idx}`,
             candidate: c.name,
-            role: c.role || req.role || 'Head Chef',
-            business: req.businessName || 'Chetan Cafe',
-            location: req.location || 'Jalgaon',
-            joiningDate: req.createdAt ? new Date(req.createdAt).toLocaleDateString('en-IN') : '28 Jul 2026',
-            salary: c.salary || req.salary || '₹35,000 / month',
-            status: idx === 2 ? 'Completed' : 'Working',
-            phone: c.mobile || '+91 98765 43210',
-            experience: c.experience || '3-5 Years'
+            role: c.role || req.role || 'Staff Member',
+            business: req.businessName || req.owner?.bizName || 'HoReCa Partner',
+            location: req.location || 'Location Specified',
+            joiningDate: req.createdAt ? new Date(req.createdAt).toLocaleDateString('en-IN') : 'Recent',
+            salary: c.salary || req.salary || '₹25,000 / month',
+            status: c.status === 'Deployed' || c.status === 'Working' ? 'Working' : 'Working',
+            phone: c.mobile || 'N/A',
+            experience: c.experience || '1-3 Years'
           });
         });
         setDeployments(dynamicDeployments);
       } else {
-        setDeployments(SEEDED_DEPLOYMENTS);
+        setDeployments([]);
       }
     } catch (err) {
       console.warn('Failed to load deployments:', err?.message);
-      setDeployments(SEEDED_DEPLOYMENTS);
+      setDeployments([]);
     } finally {
       setLoading(false);
     }
@@ -198,34 +159,34 @@ export default function ManpowerDeploymentsPage() {
             <View style={styles.summaryGrid}>
               <Pressable style={({ pressed }) => [styles.overviewCard, { width: summaryCardWidth, opacity: pressed ? 0.9 : 1 }]} onPress={() => setActiveTab('All')}>
                 <View style={styles.overviewTopRow}>
-                  <Text style={styles.overviewLabel} numberOfLines={2}>Total Staff</Text>
                   <View style={[styles.overviewIconBox, { backgroundColor: '#F8FAFC' }]}><UserRoundSearch size={20} color={NAVY} strokeWidth={2.5} /></View>
+                  <Text style={styles.overviewCount}>{deployments.length}</Text>
                 </View>
-                <Text style={styles.overviewCount}>{deployments.length}</Text>
+                <Text style={styles.overviewLabel} numberOfLines={2}>Total Staff</Text>
               </Pressable>
 
               <Pressable style={({ pressed }) => [styles.overviewCard, { width: summaryCardWidth, opacity: pressed ? 0.9 : 1 }]} onPress={() => setActiveTab('Working')}>
                 <View style={styles.overviewTopRow}>
-                  <Text style={styles.overviewLabel} numberOfLines={2}>Working</Text>
                   <View style={[styles.overviewIconBox, { backgroundColor: '#ECFDF5' }]}><UserRoundCheck size={20} color="#10B981" strokeWidth={2.5} /></View>
+                  <Text style={styles.overviewCount}>{workingCount}</Text>
                 </View>
-                <Text style={styles.overviewCount}>{workingCount}</Text>
+                <Text style={styles.overviewLabel} numberOfLines={2}>Working</Text>
               </Pressable>
 
               <Pressable style={({ pressed }) => [styles.overviewCard, { width: summaryCardWidth, opacity: pressed ? 0.9 : 1 }]} onPress={() => setActiveTab('Completed')}>
                 <View style={styles.overviewTopRow}>
-                  <Text style={styles.overviewLabel} numberOfLines={2}>Completed</Text>
                   <View style={[styles.overviewIconBox, { backgroundColor: '#EFF6FF' }]}><CircleCheck size={20} color="#3B82F6" strokeWidth={2.5} /></View>
+                  <Text style={styles.overviewCount}>{completedCount}</Text>
                 </View>
-                <Text style={styles.overviewCount}>{completedCount}</Text>
+                <Text style={styles.overviewLabel} numberOfLines={2}>Completed</Text>
               </Pressable>
 
               <Pressable style={({ pressed }) => [styles.overviewCard, { width: summaryCardWidth, opacity: pressed ? 0.9 : 1 }]} onPress={() => setActiveTab('Left Job')}>
                 <View style={styles.overviewTopRow}>
-                  <Text style={styles.overviewLabel} numberOfLines={2}>Left Job</Text>
                   <View style={[styles.overviewIconBox, { backgroundColor: '#FEF2F2' }]}><UserRoundX size={20} color="#EF4444" strokeWidth={2.5} /></View>
+                  <Text style={styles.overviewCount}>{leftJobCount}</Text>
                 </View>
-                <Text style={styles.overviewCount}>{leftJobCount}</Text>
+                <Text style={styles.overviewLabel} numberOfLines={2}>Left Job</Text>
               </Pressable>
             </View>
 
@@ -605,10 +566,10 @@ const styles = StyleSheet.create({
 
   summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', padding: 16, paddingBottom: 0, gap: 12 },
   overviewCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, minHeight: 110, borderWidth: 1, borderColor: '#E8EDF4', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2, justifyContent: 'space-between' },
-  overviewTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  overviewTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   overviewIconBox: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  overviewCount: { fontSize: 28, fontWeight: '800', color: NAVY, marginTop: 12 },
-  overviewLabel: { fontSize: 14, fontWeight: '700', color: '#64748B', flex: 1, marginRight: 8 },
+  overviewCount: { fontSize: 26, fontWeight: '800', color: NAVY },
+  overviewLabel: { fontSize: 13, fontWeight: '700', color: '#64748B' },
 
   searchSection: { padding: 16, paddingBottom: 0 },
   searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 12, height: 44 },

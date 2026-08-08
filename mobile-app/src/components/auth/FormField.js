@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TextInput, Platform } from 'react-native';
 import { AUTH_COLORS } from './AuthTheme';
 
 export default function FormField({
-  label, icon: Icon, error, containerStyle, valid, ...textInputProps
+  label, icon: Icon, error, containerStyle, labelStyle, valid, ...textInputProps
 }) {
   const [isFocused, setIsFocused] = useState(false);
 
@@ -22,7 +22,7 @@ export default function FormField({
   return (
     <View style={[styles.fieldBlock, containerStyle]}>
       {label && (
-        <Text style={styles.label}>
+        <Text style={[styles.label, labelStyle]}>
           {displayLabel}
           {isRequired && <Text style={styles.asterisk}> *</Text>}
         </Text>
@@ -54,7 +54,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#071B3A',
     marginBottom: 6,
-    letterSpacing: 0.2
+    letterSpacing: 0.2,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
   },
   asterisk: { color: '#EF4444' },
   inputWrapper: { position: 'relative', justifyContent: 'center' },

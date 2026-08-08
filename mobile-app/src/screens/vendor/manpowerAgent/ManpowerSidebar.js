@@ -8,7 +8,6 @@ const NAV = [
   { key: "requests", label: "Requests", icon: Activity, badge: 1 },
   { key: "inventory", label: "Candidates", icon: Users },
   { key: "deliveries", label: "Deployments", icon: Truck },
-  { key: "revenue", label: "Revenue", icon: DollarSign },
 ];
 
 const NAV_BOTTOM = [

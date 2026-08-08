@@ -89,17 +89,19 @@ export default function RawMaterialRevenuePage() {
           {/* Summary Cards Grid */}
           <View style={styles.summaryGrid}>
             {SUMMARY_DATA.map((item, idx) => (
-              <View key={idx} style={[styles.summaryCard, { width: (width - 48) / 2 }]}>
+              <View key={idx} style={[styles.summaryCard, { width: width < 768 ? (width - 44) / 2 : (width - 64) / 3 }]}>
                 <View style={styles.summaryHeader}>
-                  <View style={[styles.summaryIconBox, { backgroundColor: item.color + '15' }]}>
-                    <item.icon size={18} color={item.color} />
+                  <View style={[styles.summaryIconBox, { backgroundColor: item.color + '18' }]}>
+                    <item.icon size={20} color={item.color} />
                   </View>
+                  <Text style={styles.summaryValue}>{item.value}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={styles.summaryLabel}>{item.label}</Text>
                   {item.trend && (
                     <Text style={styles.trendText}>{item.trend}</Text>
                   )}
                 </View>
-                <Text style={styles.summaryValue}>{item.value}</Text>
-                <Text style={styles.summaryLabel}>{item.label}</Text>
               </View>
             ))}
           </View>
@@ -277,16 +279,17 @@ const styles = StyleSheet.create({
   activeFilterChipText: { color: '#FFFFFF' },
   scrollContent: { padding: 16 },
   
-  summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 },
   summaryCard: {
-    backgroundColor: '#FFFFFF', padding: 16, borderRadius: 12, marginBottom: 16,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
+    backgroundColor: '#FFFFFF', padding: 16, borderRadius: 16, marginBottom: 4,
+    borderWidth: 1, borderColor: '#E8EDF4',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2,
   },
-  summaryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  summaryIconBox: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  summaryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  summaryIconBox: { width: 42, height: 42, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   trendText: { fontSize: 12, color: '#10B981', fontWeight: 'bold' },
-  summaryValue: { fontSize: 18, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
-  summaryLabel: { fontSize: 12, color: '#64748B' },
+  summaryValue: { fontSize: 22, fontWeight: 'bold', color: NAVY },
+  summaryLabel: { fontSize: 13, fontWeight: '600', color: '#64748B' },
 
   sectionCard: {
     backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 16,

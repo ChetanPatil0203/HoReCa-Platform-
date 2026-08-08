@@ -23,6 +23,10 @@ const mapHistory = (o) => {
     shipped: 'Dispatched',
     confirmed: 'Accepted',
   };
+  const isCancelled = o.status === 'cancelled';
+  const icon = isCancelled ? XCircle : (o.status === 'delivered' ? CheckCircle : Package);
+  const color = isCancelled ? '#EF4444' : (o.status === 'delivered' ? '#10B981' : '#3B82F6');
+
   return {
     id: `#${o.id.slice(0, 8).toUpperCase()}`,
     _rawId: o.id,
@@ -35,6 +39,8 @@ const mapHistory = (o) => {
     status: dbToLabel[o.status] || o.status,
     paymentMethod: o.paymentMethod || '—',
     notes: o.notes || '',
+    icon,
+    color,
   };
 };
 
@@ -179,6 +185,8 @@ export default function RawMaterialHistoryPage() {
   const renderHistoryItem = ({ item }) => {
     const sStyle = getStatusColor(item.status);
     const isExpanded = !!expandedItems[item.id];
+    const ItemIcon = item.icon || Package;
+    const itemColor = item.color || '#3B82F6';
 
     if (isMobile) {
       // Mobile render: Keep primary details visible, secondary inside expandable content.
@@ -186,8 +194,8 @@ export default function RawMaterialHistoryPage() {
         <View style={styles.card}>
           <TouchableOpacity style={styles.cardHeaderPress} onPress={() => toggleExpand(item.id)}>
             <View style={styles.cardHeaderLeft}>
-              <View style={[styles.activityIconBox, { backgroundColor: item.color + '15' }]}>
-                <item.icon size={18} color={item.color} />
+              <View style={[styles.activityIconBox, { backgroundColor: itemColor + '15' }]}>
+                <ItemIcon size={18} color={itemColor} />
               </View>
               <View style={{ flex: 1 }}>
                 <View style={styles.rowBetween}>
@@ -239,8 +247,8 @@ export default function RawMaterialHistoryPage() {
     return (
       <View style={styles.horizontalRow}>
         <View style={styles.rowPartIcon}>
-          <View style={[styles.activityIconBox, { backgroundColor: item.color + '15' }]}>
-            <item.icon size={18} color={item.color} />
+          <View style={[styles.activityIconBox, { backgroundColor: itemColor + '15' }]}>
+            <ItemIcon size={18} color={itemColor} />
           </View>
         </View>
         <View style={styles.rowPartInfo}>
@@ -287,7 +295,7 @@ export default function RawMaterialHistoryPage() {
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
             <Text style={styles.headerTitle}>History</Text>
-            <Text style={styles.headerSubtitle}>View completed orders, deliveries, inventory updates and payments.</Text>
+            <Text style={styles.headerSubtitle}>Completed orders & transaction logs</Text>
           </View>
           <View style={styles.headerActions}>
             <TouchableOpacity style={styles.btnExport} onPress={() => setExportMenuVisible(true)}>
@@ -304,33 +312,14 @@ export default function RawMaterialHistoryPage() {
               <Search size={18} color={MUTED} style={{ marginRight: 8 }} />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search by order ID, product, client or delivery ID..."
+                placeholder="Search history..."
+                placeholderTextColor="#94A3B8"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
               {searchQuery !== '' && (
                 <TouchableOpacity onPress={() => setSearchQuery('')}><X size={16} color={MUTED} /></TouchableOpacity>
               )}
-            </View>
-
-            <View style={styles.dateSelectorContainer}>
-              <Text style={styles.labelSmall}>Date Filter:</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dateSelectorScroll}>
-                {['Today', 'This Week', 'This Month', 'Custom Range'].map(opt => (
-                  <TouchableOpacity 
-                    key={opt}
-                    style={[styles.dateFilterChip, dateFilter === opt && styles.dateFilterChipActive]}
-                    onPress={() => {
-                      setDateFilter(opt);
-                      if (opt === 'Custom Range') {
-                        setShowDatePickerModal(true);
-                      }
-                    }}
-                  >
-                    <Text style={[styles.dateFilterChipText, dateFilter === opt && styles.dateFilterChipTextActive]}>{opt}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
             </View>
           </View>
 
@@ -353,13 +342,13 @@ export default function RawMaterialHistoryPage() {
           {/* Summary Cards */}
           <View style={styles.summaryGrid}>
             {SUMMARY_CARDS.map((card, idx) => (
-              <View key={idx} style={[styles.summaryCard, { width: isMobile ? (width - 48) / 2 : (width - 64) / 4 }]}>
+              <View key={idx} style={[styles.summaryCard, { width: isMobile ? (width - 44) / 2 : (width - 64) / 4 }]}>
                 <View style={styles.summaryHeader}>
-                  <View style={[styles.summaryIconBox, { backgroundColor: card.color + '15' }]}>
-                    <card.icon size={18} color={card.color} />
+                  <View style={[styles.summaryIconBox, { backgroundColor: card.color + '18' }]}>
+                    <card.icon size={20} color={card.color} />
                   </View>
+                  <Text style={styles.summaryValue}>{card.value}</Text>
                 </View>
-                <Text style={styles.summaryValue}>{card.value}</Text>
                 <Text style={styles.summaryLabel}>{card.label}</Text>
               </View>
             ))}
@@ -558,10 +547,9 @@ const styles = StyleSheet.create({
   
   // Header
   header: { 
-    minHeight: 90, paddingTop: 40, paddingBottom: 16, 
+    paddingTop: Platform.OS === 'ios' ? 20 : 16, paddingBottom: 12, 
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 16, backgroundColor: WHITE,
-    borderBottomWidth: 1, borderBottomColor: '#F1F5F9'
   },
   headerTitle: { fontSize: 22, fontWeight: 'bold', color: NAVY },
   headerSubtitle: { fontSize: 13, color: MUTED, marginTop: 2 },
@@ -569,9 +557,9 @@ const styles = StyleSheet.create({
   btnExport: { flexDirection: 'row', alignItems: 'center', backgroundColor: NAVY, paddingHorizontal: 16, height: 40, borderRadius: 10 },
   btnExportText: { color: WHITE, fontWeight: 'bold', fontSize: 14 },
 
-  // Controls (Search & Date filter)
-  controlSection: { backgroundColor: WHITE, padding: 16, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
-  searchRow: { gap: 12 },
+  // Controls (Search)
+  controlSection: { backgroundColor: WHITE, paddingHorizontal: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  searchRow: { width: '100%' },
   searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 12, height: 44 },
   searchInput: { flex: 1, fontSize: 14, color: NAVY },
   dateSelectorContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
@@ -590,16 +578,16 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 16 },
 
   // Summary Grid
-  summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 20 },
+  summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12, marginBottom: 20 },
   summaryCard: {
-    backgroundColor: WHITE, padding: 12, borderRadius: 12, marginBottom: 12,
-    borderWidth: 1, borderColor: '#E6EBF2',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 1
+    backgroundColor: WHITE, padding: 16, borderRadius: 16, marginBottom: 4,
+    borderWidth: 1, borderColor: '#E8EDF4',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 2
   },
-  summaryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  summaryIconBox: { width: 30, height: 30, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
-  summaryValue: { fontSize: 16, fontWeight: 'bold', color: NAVY, marginBottom: 2 },
-  summaryLabel: { fontSize: 11, color: MUTED },
+  summaryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  summaryIconBox: { width: 42, height: 42, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  summaryValue: { fontSize: 24, fontWeight: 'bold', color: NAVY },
+  summaryLabel: { fontSize: 13, fontWeight: '600', color: MUTED },
 
   // Filter Tabs
   tabsContainer: { paddingBottom: 16 },

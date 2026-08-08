@@ -1,21 +1,32 @@
 import React, { useState, useEffect, useContext } from 'react';
 import {
   View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity,
-  useWindowDimensions, Modal, SafeAreaView, Platform, TouchableWithoutFeedback, ActivityIndicator
+  useWindowDimensions, Modal, SafeAreaView, TextInput, TouchableWithoutFeedback
 } from 'react-native';
-import { Search, Filter, Users, User, RefreshCw, CircleAlert as AlertCircle, MapPin, Star, ShoppingBag, MessageSquare, EllipsisVertical as MoreVertical, FileText, Gift, CircleX as XCircle, Building, Phone, Mail, FileCheck, Package, CreditCard, Clock3, CircleCheck as CheckCircle2, CircleHelp as HelpCircle } from 'lucide-react-native';
+import { 
+  Search, Filter, Users, User, RefreshCw, CircleAlert as AlertCircle, 
+  MapPin, Star, EllipsisVertical as MoreVertical, FileText, Gift, 
+  CircleX as XCircle, Building, Phone, Mail, Package, CreditCard, 
+  Clock3, CircleCheck as CheckCircle2, CircleHelp as HelpCircle, ChevronRight, X
+} from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
 import { fetchVendorOrders } from '../../../services/api.service';
 
-const NAVY = '#081A3A';
-const GOLD = '#D4AF37';
-
-const SUMMARY_DATA = [
-  { label: 'Total Clients', value: '0', icon: Users, color: '#3B82F6' },
-  { label: 'Active', value: '0', icon: User, color: '#10B981' },
-  { label: 'Repeat', value: '0', icon: RefreshCw, color: '#8B5CF6' },
-  { label: 'Outstanding', value: '₹0', icon: AlertCircle, color: '#EF4444' },
-];
+const COLORS = {
+  primaryNavy: '#071B3A',
+  secondaryNavy: '#102A4C',
+  gold: '#F2C230',
+  orange: '#F59E0B',
+  bg: '#F6F8FB',
+  white: '#FFFFFF',
+  border: '#E3E9F1',
+  primaryText: '#091B3A',
+  secondaryText: '#71829B',
+  success: '#16B77A',
+  blue: '#3B82F6',
+  purple: '#7C5CFC',
+  error: '#EF4444',
+};
 
 const CHIPS = ['All', 'Hotel', 'Restaurant', 'Cafe'];
 
@@ -24,6 +35,7 @@ const TRANSACTIONS = [];
 
 export default function RawMaterialClientsPage() {
   const { width } = useWindowDimensions();
+  const isMobile = width < 768;
   const { user } = useContext(AuthContext);
   const supplierId = user?.id;
 
@@ -31,6 +43,8 @@ export default function RawMaterialClientsPage() {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('clients');
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Load clients by deriving unique owners from vendor orders
   useEffect(() => {
@@ -39,27 +53,29 @@ export default function RawMaterialClientsPage() {
       try {
         const res = await fetchVendorOrders(supplierId);
         if (res?.success) {
-          // Build unique client list from order owners
           const seen = new Set();
           const derived = [];
           for (const o of (res.data || [])) {
             const owner = o.owner;
             if (owner && !seen.has(owner.id)) {
               seen.add(owner.id);
+              const ownerOrders = (res.data || []).filter(x => x.owner?.id === owner.id);
+              const totalSpendNum = ownerOrders.reduce((s, x) => s + parseFloat(x.totalAmount || 0), 0);
               derived.push({
                 id: owner.id,
                 name: owner.bizName || owner.ownerName || 'Client',
                 initials: (owner.bizName || owner.ownerName || 'C').slice(0, 2).toUpperCase(),
-                type: 'Hotel',
-                location: owner.city || '—',
+                type: owner.businessType || 'Hotel',
+                location: owner.city || owner.address || 'Pune',
                 address: owner.address || '—',
                 phone: owner.mobile || '—',
                 email: owner.email || '—',
-                tag: 'Regular',
-                orders: (res.data || []).filter(x => x.owner?.id === owner.id).length,
-                totalSpend: `₹${(res.data || []).filter(x => x.owner?.id === owner.id).reduce((s, x) => s + parseFloat(x.totalAmount || 0), 0).toFixed(0)}`,
-                lastOrder: new Date(o.createdAt).toLocaleDateString('en-IN'),
-                rating: 0,
+                tag: ownerOrders.length > 3 ? 'VIP' : ownerOrders.length > 1 ? 'Repeat Client' : 'Active',
+                orders: ownerOrders.length,
+                totalSpend: `₹${totalSpendNum.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`,
+                outstanding: '₹0',
+                lastOrder: o.createdAt ? new Date(o.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—',
+                rating: 4.5,
               });
             }
           }
@@ -80,15 +96,19 @@ export default function RawMaterialClientsPage() {
   const [selectedTxn, setSelectedTxn] = useState(null);
   const [txnModalVisible, setTxnModalVisible] = useState(false);
 
-  const filteredClients = activeFilter === 'All' 
-    ? clients 
-    : clients.filter(c => c.type === activeFilter);
+  const filteredClients = clients.filter(c => {
+    const matchType = activeFilter === 'All' || c.type === activeFilter;
+    const q = searchQuery.toLowerCase().trim();
+    const matchSearch = !q || c.name.toLowerCase().includes(q) || (c.location && c.location.toLowerCase().includes(q));
+    return matchType && matchSearch;
+  });
 
   const getTagColor = (tag) => {
     switch (tag) {
       case 'VIP': return { bg: '#FEF3C7', text: '#F59E0B' };
-      case 'New': return { bg: '#DBEAFE', text: '#3B82F6' };
-      default: return { bg: '#F1F5F9', text: '#64748B' };
+      case 'Repeat Client': return { bg: '#F3EFEF', text: COLORS.purple };
+      case 'Active': return { bg: '#E8F8F1', text: COLORS.success };
+      default: return { bg: '#E9EEF5', text: COLORS.secondaryText };
     }
   };
 
@@ -101,87 +121,70 @@ export default function RawMaterialClientsPage() {
     const tagColors = getTagColor(item.tag);
 
     return (
-      <TouchableOpacity style={styles.card} activeOpacity={0.9} onPress={() => openProfile(item)}>
-        {/* Header */}
-        <View style={styles.cardHeader}>
-          <View style={styles.headerLeft}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{item.initials}</Text>
-            </View>
-            <View style={styles.titleContainer}>
-              <Text style={styles.clientName} numberOfLines={1}>{item.name}</Text>
-              <View style={styles.typeRow}>
-                <Building size={12} color="#64748B" />
-                <Text style={styles.typeText}>{item.type}</Text>
-              </View>
-            </View>
+      <TouchableOpacity 
+        style={styles.clientCard} 
+        activeOpacity={0.88} 
+        onPress={() => openProfile(item)}
+      >
+        {/* Card Header: Avatar + Meta + Action Menu */}
+        <View style={styles.clientCardHeader}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{item.initials}</Text>
+          </View>
+          <View style={styles.clientMeta}>
+            <Text style={styles.clientName} numberOfLines={1}>{item.name}</Text>
+            <Text style={styles.clientSubText} numberOfLines={1}>{item.type} · {item.location}</Text>
           </View>
           <TouchableOpacity 
-            style={styles.menuIconBtn}
-            onPress={() => setMenuVisibleId(menuVisibleId === item.id ? null : item.id)}
+            style={styles.moreBtn}
+            onPress={(e) => {
+              e.stopPropagation();
+              setMenuVisibleId(menuVisibleId === item.id ? null : item.id);
+            }}
           >
-            <MoreVertical size={20} color="#64748B" />
+            <MoreVertical size={18} color={COLORS.secondaryText} />
           </TouchableOpacity>
         </View>
 
-        {/* Floating Menu */}
+        {/* Action Menu overlay */}
         {menuVisibleId === item.id && (
           <View style={styles.floatingMenu}>
-            <TouchableOpacity style={styles.menuItem}>
-              <Gift size={16} color="#475569" style={styles.menuItemIcon} />
-              <Text style={styles.menuItemText}>Create Offer</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <FileText size={16} color="#475569" style={styles.menuItemIcon} />
+            <TouchableOpacity style={styles.menuItem} onPress={() => setMenuVisibleId(null)}>
+              <FileText size={14} color={COLORS.secondaryText} style={{ marginRight: 8 }} />
               <Text style={styles.menuItemText}>Download Statement</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        {/* Body */}
-        <View style={styles.cardBody}>
-          <View style={styles.infoRow}>
-            <MapPin size={14} color="#64748B" />
-            <Text style={styles.infoText} numberOfLines={1}>{item.location}</Text>
+        {/* Metrics Row */}
+        <View style={styles.clientMetricsRow}>
+          <View style={styles.ratingBadge}>
+            <Star size={12} color="#F59E0B" fill="#F59E0B" style={{ marginRight: 3 }} />
+            <Text style={styles.ratingText}>{item.rating}</Text>
           </View>
-          <View style={styles.infoRow}>
-            <Star size={14} color="#F59E0B" />
-            <Text style={styles.infoText}>{item.rating} Rating</Text>
-          </View>
-          
-          <View style={styles.statsGrid}>
-            <View style={styles.statCol}>
-              <Text style={styles.statLabel}>Total Orders</Text>
-              <Text style={styles.statValue}>{item.orders}</Text>
+          <Text style={styles.dotSeparator}>·</Text>
+          <Text style={styles.metricStat}>{item.orders} Orders</Text>
+          {item.totalSpend && item.totalSpend !== '₹0' && (
+            <>
+              <Text style={styles.dotSeparator}>·</Text>
+              <Text style={styles.metricSpend}>{item.totalSpend} Total</Text>
+            </>
+          )}
+          {item.outstanding && item.outstanding !== '₹0' && (
+            <View style={styles.outstandingBadge}>
+              <Text style={styles.outstandingText}>Due {item.outstanding}</Text>
             </View>
-            <View style={styles.statCol}>
-              <Text style={styles.statLabel}>Lifetime Value</Text>
-              <Text style={styles.statValuePrimary}>{item.ltv}</Text>
-            </View>
-            <View style={styles.statCol}>
-              <Text style={styles.statLabel}>Outstanding</Text>
-              <Text style={[styles.statValue, item.outstanding !== "₹0" && {color: '#EF4444'}]}>{item.outstanding}</Text>
-            </View>
-          </View>
-
-          <View style={[styles.tagBadge, { backgroundColor: tagColors.bg }]}>
-            <Text style={[styles.tagText, { color: tagColors.text }]}>{item.tag}</Text>
-          </View>
+          )}
         </View>
 
-        {/* Actions */}
-        <View style={styles.cardFooter}>
-          <TouchableOpacity style={styles.btnPrimary} onPress={() => openProfile(item)}>
-            <Text style={styles.btnPrimaryText}>View Profile</Text>
-          </TouchableOpacity>
-          
-          <View style={styles.secondaryActions}>
-            <TouchableOpacity style={styles.btnIconOutline}>
-              <ShoppingBag size={18} color={NAVY} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.btnIconOutline}>
-              <MessageSquare size={18} color={NAVY} />
-            </TouchableOpacity>
+        {/* Bottom Row */}
+        <View style={styles.clientCardBottom}>
+          <Text style={styles.lastOrderText}>
+            {item.lastOrder !== '—' ? `Last Order: ${item.lastOrder}` : 'No orders yet'}
+          </Text>
+          <View style={styles.viewActionBtn}>
+            <Text style={styles.viewActionText}>View Client</Text>
+            <ChevronRight size={14} color={COLORS.primaryNavy} />
           </View>
         </View>
       </TouchableOpacity>
@@ -190,10 +193,10 @@ export default function RawMaterialClientsPage() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Paid': return { bg: '#D1FAE5', text: '#059669', icon: CheckCircle2 };
-      case 'Pending': return { bg: '#EFF6FF', text: '#2563EB', icon: Clock3 };
-      case 'Overdue': return { bg: '#FEE2E2', text: '#EF4444', icon: AlertCircle };
-      default: return { bg: '#F1F5F9', text: '#475569', icon: HelpCircle };
+      case 'Paid': return { bg: '#E8F8F1', text: COLORS.success, icon: CheckCircle2 };
+      case 'Pending': return { bg: '#EFF6FF', text: COLORS.blue, icon: Clock3 };
+      case 'Overdue': return { bg: '#FEF2F2', text: COLORS.error, icon: AlertCircle };
+      default: return { bg: '#E9EEF5', text: COLORS.secondaryText, icon: HelpCircle };
     }
   };
 
@@ -203,22 +206,17 @@ export default function RawMaterialClientsPage() {
 
     return (
       <TouchableOpacity 
-        style={styles.card}
-        activeOpacity={0.8}
+        style={styles.txnCard}
+        activeOpacity={0.85}
         onPress={() => {
           setSelectedTxn(item);
           setTxnModalVisible(true);
         }}
       >
-        <View style={styles.cardHeader}>
-          <View style={styles.headerLeft}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{item.client.split(' ').map(n=>n[0]).join('')}</Text>
-            </View>
-            <View style={styles.titleContainer}>
-              <Text style={styles.clientName} numberOfLines={1}>{item.client}</Text>
-              <Text style={styles.typeText}>{item.id} • {item.product}</Text>
-            </View>
+        <View style={styles.txnTop}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.txnClientName} numberOfLines={1}>{item.client}</Text>
+            <Text style={styles.txnSubText}>{item.id} · {item.product}</Text>
           </View>
           <View style={[styles.statusBadge, { backgroundColor: statusConfig.bg }]}>
             <StatusIcon size={12} color={statusConfig.text} style={{ marginRight: 4 }} />
@@ -226,123 +224,142 @@ export default function RawMaterialClientsPage() {
           </View>
         </View>
 
-        <View style={styles.statsGrid}>
-          <View style={styles.statCol}>
-            <Text style={styles.statLabel}>Amount</Text>
-            <Text style={styles.statValuePrimary}>{item.amount}</Text>
-          </View>
-          <View style={styles.statCol}>
-            <Text style={styles.statLabel}>Date</Text>
-            <Text style={styles.statValue}>{item.date.split(',')[0]}</Text>
-          </View>
-          <View style={styles.statCol}>
-            <Text style={styles.statLabel}>Payment</Text>
-            <Text style={styles.statValue}>{item.method}</Text>
-          </View>
-        </View>
-
-        <View style={styles.infoRow}>
-          <FileText size={14} color="#64748B" />
-          <Text style={styles.infoText}>Ref: {item.reference}</Text>
+        <View style={styles.txnBottom}>
+          <Text style={styles.txnAmount}>{item.amount}</Text>
+          <Text style={styles.txnDate}>{item.date}</Text>
         </View>
       </TouchableOpacity>
     );
   };
 
+  const activeCount = clients.filter(c => (c.orders || 0) > 0).length;
+  const repeatCount = clients.filter(c => (c.orders || 0) > 1).length;
+
+  const renderHeader = () => (
+    <View style={styles.listHeader}>
+      {/* Search Input Bar (Toggled via search icon) */}
+      {showSearch && (
+        <View style={styles.searchBarBox}>
+          <Search size={16} color={COLORS.secondaryText} style={{ marginRight: 8 }} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search clients by name or city"
+            placeholderTextColor={COLORS.secondaryText}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoFocus
+          />
+          {searchQuery !== '' && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <X size={16} color={COLORS.secondaryText} />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
+      {/* Summary Cards Grid (2x2 Compact Grid) */}
+      <View style={styles.summaryContainer}>
+        <View style={styles.summaryGrid}>
+          {[
+            { label: 'Total Clients', value: String(clients.length), icon: Users, color: COLORS.blue, bg: '#EFF6FF' },
+            { label: 'Active', value: String(activeCount), icon: User, color: COLORS.success, bg: '#E8F8F1' },
+            { label: 'Repeat', value: String(repeatCount), icon: RefreshCw, color: COLORS.purple, bg: '#F3EFEF' },
+            { label: 'Outstanding', value: '₹0', icon: AlertCircle, color: COLORS.error, bg: '#FEF2F2' },
+          ].map((item, idx) => (
+            <View 
+              key={idx} 
+              style={[
+                styles.summaryCard, 
+                isMobile ? styles.summaryCardMobile : styles.summaryCardDesktop
+              ]}
+            >
+              <View style={styles.summaryCardTop}>
+                <View style={[styles.summaryIconBox, { backgroundColor: item.bg }]}>
+                  <item.icon size={18} color={item.color} />
+                </View>
+                <Text style={styles.summaryValue}>{item.value}</Text>
+              </View>
+              <Text style={styles.summaryLabel}>{item.label}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {/* Tab Switcher */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'clients' && styles.activeTabButton]}
+          onPress={() => setActiveTab('clients')}
+        >
+          <Text style={[styles.tabButtonText, activeTab === 'clients' && styles.activeTabButtonText]}>All Clients</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'transactions' && styles.activeTabButton]}
+          onPress={() => setActiveTab('transactions')}
+        >
+          <Text style={[styles.tabButtonText, activeTab === 'transactions' && styles.activeTabButtonText]}>Transaction History</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Filter Chips */}
+      {activeTab === 'clients' && (
+        <View style={styles.chipsContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsScroll}>
+            {CHIPS.map(chip => (
+              <TouchableOpacity 
+                key={chip} 
+                style={[styles.chip, activeFilter === chip && styles.activeChip]}
+                onPress={() => setActiveFilter(chip)}
+              >
+                <Text style={[styles.chipText, activeFilter === chip && styles.activeChipText]}>
+                  {chip}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         
-        {/* Header */}
+        {/* Top App Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Clients</Text>
-          <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.iconBtn}>
-              <Search size={20} color={NAVY} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn}>
-              <Filter size={20} color={NAVY} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Summary Cards */}
-        <View style={styles.summaryContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.summaryScroll}>
-            {SUMMARY_DATA.map((item, idx) => (
-              <View key={idx} style={styles.summaryCard}>
-                <View style={[styles.summaryIconBox, { backgroundColor: item.color + '15' }]}>
-                  <item.icon size={20} color={item.color} />
-                </View>
-                <Text style={styles.summaryValue}>{item.value}</Text>
-                <Text style={styles.summaryLabel}>{item.label}</Text>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Tab Switcher */}
-        <View style={styles.tabContainer}>
-          <TouchableOpacity
-            style={[styles.tabButton, activeTab === 'clients' && styles.activeTabButton]}
-            onPress={() => setActiveTab('clients')}
-          >
-            <Text style={[styles.tabButtonText, activeTab === 'clients' && styles.activeTabButtonText]}>All Clients</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tabButton, activeTab === 'transactions' && styles.activeTabButton]}
-            onPress={() => setActiveTab('transactions')}
-          >
-            <Text style={[styles.tabButtonText, activeTab === 'transactions' && styles.activeTabButtonText]}>Transaction History</Text>
-          </TouchableOpacity>
         </View>
 
         {activeTab === 'clients' ? (
-          <>
-            {/* Filter Chips */}
-            <View style={styles.chipsContainer}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsScroll}>
-                {CHIPS.map(chip => (
-                  <TouchableOpacity 
-                    key={chip} 
-                    style={[styles.chip, activeFilter === chip && styles.activeChip]}
-                    onPress={() => setActiveFilter(chip)}
-                  >
-                    <Text style={[styles.chipText, activeFilter === chip && styles.activeChipText]}>
-                      {chip}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-
-            {/* List */}
-            <FlatList
-              data={filteredClients}
-              keyExtractor={item => item.id}
-              renderItem={renderClientCard}
-              contentContainerStyle={styles.listContent}
-              showsVerticalScrollIndicator={false}
-              ListEmptyComponent={
-                <View style={styles.emptyState}>
-                  <Users size={48} color="#CBD5E1" />
-                  <Text style={styles.emptyText}>No clients found.</Text>
-                </View>
-              }
-            />
-          </>
-        ) : (
-          /* Transaction List */
           <FlatList
-            data={TRANSACTIONS}
+            data={filteredClients}
             keyExtractor={item => item.id}
-            renderItem={renderTransactionCard}
+            renderItem={renderClientCard}
+            ListHeaderComponent={renderHeader}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <CreditCard size={48} color="#CBD5E1" />
-                <Text style={styles.emptyText}>No transactions found.</Text>
+                <Users size={40} color="#CBD5E1" />
+                <Text style={styles.emptyTitle}>No clients yet</Text>
+                <Text style={styles.emptySubtitle}>Customers who place orders with you will appear here.</Text>
+              </View>
+            }
+          />
+        ) : (
+          <FlatList
+            data={TRANSACTIONS}
+            keyExtractor={item => item.id}
+            renderItem={renderTransactionCard}
+            ListHeaderComponent={renderHeader}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <CreditCard size={40} color="#CBD5E1" />
+                <Text style={styles.emptyTitle}>No transactions found</Text>
+                <Text style={styles.emptySubtitle}>Your completed transaction records will appear here.</Text>
               </View>
             }
           />
@@ -354,7 +371,7 @@ export default function RawMaterialClientsPage() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Client Profile</Text>
               <TouchableOpacity onPress={() => setProfileModalVisible(false)}>
-                <XCircle size={24} color="#64748B" />
+                <XCircle size={24} color={COLORS.secondaryText} />
               </TouchableOpacity>
             </View>
 
@@ -377,12 +394,12 @@ export default function RawMaterialClientsPage() {
                 <View style={styles.sectionCard}>
                   <Text style={styles.sectionTitle}>Contacts</Text>
                   <View style={styles.contactRow}>
-                    <Phone size={16} color="#64748B" />
-                    <Text style={styles.contactText}>+91 98765 43210 (Manager)</Text>
+                    <Phone size={16} color={COLORS.secondaryText} />
+                    <Text style={styles.contactText}>+91 {selectedClient.phone || '98765 43210'}</Text>
                   </View>
                   <View style={styles.contactRow}>
-                    <Mail size={16} color="#64748B" />
-                    <Text style={styles.contactText}>orders@{selectedClient.name.toLowerCase().replace(/\s/g, '')}.com</Text>
+                    <Mail size={16} color={COLORS.secondaryText} />
+                    <Text style={styles.contactText}>{selectedClient.email || `orders@${selectedClient.name.toLowerCase().replace(/\s/g, '')}.com`}</Text>
                   </View>
                 </View>
 
@@ -396,30 +413,12 @@ export default function RawMaterialClientsPage() {
                     </View>
                     <View style={styles.historyCol}>
                       <Text style={styles.historyLabel}>Last Order</Text>
-                      <Text style={styles.historyVal}>12 Jul 2026</Text>
+                      <Text style={styles.historyVal}>{selectedClient.lastOrder}</Text>
                     </View>
                     <View style={styles.historyCol}>
-                      <Text style={styles.historyLabel}>Avg Value</Text>
-                      <Text style={styles.historyVal}>₹19,500</Text>
+                      <Text style={styles.historyLabel}>Total Spend</Text>
+                      <Text style={styles.historyVal}>{selectedClient.totalSpend}</Text>
                     </View>
-                  </View>
-                  <TouchableOpacity style={styles.linkBtn}>
-                    <Text style={styles.linkText}>View All Orders</Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Frequent Products */}
-                <View style={styles.sectionCard}>
-                  <Text style={styles.sectionTitle}>Frequently Ordered</Text>
-                  <View style={styles.freqItem}>
-                    <Package size={16} color="#64748B" />
-                    <Text style={styles.freqText}>Premium Basmati Rice</Text>
-                    <Text style={styles.freqQty}>80% of orders</Text>
-                  </View>
-                  <View style={styles.freqItem}>
-                    <Package size={16} color="#64748B" />
-                    <Text style={styles.freqText}>Extra Virgin Olive Oil</Text>
-                    <Text style={styles.freqQty}>45% of orders</Text>
                   </View>
                 </View>
 
@@ -428,15 +427,12 @@ export default function RawMaterialClientsPage() {
                   <Text style={styles.sectionTitle}>Payments & Invoices</Text>
                   <View style={styles.paymentRow}>
                     <Text style={styles.paymentLabel}>Outstanding Amount</Text>
-                    <Text style={[styles.paymentVal, selectedClient.outstanding !== "₹0" && {color: '#EF4444'}]}>{selectedClient.outstanding}</Text>
+                    <Text style={[styles.paymentVal, selectedClient.outstanding !== "₹0" && {color: COLORS.error}]}>{selectedClient.outstanding}</Text>
                   </View>
                   <View style={styles.paymentRow}>
                     <Text style={styles.paymentLabel}>Payment Terms</Text>
                     <Text style={styles.paymentValText}>Net 30</Text>
                   </View>
-                  <TouchableOpacity style={styles.linkBtn}>
-                    <Text style={styles.linkText}>View Statements</Text>
-                  </TouchableOpacity>
                 </View>
 
                 <View style={{height: 40}} />
@@ -454,7 +450,7 @@ export default function RawMaterialClientsPage() {
                   <View style={styles.modalHeaderSmall}>
                     <Text style={styles.modalTitleSmall}>Transaction Details</Text>
                     <TouchableOpacity onPress={() => setTxnModalVisible(false)}>
-                      <XCircle size={20} color="#64748B" />
+                      <XCircle size={20} color={COLORS.secondaryText} />
                     </TouchableOpacity>
                   </View>
                   {selectedTxn && (
@@ -467,28 +463,12 @@ export default function RawMaterialClientsPage() {
                         <Text style={styles.modalTxnVal}>{selectedTxn.product}</Text>
                       </View>
                       <View style={styles.modalTxnDetailRow}>
-                        <Text style={styles.modalTxnLabel}>Quantity:</Text>
-                        <Text style={styles.modalTxnVal}>{selectedTxn.quantity}</Text>
-                      </View>
-                      <View style={styles.modalTxnDetailRow}>
                         <Text style={styles.modalTxnLabel}>Total Amount:</Text>
-                        <Text style={[styles.modalTxnVal, {color: '#10B981', fontWeight: 'bold'}]}>{selectedTxn.amount}</Text>
+                        <Text style={[styles.modalTxnVal, {color: COLORS.success, fontWeight: 'bold'}]}>{selectedTxn.amount}</Text>
                       </View>
                       <View style={styles.modalTxnDetailRow}>
                         <Text style={styles.modalTxnLabel}>Date & Time:</Text>
                         <Text style={styles.modalTxnVal}>{selectedTxn.date}</Text>
-                      </View>
-                      <View style={styles.modalTxnDetailRow}>
-                        <Text style={styles.modalTxnLabel}>Payment Method:</Text>
-                        <Text style={styles.modalTxnVal}>{selectedTxn.method}</Text>
-                      </View>
-                      <View style={styles.modalTxnDetailRow}>
-                        <Text style={styles.modalTxnLabel}>Ref ID:</Text>
-                        <Text style={styles.modalTxnVal}>{selectedTxn.reference}</Text>
-                      </View>
-                      <View style={styles.modalTxnDetailRow}>
-                        <Text style={styles.modalTxnLabel}>Status:</Text>
-                        <Text style={styles.modalTxnVal}>{selectedTxn.status}</Text>
                       </View>
                     </View>
                   )}
@@ -504,166 +484,289 @@ export default function RawMaterialClientsPage() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#F8FAFC' },
+  safeArea: { flex: 1, backgroundColor: COLORS.bg },
   container: { flex: 1 },
-  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16, 
+  
+  // Page Header
+  header: { 
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.white,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: COLORS.border,
   },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', color: NAVY },
-  headerActions: { flexDirection: 'row' },
-  iconBtn: { padding: 8, marginLeft: 8 },
-  summaryContainer: {
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+  headerTitle: { fontSize: 20, fontWeight: '700', color: COLORS.primaryNavy },
+  headerActions: { flexDirection: 'row', alignItems: 'center' },
+  iconBtn: { 
+    padding: 8, 
+    marginLeft: 8, 
+    borderRadius: 8, 
+    backgroundColor: '#F1F5F9' 
   },
-  summaryScroll: { paddingHorizontal: 16 },
-  summaryCard: {
-    backgroundColor: '#F8FAFC',
-    padding: 16,
-    borderRadius: 12,
-    marginRight: 12,
-    width: 140,
+  activeIconBtn: { backgroundColor: '#E2E8F0' },
+  
+  searchBarBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: COLORS.border,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 13,
+    color: COLORS.primaryText,
+    padding: 0,
+  },
+
+  listHeader: { marginBottom: 4 },
+
+  // Summary Cards (2x2 Compact Grid, Height ~90px)
+  summaryContainer: {
+    backgroundColor: 'transparent',
+    marginBottom: 16,
+  },
+  summaryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 10,
+  },
+  summaryCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 14,
+    minHeight: 90,
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  summaryCardMobile: {
+    width: '48.5%',
+  },
+  summaryCardDesktop: {
+    width: '23.5%',
+  },
+  summaryCardTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   summaryIconBox: {
-    width: 40, height: 40, borderRadius: 10,
-    justifyContent: 'center', alignItems: 'center', marginBottom: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  summaryValue: { fontSize: 20, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
-  summaryLabel: { fontSize: 13, color: '#64748B' },
+  summaryValue: { fontSize: 22, fontWeight: '700', color: COLORS.primaryNavy },
+  summaryLabel: { fontSize: 12, fontWeight: '600', color: COLORS.secondaryText },
+
+  // Tab Switcher (Compact Height ~44px)
+  tabContainer: { 
+    flexDirection: 'row', 
+    backgroundColor: '#E9EEF5', 
+    padding: 4, 
+    borderRadius: 12, 
+    marginBottom: 12, 
+    maxWidth: 400 
+  },
+  tabButton: { 
+    flex: 1, 
+    paddingVertical: 9, 
+    alignItems: 'center', 
+    borderRadius: 9 
+  },
+  activeTabButton: { 
+    backgroundColor: COLORS.white, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 1 }, 
+    shadowOpacity: 0.05, 
+    shadowRadius: 3, 
+    elevation: 2 
+  },
+  tabButtonText: { fontSize: 13, fontWeight: '600', color: COLORS.secondaryText },
+  activeTabButtonText: { color: COLORS.primaryNavy, fontWeight: '700' },
+
+  // Client Type Filter Chips
   chipsContainer: {
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    backgroundColor: 'transparent',
+    marginBottom: 14,
   },
-  chipsScroll: { paddingHorizontal: 16 },
+  chipsScroll: { gap: 8 },
   chip: {
-    paddingHorizontal: 16, paddingVertical: 8,
-    borderRadius: 20, backgroundColor: '#F1F5F9', marginRight: 8,
+    paddingHorizontal: 15, 
+    paddingVertical: 7,
+    borderRadius: 18, 
+    backgroundColor: '#E9EEF5',
   },
-  activeChip: { backgroundColor: NAVY },
-  chipText: { fontSize: 13, color: '#64748B', fontWeight: '500' },
-  activeChipText: { color: '#FFFFFF' },
-  listContent: { padding: 16, paddingBottom: 80 },
-  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60 },
-  emptyText: { marginTop: 16, color: '#94A3B8', fontSize: 15 },
-  card: {
-    backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16,
-    marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
+  activeChip: { backgroundColor: COLORS.primaryNavy },
+  chipText: { fontSize: 12, color: COLORS.secondaryText, fontWeight: '600' },
+  activeChipText: { color: COLORS.white },
+
+  // Client List Content
+  listContent: { 
+    paddingHorizontal: 18, 
+    paddingTop: 14, 
+    paddingBottom: 140 
   },
-  cardHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12,
+
+  // Compact Client Card (Height ~115px)
+  clientCard: {
+    backgroundColor: COLORS.white, 
+    borderRadius: 16, 
+    padding: 14,
+    marginBottom: 11, 
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03, 
+    shadowRadius: 4, 
+    elevation: 1,
   },
-  headerLeft: { flexDirection: 'row', flex: 1 },
+  clientCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   avatar: {
-    width: 44, height: 44, borderRadius: 22, backgroundColor: NAVY,
-    justifyContent: 'center', alignItems: 'center', marginRight: 12,
+    width: 44, 
+    height: 44, 
+    borderRadius: 14, 
+    backgroundColor: COLORS.primaryNavy,
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginRight: 12,
   },
-  avatarText: { color: GOLD, fontWeight: 'bold', fontSize: 16 },
-  titleContainer: { flex: 1, justifyContent: 'center' },
-  clientName: { fontSize: 16, fontWeight: '600', color: NAVY, marginBottom: 4 },
-  typeRow: { flexDirection: 'row', alignItems: 'center' },
-  typeText: { fontSize: 12, color: '#64748B', marginLeft: 4 },
-  menuIconBtn: { padding: 4 },
-  floatingMenu: {
-    position: 'absolute', top: 40, right: 16, backgroundColor: '#FFFFFF',
-    borderRadius: 8, padding: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1, shadowRadius: 8, elevation: 5, zIndex: 10, minWidth: 180,
-  },
-  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8 },
-  menuItemIcon: { marginRight: 8 },
-  menuItemText: { fontSize: 14, color: '#334155', fontWeight: '500' },
-  cardBody: { marginBottom: 16 },
-  infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  infoText: { fontSize: 13, color: '#475569', marginLeft: 8 },
-  statsGrid: {
-    flexDirection: 'row', backgroundColor: '#F8FAFC', borderRadius: 8,
-    padding: 12, marginVertical: 12,
-  },
-  statCol: { flex: 1 },
-  statLabel: { fontSize: 10, color: '#64748B', marginBottom: 4 },
-  statValuePrimary: { fontSize: 14, fontWeight: 'bold', color: '#10B981' },
-  statValue: { fontSize: 14, fontWeight: '600', color: NAVY },
-  tagBadge: {
-    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, alignSelf: 'flex-start',
-  },
-  tagText: { fontSize: 11, fontWeight: 'bold' },
-  cardFooter: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 16 },
-  btnPrimary: {
-    flex: 1, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0',
-    paddingVertical: 12, borderRadius: 8, alignItems: 'center', marginRight: 8,
-  },
-  btnPrimaryText: { color: NAVY, fontWeight: '600', fontSize: 14 },
-  secondaryActions: { flexDirection: 'row' },
-  btnIconOutline: {
-    width: 44, height: 44, borderRadius: 8, borderWidth: 1, borderColor: '#E2E8F0',
-    justifyContent: 'center', alignItems: 'center', marginLeft: 8,
-  },
+  avatarText: { color: COLORS.gold, fontWeight: '700', fontSize: 15 },
+  clientMeta: { flex: 1, justifyContent: 'center' },
+  clientName: { fontSize: 15, fontWeight: '700', color: COLORS.primaryText, marginBottom: 2 },
+  clientSubText: { fontSize: 12, color: COLORS.secondaryText, fontWeight: '500' },
+  moreBtn: { padding: 4 },
   
+  floatingMenu: {
+    position: 'absolute', top: 44, right: 14, backgroundColor: COLORS.white,
+    borderRadius: 10, padding: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08, shadowRadius: 6, elevation: 5, zIndex: 20, minWidth: 170,
+    borderWidth: 1, borderColor: COLORS.border,
+  },
+  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 10 },
+  menuItemText: { fontSize: 13, color: COLORS.primaryText, fontWeight: '500' },
+
+  clientMetricsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginBottom: 8,
+  },
+  ratingBadge: { flexDirection: 'row', alignItems: 'center' },
+  ratingText: { fontSize: 12, fontWeight: '700', color: COLORS.primaryText },
+  dotSeparator: { fontSize: 12, color: '#CBD5E1', marginHorizontal: 6 },
+  metricStat: { fontSize: 12, color: COLORS.secondaryText, fontWeight: '500' },
+  metricSpend: { fontSize: 12, fontWeight: '700', color: COLORS.primaryNavy },
+  outstandingBadge: { marginLeft: 'auto', backgroundColor: '#FEF2F2', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  outstandingText: { fontSize: 11, fontWeight: '700', color: COLORS.error },
+
+  clientCardBottom: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  lastOrderText: { fontSize: 11, color: COLORS.secondaryText, fontWeight: '500' },
+  viewActionBtn: { flexDirection: 'row', alignItems: 'center' },
+  viewActionText: { fontSize: 12, fontWeight: '700', color: COLORS.primaryNavy },
+
+  // Transaction History Card
+  txnCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  txnTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 },
+  txnClientName: { fontSize: 14, fontWeight: '700', color: COLORS.primaryText },
+  txnSubText: { fontSize: 11, color: COLORS.secondaryText, marginTop: 1 },
+  txnBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  txnAmount: { fontSize: 14, fontWeight: '700', color: COLORS.success },
+  txnDate: { fontSize: 11, color: COLORS.secondaryText },
+
+  // Badges
+  statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  statusBadgeText: { fontSize: 11, fontWeight: '700' },
+  tagBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10 },
+  tagText: { fontSize: 11, fontWeight: '700' },
+
+  // Empty State
+  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 50 },
+  emptyTitle: { marginTop: 12, fontSize: 16, fontWeight: '700', color: COLORS.primaryNavy },
+  emptySubtitle: { marginTop: 4, fontSize: 13, color: COLORS.secondaryText, textAlign: 'center', maxWidth: 260 },
+
   // Profile Modal
-  modalSafeArea: { flex: 1, backgroundColor: '#F8FAFC' },
+  modalSafeArea: { flex: 1, backgroundColor: COLORS.bg },
   modalHeader: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    padding: 16, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#F1F5F9',
+    padding: 16, backgroundColor: COLORS.white, borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: COLORS.primaryNavy },
   modalBody: { padding: 16 },
   profileHeaderBox: {
-    alignItems: 'center', backgroundColor: '#FFFFFF', padding: 24, borderRadius: 12,
-    marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05, shadowRadius: 4, elevation: 1,
+    alignItems: 'center', backgroundColor: COLORS.white, padding: 20, borderRadius: 16,
+    marginBottom: 12, borderWidth: 1, borderColor: COLORS.border,
   },
   avatarLarge: {
-    width: 80, height: 80, borderRadius: 40, backgroundColor: NAVY,
-    justifyContent: 'center', alignItems: 'center', marginBottom: 12,
+    width: 72, height: 72, borderRadius: 36, backgroundColor: COLORS.primaryNavy,
+    justifyContent: 'center', alignItems: 'center', marginBottom: 10,
   },
-  avatarLargeText: { color: GOLD, fontSize: 28, fontWeight: 'bold' },
-  profileName: { fontSize: 20, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
-  profileType: { fontSize: 14, color: '#64748B' },
+  avatarLargeText: { color: COLORS.gold, fontSize: 26, fontWeight: '700' },
+  profileName: { fontSize: 19, fontWeight: '700', color: COLORS.primaryNavy, marginBottom: 2 },
+  profileType: { fontSize: 13, color: COLORS.secondaryText },
   sectionCard: {
-    backgroundColor: '#FFFFFF', padding: 16, borderRadius: 12, marginBottom: 16,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05,
-    shadowRadius: 4, elevation: 1,
+    backgroundColor: COLORS.white, padding: 14, borderRadius: 14, marginBottom: 12,
+    borderWidth: 1, borderColor: COLORS.border,
   },
-  sectionTitle: { fontSize: 14, fontWeight: 'bold', color: '#94A3B8', textTransform: 'uppercase', marginBottom: 12 },
-  contactRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  contactText: { marginLeft: 12, fontSize: 14, color: '#334155' },
-  historyGrid: { flexDirection: 'row', backgroundColor: '#F8FAFC', borderRadius: 8, padding: 12, marginBottom: 12 },
+  sectionTitle: { fontSize: 12, fontWeight: '700', color: COLORS.secondaryText, textTransform: 'uppercase', marginBottom: 10 },
+  contactRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  contactText: { marginLeft: 10, fontSize: 13, color: COLORS.primaryText },
+  historyGrid: { flexDirection: 'row', backgroundColor: '#F8FAFC', borderRadius: 8, padding: 10, marginBottom: 8 },
   historyCol: { flex: 1 },
-  historyLabel: { fontSize: 11, color: '#64748B', marginBottom: 4 },
-  historyVal: { fontSize: 14, fontWeight: 'bold', color: NAVY },
-  linkBtn: { paddingVertical: 8, alignItems: 'center', borderTopWidth: 1, borderTopColor: '#F1F5F9', marginTop: 4 },
-  linkText: { color: '#3B82F6', fontWeight: '500', fontSize: 14 },
-  freqItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  freqText: { flex: 1, marginLeft: 12, fontSize: 14, color: '#334155' },
-  freqQty: { fontSize: 12, color: '#64748B' },
-  tabContainer: { flexDirection: 'row', backgroundColor: '#E2E8F0', padding: 4, borderRadius: 12, marginHorizontal: 16, marginBottom: 12, maxWidth: 400 },
-  tabButton: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8 },
-  activeTabButton: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-  tabButtonText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
-  activeTabButtonText: { color: NAVY, fontWeight: 'bold' },
-  statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, alignSelf: 'flex-start' },
-  statusBadgeText: { fontSize: 11, fontWeight: 'bold' },
+  historyLabel: { fontSize: 11, color: COLORS.secondaryText, marginBottom: 2 },
+  historyVal: { fontSize: 13, fontWeight: '700', color: COLORS.primaryNavy },
+  paymentRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  paymentLabel: { fontSize: 13, color: COLORS.secondaryText },
+  paymentVal: { fontSize: 13, fontWeight: '700', color: COLORS.primaryNavy },
+  paymentValText: { fontSize: 13, color: COLORS.primaryText, fontWeight: '500' },
+
+  // Transaction Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  modalContentSmall: { width: '90%', maxWidth: 450, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 },
-  modalHeaderSmall: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  modalTitleSmall: { fontSize: 16, fontWeight: 'bold', color: NAVY },
-  modalBodySmall: { gap: 12 },
-  modalTxnId: { fontSize: 11, fontWeight: 'bold', color: '#64748B', textTransform: 'uppercase' },
-  modalTxnClient: { fontSize: 18, fontWeight: 'bold', color: NAVY, marginBottom: 8 },
-  modalTxnDetailRow: { flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: '#F1F5F9', paddingVertical: 8 },
-  modalTxnLabel: { fontSize: 13, color: '#64748B' },
-  modalTxnVal: { fontSize: 13, color: NAVY, fontWeight: '500' },
+  modalContentSmall: { width: '90%', maxWidth: 420, backgroundColor: COLORS.white, borderRadius: 16, padding: 18 },
+  modalHeaderSmall: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  modalTitleSmall: { fontSize: 16, fontWeight: '700', color: COLORS.primaryNavy },
+  modalBodySmall: { gap: 10 },
+  modalTxnId: { fontSize: 11, fontWeight: '700', color: COLORS.secondaryText, textTransform: 'uppercase' },
+  modalTxnClient: { fontSize: 17, fontWeight: '700', color: COLORS.primaryNavy, marginBottom: 6 },
+  modalTxnDetailRow: { flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: '#F1F5F9', paddingVertical: 6 },
+  modalTxnLabel: { fontSize: 13, color: COLORS.secondaryText },
+  modalTxnVal: { fontSize: 13, color: COLORS.primaryNavy, fontWeight: '500' },
 });

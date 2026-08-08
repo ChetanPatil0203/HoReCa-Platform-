@@ -1,11 +1,13 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { 
   View, Text, StyleSheet, ScrollView, 
-  TouchableOpacity, SafeAreaView, Dimensions, ActivityIndicator
+  TouchableOpacity, SafeAreaView, Dimensions, ActivityIndicator, Image
 } from 'react-native';
 import { TrendingUp, Package, Users, Truck, CircleAlert as AlertCircle, ChevronRight, ArrowUpRight, ArrowDownRight, PackageSearch, CircleCheck as CheckCircle2, Clock, MapPin, RefreshCw } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
 import { fetchVendorOrders } from '../../../services/api.service';
+
+const rawBgImage = require('../../../assets/raw.png');
 
 const PRIMARY = '#081A3A';
 const NAVY = '#081A3A';
@@ -97,19 +99,16 @@ export default function RawMaterialDashboardHome({ onNavigate, setActivePage }) 
       >
         <View style={styles.maxWidthContainer}>
 
-          {/* Premium Welcome Hero */}
+          {/* Premium Welcome Hero with Background Image */}
           <View style={styles.heroCard}>
-            <View style={[styles.heroContent, !isMobile && { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
-            <View>
+            <Image 
+              source={rawBgImage}
+              style={styles.heroBgImage}
+              resizeMode="cover"
+            />
+            <View style={styles.heroOverlay} />
+            <View style={styles.heroContent}>
               <Text style={styles.heroVendorName}>{user?.registration?.bizName || user?.businessName || user?.bizName || 'Vendor Agency'}</Text>
-              <Text style={styles.heroGreeting}>{new Date().getHours() < 12 ? 'Good Morning 🖐️' : new Date().getHours() < 17 ? 'Good Afternoon 🖐️' : 'Good Evening 🖐️'}</Text>
-            </View>  
-              <Text style={styles.heroSubText}>Manage orders, inventory and deliveries from one place.</Text>
-              
-
-            </View>
-            <View style={styles.heroWatermark}>
-              <Package size={80} color="rgba(255,255,255,0.06)" />
             </View>
           </View>
 
@@ -162,8 +161,7 @@ export default function RawMaterialDashboardHome({ onNavigate, setActivePage }) 
                 >
                   <View style={styles.cardHeader}>
                     <Text style={styles.idText}>{order.id}</Text>
-                    <View style={[styles.statusBadge, { backgroundColor: order.statusBg, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
-                      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: order.statusColor }} />
+                    <View style={[styles.statusBadge, { backgroundColor: 'transparent', paddingHorizontal: 0 }]}>
                       <Text style={[styles.statusText, { color: order.statusColor }]}>{order.status}</Text>
                     </View>
                   </View>
@@ -178,7 +176,6 @@ export default function RawMaterialDashboardHome({ onNavigate, setActivePage }) 
                     </View>
                     <View style={styles.viewOrderAction}>
                       <Text style={styles.viewOrderText}>View Order</Text>
-                      <ChevronRight size={14} color={NAVY} />
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -202,10 +199,38 @@ const styles = StyleSheet.create({
   
   // Premium Welcome Hero
   heroCard: { 
-    backgroundColor: PRIMARY, borderRadius: 20, padding: 20, marginBottom: 24, 
-    overflow: 'hidden', position: 'relative'
+    backgroundColor: '#071B3A', 
+    borderRadius: 20, 
+    paddingHorizontal: 24, 
+    paddingVertical: 32,
+    minHeight: 140,
+    justifyContent: 'center',
+    marginBottom: 24, 
+    overflow: 'hidden', 
+    position: 'relative'
   },
-  heroContent: { position: 'relative', zIndex: 2 },
+  heroBgImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+    borderRadius: 20,
+    zIndex: 1,
+  },
+  heroOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(7, 27, 58, 0.35)',
+    borderRadius: 20,
+    zIndex: 2,
+  },
+  heroContent: { position: 'relative', zIndex: 3 },
   heroGreeting: { fontSize: 14, color: 'rgba(255,255,255,0.7)', marginBottom: 4, fontWeight: '500' },
   heroVendorName: { fontSize: 24, fontWeight: 'bold', color: WHITE, marginBottom: 2 },
   heroVendorRole: { fontSize: 13, color: GOLD, fontWeight: '600', marginBottom: 12 },
@@ -260,8 +285,19 @@ const styles = StyleSheet.create({
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 10 },
   amountText: { fontSize: 15, fontWeight: 'bold', color: NAVY, marginBottom: 2 },
   dateText: { fontSize: 11, color: MUTED },
-  viewOrderAction: { flexDirection: 'row', alignItems: 'center' },
-  viewOrderText: { fontSize: 12, fontWeight: 'bold', color: NAVY, marginRight: 2 },
+  viewOrderAction: {
+    backgroundColor: NAVY,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  viewOrderText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
   
   row: { flexDirection: 'row' },
   

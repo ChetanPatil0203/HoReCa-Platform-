@@ -4,7 +4,7 @@ import { Lock, Eye, EyeOff, CircleCheck as CheckCircle2, Circle } from 'lucide-r
 import { AUTH_COLORS } from './AuthTheme';
 
 export default function PasswordField({
-  label, error, containerStyle, showChecklist = false, secureTextEntry, rightAction, ...textInputProps
+  label, error, containerStyle, labelStyle, showChecklist = false, secureTextEntry, rightAction, ...textInputProps
 }) {
   const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -33,7 +33,7 @@ export default function PasswordField({
     <View style={[styles.fieldBlock, containerStyle]}>
       {label && (
         <View style={styles.labelRow}>
-          <Text style={styles.label}>
+          <Text style={[styles.label, labelStyle]}>
             {displayLabel}
             {isRequired && <Text style={styles.asterisk}> *</Text>}
           </Text>
@@ -100,7 +100,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#071B3A',
-    letterSpacing: 0.2
+    letterSpacing: 0.2,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
   },
   asterisk: { color: '#EF4444' },
   inputWrapper: {

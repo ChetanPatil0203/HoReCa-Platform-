@@ -27,7 +27,21 @@ export default function ProviderRevenuePage() {
       try {
         const res = await fetchVendorRequirements(supplierId);
         const list = res?.data || res || [];
-        setReqs(list);
+        if (Array.isArray(list)) {
+          setReqs(list);
+          const mappedInvoices = list.map((r, idx) => ({
+            id: `INV-${r.id ? r.id.substring(0, 5).toUpperCase() : 1001 + idx}`,
+            rawId: r.id,
+            client: r.owner?.bizName || 'HoReCa Client',
+            service: r.title || 'Service Job',
+            amount: r.quoteData?.amount ? `₹${Number(r.quoteData.amount).toLocaleString('en-IN')}` : (r.budget ? `₹${Number(r.budget).toLocaleString('en-IN')}` : '₹0'),
+            rawAmount: Number(r.quoteData?.amount || r.budget || 0),
+            date: r.createdAt ? new Date(r.createdAt).toLocaleDateString() : 'N/A',
+            dueDate: r.extraData?.dueDate || 'As per agreement',
+            status: r.status === 'completed' || r.status === 'closed' ? 'Paid' : (r.status === 'cancelled' || r.status === 'declined' ? 'Overdue' : 'Pending')
+          }));
+          setInvoices(mappedInvoices);
+        }
       } catch (err) {
         console.error('Failed to load provider revenue:', err);
       } finally {
@@ -37,15 +51,17 @@ export default function ProviderRevenuePage() {
     loadData();
   }, [supplierId]);
 
-  const totalRev = reqs.length * 7500;
-  const completedJobs = reqs.filter(r => r.status === 'completed' || r.status === 'closed').length;
+  const completedJobsList = reqs.filter(r => r.status === 'completed' || r.status === 'closed');
+  const totalRev = completedJobsList.reduce((sum, r) => sum + Number(r.quoteData?.amount || r.budget || 0), 0);
+  const pendingJobsList = reqs.filter(r => r.status === 'pending' || r.status === 'accepted' || r.status === 'in_progress');
+  const pendingRev = pendingJobsList.reduce((sum, r) => sum + Number(r.quoteData?.amount || r.budget || 0), 0);
 
   const SUMMARY_DATA = [
     { label: "Total Revenue", value: `₹${totalRev.toLocaleString('en-IN')}`, icon: TrendingUp, color: "#10B981", bg: "#D1FAE5" },
-    { label: "Completed Jobs", value: String(completedJobs), icon: CheckCircle, color: "#3B82F6", bg: "#DBEAFE" },
-    { label: "Pending Payments", value: `₹${(reqs.length * 2000).toLocaleString('en-IN')}`, icon: Clock, color: "#F59E0B", bg: "#FEF3C7" },
+    { label: "Completed Jobs", value: String(completedJobsList.length), icon: CheckCircle, color: "#3B82F6", bg: "#DBEAFE" },
+    { label: "Pending Payments", value: `₹${pendingRev.toLocaleString('en-IN')}`, icon: Clock, color: "#F59E0B", bg: "#FEF3C7" },
     { label: "Total Direct Requests", value: String(reqs.length), icon: FileText, color: "#8B5CF6", bg: "#F3E8FF" },
-    { label: "Active Jobs", value: String(reqs.filter(r => r.status === 'accepted' || r.status === 'pending').length), icon: CreditCard, color: "#6366F1", bg: "#E0E7FF" },
+    { label: "Active Jobs", value: String(pendingJobsList.length), icon: CreditCard, color: "#6366F1", bg: "#E0E7FF" },
   ];
 
   const getStatusColor = (status) => {

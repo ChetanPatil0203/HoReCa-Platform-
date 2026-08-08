@@ -8,7 +8,6 @@ const NAV = [
   { key: "services", label: "Services", icon: Wrench },
   { key: "jobs", label: "Jobs", icon: Briefcase },
   { key: "team", label: "Team", icon: Users },
-  { key: "revenue", label: "Revenue", icon: DollarSign },
   { key: "notifications", label: "Notifications", icon: Bell },
 ];
 

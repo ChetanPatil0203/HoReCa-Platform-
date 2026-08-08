@@ -565,8 +565,15 @@ const styles = StyleSheet.create({
     color: AUTH_COLORS.primary,
   },
 
-  mobileFieldContainer: { marginBottom: 16 },
-  mobileLabel: { fontSize: 11, fontWeight: '600', color: AUTH_COLORS.primary, marginBottom: 7, textTransform: 'uppercase', letterSpacing: 0.5 },
+  mobileLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: AUTH_COLORS.primary,
+    marginBottom: 7,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System'
+  },
   mobileInputRow: { flexDirection: 'row', alignItems: 'center' },
   mobilePrefix: { backgroundColor: AUTH_COLORS.border, borderWidth: 1, borderColor: AUTH_COLORS.border, borderRightWidth: 0, borderTopLeftRadius: 14, borderBottomLeftRadius: 14, height: 52, paddingHorizontal: 14, justifyContent: 'center' },
   mobilePrefixText: { fontSize: 14, fontWeight: '700', color: AUTH_COLORS.primary },

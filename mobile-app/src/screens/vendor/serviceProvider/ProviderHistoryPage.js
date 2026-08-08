@@ -1,30 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity,
   useWindowDimensions, Modal, SafeAreaView, TextInput, KeyboardAvoidingView, 
-  Platform, TouchableWithoutFeedback, Alert
+  Platform, TouchableWithoutFeedback, Alert, ActivityIndicator
 } from 'react-native';
 import { Search, SlidersHorizontal, ChevronRight, X, CircleX as XCircle, EllipsisVertical as MoreVertical, CircleCheck as CheckCircle, User, Home, ClipboardList, Plus, Calendar, IndianRupee, Wrench, ArrowUpRight, ChevronDown, FileSpreadsheet, Download, FileText } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorRequirements } from '../../../services/api.service';
 
 const NAVY = '#071B3A';
 const BG = '#F8FAFC';
 const WHITE = '#FFFFFF';
 const MUTED = '#64748B';
 
-const MOCK_HISTORY = [];
-
-const SUMMARY_CARDS = [
-  { label: 'Completed Jobs', value: '0', icon: CheckCircle, color: '#3B82F6' },
-  { label: 'Total Revenue', value: '₹0', icon: IndianRupee, color: '#10B981' },
-  { label: 'Active Bookings', value: '0', icon: ClipboardList, color: '#F59E0B' },
-  { label: 'Average Rating', value: '0.0 ★', icon: User, color: '#8B5CF6' }
-];
-
 const TABS = ['All', 'Jobs', 'Payments'];
 
 export default function ProviderHistoryPage() {
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.registration?.id || user?.id;
+
+  const [historyItems, setHistoryItems] = useState([]);
+  const [requirements, setRequirements] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // State Variables
   const [searchQuery, setSearchQuery] = useState('');
@@ -33,8 +32,8 @@ export default function ProviderHistoryPage() {
   const [selectedItem, setSelectedItem] = useState(null);
   
   // Custom Date range state
-  const [customStartDate, setCustomStartDate] = useState('2026-07-19');
-  const [customEndDate, setCustomEndDate] = useState('2026-07-23');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
 
   // Expanded items for mobile view
   const [expandedItems, setExpandedItems] = useState({});
@@ -43,6 +42,50 @@ export default function ProviderHistoryPage() {
   const [exportMenuVisible, setExportMenuVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [showDatePickerModal, setShowDatePickerModal] = useState(false);
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (!supplierId) { setLoading(false); return; }
+      try {
+        const res = await fetchVendorRequirements(supplierId);
+        const list = res?.data || res || [];
+        if (Array.isArray(list)) {
+          setRequirements(list);
+          const mapped = list.map((r, idx) => ({
+            id: `HIS-${r.id ? r.id.substring(0, 5).toUpperCase() : 101 + idx}`,
+            rawId: r.id,
+            service: r.title || 'Service Job',
+            client: r.owner?.bizName || 'HoReCa Owner',
+            date: r.createdAt ? new Date(r.createdAt).toLocaleDateString() : 'N/A',
+            rawDate: r.createdAt || new Date().toISOString(),
+            amount: r.quoteData?.amount ? `₹${Number(r.quoteData.amount).toLocaleString('en-IN')}` : (r.budget ? `₹${Number(r.budget).toLocaleString('en-IN')}` : '₹0'),
+            rawAmount: Number(r.quoteData?.amount || r.budget || 0),
+            status: r.status === 'completed' || r.status === 'closed' ? 'Completed' : (r.status === 'cancelled' || r.status === 'declined' ? 'Cancelled' : 'In Progress'),
+            type: 'Jobs',
+            paymentMethod: r.extraData?.paymentMethod || 'Direct Pay',
+            location: r.location || 'Location Specified'
+          }));
+          setHistoryItems(mapped);
+        }
+      } catch (err) {
+        console.warn('Error loading history for vendor:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, [supplierId]);
+
+  const completedJobsCount = historyItems.filter(h => h.status === 'Completed').length;
+  const totalRev = historyItems.filter(h => h.status === 'Completed').reduce((sum, h) => sum + h.rawAmount, 0);
+  const activeBookingsCount = historyItems.filter(h => h.status === 'In Progress').length;
+
+  const SUMMARY_CARDS = [
+    { label: 'Completed Jobs', value: String(completedJobsCount), icon: CheckCircle, color: '#3B82F6' },
+    { label: 'Total Revenue', value: `₹${totalRev.toLocaleString('en-IN')}`, icon: IndianRupee, color: '#10B981' },
+    { label: 'Active Bookings', value: String(activeBookingsCount), icon: ClipboardList, color: '#F59E0B' },
+    { label: 'Average Rating', value: completedJobsCount > 0 ? '5.0 ★' : '0.0 ★', icon: User, color: '#8B5CF6' }
+  ];
 
   // Helper for status styling
   const getStatusColor = (status) => {
@@ -77,7 +120,7 @@ export default function ProviderHistoryPage() {
   };
 
   // Main filter function
-  const filteredHistory = MOCK_HISTORY.filter(item => {
+  const filteredHistory = historyItems.filter(item => {
     // 1. Tab Filter
     if (activeTab !== 'All') {
       if (item.type !== activeTab) return false;
@@ -214,48 +257,23 @@ export default function ProviderHistoryPage() {
             <Text style={styles.headerTitle}>History</Text>
             <Text style={styles.headerSubtitle}>View completed service jobs and payments received.</Text>
           </View>
-          <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.btnExport} onPress={() => setExportMenuVisible(true)}>
-              <Download size={18} color={WHITE} style={{ marginRight: 6 }} />
-              <Text style={styles.btnExportText}>Export</Text>
-            </TouchableOpacity>
-          </View>
         </View>
 
-        {/* Date Filter & Search query section */}
+        {/* Search query section */}
         <View style={styles.controlSection}>
           <View style={styles.searchRow}>
             <View style={styles.searchBox}>
               <Search size={18} color={MUTED} style={{ marginRight: 8 }} />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search by ID, service or client..."
+                placeholder="Search history..."
+                placeholderTextColor="#94A3B8"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
               {searchQuery !== '' && (
                 <TouchableOpacity onPress={() => setSearchQuery('')}><X size={16} color={MUTED} /></TouchableOpacity>
               )}
-            </View>
-
-            <View style={styles.dateSelectorContainer}>
-              <Text style={styles.labelSmall}>Date Filter:</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dateSelectorScroll}>
-                {['Today', 'This Week', 'This Month', 'Custom Range'].map(opt => (
-                  <TouchableOpacity 
-                    key={opt}
-                    style={[styles.dateFilterChip, dateFilter === opt && styles.dateFilterChipActive]}
-                    onPress={() => {
-                      setDateFilter(opt);
-                      if (opt === 'Custom Range') {
-                        setShowDatePickerModal(true);
-                      }
-                    }}
-                  >
-                    <Text style={[styles.dateFilterChipText, dateFilter === opt && styles.dateFilterChipTextActive]}>{opt}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
             </View>
           </View>
 
@@ -452,20 +470,16 @@ const styles = StyleSheet.create({
   
   // Header
   header: { 
-    minHeight: 90, paddingTop: 40, paddingBottom: 16, 
+    paddingTop: Platform.OS === 'ios' ? 20 : 16, paddingBottom: 12, 
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 16, backgroundColor: WHITE,
-    borderBottomWidth: 1, borderBottomColor: '#F1F5F9'
   },
   headerTitle: { fontSize: 22, fontWeight: 'bold', color: NAVY },
   headerSubtitle: { fontSize: 13, color: MUTED, marginTop: 2 },
-  headerActions: { flexDirection: 'row', alignItems: 'center' },
-  btnExport: { flexDirection: 'row', alignItems: 'center', backgroundColor: NAVY, paddingHorizontal: 16, height: 40, borderRadius: 10 },
-  btnExportText: { color: WHITE, fontWeight: 'bold', fontSize: 14 },
 
-  // Controls (Search & Date filter)
-  controlSection: { backgroundColor: WHITE, padding: 16, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
-  searchRow: { gap: 12 },
+  // Controls (Search)
+  controlSection: { backgroundColor: WHITE, paddingHorizontal: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  searchRow: { width: '100%' },
   searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 12, height: 44 },
   searchInput: { flex: 1, fontSize: 14, color: NAVY },
   dateSelectorContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },

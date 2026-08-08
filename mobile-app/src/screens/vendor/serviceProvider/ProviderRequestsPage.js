@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useContext, useCallback, useRef } from 'react';
-import { 
-  View, Text, StyleSheet, FlatList, TouchableOpacity, 
+import {
+  View, Text, StyleSheet, FlatList, TouchableOpacity,
   useWindowDimensions, Modal, TextInput, ScrollView, KeyboardAvoidingView, Platform, Pressable, Alert, RefreshControl, Animated
 } from 'react-native';
 import { Search, SlidersHorizontal, ChevronRight, EllipsisVertical as MoreVertical, CircleX as XCircle, Send, CircleCheck as CheckCircle, MapPin, FileText, RefreshCw, Copy, Phone } from 'lucide-react-native';
@@ -164,7 +164,7 @@ export default function ProviderRequestsPage() {
     await loadDirectRequests();
     setIsRefreshing(false);
   };
-  
+
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [selectedRequest, setSelectedRequest] = useState(null);
 
@@ -176,8 +176,8 @@ export default function ProviderRequestsPage() {
   const [viewQuoteModalVisible, setViewQuoteModalVisible] = useState(false);
 
   // Form states
-  const [quoteForm, setQuoteForm] = useState({ 
-    amount: '', pricingType: 'Fixed', visitCharge: '', date: '', time: '', compTime: '', warranty: '', workIncl: '', terms: '', validity: '' 
+  const [quoteForm, setQuoteForm] = useState({
+    amount: '', pricingType: 'Fixed', visitCharge: '', date: '', time: '', compTime: '', warranty: '', workIncl: '', terms: '', validity: ''
   });
   const [declineReason, setDeclineReason] = useState('Location not serviceable');
   const [declineOther, setDeclineOther] = useState('');
@@ -196,7 +196,7 @@ export default function ProviderRequestsPage() {
   };
 
   const filteredRequests = getFilteredRequests();
-  
+
   const tabCounts = useMemo(() => {
     const counts = {};
     TABS.forEach(t => counts[t] = 0);
@@ -276,7 +276,7 @@ export default function ProviderRequestsPage() {
         <View style={[styles.card, { borderLeftColor: theme.text, borderLeftWidth: 5 }]}>
           {/* Top Row */}
           <View style={styles.cardHeaderRow}>
-            <View style={{flexDirection: 'row', alignItems: 'center', gap: 6}}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Text style={styles.reqId}>{item.id}</Text>
               <TouchableOpacity onPress={() => showToast(`Copied Request ID: ${item.id}`)} style={{ padding: 4 }}>
                 <Copy size={12} color="#64748B" />
@@ -287,17 +287,17 @@ export default function ProviderRequestsPage() {
             </View>
             {renderBadge(item)}
           </View>
-          
+
           {/* Service & Client */}
           <Text style={styles.cardTitle} numberOfLines={2}>{item.service}</Text>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
             <View style={{ flex: 1, marginRight: 8 }}>
               <Text style={styles.clientInfo} numberOfLines={1}>
-                <Text style={{fontWeight: '600', color: NAVY}}>{item.client}</Text> · {item.businessType}
+                <Text style={{ fontWeight: '600', color: NAVY }}>{item.client}</Text> · {item.businessType}
               </Text>
               <Text style={styles.locationText} numberOfLines={1}>{item.location}</Text>
             </View>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => Alert.alert('Call Customer', `Dialing ${item.client}...`)}
               style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}
             >
@@ -325,7 +325,7 @@ export default function ProviderRequestsPage() {
               <Text style={styles.detailsBtnText}>View Details</Text>
               <ChevronRight size={16} color={NAVY} />
             </TouchableOpacity>
-            
+
             <View style={styles.actionRight}>
               {item.status === 'New' && (
                 <ScalePressable
@@ -355,12 +355,11 @@ export default function ProviderRequestsPage() {
   return (
     <Pressable style={styles.container} onPress={() => setActiveMenuId(null)}>
       <View style={[styles.mainWrapper, isLargeScreen && styles.mainWrapperDesktop]}>
-        
+
         {/* Header */}
         <View style={styles.pageHeader}>
           <View style={{ flex: 1 }}>
             <Text style={styles.pageTitle}>Direct Requests</Text>
-            <Text style={styles.pageSubtitle}>Service requests sent directly to your business</Text>
           </View>
           <View style={styles.headerActions}>
             <TouchableOpacity style={styles.headerBtn} onPress={handleRefresh}>
@@ -377,8 +376,8 @@ export default function ProviderRequestsPage() {
 
         {showSearch && (
           <View style={styles.searchRow}>
-            <TextInput 
-              style={styles.searchInput} 
+            <TextInput
+              style={styles.searchInput}
               placeholder="Search direct requests..."
               value={search}
               onChangeText={setSearch}
@@ -391,8 +390,8 @@ export default function ProviderRequestsPage() {
         <View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabScroll}>
             {TABS.map(tab => (
-              <TouchableOpacity 
-                key={tab} 
+              <TouchableOpacity
+                key={tab}
                 style={[styles.tabItem, activeTab === tab && styles.tabItemActive]}
                 onPress={() => setActiveTab(tab)}
               >
@@ -434,10 +433,10 @@ export default function ProviderRequestsPage() {
               <TouchableOpacity onPress={() => setDetailsModalVisible(false)}><XCircle size={20} color="#64748B" /></TouchableOpacity>
             </View>
             {selectedRequest && (
-              <ScrollView style={{padding: 20}}>
+              <ScrollView style={{ padding: 20 }}>
                 <Text style={styles.detailTitle}>{selectedRequest.service}</Text>
                 <Text style={styles.detailClient}>{selectedRequest.client} · {selectedRequest.businessType}</Text>
-                
+
                 <View style={styles.detailBox}>
                   <Text style={styles.boxLabel}>Schedule & Budget</Text>
                   <Text style={styles.boxValue}>{selectedRequest.date} ({selectedRequest.time})</Text>
@@ -465,15 +464,15 @@ export default function ProviderRequestsPage() {
             <View style={styles.modalFooter}>
               {selectedRequest?.status === 'New' && (
                 <TouchableOpacity style={styles.modalCancelBtn} onPress={() => { setDetailsModalVisible(false); setDeclineModalVisible(true); }}>
-                  <Text style={[styles.modalCancelText, {color: '#EF4444'}]}>Decline Request</Text>
+                  <Text style={[styles.modalCancelText, { color: '#EF4444' }]}>Decline Request</Text>
                 </TouchableOpacity>
               )}
               {selectedRequest?.status === 'New' ? (
-                <TouchableOpacity style={[styles.modalSubmitBtn, {backgroundColor: NAVY}]} onPress={() => { setDetailsModalVisible(false); setQuoteForm({ amount: '', pricingType: 'Fixed', visitCharge: '', date: '', time: '', compTime: '', warranty: '', workIncl: '', terms: '', validity: '' }); setQuoteModalVisible(true); }}>
+                <TouchableOpacity style={[styles.modalSubmitBtn, { backgroundColor: NAVY }]} onPress={() => { setDetailsModalVisible(false); setQuoteForm({ amount: '', pricingType: 'Fixed', visitCharge: '', date: '', time: '', compTime: '', warranty: '', workIncl: '', terms: '', validity: '' }); setQuoteModalVisible(true); }}>
                   <Text style={styles.modalSubmitText}>Send Quote</Text>
                 </TouchableOpacity>
               ) : (
-                <TouchableOpacity style={[styles.modalSubmitBtn, {backgroundColor: NAVY}]} onPress={() => setDetailsModalVisible(false)}>
+                <TouchableOpacity style={[styles.modalSubmitBtn, { backgroundColor: NAVY }]} onPress={() => setDetailsModalVisible(false)}>
                   <Text style={styles.modalSubmitText}>Close</Text>
                 </TouchableOpacity>
               )}
@@ -485,7 +484,7 @@ export default function ProviderRequestsPage() {
       {/* Send Quote Modal */}
       <Modal visible={quoteModalVisible} transparent animationType="slide" onRequestClose={() => setQuoteModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{width: '100%', alignItems: 'center'}}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ width: '100%', alignItems: 'center' }}>
             <View style={[styles.modalCard, { maxHeight: '90%' }]}>
               <View style={styles.modalHeader}>
                 <View>
@@ -494,57 +493,57 @@ export default function ProviderRequestsPage() {
                 </View>
                 <TouchableOpacity onPress={() => setQuoteModalVisible(false)}><XCircle size={20} color="#64748B" /></TouchableOpacity>
               </View>
-              <ScrollView style={{padding: 20}} keyboardShouldPersistTaps="handled">
+              <ScrollView style={{ padding: 20 }} keyboardShouldPersistTaps="handled">
                 <View style={styles.quoteContextBox}>
                   <Text style={styles.qcClient}>{selectedRequest?.client}</Text>
                   <Text style={styles.qcMeta}>{selectedRequest?.location}</Text>
-                  <View style={{flexDirection: 'row', justifyContent: 'space-between', marginTop: 8}}>
-                    <Text style={styles.qcMeta}>Budget: <Text style={{fontWeight: '700', color: NAVY}}>{selectedRequest?.budget}</Text></Text>
-                    <Text style={styles.qcMeta}>Date: <Text style={{fontWeight: '700', color: NAVY}}>{selectedRequest?.date}</Text></Text>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+                    <Text style={styles.qcMeta}>Budget: <Text style={{ fontWeight: '700', color: NAVY }}>{selectedRequest?.budget}</Text></Text>
+                    <Text style={styles.qcMeta}>Date: <Text style={{ fontWeight: '700', color: NAVY }}>{selectedRequest?.date}</Text></Text>
                   </View>
                 </View>
 
                 <View style={styles.formRow}>
-                  <View style={[styles.formGroup, {flex: 1}]}>
+                  <View style={[styles.formGroup, { flex: 1 }]}>
                     <Text style={styles.label}>Quoted Amount (₹) *</Text>
-                    <TextInput style={styles.input} keyboardType="numeric" value={quoteForm.amount} onChangeText={t => setQuoteForm({...quoteForm, amount: t})} placeholder="e.g. 18000" />
+                    <TextInput style={styles.input} keyboardType="numeric" value={quoteForm.amount} onChangeText={t => setQuoteForm({ ...quoteForm, amount: t })} placeholder="e.g. 18000" />
                   </View>
-                  <View style={[styles.formGroup, {flex: 1}]}>
+                  <View style={[styles.formGroup, { flex: 1 }]}>
                     <Text style={styles.label}>Pricing Type *</Text>
-                    <TextInput style={styles.input} value={quoteForm.pricingType} onChangeText={t => setQuoteForm({...quoteForm, pricingType: t})} placeholder="e.g. Fixed" />
+                    <TextInput style={styles.input} value={quoteForm.pricingType} onChangeText={t => setQuoteForm({ ...quoteForm, pricingType: t })} placeholder="e.g. Fixed" />
                   </View>
                 </View>
 
                 <View style={styles.formRow}>
-                  <View style={[styles.formGroup, {flex: 1}]}>
+                  <View style={[styles.formGroup, { flex: 1 }]}>
                     <Text style={styles.label}>Available Date *</Text>
-                    <TextInput style={styles.input} value={quoteForm.date} onChangeText={t => setQuoteForm({...quoteForm, date: t})} placeholder="e.g. 24 Jul 2026" />
+                    <TextInput style={styles.input} value={quoteForm.date} onChangeText={t => setQuoteForm({ ...quoteForm, date: t })} placeholder="e.g. 24 Jul 2026" />
                   </View>
-                  <View style={[styles.formGroup, {flex: 1}]}>
+                  <View style={[styles.formGroup, { flex: 1 }]}>
                     <Text style={styles.label}>Est. Comp. Time *</Text>
-                    <TextInput style={styles.input} value={quoteForm.compTime} onChangeText={t => setQuoteForm({...quoteForm, compTime: t})} placeholder="e.g. 2 Days" />
+                    <TextInput style={styles.input} value={quoteForm.compTime} onChangeText={t => setQuoteForm({ ...quoteForm, compTime: t })} placeholder="e.g. 2 Days" />
                   </View>
                 </View>
 
                 <View style={styles.formGroup}>
                   <Text style={styles.label}>Work Included *</Text>
-                  <TextInput style={[styles.input, {height: 60, textAlignVertical: 'top'}]} multiline value={quoteForm.workIncl} onChangeText={t => setQuoteForm({...quoteForm, workIncl: t})} placeholder="Describe what is included..." />
+                  <TextInput style={[styles.input, { height: 60, textAlignVertical: 'top' }]} multiline value={quoteForm.workIncl} onChangeText={t => setQuoteForm({ ...quoteForm, workIncl: t })} placeholder="Describe what is included..." />
                 </View>
 
                 <View style={styles.formRow}>
-                  <View style={[styles.formGroup, {flex: 1}]}>
+                  <View style={[styles.formGroup, { flex: 1 }]}>
                     <Text style={styles.label}>Payment Terms *</Text>
-                    <TextInput style={styles.input} value={quoteForm.terms} onChangeText={t => setQuoteForm({...quoteForm, terms: t})} placeholder="e.g. 50% Advance" />
+                    <TextInput style={styles.input} value={quoteForm.terms} onChangeText={t => setQuoteForm({ ...quoteForm, terms: t })} placeholder="e.g. 50% Advance" />
                   </View>
-                  <View style={[styles.formGroup, {flex: 1}]}>
+                  <View style={[styles.formGroup, { flex: 1 }]}>
                     <Text style={styles.label}>Valid Until *</Text>
-                    <TextInput style={styles.input} value={quoteForm.validity} onChangeText={t => setQuoteForm({...quoteForm, validity: t})} placeholder="e.g. 30 Jul 2026" />
+                    <TextInput style={styles.input} value={quoteForm.validity} onChangeText={t => setQuoteForm({ ...quoteForm, validity: t })} placeholder="e.g. 30 Jul 2026" />
                   </View>
                 </View>
               </ScrollView>
               <View style={styles.modalFooter}>
                 <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setQuoteModalVisible(false)}><Text style={styles.modalCancelText}>Cancel</Text></TouchableOpacity>
-                <TouchableOpacity style={[styles.modalSubmitBtn, {backgroundColor: NAVY}]} onPress={handleSendQuote}><Text style={styles.modalSubmitText}>Send Quote</Text></TouchableOpacity>
+                <TouchableOpacity style={[styles.modalSubmitBtn, { backgroundColor: NAVY }]} onPress={handleSendQuote}><Text style={styles.modalSubmitText}>Send Quote</Text></TouchableOpacity>
               </View>
             </View>
           </KeyboardAvoidingView>
@@ -560,7 +559,7 @@ export default function ProviderRequestsPage() {
               <TouchableOpacity onPress={() => setViewQuoteModalVisible(false)}><XCircle size={20} color="#64748B" /></TouchableOpacity>
             </View>
             {selectedRequest && (
-              <ScrollView style={{padding: 20}}>
+              <ScrollView style={{ padding: 20 }}>
                 <Text style={styles.boxLabel}>Request</Text>
                 <Text style={styles.boxValue}>{selectedRequest.service}</Text>
                 <Text style={styles.detailClient}>{selectedRequest.client}</Text>
@@ -568,11 +567,11 @@ export default function ProviderRequestsPage() {
                 <View style={styles.detailBox}>
                   <Text style={styles.boxLabel}>Quoted Amount</Text>
                   <Text style={styles.boxValue}>₹{selectedRequest.quoteData?.amount || '18,000'} ({selectedRequest.quoteData?.pricingType || 'Fixed'})</Text>
-                  <View style={{height: 12}} />
+                  <View style={{ height: 12 }} />
                   <Text style={styles.boxLabel}>Availability & Completion</Text>
                   <Text style={styles.boxValue}>{selectedRequest.quoteData?.date || selectedRequest.date} (Est. {selectedRequest.quoteData?.compTime || '2 Days'})</Text>
                 </View>
-                
+
                 {selectedRequest.quoteData?.workIncl ? (
                   <View style={{ marginBottom: 12 }}>
                     <Text style={styles.boxLabel}>Work Included</Text>
@@ -582,13 +581,13 @@ export default function ProviderRequestsPage() {
 
                 <Text style={styles.boxLabel}>Payment Terms</Text>
                 <Text style={styles.boxValue}>{selectedRequest.quoteData?.terms || '50% Advance, 50% on completion'}</Text>
-                <View style={{height: 12}} />
+                <View style={{ height: 12 }} />
                 <Text style={styles.boxLabel}>Quote Status</Text>
-                <Text style={[styles.boxValue, {color: '#7C3AED'}]}>Awaiting Client Response</Text>
+                <Text style={[styles.boxValue, { color: '#7C3AED' }]}>Awaiting Client Response</Text>
               </ScrollView>
             )}
             <View style={styles.modalFooter}>
-              <TouchableOpacity style={[styles.modalSubmitBtn, {backgroundColor: NAVY}]} onPress={() => setViewQuoteModalVisible(false)}>
+              <TouchableOpacity style={[styles.modalSubmitBtn, { backgroundColor: NAVY }]} onPress={() => setViewQuoteModalVisible(false)}>
                 <Text style={styles.modalSubmitText}>Close</Text>
               </TouchableOpacity>
             </View>
@@ -599,12 +598,12 @@ export default function ProviderRequestsPage() {
       {/* Decline Request Modal */}
       <Modal visible={declineModalVisible} transparent animationType="fade" onRequestClose={() => setDeclineModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalCard, {maxWidth: 400}]}>
+          <View style={[styles.modalCard, { maxWidth: 400 }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Decline this direct request?</Text>
               <TouchableOpacity onPress={() => setDeclineModalVisible(false)}><XCircle size={20} color="#64748B" /></TouchableOpacity>
             </View>
-            <ScrollView style={{padding: 20}}>
+            <ScrollView style={{ padding: 20 }}>
               {["Service not available", "Preferred date unavailable", "Budget not suitable", "Location not serviceable", "Current workload is full", "Other"].map(rsn => (
                 <TouchableOpacity key={rsn} style={styles.radioRow} onPress={() => setDeclineReason(rsn)}>
                   <View style={[styles.radioCircle, declineReason === rsn && styles.radioActive]} />
@@ -612,12 +611,12 @@ export default function ProviderRequestsPage() {
                 </TouchableOpacity>
               ))}
               {declineReason === 'Other' && (
-                <TextInput style={[styles.input, {marginTop: 8}]} placeholder="Please specify reason" value={declineOther} onChangeText={setDeclineOther} />
+                <TextInput style={[styles.input, { marginTop: 8 }]} placeholder="Please specify reason" value={declineOther} onChangeText={setDeclineOther} />
               )}
             </ScrollView>
             <View style={styles.modalFooter}>
               <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setDeclineModalVisible(false)}><Text style={styles.modalCancelText}>Cancel</Text></TouchableOpacity>
-              <TouchableOpacity style={[styles.modalSubmitBtn, {backgroundColor: '#EF4444'}]} onPress={handleConfirmDecline}><Text style={styles.modalSubmitText}>Decline Request</Text></TouchableOpacity>
+              <TouchableOpacity style={[styles.modalSubmitBtn, { backgroundColor: '#EF4444' }]} onPress={handleConfirmDecline}><Text style={styles.modalSubmitText}>Decline Request</Text></TouchableOpacity>
             </View>
           </View>
         </View>
@@ -625,13 +624,13 @@ export default function ProviderRequestsPage() {
 
       {/* Filter Bottom Sheet */}
       <Modal visible={filterModalVisible} transparent animationType="slide" onRequestClose={() => setFilterModalVisible(false)}>
-        <View style={[styles.modalOverlay, {justifyContent: 'flex-end', padding: 0}]}>
-          <View style={[styles.modalCard, {borderRadius: 0, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxWidth: '100%', maxHeight: '60%'}]}>
+        <View style={[styles.modalOverlay, { justifyContent: 'flex-end', padding: 0 }]}>
+          <View style={[styles.modalCard, { borderRadius: 0, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxWidth: '100%', maxHeight: '60%' }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Advanced Filters</Text>
               <TouchableOpacity onPress={() => setFilterModalVisible(false)}><XCircle size={20} color="#64748B" /></TouchableOpacity>
             </View>
-            <ScrollView style={{padding: 20}}>
+            <ScrollView style={{ padding: 20 }}>
               <Text style={styles.label}>Request Status</Text>
               <View style={styles.chipsContainer}>
                 <View style={styles.filterChip}><Text style={styles.filterChipText}>New</Text></View>
@@ -641,7 +640,7 @@ export default function ProviderRequestsPage() {
             </ScrollView>
             <View style={styles.modalFooter}>
               <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setFilterModalVisible(false)}><Text style={styles.modalCancelText}>Clear Filters</Text></TouchableOpacity>
-              <TouchableOpacity style={[styles.modalSubmitBtn, {backgroundColor: NAVY}]} onPress={() => setFilterModalVisible(false)}><Text style={styles.modalSubmitText}>Apply Filters</Text></TouchableOpacity>
+              <TouchableOpacity style={[styles.modalSubmitBtn, { backgroundColor: NAVY }]} onPress={() => setFilterModalVisible(false)}><Text style={styles.modalSubmitText}>Apply Filters</Text></TouchableOpacity>
             </View>
           </View>
         </View>
@@ -652,10 +651,10 @@ export default function ProviderRequestsPage() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: BG },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
   mainWrapper: { flex: 1, width: '100%', alignSelf: 'center' },
   mainWrapperDesktop: { maxWidth: 1100, paddingHorizontal: 24 },
-  
+
   pageHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 },
   pageTitle: { fontSize: 22, fontWeight: 'bold', color: NAVY },
   pageSubtitle: { fontSize: 13, color: '#64748B', marginTop: 4 },
@@ -684,7 +683,7 @@ const styles = StyleSheet.create({
   sourceBadgeText: { fontSize: 10, fontWeight: 'bold', color: '#64748B' },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   statusBadgeText: { fontSize: 11, fontWeight: 'bold' },
-  
+
   cardTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY, marginBottom: 4 },
   clientInfo: { fontSize: 15, color: '#475569', marginBottom: 2 },
   locationText: { fontSize: 13, color: '#94A3B8', marginBottom: 16 },
@@ -699,7 +698,7 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 16 },
   detailsBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, minHeight: 44 },
   detailsBtnText: { fontSize: 14, fontWeight: 'bold', color: NAVY, marginRight: 4 },
-  
+
   actionRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   primaryBtn: { paddingHorizontal: 16, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   primaryBtnText: { fontSize: 14, fontWeight: 'bold', color: '#fff' },

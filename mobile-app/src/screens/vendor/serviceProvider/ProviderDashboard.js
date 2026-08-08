@@ -25,6 +25,74 @@ const ACCENT = '#081A3A';
 const BG = '#F3F4F6';
 const WHITE = '#FFFFFF';
 
+function NotificationBadge({ count = 3 }) {
+  const pulseAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    let animation;
+    if (count > 0) {
+      animation = Animated.loop(
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1600,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        })
+      );
+      animation.start();
+    } else {
+      pulseAnim.setValue(0);
+    }
+
+    return () => {
+      if (animation) animation.stop();
+    };
+  }, [count]);
+
+  if (!count || count <= 0) return null;
+
+  const displayCount = count > 99 ? '99+' : count;
+
+  const ringScale = pulseAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.85, 1.65],
+  });
+
+  const ringOpacity = pulseAnim.interpolate({
+    inputRange: [0, 0.4, 1],
+    outputRange: [0.75, 0.35, 0],
+  });
+
+  const badgeScale = pulseAnim.interpolate({
+    inputRange: [0, 0.35, 0.7, 1],
+    outputRange: [1, 1.14, 1.06, 1],
+  });
+
+  return (
+    <View style={styles.notifBadgeWrapper}>
+      <Animated.View
+        style={[
+          styles.whitePulseRing,
+          {
+            transform: [{ scale: ringScale }],
+            opacity: ringOpacity,
+          },
+        ]}
+      />
+      <Animated.View
+        style={[
+          styles.notifBadge,
+          {
+            transform: [{ scale: badgeScale }],
+          },
+        ]}
+      >
+        <Text style={styles.notifBadgeText}>{displayCount}</Text>
+      </Animated.View>
+    </View>
+  );
+}
+
 export default function ProviderDashboard() {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || (Platform.OS !== 'web');
@@ -45,11 +113,11 @@ export default function ProviderDashboard() {
   }, []);
 
   const [imgError, setImgError] = useState(false);
-  const userPhoto = user?.profilePhoto || 
-                    user?.profileImage || 
-                    user?.registration?.profilePhoto || 
-                    user?.vendorRegistration?.profilePhoto || 
-                    (typeof window !== 'undefined' && window.localStorage ? JSON.parse(window.localStorage.getItem('hrc_user') || '{}').profilePhoto : null);
+  const userPhoto = user?.profilePhoto ||
+    user?.profileImage ||
+    user?.registration?.profilePhoto ||
+    user?.vendorRegistration?.profilePhoto ||
+    (typeof window !== 'undefined' && window.localStorage ? JSON.parse(window.localStorage.getItem('hrc_user') || '{}').profilePhoto : null);
 
   useEffect(() => {
     setImgError(false);
@@ -176,14 +244,14 @@ export default function ProviderDashboard() {
             <View style={styles.mobileRight}>
               <TouchableOpacity style={styles.mobileIconBtn} onPress={() => navigateTo('notifications')}>
                 <Bell size={18} color="#fff" />
-                <View style={styles.mobileNotificationDot} />
+                <NotificationBadge count={3} />
               </TouchableOpacity>
               <TouchableOpacity style={styles.mobileAvatarBtn} onPress={() => navigateTo('profile')}>
                 {userPhoto && !imgError ? (
-                  <Image 
-                    source={{ uri: userPhoto }} 
-                    style={{ width: 28, height: 28, borderRadius: 14 }} 
-                    onError={() => setImgError(true)} 
+                  <Image
+                    source={{ uri: userPhoto }}
+                    style={{ width: 28, height: 28, borderRadius: 14 }}
+                    onError={() => setImgError(true)}
                   />
                 ) : (
                   <User size={16} color={PRIMARY} />
@@ -200,7 +268,7 @@ export default function ProviderDashboard() {
             <View style={styles.navRight}>
               <TouchableOpacity style={styles.iconBtn} onPress={() => navigateTo('notifications')}>
                 <Bell size={20} color={colors.sub} />
-                <View style={styles.notificationDot} />
+                <NotificationBadge count={3} />
               </TouchableOpacity>
             </View>
           </View>
@@ -308,6 +376,39 @@ const styles = StyleSheet.create({
   mobileRight: { flexDirection: 'row', alignItems: 'center', gap: 12, zIndex: 10 },
   mobileIconBtn: { padding: 4, position: 'relative' },
   mobileNotificationDot: { position: 'absolute', top: 4, right: 4, width: 6, height: 6, borderRadius: 3, backgroundColor: '#EF4444' },
+  notifBadgeWrapper: {
+    position: 'absolute',
+    top: -5,
+    right: -7,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  whitePulseRing: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  notifBadge: {
+    backgroundColor: '#E11D48',
+    minWidth: 17,
+    height: 17,
+    borderRadius: 8.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  notifBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 9.5,
+    fontWeight: '900',
+    textAlign: 'center',
+    includeFontPadding: false,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
+  },
   mobileAvatarBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   pageArea: { flex: 1 },
   placeholder: { flex: 1, alignItems: 'center', justifyContent: 'center' },

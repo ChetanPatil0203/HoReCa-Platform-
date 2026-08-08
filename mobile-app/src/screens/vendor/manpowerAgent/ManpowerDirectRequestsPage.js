@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Modal, SafeAreaView, FlatList, TextInput, Pressable, useWindowDimensions, ActivityIndicator, Animated
@@ -314,6 +314,11 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
     }
   };
 
+  const newCount = requests.filter(r => r.status === 'New' || r.status === 'pending').length;
+  const acceptedCount = requests.filter(r => r.status === 'Accepted' || r.status === 'confirmed').length;
+  const sentCount = requests.filter(r => r.status === 'Candidates Sent' || r.status === 'candidates_sent').length;
+  const pendingCount = requests.filter(r => r.status === 'Pending' || r.status === 'New' || r.status === 'pending').length;
+
   const filteredRequests = requests.filter(r => {
     const matchesTab = activeFilter === "All" || r.status === activeFilter;
     const q = searchQuery.toLowerCase();
@@ -349,12 +354,12 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
                 onPress={() => setActiveFilter("New")}
               >
                 <View style={styles.overviewTopRow}>
-                  <Text style={styles.overviewLabel} numberOfLines={2}>New</Text>
                   <View style={[styles.overviewIconBox, { backgroundColor: '#EFF6FF' }]}>
                     <FilePlus2 size={20} color="#3B82F6" strokeWidth={2.5} />
                   </View>
+                  <Text style={styles.overviewValue}>{newCount}</Text>
                 </View>
-                <Text style={styles.overviewValue}>1</Text>
+                <Text style={styles.overviewLabel} numberOfLines={2}>New</Text>
               </Pressable>
 
               <Pressable
@@ -362,12 +367,12 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
                 onPress={() => setActiveFilter("Accepted")}
               >
                 <View style={styles.overviewTopRow}>
-                  <Text style={styles.overviewLabel} numberOfLines={2}>Accepted</Text>
                   <View style={[styles.overviewIconBox, { backgroundColor: '#ECFDF5' }]}>
                     <CircleCheck size={20} color="#10B981" strokeWidth={2.5} />
                   </View>
+                  <Text style={styles.overviewValue}>{acceptedCount}</Text>
                 </View>
-                <Text style={styles.overviewValue}>1</Text>
+                <Text style={styles.overviewLabel} numberOfLines={2}>Accepted</Text>
               </Pressable>
 
               <Pressable
@@ -375,12 +380,12 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
                 onPress={() => setActiveFilter("Candidates Sent")}
               >
                 <View style={styles.overviewTopRow}>
-                  <Text style={styles.overviewLabel} numberOfLines={2}>Candidates Sent</Text>
                   <View style={[styles.overviewIconBox, { backgroundColor: '#F5F3FF' }]}>
                     <Send size={20} color="#8B5CF6" strokeWidth={2.5} />
                   </View>
+                  <Text style={styles.overviewValue}>{sentCount}</Text>
                 </View>
-                <Text style={styles.overviewValue}>1</Text>
+                <Text style={styles.overviewLabel} numberOfLines={2}>Candidates Sent</Text>
               </Pressable>
 
               <Pressable
@@ -388,12 +393,12 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
                 onPress={() => setActiveFilter("Pending")}
               >
                 <View style={styles.overviewTopRow}>
-                  <Text style={styles.overviewLabel} numberOfLines={2}>Pending</Text>
                   <View style={[styles.overviewIconBox, { backgroundColor: '#FFF7ED' }]}>
                     <Clock3 size={20} color="#F97316" strokeWidth={2.5} />
                   </View>
+                  <Text style={styles.overviewValue}>{pendingCount}</Text>
                 </View>
-                <Text style={styles.overviewValue}>2</Text>
+                <Text style={styles.overviewLabel} numberOfLines={2}>Pending</Text>
               </Pressable>
             </View>
 
@@ -849,7 +854,8 @@ const styles = StyleSheet.create({
   overviewTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   overviewIconBox: {
     width: 40,
@@ -859,17 +865,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   overviewValue: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '800',
     color: NAVY,
-    marginTop: 12,
   },
   overviewLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: '#64748B',
-    flex: 1,
-    marginRight: 8,
   },
 
   searchSection: { padding: 16, paddingBottom: 0 },

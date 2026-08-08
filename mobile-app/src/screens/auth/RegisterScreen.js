@@ -533,8 +533,13 @@ const styles = StyleSheet.create({
   stepSubtitle: { fontSize: 14, color: TEXT_MUTED, marginBottom: 24, lineHeight: 20 },
 
   // Inputs
-  inputGroup: { marginBottom: 16 },
-  inputLabel: { fontSize: 13, fontWeight: '600', color: '#475569', marginBottom: 8 },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#475569',
+    marginBottom: 8,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System'
+  },
   input: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,

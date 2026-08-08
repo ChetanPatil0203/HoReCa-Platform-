@@ -1,5 +1,5 @@
 import React, { useState, useContext, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Platform, useWindowDimensions, TouchableOpacity, Image, Animated } from 'react-native';
+import { View, Text, StyleSheet, Platform, useWindowDimensions, TouchableOpacity, Image, Animated, Easing } from 'react-native';
 import { Menu, Bell, Search, User, ChefHat, ArrowLeft } from 'lucide-react-native';
 import VendorSidebar from '../../components/vendor/VendorSidebar';
 import { AuthContext } from '../../context/AuthContext';
@@ -13,6 +13,74 @@ import VendorRevenuePage from './VendorRevenuePage';
 import VendorInventoryPage from './VendorInventoryPage';
 import FeedWallPage from './FeedWallPage';
 import HRCSupportBot from '../../components/owner/chatbot/HRCSupportBot';
+
+function NotificationBadge({ count = 3 }) {
+  const pulseAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    let animation;
+    if (count > 0) {
+      animation = Animated.loop(
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1600,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        })
+      );
+      animation.start();
+    } else {
+      pulseAnim.setValue(0);
+    }
+
+    return () => {
+      if (animation) animation.stop();
+    };
+  }, [count]);
+
+  if (!count || count <= 0) return null;
+
+  const displayCount = count > 99 ? '99+' : count;
+
+  const ringScale = pulseAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.85, 1.65],
+  });
+
+  const ringOpacity = pulseAnim.interpolate({
+    inputRange: [0, 0.4, 1],
+    outputRange: [0.75, 0.35, 0],
+  });
+
+  const badgeScale = pulseAnim.interpolate({
+    inputRange: [0, 0.35, 0.7, 1],
+    outputRange: [1, 1.14, 1.06, 1],
+  });
+
+  return (
+    <View style={styles.notifBadgeWrapper}>
+      <Animated.View
+        style={[
+          styles.whitePulseRing,
+          {
+            transform: [{ scale: ringScale }],
+            opacity: ringOpacity,
+          },
+        ]}
+      />
+      <Animated.View
+        style={[
+          styles.notifBadge,
+          {
+            transform: [{ scale: badgeScale }],
+          },
+        ]}
+      >
+        <Text style={styles.notifBadgeText}>{displayCount}</Text>
+      </Animated.View>
+    </View>
+  );
+}
 
 export default function VendorDashboard() {
   const { width } = useWindowDimensions();

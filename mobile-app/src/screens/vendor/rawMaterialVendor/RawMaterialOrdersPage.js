@@ -4,7 +4,7 @@ import {
   useWindowDimensions, Modal, SafeAreaView, TextInput, KeyboardAvoidingView, 
   Platform, TouchableWithoutFeedback, ActivityIndicator, Alert, Animated, Image
 } from 'react-native';
-import { Search, SlidersHorizontal, Package, ChevronRight, X, CircleCheck as CheckCircle, Truck, User, Home, ClipboardList, Plus, CalendarDays, RefreshCw, EllipsisVertical as MoreVertical, CircleAlert as AlertCircle, Eye, Calendar, PackageCheck, Info, UserCheck, ShieldCheck, CircleHelp as HelpCircle, Copy, Phone } from 'lucide-react-native';
+import { Search, SlidersHorizontal, Package, ChevronRight, X, CircleCheck as CheckCircle, Truck, User, Home, ClipboardList, Plus, CalendarDays, RefreshCw, EllipsisVertical as MoreVertical, CircleAlert as AlertCircle, Eye, Calendar, PackageCheck, Info, UserCheck, ShieldCheck, CircleHelp as HelpCircle, Copy, Phone, Clock, FileText } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
 import { fetchVendorOrders, vendorRespondOrder, updateOrderStatusApi } from '../../../services/api.service';
 import { API_BASE_URL } from '../../../config/api';
@@ -341,14 +341,14 @@ export default function RawMaterialOrdersPage() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'New': return { bg: '#EFF6FF', text: '#3B82F6', border: '#BFDBFE', accent: '#3B82F6' }; // Blue
-      case 'Confirmed': return { bg: '#EEF2FF', text: '#6366F1', border: '#C7D2FE', accent: '#6366F1' }; // Indigo
-      case 'Preparing': return { bg: '#FFF7ED', text: '#F97316', border: '#FFEDD5', accent: '#F97316' }; // Orange
-      case 'Ready to Dispatch': return { bg: '#FAF5FF', text: '#9333EA', border: '#F3E8FF', accent: '#9333EA' }; // Purple
-      case 'Out for Delivery': return { bg: '#F0FDFA', text: '#0D9488', border: '#CCFBF1', accent: '#0D9488' }; // Teal
-      case 'Delivered': return { bg: '#F0FDF4', text: '#16A34A', border: '#DCFCE7', accent: '#16A34A' }; // Green
-      case 'Cancelled': return { bg: '#FEF2F2', text: '#DC2626', border: '#FEE2E2', accent: '#DC2626' }; // Red
-      default: return { bg: '#F1F5F9', text: '#64748B', border: '#E2E8F0', accent: '#64748B' };
+      case 'New': return { bg: 'transparent', text: '#3B82F6', border: 'transparent', accent: '#3B82F6' }; // Blue
+      case 'Confirmed': return { bg: 'transparent', text: '#6366F1', border: 'transparent', accent: '#6366F1' }; // Indigo
+      case 'Preparing': return { bg: 'transparent', text: '#F97316', border: 'transparent', accent: '#F97316' }; // Orange
+      case 'Ready to Dispatch': return { bg: 'transparent', text: '#9333EA', border: 'transparent', accent: '#9333EA' }; // Purple
+      case 'Out for Delivery': return { bg: 'transparent', text: '#0D9488', border: 'transparent', accent: '#0D9488' }; // Teal
+      case 'Delivered': return { bg: 'transparent', text: '#16A34A', border: 'transparent', accent: '#16A34A' }; // Green
+      case 'Cancelled': return { bg: 'transparent', text: '#DC2626', border: 'transparent', accent: '#DC2626' }; // Red
+      default: return { bg: 'transparent', text: '#64748B', border: 'transparent', accent: '#64748B' };
     }
   };
 
@@ -546,8 +546,7 @@ export default function RawMaterialOrdersPage() {
             
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, zIndex: 999 }}>
               {/* Compact Status Badge */}
-              <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, borderColor: statusStyle.border, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
-                <Animated.View style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: statusStyle.accent || statusStyle.text, opacity: pulseAnim }} />
+              <View style={[styles.statusBadge, { backgroundColor: 'transparent', borderWidth: 0, paddingHorizontal: 0 }]}>
                 <Text style={[styles.statusText, { color: statusStyle.text }]}>{item.status.toUpperCase()}</Text>
               </View>
             </View>
@@ -662,7 +661,6 @@ export default function RawMaterialOrdersPage() {
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <Text style={styles.headerTitle}>Orders</Text>
-              <Text style={styles.headerSubtitle}>Manage incoming and active customer orders</Text>
             </View>
             <View style={styles.headerRight}>
               <TouchableOpacity style={styles.iconBtn} onPress={() => setSearchActive(!searchActive)}>
@@ -911,74 +909,116 @@ export default function RawMaterialOrdersPage() {
       <Modal visible={arrangeDeliveryModalVisible} animationType="fade" transparent>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
           <View style={styles.modalOverlay}>
-            <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }}>
-              <View style={[styles.modalCenterCard, { marginVertical: 32 }]}>
-                <Text style={styles.modalTitle}>Arrange Delivery</Text>
+            <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 24 }}>
+              <View style={[styles.modalCenterCard, styles.arrangeDeliveryCard, { width: isMobile ? '94%' : '90%', maxWidth: 540 }]}>
                 
-                <Text style={styles.inputLabel}>Delivery Mode</Text>
-                <View style={styles.deliveryModeRow}>
-                  {['Vendor Delivery', 'Third-Party Delivery', 'Customer Pickup'].map(m => (
-                    <TouchableOpacity
-                      key={m}
-                      style={[styles.deliveryModeBtn, deliveryMode === m && styles.deliveryModeBtnActive]}
-                      onPress={() => setDeliveryMode(m)}
-                    >
-                      <Text style={[styles.deliveryModeText, deliveryMode === m && styles.deliveryModeTextActive]}>{m}</Text>
-                    </TouchableOpacity>
-                  ))}
+                {/* Header */}
+                <View style={styles.modalHeaderRow}>
+                  <View style={styles.modalHeaderTitleGroup}>
+                    <View style={styles.modalHeaderIconContainer}>
+                      <Truck size={22} color={NAVY} />
+                    </View>
+                    <View>
+                      <Text style={styles.modalHeaderTitleText}>Arrange Delivery</Text>
+                      <Text style={styles.modalHeaderSubText}>Enter driver & dispatch details</Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity onPress={closeAllModals} style={styles.modalCloseButton} activeOpacity={0.7}>
+                    <X size={18} color={MUTED} />
+                  </TouchableOpacity>
                 </View>
 
-                {deliveryMode !== 'Customer Pickup' && (
-                  <>
-                    <Text style={styles.inputLabel}>Driver Name</Text>
-                    <TextInput
-                      style={styles.modalInput}
-                      placeholder="e.g. Suresh Patil"
-                      value={driverName}
-                      onChangeText={setDriverName}
-                    />
+                {/* Form Fields Grid */}
+                <View style={styles.formContainer}>
+                  {/* Row 1: Driver Name & Mobile */}
+                  <View style={[styles.formGridRow, isMobile && styles.formGridRowMobile]}>
+                    <View style={styles.formInputGroup}>
+                      <Text style={styles.formLabel}>Driver Name</Text>
+                      <View style={styles.inputIconWrapper}>
+                        <User size={16} color={MUTED} style={styles.inputIconLeft} />
+                        <TextInput
+                          style={styles.formTextInputWithIcon}
+                          placeholder="e.g. Suresh Patil"
+                          placeholderTextColor="#94A3B8"
+                          value={driverName}
+                          onChangeText={setDriverName}
+                        />
+                      </View>
+                    </View>
 
-                    <Text style={styles.inputLabel}>Mobile Number</Text>
-                    <TextInput
-                      style={styles.modalInput}
-                      placeholder="e.g. 9876543210"
-                      keyboardType="phone-pad"
-                      value={driverMobile}
-                      onChangeText={setDriverMobile}
-                    />
+                    <View style={styles.formInputGroup}>
+                      <Text style={styles.formLabel}>Mobile Number</Text>
+                      <View style={styles.inputIconWrapper}>
+                        <Phone size={16} color={MUTED} style={styles.inputIconLeft} />
+                        <TextInput
+                          style={styles.formTextInputWithIcon}
+                          placeholder="e.g. 9876543210"
+                          placeholderTextColor="#94A3B8"
+                          keyboardType="phone-pad"
+                          value={driverMobile}
+                          onChangeText={setDriverMobile}
+                        />
+                      </View>
+                    </View>
+                  </View>
 
-                    <Text style={styles.inputLabel}>Vehicle Number</Text>
-                    <TextInput
-                      style={styles.modalInput}
-                      placeholder="e.g. MH-12-PQ-4567"
-                      value={vehicleNo}
-                      onChangeText={setVehicleNo}
-                    />
-                  </>
-                )}
+                  {/* Row 2: Vehicle Number & Dispatch Time */}
+                  <View style={[styles.formGridRow, isMobile && styles.formGridRowMobile]}>
+                    <View style={styles.formInputGroup}>
+                      <Text style={styles.formLabel}>Vehicle Number</Text>
+                      <View style={styles.inputIconWrapper}>
+                        <Truck size={16} color={MUTED} style={styles.inputIconLeft} />
+                        <TextInput
+                          style={styles.formTextInputWithIcon}
+                          placeholder="e.g. MH-12-PQ-4567"
+                          placeholderTextColor="#94A3B8"
+                          value={vehicleNo}
+                          onChangeText={setVehicleNo}
+                        />
+                      </View>
+                    </View>
 
-                <Text style={styles.inputLabel}>Dispatch Time</Text>
-                <TextInput
-                  style={styles.modalInput}
-                  value={dispatchTime}
-                  onChangeText={setDispatchTime}
-                />
+                    <View style={styles.formInputGroup}>
+                      <Text style={styles.formLabel}>Dispatch Time</Text>
+                      <View style={styles.inputIconWrapper}>
+                        <Clock size={16} color={MUTED} style={styles.inputIconLeft} />
+                        <TextInput
+                          style={styles.formTextInputWithIcon}
+                          placeholder="Today · 04:00 PM"
+                          placeholderTextColor="#94A3B8"
+                          value={dispatchTime}
+                          onChangeText={setDispatchTime}
+                        />
+                      </View>
+                    </View>
+                  </View>
 
-                <Text style={styles.inputLabel}>Delivery Note</Text>
-                <TextInput
-                  style={[styles.modalInput, { height: 60 }]}
-                  placeholder="Additional instructions..."
-                  multiline
-                  value={deliveryNote}
-                  onChangeText={setDeliveryNote}
-                />
+                  {/* Row 3: Delivery Note */}
+                  <View style={styles.formInputGroupFull}>
+                    <Text style={styles.formLabel}>Delivery Note / Special Instructions</Text>
+                    <View style={[styles.inputIconWrapper, { alignItems: 'flex-start', paddingTop: 10 }]}>
+                      <FileText size={16} color={MUTED} style={[styles.inputIconLeft, { marginTop: 2 }]} />
+                      <TextInput
+                        style={[styles.formTextInputWithIcon, styles.formTextArea]}
+                        placeholder="Additional instructions for driver or customer..."
+                        placeholderTextColor="#94A3B8"
+                        multiline
+                        numberOfLines={3}
+                        value={deliveryNote}
+                        onChangeText={setDeliveryNote}
+                      />
+                    </View>
+                  </View>
+                </View>
 
-                <View style={styles.modalActionsRow}>
-                  <TouchableOpacity style={styles.btnSecondary} onPress={closeAllModals}>
-                    <Text style={styles.btnSecondaryText}>Cancel</Text>
+                {/* Modal Footer Actions */}
+                <View style={[styles.modalFooterRow, isMobile && styles.modalFooterRowMobile]}>
+                  <TouchableOpacity style={styles.modalCancelBtn} onPress={closeAllModals} activeOpacity={0.7}>
+                    <Text style={styles.modalCancelBtnText} numberOfLines={1}>Cancel</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.btnPrimary} onPress={handleArrangeDelivery}>
-                    <Text style={styles.btnPrimaryText}>Arrange & Dispatch</Text>
+                  <TouchableOpacity style={styles.modalConfirmBtn} onPress={handleArrangeDelivery} activeOpacity={0.85}>
+                    <Truck size={16} color={WHITE} />
+                    <Text style={styles.modalConfirmBtnText} numberOfLines={1}>Confirm & Dispatch</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1239,7 +1279,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 22, fontWeight: '800', color: NAVY },
   headerSubtitle: { fontSize: 13, color: MUTED, marginTop: 2 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  iconBtn: { padding: 6, borderRadius: 8, backgroundColor: BG },
+  iconBtn: { width: 38, height: 38, borderRadius: 10, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center' },
 
   // Search Bar
   searchBarContainer: {
@@ -1300,8 +1340,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.02,
     shadowRadius: 6,
     elevation: 1,
-    flex: 1,
     marginVertical: 6,
+    overflow: 'hidden',
   },
   cardDesktop: {
     maxWidth: '48.8%',
@@ -1364,24 +1404,24 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
     paddingTop: 10,
-    marginTop: 2
+    marginTop: 2,
+    gap: 8,
   },
   deliveryLabelCompact: { fontSize: 9, color: MUTED, fontWeight: '700', textTransform: 'uppercase', marginBottom: 1 },
   deliveryValCompact: { fontSize: 12, color: NAVY, fontWeight: '600' },
 
-  actionsContainer: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  viewDetailsBtnCompact: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, borderWidth: 1, borderColor: '#CBD5E1', backgroundColor: WHITE },
+  actionsContainer: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 },
+  viewDetailsBtnCompact: { paddingHorizontal: 10, paddingVertical: 7, borderRadius: 6, borderWidth: 1, borderColor: '#CBD5E1', backgroundColor: WHITE, justifyContent: 'center', alignItems: 'center' },
   viewDetailsTextCompact: { fontSize: 11, fontWeight: '700', color: NAVY },
 
   primaryActionBtnCompact: {
     backgroundColor: NAVY,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 6,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 80
   },
   primaryActionTextCompact: { fontSize: 11, fontWeight: '700', color: WHITE },
 
@@ -1471,6 +1511,165 @@ const styles = StyleSheet.create({
   deliveryModeText: { fontSize: 11, color: NAVY, fontWeight: '600' },
   deliveryModeTextActive: { color: WHITE },
   modalInput: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 8, paddingHorizontal: 12, height: 38, fontSize: 13, color: NAVY },
+
+  // Arrange Delivery Modal Responsive Styles
+  arrangeDeliveryCard: {
+    padding: 22,
+    borderRadius: 20,
+    backgroundColor: WHITE,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  modalHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 18,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  modalHeaderTitleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  modalHeaderIconContainer: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  modalHeaderTitleText: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: NAVY,
+    letterSpacing: -0.2,
+  },
+  modalHeaderSubText: {
+    fontSize: 12,
+    color: MUTED,
+    marginTop: 2,
+  },
+  modalCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+
+  formContainer: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  formGridRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  formGridRowMobile: {
+    flexDirection: 'column',
+    gap: 12,
+  },
+  formInputGroup: {
+    flex: 1,
+  },
+  formInputGroupFull: {
+    width: '100%',
+  },
+  formLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: NAVY,
+    marginBottom: 6,
+  },
+  inputIconWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+  },
+  inputIconLeft: {
+    marginRight: 8,
+  },
+  formTextInputWithIcon: {
+    flex: 1,
+    height: 42,
+    fontSize: 13,
+    color: NAVY,
+    fontWeight: '500',
+  },
+  formTextArea: {
+    height: 64,
+    paddingTop: 4,
+    textAlignVertical: 'top',
+  },
+
+  modalFooterRow: {
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  modalFooterRowMobile: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  modalCancelBtn: {
+    flex: 1,
+    height: 44,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    backgroundColor: WHITE,
+    alignItems: 'center',
+    justify: 'center',
+  },
+  modalCancelBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: NAVY,
+    textAlign: 'center',
+  },
+  modalConfirmBtn: {
+    flex: 1.5,
+    height: 44,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: NAVY,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justify: 'center',
+    gap: 6,
+    shadowColor: NAVY,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  modalConfirmBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: WHITE,
+    textAlign: 'center',
+  },
 
   // Details Modal (centered card layout)
   detailsCard: {
