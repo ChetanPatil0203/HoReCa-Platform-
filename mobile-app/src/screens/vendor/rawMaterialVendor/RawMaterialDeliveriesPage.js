@@ -256,15 +256,15 @@ export default function RawMaterialDeliveriesPage() {
         </View>
 
         {/* Card Footer (Delivery Date & Action Buttons) */}
-        <View style={styles.cardFooterCompact}>
-          <View style={{ flex: 1 }}>
+        <View style={[styles.cardFooterCompact, isMobile && primaryAction && { flexDirection: 'column', alignItems: 'stretch', gap: 10 }]}>
+          <View style={isMobile && primaryAction ? { marginBottom: 2 } : { flex: 1 }}>
             <Text style={styles.deliveryLabelCompact}>Delivery Date</Text>
             <Text style={styles.deliveryValCompact} numberOfLines={1}>{item.date}</Text>
           </View>
           
-          <View style={styles.actionsContainer}>
+          <View style={[styles.actionsContainer, isMobile && primaryAction && { width: '100%', justifyContent: 'space-between', gap: 8 }]}>
             <TouchableOpacity
-              style={styles.viewDetailsBtnCompact}
+              style={[styles.viewDetailsBtnCompact, isMobile && primaryAction && { flex: 1, paddingVertical: 10 }]}
               onPress={() => handleAction(item, 'details')}
               activeOpacity={0.7}
             >
@@ -273,7 +273,7 @@ export default function RawMaterialDeliveriesPage() {
 
             {primaryAction && (
               <TouchableOpacity
-                style={styles.primaryActionBtnCompact}
+                style={[styles.primaryActionBtnCompact, isMobile && { flex: 1.6, paddingVertical: 10 }]}
                 onPress={() => handleAction(item, primaryAction)}
                 activeOpacity={0.8}
               >
@@ -316,22 +316,6 @@ export default function RawMaterialDeliveriesPage() {
                         <TouchableOpacity onPress={() => setSearchQuery('')}><XCircle size={16} color={MUTED} /></TouchableOpacity>
                       )}
                     </View>
-                    <TouchableOpacity 
-                      style={{ 
-                        marginLeft: 12, 
-                        width: 44, 
-                        height: 44, 
-                        borderRadius: 12, 
-                        backgroundColor: WHITE, 
-                        borderWidth: 1, 
-                        borderColor: '#E2E8F0', 
-                        justifyContent: 'center', 
-                        alignItems: 'center' 
-                      }} 
-                      onPress={() => setFilterVisible(true)}
-                    >
-                      <SlidersHorizontal size={20} color={NAVY} />
-                    </TouchableOpacity>
                   </View>
                   <View style={styles.tabsContainer}>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsScroll}>

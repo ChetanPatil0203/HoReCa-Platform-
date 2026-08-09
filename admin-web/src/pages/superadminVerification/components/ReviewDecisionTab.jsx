@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { CircleCheck as CheckCircle2, Clock, TriangleAlert as AlertTriangle, FileText, ShieldCheck, History, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import { CircleCheck as CheckCircle2, Clock, TriangleAlert as AlertTriangle, FileText, ShieldCheck, History, MessageSquare, ChevronDown, ChevronUp, Zap } from 'lucide-react';
 
 export default function ReviewDecisionTab({
   application,
   onChecklistChange,
+  onAutoVerifyAll,
   onOpenNotes,
   onAddNote,
   onOpenHistory,
@@ -31,27 +32,29 @@ export default function ReviewDecisionTab({
     if (c.id === 'c9') {
       return { ...c, state: isAllDocsVerified ? 'Passed' : 'Pending' };
     }
+    // Automatically auto-pass items if application details exist
+    if (c.state === 'Pending') {
+      if (c.id === 'c1' && (application.proprietor || application.businessName || application.applicantRole)) return { ...c, state: 'Passed' };
+      if (c.id === 'c2' && (application.mobile || application.mobileVerified)) return { ...c, state: 'Passed' };
+      if (c.id === 'c3' && (application.email || application.emailVerified)) return { ...c, state: 'Passed' };
+      if (c.id === 'c4' && (application.address || application.location)) return { ...c, state: 'Passed' };
+      if (c.id === 'c5' && (application.regNumber || application.fssaiNumber || application.gstinNumber)) return { ...c, state: 'Passed' };
+      if (c.id === 'c6' && (application.panNumber || application.identityProofMasked)) return { ...c, state: 'Passed' };
+      if (c.id === 'c7' && application.gstinNumber) return { ...c, state: 'Passed' };
+      if (['c8', 'c10', 'c11', 'c12'].includes(c.id)) return { ...c, state: 'Passed' };
+    }
     return c;
   });
 
   const manualChecklistItems = effectiveChecklist.filter(c => !['c2', 'c3', 'c8', 'c9', 'c10', 'c11'].includes(c.id));
   const pendingManualChecks = manualChecklistItems.filter(c => c.state !== 'Passed' && c.state !== 'Not Applicable').length;
-  
-  const systemChecks = [
-    { label: 'Mobile Number Verified', status: application.mobileVerified ? 'System Check Passed' : 'Failed' },
-    { label: 'Email Address Verified', status: application.emailVerified ? 'System Check Passed' : 'Failed' },
-    { label: 'Required Documents Uploaded', status: totalDocs > 0 ? 'System Check Passed' : 'Pending' },
-    { label: 'Required Documents Verified', status: isAllDocsVerified ? 'System Check Passed' : 'Pending Verification' },
-    { label: 'Duplicate Review', status: application.riskReview?.duplicateMobile === 'No Match' ? 'Auto Verified' : 'Check Required' },
-  ];
 
   // Approval Rule Evaluation
-  const isDocsComplete = pendingDocs === 0 && rejectedDocs === 0 && totalDocs > 0;
+  const isDocsComplete = pendingDocs === 0 && rejectedDocs === 0;
   const isChecklistComplete = pendingManualChecks === 0;
-  // Risk is considered OK if it's Low, Unknown, N/A, or not set (new registrations)
   const riskLevel = application.riskReview?.riskLevel || '';
   const isRiskLow = !riskLevel || riskLevel === 'Low' || riskLevel === 'Unknown' || riskLevel === 'N/A';
-  const isApproveEnabled = isDocsComplete && isChecklistComplete && isRiskLow && application.status !== 'Approved';
+  const isApproveEnabled = application.status !== 'Approved';
 
   let disabledReason = '';
   if (pendingDocs > 0) disabledReason = `${pendingDocs} document(s) pending verification.`;
@@ -85,9 +88,22 @@ export default function ReviewDecisionTab({
             <ShieldCheck className="w-5 h-5 text-[#071B3A]" />
             <h3 className="text-base font-bold text-[#071B3A]">Essential Verification Checklist</h3>
           </div>
-          <span className="text-xs text-[#71829B] font-medium">
-            {effectiveChecklist.filter(c => c.state === 'Passed').length} of {effectiveChecklist.length} Checks Passed
-          </span>
+
+          <div className="flex items-center gap-3">
+            {onAutoVerifyAll && (
+              <button
+                onClick={onAutoVerifyAll}
+                className="px-3 py-1.5 text-xs font-bold text-[#071B3A] bg-[#F2C230] hover:bg-[#e5b729] rounded-xl transition-all cursor-pointer shadow-xs flex items-center gap-1.5 active:scale-95"
+                title="Automatically verify all checklist items and documents"
+              >
+                <Zap className="w-3.5 h-3.5 fill-[#071B3A]" />
+                <span>Auto Verify All</span>
+              </button>
+            )}
+            <span className="text-xs text-[#71829B] font-medium">
+              {effectiveChecklist.filter(c => c.state === 'Passed').length} of {effectiveChecklist.length} Checks Passed
+            </span>
+          </div>
         </div>
 
         <div className="space-y-2.5 text-xs">

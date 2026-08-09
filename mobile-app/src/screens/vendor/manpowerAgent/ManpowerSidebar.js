@@ -96,8 +96,8 @@ export default function ManpowerSidebar({ activePage, setActivePage, isMobile, m
       <View style={styles.bottomSection}>
         {NAV_BOTTOM.map((item) => <NavBtn key={item.key} item={item} />)}
         <TouchableOpacity style={styles.logoutBtn} onPress={onLogout}>
-          <LogOut size={20} color="#B8C6E3" strokeWidth={1.5} />
-          <Text style={styles.logoutText}>Logout</Text>
+          <LogOut size={20} color="#EF4444" strokeWidth={1.5} />
+          <Text style={[styles.logoutText, { color: '#EF4444' }]}>Logout</Text>
         </TouchableOpacity>
       </View>
     </View>

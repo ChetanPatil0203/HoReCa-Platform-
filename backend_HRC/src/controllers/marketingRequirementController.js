@@ -79,6 +79,16 @@ exports.getRequirementProposals = async (req, res) => {
   }
 };
 
+exports.getVendorProposals = async (req, res) => {
+  try {
+    const { supplierId } = req.params;
+    const proposals = await service.getVendorProposalsService(supplierId);
+    res.status(200).json({ success: true, data: proposals });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 exports.acceptProposal = async (req, res) => {
   try {
     const { proposalId } = req.params;

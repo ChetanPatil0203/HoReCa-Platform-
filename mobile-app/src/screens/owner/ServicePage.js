@@ -290,7 +290,7 @@ export default function ServicePage() {
     return (
       <DirectRequirementPage
         provider={selectedProvider}
-        onBack={() => setCurrentView('browseProviders')}
+        onBack={() => setCurrentView('home')}
         onHome={() => setCurrentView('home')}
       />
     );
@@ -322,31 +322,31 @@ export default function ServicePage() {
           </View>
 
           {/* ── Quick Actions ── */}
-          <View style={[styles.actionsRow, isMobile && { flexDirection: 'row' }]}>
+          <View style={styles.actionsRow}>
             <TouchableOpacity
-              style={[styles.primaryActionCard, isMobile && { padding: 16 }]}
+              style={styles.primaryActionCard}
               onPress={() => setCurrentView('broadcast')}
+              activeOpacity={0.85}
             >
-              <View style={[styles.actionHeader, isMobile && { marginBottom: 12 }]}>
+              <View style={styles.actionHeader}>
                 <View style={styles.primaryIconBox}>
-                  <PlusCircle size={24} color="#fff" />
+                  <PlusCircle size={22} color="#fff" />
                 </View>
-                <ArrowRight size={20} color="rgba(255,255,255,0.8)" />
               </View>
-              <Text style={[styles.primaryActionTitle, isMobile && { fontSize: 16, marginBottom: 0 }]}>Post Requirement</Text>
+              <Text style={styles.primaryActionTitle} numberOfLines={1}>Post Requirement</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.secondaryActionCard, isMobile && { padding: 16 }]}
+              style={styles.secondaryActionCard}
               onPress={() => setCurrentView('browseProviders')}
+              activeOpacity={0.85}
             >
-              <View style={[styles.actionHeader, isMobile && { marginBottom: 12 }]}>
+              <View style={styles.actionHeader}>
                 <View style={styles.secondaryIconBox}>
-                  <Search size={24} color={NAVY} />
+                  <Search size={22} color="#2563EB" />
                 </View>
-                <ArrowRight size={20} color={NAVY} />
               </View>
-              <Text style={[styles.secondaryActionTitle, isMobile && { fontSize: 16, marginBottom: 0 }]}>Browse Providers</Text>
+              <Text style={styles.secondaryActionTitle} numberOfLines={1}>Browse Providers</Text>
             </TouchableOpacity>
           </View>
 
@@ -385,19 +385,41 @@ export default function ServicePage() {
                 <Text style={styles.sectionTitle}>Top Rated Providers</Text>
                 <TouchableOpacity onPress={() => setCurrentView('browseProviders')}><Text style={styles.viewAllText}>View All</Text></TouchableOpacity>
               </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
-                {topProviders.length === 0 ? (
-                  <View style={{ padding: 16, alignItems: 'center' }}>
-                    <Text style={{ fontSize: 13, color: '#94A3B8' }}>No rated providers found.</Text>
-                  </View>
-                ) : (
-                  topProviders.map(provider => (
-                    <TouchableOpacity key={provider.id} onPress={() => { setSelectedProvider(provider); setCurrentView('providerProfile'); }}>
-                      <ProviderCard provider={provider} />
+              {topProviders.length === 0 ? (
+                <View style={{ padding: 16, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 13, color: '#94A3B8' }}>No rated providers found.</Text>
+                </View>
+              ) : (
+                <View style={{ flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+                  {topProviders.map(provider => (
+                    <TouchableOpacity
+                      key={provider.id}
+                      style={styles.providerRowCard}
+                      onPress={() => {
+                        setSelectedProvider(provider);
+                        setCurrentView('providerProfile');
+                      }}
+                      activeOpacity={0.85}
+                    >
+                      <View style={styles.providerAvatar}>
+                        <Text style={styles.providerAvatarText}>
+                          {provider.name ? provider.name.charAt(0).toUpperCase() : 'P'}
+                        </Text>
+                      </View>
+                      <View style={styles.providerInfo}>
+                        <Text style={styles.providerRowName} numberOfLines={1}>{provider.name}</Text>
+                        <Text style={styles.providerRowCat} numberOfLines={1}>{provider.category || 'Service Provider'}</Text>
+                      </View>
+                      <View style={styles.providerRight}>
+                        <View style={styles.providerRatingBadge}>
+                          <Star size={12} color="#D97706" fill="#D97706" />
+                          <Text style={styles.providerRatingText}>{provider.rating || 4.8}</Text>
+                        </View>
+                      </View>
                     </TouchableOpacity>
-                  ))
-                )}
-              </ScrollView>
+                  ))}
+                </View>
+              )}
             </View>
 
 
@@ -442,24 +464,68 @@ const styles = StyleSheet.create({
   summaryValue: { fontSize: 24, fontWeight: '900', color: NAVY },
   summaryLabel: { fontSize: 12, color: '#64748B', fontWeight: '600' },
 
-  // Actions
-  actionsRow: { flexDirection: 'row', gap: 16 },
-  primaryActionCard: { flex: 1, backgroundColor: NAVY, borderRadius: 16, padding: 24 },
-  secondaryActionCard: { flex: 1, backgroundColor: '#fff', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: colors.border },
-  actionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
-  primaryIconBox: { width: 48, height: 48, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
-  secondaryIconBox: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
-  primaryActionTitle: { fontSize: 20, fontWeight: '800', color: '#fff', marginBottom: 8 },
-  primaryActionDesc: { fontSize: 14, color: 'rgba(255,255,255,0.7)', lineHeight: 20 },
-  secondaryActionTitle: { fontSize: 20, fontWeight: '800', color: NAVY, marginBottom: 8 },
-  secondaryActionDesc: { fontSize: 14, color: '#64748B', lineHeight: 20 },
+  // Actions (Matching Marketing card size)
+  actionsRow: { flexDirection: 'row', gap: 12 },
+  primaryActionCard: {
+    flex: 1,
+    backgroundColor: NAVY,
+    borderRadius: 16,
+    padding: 16,
+    minHeight: 105,
+    justifyContent: 'space-between',
+    overflow: 'hidden'
+  },
+  primaryIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  primaryActionTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginTop: 14
+  },
+  secondaryActionCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    minHeight: 105,
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: NAVY,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 2
+  },
+  secondaryIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  secondaryActionTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: NAVY,
+    marginTop: 14
+  },
+  actionHeader: { flexDirection: 'row', alignItems: 'center' },
 
   // Sections
   sectionsContainer: { gap: 24, marginTop: 8 },
   section: { gap: 16 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   sectionTitle: { fontSize: 18, fontWeight: '800', color: NAVY },
-  viewAllText: { fontSize: 14, fontWeight: '600', color: '#2563EB' },
+  viewAllText: { fontSize: 14, fontWeight: '600', color: '#000000' },
   cardsList: { gap: 12 },
 
   // Service Request Card
@@ -493,5 +559,57 @@ const styles = StyleSheet.create({
   providerCategory: { fontSize: 12, color: '#64748B', marginBottom: 12 },
   providerJobs: { fontSize: 12, fontWeight: '600', color: '#475569', marginBottom: 16 },
   providerBtn: { paddingVertical: 8, borderRadius: 6, backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: colors.border, alignItems: 'center' },
-  providerBtnText: { fontSize: 12, fontWeight: '700', color: NAVY }
+  providerBtnText: { fontSize: 12, fontWeight: '700', color: NAVY },
+
+  // Provider Row Card (Matches Manpower layout)
+  providerRowCard: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E8EDF4',
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  providerInfo: {
+    flex: 1,
+    paddingRight: 6,
+  },
+  providerRowName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#071B3A',
+    marginBottom: 2,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
+  },
+  providerRowCat: {
+    fontSize: 11,
+    color: '#64748B',
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
+  },
+  providerRight: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  providerRatingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFBEB',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  providerRatingText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#D97706',
+    marginLeft: 4,
+    fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
+  }
 });

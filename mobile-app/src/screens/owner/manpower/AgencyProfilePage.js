@@ -226,6 +226,6 @@ const styles = StyleSheet.create({
   stickyActionBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', backgroundColor: '#fff', paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#E2E8F0', gap: 12 },
   secondaryBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: '#CBD5E1', alignItems: 'center' },
   secondaryBtnText: { color: '#475569', fontSize: 14, fontWeight: 'bold' },
-  primaryBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: GOLD, alignItems: 'center' },
+  primaryBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: NAVY, alignItems: 'center' },
   primaryBtnText: { color: '#fff', fontSize: 14, fontWeight: 'bold' }
 });

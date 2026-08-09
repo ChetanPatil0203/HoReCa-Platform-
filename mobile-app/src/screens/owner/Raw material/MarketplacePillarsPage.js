@@ -154,7 +154,7 @@ export default function MarketplacePillarsPage({ onNavigate, setMobileMenuOpen }
             <Text style={styles.sectionTitle}>Popular Near You</Text>
             <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Text style={styles.viewAllText}>View All</Text>
-              <ChevronRight color="#2563EB" size={16} />
+              <ChevronRight color="#000000" size={16} />
             </TouchableOpacity>
           </View>
 
@@ -549,6 +549,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#D97706',
     marginTop: 4,
+  },
+  viewAllText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#000000',
   }
 });
 

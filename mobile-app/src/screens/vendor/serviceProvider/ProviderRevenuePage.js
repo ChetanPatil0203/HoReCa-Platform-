@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: 13,
-    color: GOLD,
+    color: '#000000',
     fontWeight: 'bold',
     marginBottom: 12,
   },

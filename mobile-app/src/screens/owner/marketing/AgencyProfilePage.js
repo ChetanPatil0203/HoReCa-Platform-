@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
   sectionCard: { backgroundColor: '#fff', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: colors.border },
   sectionTitle: { fontSize: 18, fontWeight: '800', color: NAVY, marginBottom: 16 },
   sectionHeaderFlex: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  linkText: { fontSize: 14, fontWeight: '700', color: '#2563EB' },
+  linkText: { fontSize: 14, fontWeight: '700', color: '#000000' },
   
   aboutText: { fontSize: 15, color: '#475569', lineHeight: 24 },
 

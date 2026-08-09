@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, Search, Funnel as Filter, Download, RefreshCw, Clock, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle2, X, Eye, ChevronRight, UserCheck, ShieldAlert, FileText, Phone, Mail, MapPin, Copy, Check, ExternalLink, SlidersHorizontal, Send, FileQuestion, Info, Users, Lock, LockOpen as Unlock, ArrowUpRight, RotateCcw, Paperclip, Building2, Tag, CircleAlert as AlertCircle, CircleHelp as HelpCircle, SquareCheck as CheckSquare } from 'lucide-react';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 // Helper function to fetch tickets from backend
 const fetchComplaintTickets = async () => {
   try {
-    const res = await fetch('http://localhost:5000/api/support/admin/tickets');
+    const res = await fetch(`${API_BASE_URL}/support/admin/tickets`);
     if (!res.ok) return null;
     const json = await res.json();
     return json.success ? json.data : null;
@@ -346,7 +348,7 @@ export default function Complaints() {
     const targetId = resolvingTicket.id;
 
     try {
-      await fetch(`http://localhost:5000/api/support/admin/tickets/${targetId}`, {
+      await fetch(`${API_BASE_URL}/support/admin/tickets/${targetId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -461,7 +463,7 @@ export default function Complaints() {
     const timeStr = new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
     try {
-      await fetch(`http://localhost:5000/api/support/tickets/${targetId}/messages`, {
+      await fetch(`${API_BASE_URL}/support/tickets/${targetId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

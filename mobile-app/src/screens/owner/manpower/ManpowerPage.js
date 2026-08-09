@@ -146,7 +146,7 @@ export default function ManpowerPage() {
     return (
       <AgencyProfilePage
         agency={selectedAgency}
-        onBack={() => setCurrentView('browseAgencies')}
+        onBack={() => setCurrentView('home')}
         onSendRequirement={(agency) => {
           setSelectedAgency(agency);
           setCurrentView('directRequirement');
@@ -160,7 +160,7 @@ export default function ManpowerPage() {
     return (
       <DirectRequirementPage
         agency={selectedAgency}
-        onBack={() => setCurrentView('agencyProfile')}
+        onBack={() => setCurrentView('home')}
         onHome={() => setCurrentView('home')}
       />
     );
@@ -276,26 +276,22 @@ export default function ManpowerPage() {
 
           {/* ── Quick Actions ── */}
           <View style={styles.actionsRow}>
-            <TouchableOpacity style={[styles.primaryActionCard, isMobile && { padding: 16 }]} onPress={() => setCurrentView('postRequirement')}>
-              <View style={styles.primaryActionHeader}>
+            <TouchableOpacity style={styles.primaryActionCard} onPress={() => setCurrentView('postRequirement')} activeOpacity={0.85}>
+              <View style={styles.actionHeader}>
                 <View style={styles.primaryActionIconBox}>
-                  <CirclePlus size={24} color="#fff" />
+                  <CirclePlus size={22} color="#fff" />
                 </View>
-                {!isMobile && <ArrowRight size={20} color="rgba(255,255,255,0.8)" />}
               </View>
-              <Text style={[styles.primaryActionTitle, isMobile && { fontSize: 15, marginBottom: 0 }]} numberOfLines={2}>Post Requirement</Text>
-              {!isMobile && <Text style={styles.primaryActionDesc}>Share your staffing needs with our network of verified agencies.</Text>}
+              <Text style={styles.primaryActionTitle} numberOfLines={1}>Post Requirement</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.secondaryActionCard, isMobile && { padding: 16 }]} onPress={() => setCurrentView('browseAgencies')}>
-              <View style={styles.secondaryActionHeader}>
+            <TouchableOpacity style={styles.secondaryActionCard} onPress={() => setCurrentView('browseAgencies')} activeOpacity={0.85}>
+              <View style={styles.actionHeader}>
                 <View style={styles.secondaryActionIconBox}>
-                  <Search size={24} color={BLUE} />
+                  <Search size={22} color="#2563EB" />
                 </View>
-                {!isMobile && <ArrowRight size={20} color={BLUE} />}
               </View>
-              <Text style={[styles.secondaryActionTitle, isMobile && { fontSize: 15, marginBottom: 0 }]} numberOfLines={2}>Browse Agencies</Text>
-              {!isMobile && <Text style={styles.secondaryActionDesc}>Explore top-rated manpower agencies and view their available staff.</Text>}
+              <Text style={styles.secondaryActionTitle} numberOfLines={1}>Browse Agencies</Text>
             </TouchableOpacity>
           </View>
 
@@ -458,25 +454,67 @@ const styles = StyleSheet.create({
   summaryValue: { fontSize: 24, fontWeight: '900', color: '#0F172A' },
   summaryLabel: { fontSize: 12, color: '#64748B', fontWeight: '600' },
 
-  // Actions
-  actionsRow: { flexDirection: 'row', gap: 16 },
-  primaryActionCard: { flex: 1, backgroundColor: NAVY, borderRadius: 16, padding: 24, overflow: 'hidden' },
-  primaryActionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
-  primaryActionIconBox: { width: 48, height: 48, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
-  primaryActionTitle: { fontSize: 20, fontWeight: '800', color: '#fff', marginBottom: 8 },
-  primaryActionDesc: { fontSize: 14, color: 'rgba(255,255,255,0.9)', lineHeight: 20 },
-
-  secondaryActionCard: { flex: 1, backgroundColor: '#fff', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: colors.border },
-  secondaryActionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
-  secondaryActionIconBox: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' },
-  secondaryActionTitle: { fontSize: 20, fontWeight: '800', color: '#0F172A', marginBottom: 8 },
-  secondaryActionDesc: { fontSize: 14, color: '#64748B', lineHeight: 20 },
+  // Actions (Matching Marketing card size)
+  actionsRow: { flexDirection: 'row', gap: 12 },
+  primaryActionCard: {
+    flex: 1,
+    backgroundColor: NAVY,
+    borderRadius: 16,
+    padding: 16,
+    minHeight: 105,
+    justifyContent: 'space-between',
+    overflow: 'hidden'
+  },
+  primaryActionIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  primaryActionTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginTop: 14
+  },
+  secondaryActionCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    minHeight: 105,
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: NAVY,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 2
+  },
+  secondaryActionIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  secondaryActionTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginTop: 14
+  },
+  actionHeader: { flexDirection: 'row', alignItems: 'center' },
 
   // Sections
   section: { gap: 16 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   sectionTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
-  viewAllText: { fontSize: 14, fontWeight: '600', color: BLUE },
+  viewAllText: { fontSize: 14, fontWeight: '600', color: '#000000' },
 
   // Roles
   rolesScroll: { gap: 12, paddingRight: 16 },

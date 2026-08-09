@@ -202,22 +202,22 @@ const styles = StyleSheet.create({
   
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 120 }, // Ensure bottom padding for nav
-  contentLayout: { padding: 16 },
-  contentLayoutWeb: { padding: 32, maxWidth: 800, alignSelf: 'center', width: '100%' },
+  contentLayout: { padding: 12 },
+  contentLayoutWeb: { padding: 24, maxWidth: 800, alignSelf: 'center', width: '100%' },
 
-  searchSection: { marginBottom: 24 },
-  searchRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
-  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, paddingHorizontal: 16, borderWidth: 1, borderColor: '#E2E8F0', height: 48 },
-  searchInput: { flex: 1, marginLeft: 10, fontSize: 14, color: '#1E293B' },
-  filterBtn: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' },
+  searchSection: { marginBottom: 12 },
+  searchRow: { flexDirection: 'row', gap: 10, marginBottom: 8 },
+  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 10, paddingHorizontal: 12, borderWidth: 1, borderColor: '#E2E8F0', height: 38 },
+  searchInput: { flex: 1, marginLeft: 8, fontSize: 13, color: '#1E293B' },
+  filterBtn: { width: 38, height: 38, borderRadius: 10, backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', justifyContent: 'center' },
   
   filtersScroll: { flexGrow: 0 },
-  filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F1F5F9', marginRight: 10 },
+  filterChip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 16, backgroundColor: '#F1F5F9', marginRight: 8 },
   filterChipActive: { backgroundColor: NAVY },
-  filterText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
+  filterText: { fontSize: 12, fontWeight: '600', color: '#64748B' },
   filterTextActive: { color: '#fff' },
 
-  agenciesGrid: { flexDirection: 'column', gap: 16 },
+  agenciesGrid: { flexDirection: 'column', gap: 10 },
   agencyCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#E8EDF4', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 3, elevation: 1 },
   
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
@@ -255,6 +255,6 @@ const styles = StyleSheet.create({
   actionsRow: { flexDirection: 'row', gap: 12 },
   secondaryBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: '#CBD5E1', alignItems: 'center' },
   secondaryBtnText: { color: '#475569', fontSize: 14, fontWeight: 'bold' },
-  primaryBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: GOLD, alignItems: 'center' },
+  primaryBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: NAVY, alignItems: 'center' },
   primaryBtnText: { color: '#fff', fontSize: 14, fontWeight: 'bold' }
 });

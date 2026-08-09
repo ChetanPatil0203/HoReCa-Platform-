@@ -66,10 +66,10 @@ export default function BrowseAgenciesPage({ onBack, onViewProfile }) {
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 60 }}>
         <View style={[styles.contentLayout, !isMobile && styles.contentLayoutWeb]}>
 
-          {/* Search & Filter Bar */}
-          <View style={[styles.searchFilterContainer, isMobile && { flexDirection: 'column' }]}>
+          {/* Search Bar */}
+          <View style={styles.searchSection}>
             <View style={styles.searchBox}>
-              <Search size={20} color="#64748B" style={styles.searchIcon} />
+              <Search size={18} color="#94A3B8" style={styles.searchIcon} />
               <TextInput
                 style={styles.searchInput}
                 placeholder="Search agencies by name, service, or location..."
@@ -78,10 +78,6 @@ export default function BrowseAgenciesPage({ onBack, onViewProfile }) {
                 onChangeText={setSearchQuery}
               />
             </View>
-            <TouchableOpacity style={styles.filterBtn}>
-              <Filter size={20} color={NAVY} style={{ marginRight: 8 }} />
-              <Text style={styles.filterBtnText}>Advanced Filters</Text>
-            </TouchableOpacity>
           </View>
 
           {/* Quick Filters */}
@@ -98,49 +94,63 @@ export default function BrowseAgenciesPage({ onBack, onViewProfile }) {
           </ScrollView>
 
           {/* Results Grid */}
-          <View style={styles.resultsGrid}>
+          <View style={styles.agenciesGrid}>
             {filteredAgencies.map(agency => (
               <View key={agency.id} style={styles.agencyCard}>
+                
+                {/* Top Header */}
                 <View style={styles.cardHeader}>
-                  <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>{agency.name.charAt(0)}</Text>
+                  <View style={styles.agencyLogo}>
+                    <Text style={styles.agencyLogoText}>{agency.name.charAt(0).toUpperCase()}</Text>
                   </View>
-                  <View style={styles.headerInfo}>
+                  <View style={styles.cardHeaderCenter}>
                     <View style={styles.nameRow}>
                       <Text style={styles.agencyName} numberOfLines={1}>{agency.name}</Text>
-                      {agency.verified && <ShieldCheck size={16} color="#16A34A" style={{ marginLeft: 6 }} />}
+                      {agency.verified && (
+                        <View style={styles.verifiedBadge}>
+                          <ShieldCheck size={12} color="#16A34A" />
+                          <Text style={styles.verifiedText}>Verified Agency</Text>
+                        </View>
+                      )}
                     </View>
-                    <View style={styles.badgeRow}>
+                    
+                    <View style={styles.ratingLocationRow}>
+                      <View style={styles.ratingBox}>
+                        <Star size={12} color={GOLD} fill={GOLD} />
+                        <Text style={styles.ratingText}>{agency.rating}</Text>
+                      </View>
+                      <View style={styles.dotSeparator} />
                       <View style={[styles.typeBadge, agency.type === 'Online' ? styles.typeOnline : styles.typeOffline]}>
                         <Text style={[styles.typeBadgeText, agency.type === 'Online' ? styles.typeTextOnline : styles.typeTextOffline]}>{agency.type}</Text>
                       </View>
-                      <View style={styles.ratingBox}>
-                        <Star size={12} color={GOLD} fill={GOLD} style={{ marginRight: 4 }} />
-                        <Text style={styles.ratingText}>{agency.rating}</Text>
-                      </View>
                     </View>
                   </View>
                 </View>
 
-                <View style={styles.statsRow}>
-                  <View style={styles.statBox}>
-                    <Briefcase size={16} color="#64748B" style={{ marginBottom: 4 }} />
-                    <Text style={styles.statValue}>{agency.projects}</Text>
-                    <Text style={styles.statLabel}>Projects</Text>
+                <View style={styles.divider} />
+
+                {/* Stats Area */}
+                <View style={styles.statsArea}>
+                  <View style={styles.statItem}>
+                    <Briefcase size={16} color={NAVY} />
+                    <Text style={styles.statValue}>{agency.projects} Projects</Text>
                   </View>
-                  <View style={styles.statBox}>
-                    <MapPin size={16} color="#64748B" style={{ marginBottom: 4 }} />
-                    <Text style={styles.statValue}>{agency.experience}</Text>
-                    <Text style={styles.statLabel}>Experience</Text>
+                  <View style={styles.statItem}>
+                    <MapPin size={16} color={NAVY} />
+                    <Text style={styles.statValue}>{agency.experience} Experience</Text>
                   </View>
                 </View>
 
-                <View style={styles.cardFooter}>
-                  <TouchableOpacity style={styles.viewProfileBtn} onPress={() => onViewProfile(agency)}>
-                    <Text style={styles.viewProfileText}>View Profile</Text>
-                    <ChevronRight size={16} color={NAVY} />
+                {/* Actions */}
+                <View style={styles.actionsRow}>
+                  <TouchableOpacity style={styles.secondaryBtn} onPress={() => onViewProfile(agency)}>
+                    <Text style={styles.secondaryBtnText}>View Profile</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.primaryBtn} onPress={() => onViewProfile(agency)}>
+                    <Text style={styles.primaryBtnText}>Send Requirement</Text>
                   </TouchableOpacity>
                 </View>
+
               </View>
             ))}
             {filteredAgencies.length === 0 && (
@@ -156,53 +166,61 @@ export default function BrowseAgenciesPage({ onBack, onViewProfile }) {
 
 const styles = StyleSheet.create({
   wrapper: { flex: 1, backgroundColor: '#F8FAFC' },
-  pageHeader: { paddingHorizontal: 20, paddingVertical: 24, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: colors.border },
-  pageHeaderMobile: { paddingHorizontal: 16, paddingVertical: 16 },
+  pageHeader: { paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: colors.border },
+  pageHeaderMobile: { paddingHorizontal: 14, paddingVertical: 10 },
   headerLeft: { flexDirection: 'row', alignItems: 'center' },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-  pageTitle: { fontSize: 24, fontWeight: '900', color: NAVY, marginBottom: 4 },
-  pageSubtitle: { fontSize: 14, color: '#64748B' },
+  backBtn: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  pageTitle: { fontSize: 18, fontWeight: '900', color: NAVY, marginBottom: 2 },
+  pageSubtitle: { fontSize: 12, color: '#64748B' },
 
   scroll: { flex: 1 },
-  contentLayout: { padding: 16, gap: 24 },
-  contentLayoutWeb: { padding: 32, maxWidth: 1200, alignSelf: 'center', width: '100%', gap: 32 },
+  contentLayout: { padding: 12, gap: 10 },
+  contentLayoutWeb: { padding: 24, maxWidth: 1200, alignSelf: 'center', width: '100%', gap: 16 },
 
-  searchFilterContainer: { flexDirection: 'row', gap: 16 },
-  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 16, height: 48 },
-  searchIcon: { marginRight: 12 },
-  searchInput: { flex: 1, fontSize: 15, color: '#0F172A', ...Platform.select({ web: { outlineStyle: 'none' } }) },
-  filterBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 20, height: 48 },
-  filterBtnText: { fontSize: 14, fontWeight: '700', color: NAVY },
+  searchSection: { marginBottom: 8 },
+  searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 10, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 12, height: 38 },
+  searchIcon: { marginRight: 8 },
+  searchInput: { flex: 1, fontSize: 13, color: '#0F172A', ...Platform.select({ web: { outlineStyle: 'none' } }) },
 
-  quickFiltersScroll: { flexGrow: 0, marginBottom: 8 },
-  quickFilterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border, marginRight: 12 },
+  quickFiltersScroll: { flexGrow: 0, marginBottom: 4 },
+  quickFilterChip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 16, backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border, marginRight: 8 },
   quickFilterChipActive: { backgroundColor: NAVY, borderColor: NAVY },
-  quickFilterText: { fontSize: 14, fontWeight: '600', color: '#64748B' },
+  quickFilterText: { fontSize: 12, fontWeight: '600', color: '#64748B' },
   quickFilterTextActive: { color: '#fff' },
 
-  resultsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 24 },
-  agencyCard: { width: '100%', maxWidth: 350, backgroundColor: '#fff', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border, flexGrow: 1 },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  avatar: { width: 56, height: 56, borderRadius: 12, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-  avatarText: { fontSize: 24, fontWeight: '900', color: NAVY },
-  headerInfo: { flex: 1 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  agencyName: { fontSize: 18, fontWeight: '800', color: NAVY, flexShrink: 1 },
-  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  agenciesGrid: { flexDirection: 'column', gap: 10 },
+  agencyCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#E8EDF4', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 3, elevation: 1 },
+  
+  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  agencyLogo: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#EEF2FF', alignItems: 'center', justifyContent: 'center' },
+  agencyLogoText: { fontSize: 20, fontWeight: 'bold', color: '#2563EB' },
+  
+  cardHeaderCenter: { flex: 1, marginLeft: 12 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 },
+  agencyName: { fontSize: 16, fontWeight: 'bold', color: NAVY, marginRight: 8 },
+  verifiedBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0FDF4', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 },
+  verifiedText: { fontSize: 10, fontWeight: 'bold', color: '#16A34A', marginLeft: 4 },
+  
+  ratingLocationRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
+  ratingBox: { flexDirection: 'row', alignItems: 'center' },
+  ratingText: { fontSize: 12, fontWeight: 'bold', color: '#1E293B', marginLeft: 4 },
+  dotSeparator: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#CBD5E1', marginHorizontal: 8 },
+  
   typeBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
   typeOnline: { backgroundColor: '#EFF6FF' },
   typeTextOnline: { color: '#2563EB', fontSize: 11, fontWeight: '700' },
   typeOffline: { backgroundColor: '#FEF2F2' },
   typeTextOffline: { color: '#DC2626', fontSize: 11, fontWeight: '700' },
-  ratingBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFBEB', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
-  ratingText: { fontSize: 12, fontWeight: '700', color: GOLD },
 
-  statsRow: { flexDirection: 'row', backgroundColor: '#F8FAFC', borderRadius: 12, padding: 16, marginBottom: 20 },
-  statBox: { flex: 1, alignItems: 'center', borderRightWidth: 1, borderRightColor: colors.border },
-  statValue: { fontSize: 16, fontWeight: '800', color: NAVY, marginBottom: 2 },
-  statLabel: { fontSize: 12, color: '#64748B' },
+  divider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 12 },
 
-  cardFooter: { borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 16 },
-  viewProfileBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8 },
-  viewProfileText: { fontSize: 14, fontWeight: '700', color: NAVY, marginRight: 4 }
+  statsArea: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 16 },
+  statItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  statValue: { fontSize: 13, fontWeight: '600', color: '#1E293B' },
+
+  actionsRow: { flexDirection: 'row', gap: 12 },
+  secondaryBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: '#CBD5E1', alignItems: 'center' },
+  secondaryBtnText: { color: '#475569', fontSize: 14, fontWeight: 'bold' },
+  primaryBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: NAVY, alignItems: 'center' },
+  primaryBtnText: { color: '#fff', fontSize: 14, fontWeight: 'bold' }
 });

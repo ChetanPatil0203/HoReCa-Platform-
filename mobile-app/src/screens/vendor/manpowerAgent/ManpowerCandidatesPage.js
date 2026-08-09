@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   useWindowDimensions, Modal, SafeAreaView, FlatList, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator
 } from 'react-native';
-import { UsersRound, UserPlus, EllipsisVertical as MoreVertical, Search, SlidersHorizontal, Users, UserRoundCheck, BriefcaseBusiness, BadgeCheck, Clock3, CircleX, ChevronRight, Send, X, MapPin, Briefcase, DollarSign, Calendar, Upload, Download, FileText, User, CircleCheck as CheckCircle, Trash2 } from 'lucide-react-native';
+import { UsersRound, UserPlus, EllipsisVertical as MoreVertical, Search, SlidersHorizontal, Users, UserRoundCheck, BriefcaseBusiness, BadgeCheck, Clock3, CircleX, ChevronRight, Send, X, MapPin, Briefcase, DollarSign, Calendar, Upload, Download, FileText, User, CircleCheck as CheckCircle, Trash2, Phone, Mail, Building2, Sparkles, IndianRupee } from 'lucide-react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { AuthContext } from '../../../context/AuthContext';
 import { fetchVendorCandidatesApi, createCandidateApi, updateCandidateApi, deleteCandidateApi } from '../../../services/api.service';
@@ -34,11 +34,12 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
   const [selectedCand, setSelectedCand] = useState(null);
 
   const [addStep, setAddStep] = useState(1);
-  const [newCand, setNewCand] = useState({ 
-    name: '', 
-    mobile: '', 
-    role: '', 
-    experience: '', 
+  const [newCand, setNewCand] = useState({
+    name: '',
+    mobile: '',
+    email: '',
+    role: '',
+    experience: '',
     salary: '',
     location: '',
     documents: { aadhaar: null, pan: null, photo: null }
@@ -137,6 +138,7 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
         supplierId,
         name: newCand.name,
         mobile: newCand.mobile,
+        email: newCand.email,
         role: newCand.role,
         experience: newCand.experience || '1-3 Years',
         salary: newCand.salary || '₹20,000 / month',
@@ -149,7 +151,7 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
         showToast("Candidate added successfully to Database!");
         setAddVisible(false);
         setAddStep(1);
-        setNewCand({ name: '', mobile: '', role: '', experience: '', salary: '', location: '', documents: { aadhaar: null, pan: null, photo: null } });
+        setNewCand({ name: '', mobile: '', email: '', role: '', experience: '', salary: '', location: '', documents: { aadhaar: null, pan: null, photo: null } });
         loadCandidates();
       }
     } catch (err) {
@@ -204,7 +206,6 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
             <UsersRound size={22} color={NAVY} />
             <Text style={styles.introTitle}>Candidates</Text>
           </View>
-          <Text style={styles.introSub}>Manage candidate profiles and availability.</Text>
         </View>
         <View style={styles.introRight}>
           <TouchableOpacity style={styles.primaryBtn} onPress={() => setAddVisible(true)}>
@@ -310,7 +311,7 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
                       </View>
                     </View>
                   </View>
-                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '1A' }]}>
+                  <View style={[styles.statusBadge, { backgroundColor: 'transparent', paddingHorizontal: 0 }]}>
                     <Text style={[styles.statusBadgeText, { color: getStatusColor(item.status) }]}>{item.status}</Text>
                   </View>
                 </View>
@@ -440,6 +441,8 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
                   <TextInput style={styles.input} value={newCand.name} onChangeText={t => setNewCand({ ...newCand, name: t })} placeholder="e.g. Rahul Sharma" />
                   <Text style={styles.inputLabel}>Mobile Number</Text>
                   <TextInput style={styles.input} value={newCand.mobile} onChangeText={t => setNewCand({ ...newCand, mobile: t })} placeholder="+91" keyboardType="phone-pad" />
+                  <Text style={styles.inputLabel}>Email Address</Text>
+                  <TextInput style={styles.input} value={newCand.email} onChangeText={t => setNewCand({ ...newCand, email: t })} placeholder="e.g. rahul.sharma@example.com" keyboardType="email-address" autoCapitalize="none" />
 
                   <Text style={styles.formSectionTitle}>Professional Details</Text>
                   <Text style={styles.inputLabel}>Primary Role</Text>
@@ -451,8 +454,8 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
 
                   <Text style={styles.formSectionTitle}>Documents Upload</Text>
                   <View style={styles.docGrid}>
-                    <TouchableOpacity 
-                      style={[styles.docUploadBoxSmall, newCand.documents?.aadhaar && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]} 
+                    <TouchableOpacity
+                      style={[styles.docUploadBoxSmall, newCand.documents?.aadhaar && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]}
                       onPress={() => handlePickCandidateDoc('aadhaar')}
                       accessibilityRole="button"
                     >
@@ -466,8 +469,8 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
                       </Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity 
-                      style={[styles.docUploadBoxSmall, newCand.documents?.pan && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]} 
+                    <TouchableOpacity
+                      style={[styles.docUploadBoxSmall, newCand.documents?.pan && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]}
                       onPress={() => handlePickCandidateDoc('pan')}
                       accessibilityRole="button"
                     >
@@ -481,8 +484,8 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
                       </Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity 
-                      style={[styles.docUploadBoxSmall, newCand.documents?.photo && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]} 
+                    <TouchableOpacity
+                      style={[styles.docUploadBoxSmall, newCand.documents?.photo && { borderColor: '#10B981', backgroundColor: '#ECFDF5' }]}
                       onPress={() => handlePickCandidateDoc('photo')}
                       accessibilityRole="button"
                     >
@@ -515,45 +518,131 @@ export default function ManpowerCandidatesPage({ route, initialAction }) {
         <TouchableOpacity style={styles.modalOverlayCenter} activeOpacity={1} onPress={() => setProfileVisible(false)}>
           <View style={styles.profileModalBox}>
             <View style={styles.modalHeader}>
-              <TouchableOpacity onPress={() => setProfileVisible(false)} style={styles.modalCloseBtn}><X size={24} color="#1E293B" /></TouchableOpacity>
               <Text style={styles.modalTitle}>Candidate Profile</Text>
-              <View style={{ width: 40 }} />
+              <TouchableOpacity onPress={() => setProfileVisible(false)} style={styles.modalCloseBtn}>
+                <X size={20} color={NAVY} />
+              </TouchableOpacity>
             </View>
 
             {selectedCand && (
-              <ScrollView style={styles.modalContent}>
-                <View style={styles.profHeaderRow}>
-                  <View style={styles.profAvatarLarge}><Text style={styles.profAvatarTextLarge}>{selectedCand.name.charAt(0)}</Text></View>
+              <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+                {/* 1. Header Hero Card */}
+                <View style={styles.profHeroCard}>
+                  <View style={styles.profAvatarLarge}>
+                    <Text style={styles.profAvatarTextLarge}>{selectedCand.name ? selectedCand.name.charAt(0).toUpperCase() : 'C'}</Text>
+                  </View>
+
                   <View style={{ flex: 1 }}>
                     <Text style={styles.profName}>{selectedCand.name}</Text>
-                    <Text style={styles.profRole}>{selectedCand.role}</Text>
-                    <Text style={styles.profId}>{selectedCand.id}</Text>
-                  </View>
-                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(selectedCand.status) + '1A', alignSelf: 'flex-start' }]}>
-                    <Text style={[styles.statusBadgeText, { color: getStatusColor(selectedCand.status) }]}>{selectedCand.status}</Text>
+                    <Text style={styles.profRole}>{selectedCand.role || 'Staff Candidate'}</Text>
+                    <View style={styles.idBadgeRow}>
+                      <View style={styles.idBadgeChip}>
+                        <Text style={styles.idBadgeChipText}>{selectedCand.id || 'C-1001'}</Text>
+                      </View>
+                      <View style={[styles.profStatusChip, { backgroundColor: 'transparent', paddingHorizontal: 0 }]}>
+                        <View style={[styles.statusDot, { backgroundColor: getStatusColor(selectedCand.status) }]} />
+                        <Text style={[styles.profStatusChipText, { color: getStatusColor(selectedCand.status) }]}>
+                          {selectedCand.status || 'Available'}
+                        </Text>
+                      </View>
+                    </View>
                   </View>
                 </View>
 
-                <View style={styles.profSection}>
-                  <Text style={styles.formSectionTitle}>Contact Info</Text>
-                  <Text style={styles.profDetailText}>Mobile: {selectedCand.mobile}</Text>
-                  <Text style={styles.profDetailText}>Email: {selectedCand.email}</Text>
-                  <Text style={styles.profDetailText}>Location: {selectedCand.location}</Text>
-                </View>
-
-                <View style={styles.profSection}>
-                  <Text style={styles.formSectionTitle}>Professional Info</Text>
-                  <Text style={styles.profDetailText}>Experience: {selectedCand.experience}</Text>
-                  <Text style={styles.profDetailText}>Expected Salary: {selectedCand.salary}</Text>
-                  <Text style={styles.profDetailText}>Previous Employer: {selectedCand.prevEmployer}</Text>
-                  <Text style={styles.profDetailText}>Availability: {selectedCand.availability}</Text>
-                </View>
-
-                <View style={styles.profSection}>
-                  <Text style={styles.formSectionTitle}>Skills</Text>
-                  <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-                    {( selectedCand?.skills || [] ).map(s => <View key={s} style={styles.skillBadge}><Text style={styles.skillText}>{s}</Text></View>)}
+                {/* 2. Contact Info Section */}
+                <View style={styles.infoCardSection}>
+                  <View style={styles.infoCardHeader}>
+                    <User size={16} color={NAVY} />
+                    <Text style={styles.infoCardTitle}>Contact Details</Text>
                   </View>
+
+                  <View style={styles.infoGrid}>
+                    <View style={styles.infoGridRow}>
+                      <View style={styles.iconCircle}><Phone size={14} color="#3B82F6" /></View>
+                      <View style={styles.infoGridTextWrap}>
+                        <Text style={styles.infoGridLabel}>Mobile</Text>
+                        <Text style={styles.infoGridValue}>{selectedCand.mobile || 'Confidential'}</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.infoGridRow}>
+                      <View style={styles.iconCircle}><Mail size={14} color="#8B5CF6" /></View>
+                      <View style={styles.infoGridTextWrap}>
+                        <Text style={styles.infoGridLabel}>Email</Text>
+                        <Text style={styles.infoGridValue}>{selectedCand.email || 'Not provided'}</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.infoGridRow}>
+                      <View style={styles.iconCircle}><MapPin size={14} color="#EF4444" /></View>
+                      <View style={styles.infoGridTextWrap}>
+                        <Text style={styles.infoGridLabel}>Location</Text>
+                        <Text style={styles.infoGridValue}>{selectedCand.location || 'India'}</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+
+                {/* 3. Professional Info Section */}
+                <View style={styles.infoCardSection}>
+                  <View style={styles.infoCardHeader}>
+                    <Briefcase size={16} color={NAVY} />
+                    <Text style={styles.infoCardTitle}>Professional Details</Text>
+                  </View>
+
+                  <View style={styles.infoGrid}>
+                    <View style={styles.infoGridTwoCol}>
+                      <View style={styles.infoGridBox}>
+                        <Clock3 size={15} color="#0B2246" />
+                        <Text style={styles.infoGridLabel}>Experience</Text>
+                        <Text style={styles.infoGridValueBold}>{selectedCand.experience || 'Fresh'}</Text>
+                      </View>
+
+                      <View style={styles.infoGridBox}>
+                        <IndianRupee size={15} color="#059669" />
+                        <Text style={styles.infoGridLabel}>Expected Salary</Text>
+                        <Text style={styles.infoGridValueBold}>{selectedCand.salary ? `₹${selectedCand.salary}` : 'Negotiable'}</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.infoGridRow}>
+                      <View style={styles.iconCircle}><Building2 size={14} color="#F59E0B" /></View>
+                      <View style={styles.infoGridTextWrap}>
+                        <Text style={styles.infoGridLabel}>Previous Employer</Text>
+                        <Text style={styles.infoGridValue}>{selectedCand.prevEmployer || 'N/A'}</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.infoGridRow}>
+                      <View style={styles.iconCircle}><Calendar size={14} color="#10B981" /></View>
+                      <View style={styles.infoGridTextWrap}>
+                        <Text style={styles.infoGridLabel}>Availability</Text>
+                        <Text style={styles.infoGridValue}>{selectedCand.availability || 'Immediate Joining'}</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+
+                {/* 4. Key Skills Section */}
+                <View style={styles.infoCardSection}>
+                  <View style={styles.infoCardHeader}>
+                    <Sparkles size={16} color="#D4AF37" />
+                    <Text style={styles.infoCardTitle}>Skills & Expertise</Text>
+                  </View>
+
+                  {selectedCand?.skills && selectedCand.skills.length > 0 ? (
+                    <View style={styles.skillsPillContainer}>
+                      {selectedCand.skills.map((s, idx) => (
+                        <View key={idx} style={styles.skillPillChip}>
+                          <Text style={styles.skillPillText}>{s}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  ) : (
+                    <Text style={{ fontSize: 13, color: '#94A3B8', fontStyle: 'italic', paddingLeft: 4 }}>
+                      No specific skills listed.
+                    </Text>
+                  )}
                 </View>
               </ScrollView>
             )}
@@ -678,11 +767,37 @@ const styles = StyleSheet.create({
   primaryBtnLargeText: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
 
   profHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
-  profAvatarLarge: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-  profAvatarTextLarge: { fontSize: 24, fontWeight: 'bold', color: NAVY },
-  profName: { fontSize: 22, fontWeight: 'bold', color: NAVY },
-  profRole: { fontSize: 16, color: '#64748B', marginTop: 4 },
+  profAvatarLarge: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#0B2246', alignItems: 'center', justifyContent: 'center', marginRight: 14, borderWidth: 2, borderColor: '#D4AF37' },
+  profAvatarTextLarge: { fontSize: 22, fontWeight: '900', color: '#FFFFFF' },
+  profName: { fontSize: 20, fontWeight: '800', color: NAVY, textTransform: 'capitalize' },
+  profRole: { fontSize: 14, color: '#64748B', marginTop: 2, fontWeight: '500', textTransform: 'capitalize' },
   profId: { fontSize: 13, color: '#94A3B8', marginTop: 4 },
+
+  profHeroCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', padding: 16, borderRadius: 18, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 18 },
+  idBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+  idBadgeChip: { backgroundColor: '#E2E8F0', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  idBadgeChipText: { fontSize: 11, fontWeight: '700', color: '#475569' },
+  profStatusChip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  statusDot: { width: 6, height: 6, borderRadius: 3 },
+  profStatusChipText: { fontSize: 11, fontWeight: '700' },
+
+  infoCardSection: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 16, padding: 16, marginBottom: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 6, elevation: 1 },
+  infoCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingBottom: 12, marginBottom: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  infoCardTitle: { fontSize: 14, fontWeight: '700', color: NAVY },
+  infoGrid: { gap: 10 },
+  infoGridRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  iconCircle: { width: 32, height: 32, borderRadius: 10, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
+  infoGridTextWrap: { flex: 1 },
+  infoGridLabel: { fontSize: 11, color: '#64748B', fontWeight: '500' },
+  infoGridValue: { fontSize: 13, color: NAVY, fontWeight: '600', marginTop: 1 },
+  infoGridValueBold: { fontSize: 14, color: NAVY, fontWeight: '800', marginTop: 2 },
+
+  infoGridTwoCol: { flexDirection: 'row', gap: 10, marginBottom: 4 },
+  infoGridBox: { flex: 1, backgroundColor: '#F8FAFC', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#F1F5F9' },
+
+  skillsPillContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  skillPillChip: { backgroundColor: '#EFF6FF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#DBEAFE' },
+  skillPillText: { fontSize: 12, color: '#1E40AF', fontWeight: '600' },
 
   profSection: { marginBottom: 24 },
   profDetailText: { fontSize: 14, color: '#475569', marginBottom: 8 },

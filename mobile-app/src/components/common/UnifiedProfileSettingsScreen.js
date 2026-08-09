@@ -97,7 +97,6 @@ const ROLE_SPECIFIC_OPTIONS = {
   ],
   marketing: [
     { id: 'marketingServices', title: 'Marketing Services', desc: 'Manage online and offline services', icon: Megaphone, key: 'marketingServices' },
-    { id: 'portfolio', title: 'Portfolio', desc: 'Manage campaigns and work samples', icon: FolderOpen, key: 'portfolio' },
     { id: 'pricingPackages', title: 'Pricing Packages', desc: 'Manage campaign plans and charges', icon: Briefcase, key: 'pricingPackages' },
   ]
 };
@@ -154,7 +153,7 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
                 'profile_photo',
                 token
               );
-              
+
               if (uploadRes?.success && uploadRes?.data?.fileUrl) {
                 const secureUrl = uploadRes.data.fileUrl;
                 const photoMeta = {
@@ -187,7 +186,7 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
             } catch (uploadErr) {
               console.warn('[Cloudinary] Web profile photo upload failed, using local URI:', uploadErr?.message);
               if (auth?.updateUser) auth.updateUser({ profilePhoto: photoUri });
-              updateUserProfileApi({ profilePhoto: photoUri }).catch(() => {});
+              updateUserProfileApi({ profilePhoto: photoUri }).catch(() => { });
             }
           })();
         }
@@ -244,7 +243,7 @@ export default function UnifiedProfileSettingsScreen({ roleOverride, navigation,
           console.warn('[Cloudinary] Profile photo upload failed, using local URI:', uploadErr?.message);
           // Fallback: keep local preview but persist local URI to DB
           if (auth?.updateUser) auth.updateUser({ profilePhoto: asset.uri });
-          updateUserProfileApi({ profilePhoto: asset.uri }).catch(() => {});
+          updateUserProfileApi({ profilePhoto: asset.uri }).catch(() => { });
         }
       }
     }).catch(err => {
@@ -1784,6 +1783,7 @@ const styles = StyleSheet.create({
     width: '92%',
     maxWidth: 520,
     maxHeight: '84%',
+    height: Platform.OS === 'web' ? 'auto' : '80%',
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     borderWidth: 1,

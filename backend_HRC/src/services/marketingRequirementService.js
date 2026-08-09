@@ -258,6 +258,47 @@ exports.getRequirementProposalsService = async (requirementId) => {
   });
 };
 
+exports.getVendorProposalsService = async (supplierId) => {
+  const vendorId = await resolveVendorId(supplierId);
+  const searchIds = [supplierId, vendorId].filter(id => isUuid(id));
+  if (searchIds.length === 0) return [];
+
+  const proposals = await MarketingProposal.findAll({
+    where: { supplierId: { [Op.in]: searchIds } },
+    include: [
+      {
+        model: MarketingRequirement,
+        as: 'requirement',
+        attributes: ['id', 'campaignType', 'budget', 'duration', 'location', 'status', 'ownerId'],
+        include: [
+          { model: HorecaRegistration, as: 'owner', attributes: ['id', 'bizName', 'city'] }
+        ]
+      }
+    ],
+    order: [['createdAt', 'DESC']],
+  });
+
+  return proposals.map(p => ({
+    id: p.id,
+    requirementId: p.requirementId,
+    status: p.status,
+    amount: p.amount,
+    duration: p.duration,
+    strategy: p.strategy,
+    deliverables: p.deliverables,
+    paymentTerms: p.paymentTerms,
+    startDate: p.startDate,
+    completionDate: p.completionDate,
+    notes: p.notes,
+    createdAt: p.createdAt,
+    updatedAt: p.updatedAt,
+    campaign: p.requirement?.campaignType || 'Marketing Campaign',
+    client: p.requirement?.owner?.bizName || 'HoReCa Client',
+    budget: p.requirement?.budget || null,
+    location: p.requirement?.location || null,
+  }));
+};
+
 exports.acceptMarketingProposalService = async (proposalId) => {
   const proposal = await MarketingProposal.findByPk(proposalId);
   if (!proposal) throw new Error('Proposal not found');

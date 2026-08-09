@@ -562,6 +562,11 @@ export const fetchMarketingProposalsApi = async (requirementId) => {
   return response.data;
 };
 
+export const fetchVendorProposalsBySupplierApi = async (supplierId) => {
+  const response = await api.get(`/requirements/marketing/proposals/vendor/${supplierId}`);
+  return response.data;
+};
+
 export const acceptMarketingProposalApi = async (proposalId) => {
   const response = await api.patch(`/requirements/marketing/proposals/${proposalId}/accept`);
   return response.data;
@@ -707,6 +712,57 @@ export const uploadComplianceApi = async (file, token) => {
   });
   if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
   return response.json();
+};
+
+/**
+ * Notification API Integrations
+ */
+
+// 1. Fetch notifications for user (with optional filter type/status)
+export const fetchUserNotificationsApi = async (userId, statusFilter = 'All') => {
+  try {
+    const url = statusFilter && statusFilter !== 'All' 
+      ? `/notifications/user/${userId}?status=${encodeURIComponent(statusFilter)}`
+      : `/notifications/user/${userId}`;
+    const response = await api.get(url);
+    return response.data;
+  } catch (error) {
+    console.error('fetchUserNotificationsApi Error:', error?.response?.data || error.message);
+    throw error;
+  }
+};
+
+// 2. Mark all notifications as read for user
+export const markAllNotificationsReadApi = async (userId) => {
+  try {
+    const response = await api.put(`/notifications/mark-all-read/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error('markAllNotificationsReadApi Error:', error?.response?.data || error.message);
+    throw error;
+  }
+};
+
+// 3. Toggle single notification read status (or set status)
+export const toggleNotificationReadApi = async (notificationId) => {
+  try {
+    const response = await api.put(`/notifications/${notificationId}/toggle-read`);
+    return response.data;
+  } catch (error) {
+    console.error('toggleNotificationReadApi Error:', error?.response?.data || error.message);
+    throw error;
+  }
+};
+
+// 4. Explicitly mark notification as unread
+export const markNotificationUnreadApi = async (notificationId) => {
+  try {
+    const response = await api.put(`/notifications/${notificationId}/mark-unread`);
+    return response.data;
+  } catch (error) {
+    console.error('markNotificationUnreadApi Error:', error?.response?.data || error.message);
+    throw error;
+  }
 };
 
 export default api;

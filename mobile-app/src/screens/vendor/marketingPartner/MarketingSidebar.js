@@ -87,8 +87,8 @@ export default function MarketingSidebar({ activePage, setActivePage, isMobile, 
       <View style={styles.bottomSection}>
         {NAV_BOTTOM.map((item) => <NavBtn key={item.key} item={item} />)}
         <TouchableOpacity style={styles.logoutBtn} onPress={onLogout}>
-          <LogOut size={20} color="#B8C6E3" strokeWidth={1.5} />
-          <Text style={styles.logoutText}>Logout</Text>
+          <LogOut size={20} color="#EF4444" strokeWidth={1.5} />
+          <Text style={[styles.logoutText, { color: '#EF4444' }]}>Logout</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -116,7 +116,7 @@ export default function MarketingSidebar({ activePage, setActivePage, isMobile, 
 const styles = StyleSheet.create({
   desktopSidebar: {
     width: 280,
-    backgroundColor: '#081A3A',
+    backgroundColor: '#0B2246',
     borderRightWidth: 1,
     borderRightColor: 'rgba(255,255,255,0.08)',
     flexDirection: 'column',
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
     flex: 1, backgroundColor: 'rgba(0,0,0,0.6)',
   },
   mobileSidebar: {
-    width: 280, backgroundColor: '#081A3A',
+    width: 280, backgroundColor: '#0B2246',
   },
   sidebarInner: {
     flex: 1, justifyContent: 'space-between',

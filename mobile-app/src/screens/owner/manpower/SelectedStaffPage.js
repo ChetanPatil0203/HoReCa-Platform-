@@ -4,7 +4,7 @@ import { ArrowLeft, User, Building, Calendar, Phone, MessageSquare, CircleCheck 
 import { colors } from '../../../theme/colors';
 import { SELECTED_STAFF } from '../../../constants/manpowerData';
 
-const BLUE = '#2563EB';
+const BLUE = '#071B3A';
 
 export default function SelectedStaffPage({ onBack, onRequestReplacement }) {
   const { width } = useWindowDimensions();

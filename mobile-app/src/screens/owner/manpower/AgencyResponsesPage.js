@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, 
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Platform, Dimensions, Modal, KeyboardAvoidingView,
-  TouchableWithoutFeedback 
+  TouchableWithoutFeedback
 } from 'react-native';
 import { Building2, UsersRound, ArrowUpDown, ShieldCheck, Star, ChevronRight, EllipsisVertical as MoreVertical, X, Clock3, CircleAlert as AlertCircle } from 'lucide-react-native';
 import { fetchVendorCandidatesApi } from '../../../services/api.service';
@@ -35,7 +35,7 @@ export default function AgencyResponsesPage({ requirement, onBack }) {
   const [filter, setFilter] = useState('All');
   const [responses, setResponses] = useState([]);
   const [candidates, setCandidates] = useState([]);
-  
+
   // Modals
   const [agencyModal, setAgencyModal] = useState(false);
   const [candidatesModal, setCandidatesModal] = useState(false);
@@ -43,7 +43,7 @@ export default function AgencyResponsesPage({ requirement, onBack }) {
   const [shortlistModal, setShortlistModal] = useState(false);
   const [selectedAgency, setSelectedAgency] = useState(null);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
-  
+
   const [moreMenuVisible, setMoreMenuVisible] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState(null);
 
@@ -52,7 +52,7 @@ export default function AgencyResponsesPage({ requirement, onBack }) {
       try {
         const candRes = await fetchVendorCandidatesApi('all');
         const list = candRes?.data || candRes || [];
-        
+
         const fallbackCands = [];
 
         const mappedCands = (Array.isArray(list) && list.length > 0) ? list.map(c => ({
@@ -118,7 +118,7 @@ export default function AgencyResponsesPage({ requirement, onBack }) {
       <View style={styles.globalHeaderMock} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingHorizontal: isMobile ? (width < 340 ? 12 : 16) : 24 }]}>
-        
+
         {/* Page Header */}
         <View style={styles.pageHeader}>
           <View style={styles.pageTitleRow}>
@@ -157,9 +157,9 @@ export default function AgencyResponsesPage({ requirement, onBack }) {
         <View style={styles.filtersWrap}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersScroll}>
             {['All', 'Verified', 'Reviewed', 'New'].map(f => (
-              <TouchableOpacity 
-                key={f} 
-                style={[styles.filterPill, filter === f && styles.filterPillActive]} 
+              <TouchableOpacity
+                key={f}
+                style={[styles.filterPill, filter === f && styles.filterPillActive]}
                 onPress={() => setFilter(f)}
               >
                 <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>{f}</Text>
@@ -174,7 +174,7 @@ export default function AgencyResponsesPage({ requirement, onBack }) {
             const sStyle = getStatusStyle(res.status);
             return (
               <View key={res.id} style={[styles.agencyCard, !isMobile && { width: '48%', marginRight: '2%' }]}>
-                
+
                 {/* Header */}
                 <View style={styles.cardHeader}>
                   <View style={styles.cardHeaderLeft}>
@@ -267,7 +267,7 @@ export default function AgencyResponsesPage({ requirement, onBack }) {
       )}
 
       {/* Modals */}
-      
+
       {/* Decline Response Modal */}
       <Modal visible={declineModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
@@ -277,9 +277,9 @@ export default function AgencyResponsesPage({ requirement, onBack }) {
               <TouchableOpacity onPress={() => setDeclineModal(false)}><X size={24} color={GRAY} /></TouchableOpacity>
             </View>
             <View style={styles.modalBody}>
-              <Text style={styles.confirmText}>Agency: <Text style={{fontWeight: 'bold', color: NAVY}}>Elite Staffing Co.</Text></Text>
-              <Text style={styles.confirmText}>Requirement: <Text style={{fontWeight: 'bold', color: NAVY}}>REQ-091</Text></Text>
-              
+              <Text style={styles.confirmText}>Agency: <Text style={{ fontWeight: 'bold', color: NAVY }}>Elite Staffing Co.</Text></Text>
+              <Text style={styles.confirmText}>Requirement: <Text style={{ fontWeight: 'bold', color: NAVY }}>REQ-091</Text></Text>
+
               <Text style={[styles.inputLabel, { marginTop: 16 }]}>Reason for declining:</Text>
               <TouchableOpacity style={styles.reasonOption}><Text style={styles.reasonText}>Service fee is too high</Text></TouchableOpacity>
               <TouchableOpacity style={styles.reasonOption}><Text style={styles.reasonText}>Candidate profiles are not suitable</Text></TouchableOpacity>
@@ -361,7 +361,7 @@ export default function AgencyResponsesPage({ requirement, onBack }) {
               <TouchableOpacity onPress={() => setCandidatesModal(false)}><X size={24} color={GRAY} /></TouchableOpacity>
             </View>
             <ScrollView style={styles.modalBody}>
-              
+
               {candidates.map(cand => (
                 <View key={cand.id} style={styles.candidateCard}>
                   <View style={styles.candHeader}>
@@ -376,8 +376,8 @@ export default function AgencyResponsesPage({ requirement, onBack }) {
                     </View>
                   </View>
                   <View style={styles.candMeta}>
-                    <Text style={styles.candMetaText}>Expected Salary: <Text style={{fontWeight: 'bold', color: NAVY}}>{cand.salary}</Text></Text>
-                    <Text style={styles.candMetaText}>Available: <Text style={{color: NAVY}}>{cand.avail}</Text></Text>
+                    <Text style={styles.candMetaText}>Expected Salary: <Text style={{ fontWeight: 'bold', color: NAVY }}>{cand.salary}</Text></Text>
+                    <Text style={styles.candMetaText}>Available: <Text style={{ color: NAVY }}>{cand.avail}</Text></Text>
                   </View>
                   <View style={styles.cardFooter}>
                     <TouchableOpacity style={styles.textBtn}>
@@ -405,9 +405,9 @@ export default function AgencyResponsesPage({ requirement, onBack }) {
               <TouchableOpacity onPress={() => setShortlistModal(false)}><X size={24} color={GRAY} /></TouchableOpacity>
             </View>
             <View style={styles.modalBody}>
-              <Text style={styles.confirmText}>Candidate: <Text style={{fontWeight: 'bold', color: NAVY}}>{selectedCandidate?.name}</Text></Text>
-              <Text style={styles.confirmText}>Agency: <Text style={{fontWeight: 'bold', color: NAVY}}>{selectedAgency?.agencyName}</Text></Text>
-              <Text style={styles.confirmText}>Requirement: <Text style={{fontWeight: 'bold', color: NAVY}}>Head Chef · REQ-091</Text></Text>
+              <Text style={styles.confirmText}>Candidate: <Text style={{ fontWeight: 'bold', color: NAVY }}>{selectedCandidate?.name}</Text></Text>
+              <Text style={styles.confirmText}>Agency: <Text style={{ fontWeight: 'bold', color: NAVY }}>{selectedAgency?.agencyName}</Text></Text>
+              <Text style={styles.confirmText}>Requirement: <Text style={{ fontWeight: 'bold', color: NAVY }}>Head Chef · REQ-091</Text></Text>
             </View>
             <View style={styles.modalFooter}>
               <TouchableOpacity style={styles.btnOutlineModal} onPress={() => setShortlistModal(false)}>
@@ -428,7 +428,7 @@ export default function AgencyResponsesPage({ requirement, onBack }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: LIGHT_BG },
   scrollContent: { paddingBottom: 115, maxWidth: 1320, alignSelf: 'center', width: '100%', paddingTop: 20 },
-  
+
   pageHeader: { marginBottom: 16 },
   pageTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
   pageTitle: { fontSize: 24, fontWeight: 'bold', color: NAVY },
@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
 
   cardsGrid: { flexDirection: 'row', flexWrap: 'wrap' },
   agencyCard: { width: '100%', backgroundColor: WHITE, borderRadius: 18, borderWidth: 1, borderColor: '#E2E8F0', padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 2, elevation: 1 },
-  
+
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
   cardHeaderLeft: { flexDirection: 'row', alignItems: 'flex-start', flex: 1 },
   avatar: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#EFF6FF', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
   verifiedText: { fontSize: 12, color: GREEN, fontWeight: '600' },
   ratingBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FFFBEB', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
   ratingText: { fontSize: 12, fontWeight: 'bold', color: GOLD },
-  
+
   cardHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   statusBadgeText: { fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase' },
@@ -499,7 +499,7 @@ const styles = StyleSheet.create({
   modalSubtitle: { fontSize: 13, color: GRAY, marginTop: 4 },
   modalBody: { padding: 20 },
   modalFooter: { flexDirection: 'row', justifyContent: 'flex-end', padding: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9', backgroundColor: WHITE, gap: 12 },
-  
+
   confirmText: { fontSize: 14, color: GRAY, marginBottom: 8 },
   inputLabel: { fontSize: 13, fontWeight: '600', color: NAVY, marginBottom: 12 },
   reasonOption: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },

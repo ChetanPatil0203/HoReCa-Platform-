@@ -27,7 +27,7 @@ import { AuthContext } from '../../../context/AuthContext';
 import { createRequirementApi } from '../../../services/api.service';
 
 // Design Tokens
-const NAVY = '#071B3A';
+const NAVY = '#0B2246';
 const GOLD = '#F2C230';
 const BG_PAGE = '#F5F7FA';
 const CARD_BG = '#FFFFFF';

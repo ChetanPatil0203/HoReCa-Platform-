@@ -263,7 +263,7 @@ export default function ProviderRequestsPage() {
     let text = item.priorityBadge || item.status;
     const theme = getStatusTheme(item.status);
     return (
-      <View style={[styles.statusBadge, { backgroundColor: theme.bg, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+      <View style={[styles.statusBadge, { backgroundColor: 'transparent', paddingHorizontal: 0, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
         <Animated.View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: theme.text, opacity: pulseAnim }} />
         <Text style={[styles.statusBadgeText, { color: theme.text }]}>{text.toUpperCase()}</Text>
       </View>
@@ -273,7 +273,7 @@ export default function ProviderRequestsPage() {
     const theme = getStatusTheme(item.status);
     return (
       <FadeInCard index={index}>
-        <View style={[styles.card, { borderLeftColor: theme.text, borderLeftWidth: 5 }]}>
+        <View style={styles.card}>
           {/* Top Row */}
           <View style={styles.cardHeaderRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -290,19 +290,11 @@ export default function ProviderRequestsPage() {
 
           {/* Service & Client */}
           <Text style={styles.cardTitle} numberOfLines={2}>{item.service}</Text>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-            <View style={{ flex: 1, marginRight: 8 }}>
-              <Text style={styles.clientInfo} numberOfLines={1}>
-                <Text style={{ fontWeight: '600', color: NAVY }}>{item.client}</Text> · {item.businessType}
-              </Text>
-              <Text style={styles.locationText} numberOfLines={1}>{item.location}</Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => Alert.alert('Call Customer', `Dialing ${item.client}...`)}
-              style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <Phone size={14} color="#3B82F6" />
-            </TouchableOpacity>
+          <View style={{ marginBottom: 12 }}>
+            <Text style={styles.clientInfo} numberOfLines={1}>
+              <Text style={{ fontWeight: '600', color: NAVY }}>{item.client}</Text> · {item.businessType}
+            </Text>
+            <Text style={styles.locationText} numberOfLines={1}>{item.location}</Text>
           </View>
 
           {/* 2-Column Details */}

@@ -42,7 +42,7 @@ import PostRequirementPage from './PostRequirementPage';
 import BrowseAgenciesPage from './BrowseAgenciesPage';
 import CampaignRequestsPage from './CampaignRequestsPage';
 
-const NAVY = '#071B3A';
+const NAVY = '#0B2246';
 const BORDER = '#E2E8F0';
 const TEXT_MUTED = '#64748B';
 const ACCENT_ORANGE = '#F97316';
@@ -652,7 +652,7 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   sectionTitle: { fontSize: 18, fontWeight: '800', color: NAVY },
   sectionSubtitle: { fontSize: 12, color: TEXT_MUTED, marginTop: 2 },
-  viewAllText: { fontSize: 13, fontWeight: '700', color: '#2563EB' },
+  viewAllText: { fontSize: 13, fontWeight: '700', color: '#000000' },
 
   // Popular Services
   servicesScroll: { gap: 12, paddingRight: 16 },

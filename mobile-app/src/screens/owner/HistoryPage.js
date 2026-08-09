@@ -86,7 +86,8 @@ export default function HistoryPage() {
     let isMounted = true;
     const loadBackendHistory = async () => {
       try {
-        const ownerId = user?.id || user?.registrationId || 'OWNER-DEMO-001';
+        const ownerId = user?.id || user?.registration?.id || user?.userId;
+        if (!ownerId) return;
         const res = await fetchOwnerActivityHistoryApi(ownerId);
         if (res && res.success && res.data) {
           const { orders = [], requirements = [] } = res.data;

@@ -223,7 +223,7 @@ export default function ManpowerDeploymentsPage() {
               <View style={styles.recordAvatar}><Text style={styles.recordAvatarText}>{item.candidate.charAt(0)}</Text></View>
               <View style={styles.recordHeaderInfo}>
                 <Text style={styles.recordName} numberOfLines={1}>{item.candidate}</Text>
-                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '15' }]}>
+                <View style={[styles.statusBadge, { backgroundColor: 'transparent', paddingHorizontal: 0 }]}>
                   <Text style={[styles.statusBadgeText, { color: getStatusColor(item.status) }]}>{item.status}</Text>
                 </View>
               </View>
@@ -413,33 +413,8 @@ export default function ManpowerDeploymentsPage() {
             </ScrollView>
 
             {/* Contextual Actions */}
-            {selectedDep && (
+            {selectedDep && selectedDep.status !== 'Working' && (
               <View style={styles.stickyFooter}>
-                {selectedDep.status === 'Working' && (
-                  <View style={styles.actionRow}>
-                    <TouchableOpacity style={styles.primaryBtnLarge} onPress={() => setCompleteModalVisible(true)}>
-                      <CircleCheck size={18} color="#fff" style={{ marginRight: 8 }} />
-                      <Text style={styles.primaryBtnLargeText}>Mark as Completed</Text>
-                    </TouchableOpacity>
-                    <View style={{ position: 'relative' }}>
-                      <TouchableOpacity style={styles.moreActionBtn} onPress={() => setMoreMenuVisible(!moreMenuVisible)}>
-                        <MoreVertical size={20} color={NAVY} />
-                      </TouchableOpacity>
-                      {moreMenuVisible && (
-                        <View style={styles.moreDropdown}>
-                          <TouchableOpacity style={styles.moreDropdownItem} onPress={() => { setMoreMenuVisible(false); setUpdateModalVisible(true); }}>
-                            <Pencil size={16} color="#475569" style={{ marginRight: 8 }} />
-                            <Text style={styles.moreDropdownText}>Update Assignment</Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity style={[styles.moreDropdownItem, { borderTopWidth: 1, borderTopColor: '#F1F5F9' }]} onPress={() => { setMoreMenuVisible(false); setLeftJobModalVisible(true); }}>
-                            <UserRoundX size={16} color="#EF4444" style={{ marginRight: 8 }} />
-                            <Text style={[styles.moreDropdownText, { color: '#EF4444' }]}>Report Left Job</Text>
-                          </TouchableOpacity>
-                        </View>
-                      )}
-                    </View>
-                  </View>
-                )}
                 {selectedDep.status === 'Completed' && (
                   <TouchableOpacity style={styles.primaryBtnLarge} onPress={() => { showToast("Viewing completion summary..."); }}>
                     <FileText size={18} color="#fff" style={{ marginRight: 8 }} />

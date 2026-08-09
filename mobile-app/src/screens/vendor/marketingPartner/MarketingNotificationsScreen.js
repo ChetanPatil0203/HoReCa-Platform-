@@ -1,268 +1,312 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, Platform, ToastAndroid } from 'react-native';
-import { Bell, Check, Trash2, Megaphone, Send, Eye, ThumbsUp, CircleX as XCircle, MessageSquare, CircleCheck as CheckCircle, Image as ImageIcon, Calendar, Clock, Flag, DollarSign, Star, Info } from 'lucide-react-native';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
+import {
+  View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator
+} from 'react-native';
+import { Bell } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
-import { fetchVendorRequirements, fetchPublicRequirements } from '../../../services/api.service';
+import {
+  fetchUserNotificationsApi,
+  markAllNotificationsReadApi,
+  toggleNotificationReadApi,
+  fetchVendorOrders
+} from '../../../services/api.service';
 
-const FILTERS = ["All", "Requirements", "Proposals", "Campaigns", "Approvals", "Payments", "System"];
+const NAVY = '#0B2246';
+const STORAGE_KEY = 'hrc_read_notifications_marketing';
 
-const INITIAL_NOTIFICATIONS = [];
+const TABS = ['All', 'Unread', 'Marked as Read'];
 
-export default function MarketingNotificationsScreen({ setActivePage }) {
+export default function MarketingNotificationsScreen() {
   const { user } = useContext(AuthContext);
+  const userId = user?.id || user?.registration?.userId || user?.userId;
   const supplierId = user?.registration?.id || user?.id;
 
-  const [activeFilter, setActiveFilter] = useState("All");
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const [activeTab, setActiveTab] = useState('All');
+  const [allNotifications, setAllNotifications] = useState([]);
+  const [readOverrideMap, setReadOverrideMap] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  // Restore persistent read overrides from LocalStorage on mount
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const saved = window.localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          setReadOverrideMap(JSON.parse(saved));
+        }
+      }
+    } catch (e) {
+      console.warn('LocalStorage restore error:', e);
+    }
+  }, []);
+
+  const updateReadOverrides = (updater) => {
+    setReadOverrideMap(prev => {
+      const nextMap = typeof updater === 'function' ? updater(prev) : updater;
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextMap));
+        }
+      } catch (e) {}
+      return nextMap;
+    });
+  };
+
+  const loadNotifications = useCallback(async () => {
+    if (!userId && !supplierId) return;
+
+    try {
+      let dbRes = null;
+      if (userId) {
+        try {
+          dbRes = await fetchUserNotificationsApi(userId, 'All');
+        } catch (e) {}
+      }
+
+      if (dbRes?.success && Array.isArray(dbRes.data) && dbRes.data.length > 0) {
+        setAllNotifications(dbRes.data);
+      } else {
+        // Fallback sync from Live Vendor Orders / Campaigns
+        const res = await fetchVendorOrders(supplierId);
+        const ordersList = res?.data || res || [];
+        const list = [];
+
+        if (Array.isArray(ordersList)) {
+          ordersList.forEach((ord, idx) => {
+            const timeStr = ord.createdAt ? new Date(ord.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '02:15 PM';
+            const shortId = (ord.id || '').toString().slice(-4).toUpperCase();
+            
+            list.push({
+              id: `mkt-${ord.id || idx}`,
+              type: 'Orders',
+              title: `Campaign Update: #${shortId}`,
+              message: `Client ${ord.owner?.bizName || 'Grand Hotel'} launched campaign request. Status: ${ord.status || 'Active'}.`,
+              createdAt: ord.createdAt || new Date().toISOString(),
+              time: timeStr,
+              isRead: ord.status === 'completed',
+            });
+          });
+        }
+        setAllNotifications(list);
+      }
+    } catch (err) {
+      console.warn('Error loading marketing notifications:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [userId, supplierId]);
 
   useEffect(() => {
-    const loadLiveNotifications = async () => {
-      try {
-        const [directRes, publicRes] = await Promise.all([
-          supplierId ? fetchVendorRequirements(supplierId).catch(() => []) : Promise.resolve([]),
-          fetchPublicRequirements('marketing').catch(() => [])
-        ]);
-
-        const list = [];
-        const directList = directRes?.data || directRes || [];
-        const publicList = publicRes?.data || publicRes || [];
-
-        if (Array.isArray(directList)) {
-          directList.forEach((req, idx) => {
-            list.push({
-              id: `direct-${req.id || idx}`,
-              type: 'New Direct Request',
-              category: 'Requirements',
-              title: `Direct Marketing Brief: ${req.title || 'Marketing Request'}`,
-              message: `${req.owner?.bizName || 'Client'} sent a direct marketing request. Budget: ${req.budget || 'Open'}.`,
-              time: req.createdAt ? new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
-              isRead: false,
-            });
-          });
-        }
-
-        if (Array.isArray(publicList)) {
-          publicList.slice(0, 5).forEach((req, idx) => {
-            list.push({
-              id: `public-${req.id || idx}`,
-              type: 'New Broadcast Requirement',
-              category: 'Requirements',
-              title: `Public Opportunity: ${req.title || 'Marketing Brief'}`,
-              message: `Broadcasted brief from ${req.owner?.bizName || 'Client'}: "${req.description || req.title}".`,
-              time: req.createdAt ? new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
-              isRead: true,
-            });
-          });
-        }
-
-        setNotifications(list);
-      } catch (err) {
-        console.warn('Error loading marketing notifications:', err);
-      }
-    };
-
-    loadLiveNotifications();
-    const interval = setInterval(loadLiveNotifications, 4000);
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 2000);
     return () => clearInterval(interval);
-  }, [supplierId]);
+  }, [loadNotifications]);
 
-  const filteredNotifs = activeFilter === "All" ? notifications : notifications.filter(n => n.category === activeFilter);
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const processedNotifications = allNotifications.map(n => {
+    const isOverridden = readOverrideMap[n.id] !== undefined;
+    return {
+      ...n,
+      isRead: isOverridden ? readOverrideMap[n.id] : Boolean(n.isRead),
+    };
+  });
 
-  const getIconForType = (type) => {
-    switch (type) {
-      case 'New Broadcast Requirement': return <Megaphone size={20} color="#071B3A" />;
-      case 'New Direct Request': return <Send size={20} color="#071B3A" />;
-      case 'Proposal Viewed': return <Eye size={20} color="#3B82F6" />;
-      case 'Proposal Accepted': return <ThumbsUp size={20} color="#10B981" />;
-      case 'Proposal Rejected': return <XCircle size={20} color="#EF4444" />;
-      case 'Revision Requested': return <MessageSquare size={20} color="#F59E0B" />;
-      case 'Creative Approved': return <CheckCircle size={20} color="#10B981" />;
-      case 'Creative Changes Requested': return <ImageIcon size={20} color="#EF4444" />;
-      case 'Campaign Start Reminder': return <Calendar size={20} color="#3B82F6" />;
-      case 'Task Due': return <Clock size={20} color="#F59E0B" />;
-      case 'Campaign Completed': return <Flag size={20} color="#10B981" />;
-      case 'Payment Received': return <DollarSign size={20} color="#10B981" />;
-      case 'New Review': return <Star size={20} color="#F59E0B" />;
-      default: return <Info size={20} color="#64748B" />;
+  const unreadCount = processedNotifications.filter(n => !n.isRead).length;
+  const readCount = processedNotifications.filter(n => n.isRead).length;
+  const totalCount = processedNotifications.length;
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      if (userId) {
+        markAllNotificationsReadApi(userId).catch(() => {});
+      }
+      
+      const newOverrides = { ...readOverrideMap };
+      allNotifications.forEach(n => {
+        newOverrides[n.id] = true;
+      });
+      updateReadOverrides(newOverrides);
+      setAllNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    } catch (err) {
+      console.warn('Mark all read error:', err);
     }
   };
 
-  const markAllRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, isRead: true })));
-    if (Platform.OS === 'android') {
-      ToastAndroid.show("All marked as read.", ToastAndroid.SHORT);
+  const handleNotificationPress = async (item) => {
+    if (item.isRead) return;
+
+    try {
+      updateReadOverrides(prev => ({
+        ...prev,
+        [item.id]: true,
+      }));
+
+      setAllNotifications(prev => prev.map(n => n.id === item.id ? { ...n, isRead: true } : n));
+
+      if (userId && !item.id.toString().startsWith('mkt-') && !item.id.toString().startsWith('req-')) {
+        toggleNotificationReadApi(item.id).catch(() => {});
+      }
+    } catch (err) {
+      console.warn('Mark notification read error:', err);
     }
   };
 
-  const markAsRead = (id) => {
-    setNotifications(notifications.map(n => n.id === id ? { ...n, isRead: true } : n));
+  const displayedNotifications = processedNotifications.filter(n => {
+    if (activeTab === 'Unread') return !n.isRead;
+    if (activeTab === 'Marked as Read') return n.isRead;
+    return true;
+  });
+
+  const getTabLabel = (tabName) => {
+    if (tabName === 'All') return `All (${totalCount})`;
+    if (tabName === 'Unread') return `Unread (${unreadCount})`;
+    if (tabName === 'Marked as Read') return `Marked as Read (${readCount})`;
+    return tabName;
   };
 
-  const deleteNotif = (id) => {
-    setNotifications(notifications.filter(n => n.id !== id));
-  };
+  const renderNotif = ({ item }) => {
+    const timeDisplay = item.time || (item.createdAt ? new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '');
 
-  const handleCardPress = (item) => {
-    markAsRead(item.id);
-    // Simulation of opening related screen
-    if (item.category === 'Payments') setActivePage('revenue');
-    else if (item.category === 'Campaigns') setActivePage('campaigns');
-    else if (item.category === 'Approvals') setActivePage('campaigns');
-    else if (item.category === 'Requirements') setActivePage('dashboard');
-    else if (item.category === 'Proposals') setActivePage('requests');
+    return (
+      <TouchableOpacity 
+        style={[styles.notifCard, !item.isRead && styles.unreadCard]}
+        onPress={() => handleNotificationPress(item)}
+        activeOpacity={0.85}
+      >
+        <View style={styles.notifContent}>
+          <View style={styles.notifHeader}>
+            <Text style={[styles.notifTitle, !item.isRead && styles.unreadText]}>{item.title}</Text>
+            <Text style={styles.timeText}>{timeDisplay}</Text>
+          </View>
+          <Text style={styles.messageText}>{item.message}</Text>
+        </View>
+      </TouchableOpacity>
+    );
   };
-
-  const renderNotifCard = ({ item }) => (
-    <TouchableOpacity
-      style={[styles.card, !item.isRead && styles.cardUnread]}
-      onPress={() => handleCardPress(item)}
-    >
-      <View style={styles.iconBox}>
-        {getIconForType(item.type)}
-      </View>
-      <View style={styles.contentBox}>
-        <Text style={[styles.title, !item.isRead && styles.titleUnread]}>{item.title}</Text>
-        <Text style={styles.message}>{item.message}</Text>
-        <Text style={styles.time}>{item.time}</Text>
-      </View>
-      <View style={styles.actionCol}>
-        {!item.isRead && (
-          <TouchableOpacity style={styles.actionBtn} onPress={() => markAsRead(item.id)}>
-            <Check size={18} color="#071B3A" />
-          </TouchableOpacity>
-        )}
-        <TouchableOpacity style={styles.actionBtn} onPress={() => deleteNotif(item.id)}>
-          <Trash2 size={18} color="#94A3B8" />
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.headerTitle}>Notifications</Text>
-          {unreadCount > 0 && (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadBadgeText}>{unreadCount}</Text>
-            </View>
-          )}
-        </View>
-        <TouchableOpacity style={styles.markAllBtn} onPress={markAllRead}>
-          <Check size={16} color="#071B3A" />
-          <Text style={styles.markAllText}>Mark all read</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.filterWrapper}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-          {FILTERS.map(f => (
-            <TouchableOpacity key={f} style={[styles.filterChip, activeFilter === f && styles.filterChipActive]} onPress={() => setActiveFilter(f)}>
-              <Text style={[styles.filterText, activeFilter === f && styles.filterTextActive]}>{f}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
-      <FlatList
-        data={filteredNotifs}
-        keyExtractor={item => item.id}
-        renderItem={renderNotifCard}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={() => (
-          <View style={styles.emptyBox}>
-            <Bell size={48} color="#CBD5E1" />
-            <Text style={styles.emptyText}>You're all caught up!</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={styles.headerTitle}>Notifications</Text>
+            {unreadCount > 0 && (
+              <View style={styles.unreadBadgeHeader}>
+                <Text style={styles.unreadBadgeText}>{unreadCount}</Text>
+              </View>
+            )}
           </View>
+          <TouchableOpacity style={styles.markReadBtn} onPress={handleMarkAllAsRead}>
+            <Text style={styles.markReadText}>Mark all as read</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* 3 Tabs */}
+        <View style={styles.filterContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+            {TABS.map(tab => (
+              <TouchableOpacity 
+                key={tab} 
+                style={[styles.filterChip, activeTab === tab && styles.activeFilterChip]}
+                onPress={() => setActiveTab(tab)}
+              >
+                <Text style={[styles.filterChipText, activeTab === tab && styles.activeFilterChipText]}>
+                  {getTabLabel(tab)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {loading && displayedNotifications.length === 0 ? (
+          <View style={styles.centerBox}>
+            <ActivityIndicator size="large" color={NAVY} />
+          </View>
+        ) : displayedNotifications.length === 0 ? (
+          <View style={styles.centerBox}>
+            <Bell size={44} color="#CBD5E1" />
+            <Text style={styles.emptyText}>
+              {activeTab === 'Unread' 
+                ? 'No unread notifications' 
+                : activeTab === 'Marked as Read' 
+                ? 'No read notifications' 
+                : 'No notifications found'}
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={displayedNotifications}
+            keyExtractor={item => item.id.toString()}
+            renderItem={renderNotif}
+            contentContainerStyle={styles.listContent}
+          />
         )}
-      />
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1, backgroundColor: '#F8FAFC',
+  safeArea: { flex: 1, backgroundColor: '#F8FAFC' },
+  container: { flex: 1 },
+  header: { 
+    paddingTop: 16, 
+    paddingBottom: 16,  
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    paddingHorizontal: 16, 
+    backgroundColor: '#FFFFFF', 
+    borderBottomWidth: 1, 
+    borderBottomColor: '#F1F5F9' 
   },
-  header: { minHeight: 90, paddingTop: 40, paddingBottom: 16, 
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0',
+  headerTitle: { fontSize: 20, fontWeight: '800', color: NAVY },
+  unreadBadgeHeader: {
+    marginLeft: 8,
+    backgroundColor: '#EF4444',
+    borderRadius: 10,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  headerLeft: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
+  unreadBadgeText: { fontSize: 11, fontWeight: '800', color: '#FFFFFF' },
+  markReadBtn: { paddingVertical: 4 },
+  markReadText: { fontSize: 13, color: NAVY, fontWeight: '600' },
+  
+  filterContainer: { backgroundColor: '#FFFFFF', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  filterScroll: { paddingHorizontal: 16 },
+  filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F1F5F9', marginRight: 8 },
+  activeFilterChip: { backgroundColor: NAVY },
+  filterChipText: { fontSize: 13, color: '#64748B', fontWeight: '600' },
+  activeFilterChipText: { color: '#FFFFFF' },
+  
+  listContent: { padding: 16, paddingBottom: 80 },
+  notifCard: { 
+    flexDirection: 'row', 
+    backgroundColor: '#FFFFFF', 
+    padding: 16, 
+    borderRadius: 14, 
+    marginBottom: 12, 
+    borderWidth: 1, 
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  headerTitle: {
-    fontSize: 20, fontWeight: 'bold', color: '#0F172A',
+  unreadCard: { 
+    backgroundColor: '#F0F9FF', 
+    borderColor: '#BAE6FD' 
   },
-  unreadBadge: {
-    backgroundColor: '#EF4444', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10,
-  },
-  unreadBadgeText: {
-    color: '#fff', fontSize: 10, fontWeight: 'bold',
-  },
-  markAllBtn: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F3FF', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, gap: 4,
-  },
-  markAllText: {
-    color: '#071B3A', fontWeight: 'bold', fontSize: 12,
-  },
-  filterWrapper: {
-    backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#E2E8F0', paddingVertical: 8,
-  },
-  filterScroll: {
-    paddingHorizontal: 16, gap: 8,
-  },
-  filterChip: {
-    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 16, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0',
-  },
-  filterChipActive: {
-    backgroundColor: '#071B3A', borderColor: '#071B3A',
-  },
-  filterText: {
-    fontSize: 13, fontWeight: '600', color: '#64748B',
-  },
-  filterTextActive: {
-    color: '#fff',
-  },
-  listContainer: {
-    padding: 16, paddingBottom: 40,
-  },
-  card: {
-    flexDirection: 'row', backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0',
-  },
-  cardUnread: {
-    backgroundColor: '#F5F3FF', borderColor: '#DDD6FE',
-  },
-  iconBox: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginRight: 12,
-  },
-  contentBox: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 14, color: '#334155', fontWeight: '500', marginBottom: 4,
-  },
-  titleUnread: {
-    color: '#0F172A', fontWeight: 'bold',
-  },
-  message: {
-    fontSize: 13, color: '#475569', lineHeight: 18, marginBottom: 6,
-  },
-  time: {
-    fontSize: 11, color: '#94A3B8', fontWeight: '500',
-  },
-  actionCol: {
-    justifyContent: 'space-between', paddingLeft: 12,
-  },
-  actionBtn: {
-    padding: 4,
-  },
-  emptyBox: {
-    alignItems: 'center', justifyContent: 'center', padding: 40, marginTop: 40,
-  },
-  emptyText: {
-    marginTop: 12, fontSize: 16, color: '#94A3B8', fontWeight: '500',
-  }
+  notifContent: { flex: 1 },
+  notifHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  notifTitle: { fontSize: 15, fontWeight: '700', color: NAVY },
+  unreadText: { fontWeight: '800', color: NAVY },
+  timeText: { fontSize: 12, color: '#64748B', fontWeight: '500' },
+  messageText: { fontSize: 13, color: '#475569', lineHeight: 19 },
+  
+  centerBox: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  emptyText: { marginTop: 12, fontSize: 14, color: '#94A3B8', fontWeight: '500' },
 });

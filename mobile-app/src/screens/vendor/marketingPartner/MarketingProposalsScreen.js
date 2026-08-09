@@ -1,17 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { 
   View, Text, StyleSheet, FlatList, TouchableOpacity, 
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback, ActivityIndicator
 } from 'react-native';
 import { ChevronRight, EllipsisVertical as MoreVertical, FileText } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorProposalsBySupplierApi } from '../../../services/api.service';
 
-const MY_PROPOSALS = [];
+const PROPOSAL_FILTERS = ["All", "Draft", "Sent", "submitted", "Under Review", "Accepted", "accepted", "Rejected", "Closed"];
+const DISPLAY_FILTERS = ["All", "Draft", "Sent", "Under Review", "Accepted", "Rejected", "Closed"];
 
-const PROPOSAL_FILTERS = ["All", "Draft", "Sent", "Under Review", "Accepted", "Rejected", "Closed"];
+const mapStatus = (s) => {
+  if (!s) return 'Sent';
+  if (s === 'submitted') return 'Sent';
+  if (s === 'accepted') return 'Accepted';
+  if (s === 'rejected') return 'Rejected';
+  if (s === 'draft') return 'Draft';
+  return s.charAt(0).toUpperCase() + s.slice(1);
+};
 
 export default function MarketingProposalsScreen({ setActivePage }) {
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.registration?.id || user?.id;
+
   const [proposalFilter, setProposalFilter] = useState("All");
   const [activeMenuId, setActiveMenuId] = useState(null);
+  const [proposals, setProposals] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadProposals = async () => {
+    if (!supplierId) { setLoading(false); return; }
+    try {
+      const res = await fetchVendorProposalsBySupplierApi(supplierId);
+      const list = res?.data || res || [];
+      if (Array.isArray(list)) {
+        const mapped = list.map(p => ({
+          id: `PROP-${p.id ? p.id.substring(0, 6).toUpperCase() : '001'}`,
+          rawId: p.id,
+          campaign: p.campaign || 'Marketing Campaign',
+          client: p.client || 'HoReCa Client',
+          status: mapStatus(p.status),
+          proposedAmount: p.amount ? `₹${Number(p.amount).toLocaleString('en-IN')}` : 'Custom Quote',
+          duration: p.duration || '—',
+          submittedDate: p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—',
+          validUntil: p.completionDate ? new Date(p.completionDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—',
+        }));
+        setProposals(mapped);
+      }
+    } catch (err) {
+      console.warn('Error loading marketing proposals:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadProposals();
+    const interval = setInterval(loadProposals, 5000);
+    return () => clearInterval(interval);
+  }, [supplierId]);
 
   const getStatusStyle = (status) => {
     switch(status) {
@@ -66,7 +113,7 @@ export default function MarketingProposalsScreen({ setActivePage }) {
         <View style={styles.actionRow}>
           <TouchableOpacity style={styles.textAction} onPress={() => {}}>
             <Text style={styles.textActionLabel}>View Proposal</Text>
-            <ChevronRight size={16} color="#1E3A8A" />
+            <ChevronRight size={16} color="#0B2246" />
           </TouchableOpacity>
           <View style={styles.rightActions}>
             {item.status === 'Draft' && (
@@ -106,7 +153,7 @@ export default function MarketingProposalsScreen({ setActivePage }) {
   };
 
   const getFilteredProposals = () => {
-    return proposalFilter === 'All' ? MY_PROPOSALS : MY_PROPOSALS.filter(r => r.status === proposalFilter);
+    return proposalFilter === 'All' ? proposals : proposals.filter(r => r.status === proposalFilter);
   };
 
   return (
@@ -121,7 +168,7 @@ export default function MarketingProposalsScreen({ setActivePage }) {
           <FlatList 
             horizontal 
             showsHorizontalScrollIndicator={false}
-            data={PROPOSAL_FILTERS}
+            data={DISPLAY_FILTERS}
             keyExtractor={item => item}
             contentContainerStyle={styles.filterScroll}
             renderItem={({item}) => (
@@ -135,23 +182,29 @@ export default function MarketingProposalsScreen({ setActivePage }) {
           />
         </View>
 
-        <FlatList
-          data={getFilteredProposals()}
-          keyExtractor={(item) => item.id}
-          renderItem={renderProposalCard}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateTitle}>No proposals found</Text>
-              <Text style={styles.emptyStateSub}>Create a proposal from a direct request or open opportunity.</Text>
-            </View>
-          }
-        />
+        {loading ? (
+          <ActivityIndicator size="large" color="#0B2246" style={{ marginTop: 40 }} />
+        ) : (
+          <FlatList
+            data={getFilteredProposals()}
+            keyExtractor={(item) => item.id}
+            renderItem={renderProposalCard}
+            contentContainerStyle={styles.listContainer}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <FileText size={32} color="#CBD5E1" style={{marginBottom: 12}} />
+                <Text style={styles.emptyStateTitle}>No proposals found</Text>
+                <Text style={styles.emptyStateSub}>Create a proposal from a direct request or open opportunity.</Text>
+              </View>
+            }
+          />
+        )}
       </View>
     </TouchableWithoutFeedback>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -176,7 +229,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0',
   },
   filterChipActive: {
-    backgroundColor: '#1E3A8A', borderColor: '#1E3A8A',
+    backgroundColor: '#0B2246', borderColor: '#0B2246',
   },
   filterChipText: {
     fontSize: 13, color: '#64748B', fontWeight: '500',
@@ -228,13 +281,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', paddingVertical: 8,
   },
   textActionLabel: {
-    fontSize: 14, fontWeight: '600', color: '#1E3A8A', marginRight: 4,
+    fontSize: 14, fontWeight: '600', color: '#0B2246', marginRight: 4,
   },
   rightActions: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
   },
   btnPrimary: {
-    backgroundColor: '#071B3A', paddingHorizontal: 16, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', flexDirection: 'row',
+    backgroundColor: '#0B2246', paddingHorizontal: 16, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', flexDirection: 'row',
   },
   btnPrimaryText: {
     color: '#fff', fontWeight: '600', fontSize: 14,

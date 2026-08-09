@@ -16,6 +16,7 @@ const supportRoutes = require('./routes/supportRoutes');
 const candidateRoutes = require('./routes/candidateRoutes');
 const documentRoutes = require('./routes/documentRoutes');
 const chatRoutes = require('./routes/chatRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 const app = express();
 
@@ -51,6 +52,7 @@ app.use('/api/support', supportRoutes);
 app.use('/api/candidates', candidateRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Root & API Health Check Route
 app.get(['/', '/api', '/api/health'], (req, res) => {

@@ -19,6 +19,7 @@ import FeedWallPage from '../FeedWallPage';
 import CompliancePage from '../../owner/compliance/CompliancePage';
 import DocumentsKycScreen from '../../common/DocumentsKycScreen';
 import HRCSupportBot from '../../../components/owner/chatbot/HRCSupportBot';
+import { fetchVendorOrders, fetchUserNotificationsApi } from '../../../services/api.service';
 
 const PRIMARY = '#081A3A';
 const ACCENT = '#081A3A';
@@ -97,6 +98,57 @@ export default function ManpowerDashboard({ initialTab = "dashboard" }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 768 || (Platform.OS !== 'web');
   const { user, logout } = useContext(AuthContext);
+
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const loadManpowerUnread = async () => {
+      const userId = user?.id || user?.registration?.userId || user?.userId;
+      const supplierId = user?.registration?.id || user?.id;
+
+      try {
+        let readOverrides = {};
+        try {
+          if (typeof window !== 'undefined' && window.localStorage) {
+            const saved = window.localStorage.getItem('hrc_read_notifications_manpower');
+            if (saved) readOverrides = JSON.parse(saved);
+          }
+        } catch (e) {}
+
+        if (userId) {
+          const notifRes = await fetchUserNotificationsApi(userId);
+          if (notifRes?.success && Array.isArray(notifRes.data)) {
+            const unread = notifRes.data.filter(n => {
+              const isOverridden = readOverrides[n.id] !== undefined;
+              return isOverridden ? !readOverrides[n.id] : !n.isRead;
+            }).length;
+            setUnreadCount(unread);
+            return;
+          }
+        }
+
+        if (supplierId) {
+          const res = await fetchVendorOrders(supplierId);
+          const ordersList = res?.data || res || [];
+          if (Array.isArray(ordersList)) {
+            const unread = ordersList.filter((o, idx) => {
+              const notifId = `man-${o.id || idx}`;
+              const isOverridden = readOverrides[notifId] !== undefined;
+              const defaultRead = o.status === 'completed';
+              return isOverridden ? !readOverrides[notifId] : !defaultRead;
+            }).length;
+            setUnreadCount(unread);
+          }
+        }
+      } catch (e) {
+        console.log('Error fetching manpower unread notifications:', e);
+      }
+    };
+
+    loadManpowerUnread();
+    const interval = setInterval(loadManpowerUnread, 2000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const [activePage, setActivePage] = useState(initialTab);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -278,7 +330,7 @@ export default function ManpowerDashboard({ initialTab = "dashboard" }) {
             <View style={styles.mobileRight}>
               <TouchableOpacity style={styles.mobileIconBtn} onPress={() => navigateTo('notifications')}>
                 <Bell size={18} color="#fff" />
-                <NotificationBadge count={3} />
+                <NotificationBadge count={unreadCount} />
               </TouchableOpacity>
               <TouchableOpacity style={styles.mobileAvatarBtn} onPress={() => navigateTo('profile')}>
                 {(user?.profilePhoto || user?.profileImage || user?.registration?.profilePhoto || user?.vendorRegistration?.profilePhoto) ? (
@@ -299,7 +351,7 @@ export default function ManpowerDashboard({ initialTab = "dashboard" }) {
             <View style={styles.navRight}>
               <TouchableOpacity style={styles.iconBtn} onPress={() => navigateTo('notifications')}>
                 <Bell size={20} color={colors.sub} />
-                <NotificationBadge count={3} />
+                <NotificationBadge count={unreadCount} />
               </TouchableOpacity>
             </View>
           </View>

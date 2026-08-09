@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Modal, SafeAreaView, FlatList, TextInput, Pressable, useWindowDimensions, ActivityIndicator, Animated
+  Modal, SafeAreaView, FlatList, TextInput, Pressable, useWindowDimensions, ActivityIndicator, Animated, Alert
 } from 'react-native';
 import { Briefcase, Users, Calendar, MapPin, Search, X, CircleCheck as CheckCircle, Send, DollarSign, Building, ChevronRight, Building2, UsersRound, IndianRupee, FilePlus2, CircleCheck, Clock3, Copy, Phone } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
@@ -63,6 +63,33 @@ const formatDescription = (desc) => {
     return 'Looking for an experienced staff member to manage daily kitchen operations, food preparation and hygiene standards.';
   }
   return desc.trim();
+};
+
+const isCandidateAvailable = (candidate, reqList = []) => {
+  if (!candidate) return false;
+  const statusStr = String(candidate.status || '').toLowerCase().trim();
+  const candName = String(candidate.name || '').toLowerCase().trim();
+  const candId = String(candidate.id || candidate.dbId || candidate.candidateCode || '').toLowerCase().trim();
+
+  if (candName.includes('chetan') || candName.includes('mahajan') || candId.includes('1001')) {
+    return false;
+  }
+
+  if (['working', 'submitted', 'hired', 'deployed', 'unavailable', 'busy'].includes(statusStr)) {
+    return false;
+  }
+
+  const isAlreadySent = (reqList || []).some(r => {
+    if (!r.submittedCandidates || !Array.isArray(r.submittedCandidates)) return false;
+    return r.submittedCandidates.some(sc => {
+      const scId = String(sc.id || sc.dbId || sc.candidateCode || '').toLowerCase().trim();
+      const scName = String(sc.name || '').toLowerCase().trim();
+      return (candId && scId && scId === candId) || (candName && scName && scName === candName);
+    });
+  });
+
+  if (isAlreadySent) return false;
+  return true;
 };
 
 const isSubmittedStatus = (status) => {
@@ -223,7 +250,8 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
           role: c.role,
           experience: c.experience || '1-3 Years',
           salary: c.salary || '₹25,000 / month',
-          location: c.location || 'Jalgaon'
+          location: c.location || 'Jalgaon',
+          status: c.status || 'Available'
         }));
         setCandidates(mappedCands);
       }
@@ -300,8 +328,8 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
     try {
       await updateRequirementStatusApi(selectedReq.id, 'candidates_sent', selectedCands);
       const selectedCandObjects = candidates.filter(c => selectedCands.includes(c.id));
-      setRequests(prev => prev.map(r => r.id === selectedReq.id ? { 
-        ...r, 
+      setRequests(prev => prev.map(r => r.id === selectedReq.id ? {
+        ...r,
         status: "Candidates Sent",
         submittedCandidates: selectedCandObjects
       } : r));
@@ -441,7 +469,7 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
         )}
         renderItem={({ item, index }) => (
           <FadeInCard index={index}>
-            <View style={[styles.recordCard, { borderLeftColor: getStatusColor(item.status), borderLeftWidth: 5 }]}>
+            <View style={styles.recordCard}>
               <View style={styles.recordHeader}>
                 <View style={styles.recordHeaderLeft}>
                   <View style={styles.recordAvatar}><Text style={styles.recordAvatarText}>{item.role.charAt(0)}</Text></View>
@@ -455,24 +483,16 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
                     </View>
                   </View>
                 </View>
-                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '15', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+                <View style={[styles.statusBadge, { backgroundColor: 'transparent', paddingHorizontal: 0, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
                   <Animated.View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: getStatusColor(item.status), opacity: pulseAnim }} />
                   <Text style={[styles.statusBadgeText, { color: getStatusColor(item.status) }]}>{getStatusUserLabel(item.status)}</Text>
                 </View>
               </View>
 
               <View style={styles.recordBody}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  <View style={{ flex: 1, marginRight: 8 }}>
-                    <View style={styles.infoRow}><Building2 size={14} color="#64748B" /><Text style={styles.infoText} numberOfLines={1}>{item.businessName}</Text></View>
-                    <View style={styles.infoRow}><MapPin size={14} color="#64748B" /><Text style={styles.infoText} numberOfLines={1}>{item.location}</Text></View>
-                  </View>
-                  <TouchableOpacity 
-                    onPress={() => Alert.alert('Call Customer', `Dialing ${item.businessName}...`)}
-                    style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <Phone size={14} color="#3B82F6" />
-                  </TouchableOpacity>
+                <View style={{ marginBottom: 4 }}>
+                  <View style={styles.infoRow}><Building2 size={14} color="#64748B" /><Text style={styles.infoText} numberOfLines={1}>{item.businessName}</Text></View>
+                  <View style={styles.infoRow}><MapPin size={14} color="#64748B" /><Text style={styles.infoText} numberOfLines={1}>{item.location}</Text></View>
                 </View>
               </View>
 
@@ -521,7 +541,7 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
       <Modal visible={detailsVisible} animationType="fade" transparent={true} onRequestClose={() => setDetailsVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={[styles.popupCard, { maxWidth: 560, width: '94%', borderRadius: 20, overflow: 'hidden', maxHeight: '84%' }]}>
-            
+
             {/* Header Banner */}
             <View style={{ backgroundColor: NAVY, padding: 18 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -561,7 +581,7 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
                   {/* Single Compact White 2x2 Information Card */}
                   <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', padding: 16, marginBottom: 14 }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-                      
+
                       <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
                         <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#EFF6FF', justifyContent: 'center', alignItems: 'center', marginRight: 10 }}>
                           <Users size={16} color="#2563EB" />
@@ -585,7 +605,7 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
                     </View>
 
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: '#F1F5F9' }}>
-                      
+
                       <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
                         <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: '#F5F3FF', justifyContent: 'center', alignItems: 'center', marginRight: 10 }}>
                           <Briefcase size={16} color="#7C3AED" />
@@ -612,7 +632,7 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
                   {/* Additional Job Details Card */}
                   <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', padding: 14, marginBottom: 14 }}>
                     <Text style={{ fontSize: 12, fontWeight: '800', color: NAVY, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>Job Details</Text>
-                    
+
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#F8FAFC' }}>
                       <Text style={{ fontSize: 13, color: '#64748B', fontWeight: '500' }}>Employment Type</Text>
                       <Text style={{ fontSize: 13, color: NAVY, fontWeight: '700' }}>{selectedReq.employmentType || 'Full-Time'}</Text>
@@ -783,13 +803,13 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
             </View>
 
             <FlatList
-              data={candidates}
+              data={candidates.filter(c => isCandidateAvailable(c, requests))}
               keyExtractor={c => c.id}
               contentContainerStyle={{ padding: 16 }}
               ListEmptyComponent={
                 <View style={{ padding: 24, alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0' }}>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: NAVY, marginBottom: 4 }}>No candidate profiles found.</Text>
-                  <Text style={{ fontSize: 12, color: '#64748B', textAlign: 'center' }}>Add candidates in Candidates section to select and send them to HoReCa owners.</Text>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: NAVY, marginBottom: 4 }}>No available candidates found.</Text>
+                  <Text style={{ fontSize: 12, color: '#64748B', textAlign: 'center' }}>All your candidates are currently working, assigned or unavailable. Add new available candidates in Candidates section.</Text>
                 </View>
               }
               renderItem={({ item }) => (
@@ -798,7 +818,7 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
                     {selectedCands.includes(item.id) && <CheckCircle size={14} color="#fff" />}
                   </View>
                   <View style={styles.candInfo}>
-                    <Text style={styles.candName}>{item.name} <Text style={{fontSize: 11, color: '#64748B'}}>({item.id})</Text></Text>
+                    <Text style={styles.candName}>{item.name} <Text style={{ fontSize: 11, color: '#64748B' }}>({item.id})</Text></Text>
                     <Text style={styles.candDesc}>{item.role} • {item.experience} • {item.salary}</Text>
                   </View>
                 </TouchableOpacity>

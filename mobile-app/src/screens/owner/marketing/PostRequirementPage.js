@@ -27,7 +27,7 @@ import { AuthContext } from '../../../context/AuthContext';
 import { createRequirementApi } from '../../../services/api.service';
 
 // Design Tokens
-const NAVY = '#071B3A';
+const NAVY = '#0B2246';
 const SECONDARY_NAVY = '#102A4C';
 const GOLD = '#F2C230';
 const BG_PAGE = '#F5F7FA';
@@ -91,7 +91,7 @@ export default function PostRequirementPage({ onBack, onSuccess, visible = true 
   const [maxBudget, setMaxBudget] = useState('');
   const [duration, setDuration] = useState('');
   const [customDuration, setCustomDuration] = useState('');
-  
+
   // Default Start Date = Today + 7 days
   const [startDate, setStartDate] = useState(() => {
     const tmr = new Date();
@@ -295,8 +295,8 @@ export default function PostRequirementPage({ onBack, onSuccess, visible = true 
   const currentServiceOptions = marketingType === 'Online Marketing'
     ? ONLINE_SERVICES
     : marketingType === 'Offline Marketing'
-    ? OFFLINE_SERVICES
-    : [];
+      ? OFFLINE_SERVICES
+      : [];
 
   // Helper Calendar Generator
   const renderCalendar = () => {
@@ -423,7 +423,7 @@ export default function PostRequirementPage({ onBack, onSuccess, visible = true 
           {/* POPUP HEADER */}
           <View style={styles.popupHeader}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.headerTitle}>Post Marketing Requirement</Text>
+              <Text style={styles.headerTitle}>Post Requirement</Text>
               <Text style={styles.headerSubtitle} numberOfLines={1}>
                 Broadcast your requirement to verified marketing agencies.
               </Text>

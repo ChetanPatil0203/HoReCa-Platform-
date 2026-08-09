@@ -10,6 +10,7 @@ export default function ReviewWorkspace({
   onClose,
   onUpdateApplication,
   onAssignReviewerClick,
+  onAutoVerifyAll,
   onViewDoc,
   onVerifyDoc,
   onRejectDoc,
@@ -106,6 +107,7 @@ export default function ReviewWorkspace({
             <ReviewDecisionTab
               application={application}
               onChecklistChange={handleChecklistChange}
+              onAutoVerifyAll={onAutoVerifyAll}
               onOpenNotes={onOpenNotes}
               onAddNote={onAddNote}
               onOpenHistory={onOpenHistory}

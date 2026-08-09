@@ -301,27 +301,6 @@ export default function ManpowerClientsPage({ navigation }) {
           {/* TAB 1: ALL CLIENTS */}
           {activeTab === 'clients' ? (
             <>
-              {/* Client Type Filters */}
-              <View style={styles.filterPillsRow}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                  {[
-                    { label: 'All', count: totalClients },
-                    { label: 'Hotel', count: countHotel },
-                    { label: 'Restaurant', count: countRestaurant },
-                    { label: 'Cafe', count: countCafe }
-                  ].map(pill => (
-                    <TouchableOpacity
-                      key={pill.label}
-                      style={[styles.filterPill, activeTypeFilter === pill.label && styles.filterPillActive]}
-                      onPress={() => setActiveTypeFilter(pill.label)}
-                    >
-                      <Text style={[styles.filterPillText, activeTypeFilter === pill.label && styles.filterPillTextActive]}>
-                        {pill.label} <Text style={{ fontSize: 11, opacity: 0.8 }}>{pill.count}</Text>
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
 
               {/* Client List / Table */}
               {loading ? (
@@ -920,7 +899,7 @@ const styles = StyleSheet.create({
   // 4. Primary Tabs
   tabBarContainer: {
     marginBottom: 16,
-    alignItems: 'flex-start',
+    width: '100%',
   },
   segmentedControl: {
     flexDirection: 'row',
@@ -929,11 +908,15 @@ const styles = StyleSheet.create({
     padding: 4,
     borderWidth: 1,
     borderColor: BORDER,
+    width: '100%',
   },
   segmentBtn: {
-    paddingHorizontal: 20,
-    paddingVertical: 9,
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   segmentBtnActive: {
     backgroundColor: NAVY,
@@ -942,6 +925,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: TEXT_MUTED,
+    textAlign: 'center',
   },
   segmentBtnTextActive: {
     color: '#FFFFFF',

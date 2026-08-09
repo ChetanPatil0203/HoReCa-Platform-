@@ -48,8 +48,8 @@ exports.getPublicRequirements = async (req, res) => {
 exports.updateRequirementStatus = async (req, res) => {
   try {
     const { requirementId } = req.params;
-    const { status } = req.body;
-    const requirement = await updateManpowerRequirementStatus(requirementId, status);
+    const { status, submittedCandidates } = req.body;
+    const requirement = await updateManpowerRequirementStatus(requirementId, status, { submittedCandidates });
     res.status(200).json({ success: true, message: 'Status updated successfully', data: requirement });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

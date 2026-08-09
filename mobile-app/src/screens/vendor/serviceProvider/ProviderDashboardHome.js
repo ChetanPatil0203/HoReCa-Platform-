@@ -213,7 +213,7 @@ export default function ProviderDashboardHome({ onNavigate }) {
                 <Text style={styles.sectionTitle}>Today's Schedule</Text>
                 <TouchableOpacity style={styles.viewAllBtn} onPress={() => onNavigate && onNavigate('jobs')}>
                   <Text style={styles.viewAllText}>View All</Text>
-                  <ChevronRight size={16} color={NAVY} />
+                  <ChevronRight size={16} color="#000000" />
                 </TouchableOpacity>
               </View>
 
@@ -230,7 +230,7 @@ export default function ProviderDashboardHome({ onNavigate }) {
                 <Text style={styles.sectionTitle}>Recent Activity</Text>
                 <TouchableOpacity style={styles.viewAllBtn} onPress={() => onNavigate && onNavigate('history')}>
                   <Text style={styles.viewAllText}>View All</Text>
-                  <ChevronRight size={16} color={NAVY} />
+                  <ChevronRight size={16} color="#000000" />
                 </TouchableOpacity>
               </View>
 
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: NAVY },
   sectionSubtitle: { fontSize: 12, color: '#64748B', marginTop: 2 },
   viewAllBtn: { flexDirection: 'row', alignItems: 'center' },
-  viewAllText: { fontSize: 13, fontWeight: '600', color: NAVY, marginRight: 2 },
+  viewAllText: { fontSize: 13, fontWeight: '600', color: '#000000', marginRight: 2 },
 
   overviewGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12 },
   overviewCard: { width: '48%', backgroundColor: '#fff', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: '#E8EDF4', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2, display: 'flex', flexDirection: 'column' },

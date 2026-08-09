@@ -8,7 +8,8 @@ const {
   VendorRegistration,
   Order,
   OrderItem,
-  Product
+  Product,
+  Candidate
 } = require('../models');
 
 // Helper to resolve model based on type
@@ -366,6 +367,27 @@ exports.updateRequirementStatusService = async (requirementId, status, extraPayl
           req.description = existingDesc + jsonTag;
         } else {
           req.description = existingDesc.replace(/\[SUBMITTED_CANDIDATES:.*?\]/, `[SUBMITTED_CANDIDATES:${JSON.stringify(extraPayload.submittedCandidates)}]`);
+        }
+
+        try {
+          if (Candidate) {
+            const candIds = extraPayload.submittedCandidates.map(c => typeof c === 'object' ? (c.id || c.dbId || c.candidateCode) : c).filter(Boolean);
+            if (candIds.length > 0) {
+              await Candidate.update(
+                { status: 'Working' },
+                {
+                  where: {
+                    [Op.or]: [
+                      { id: { [Op.in]: candIds } },
+                      { candidateCode: { [Op.in]: candIds } }
+                    ]
+                  }
+                }
+              );
+            }
+          }
+        } catch (cErr) {
+          console.warn('Candidate status DB update note:', cErr.message);
         }
       }
       await req.save();

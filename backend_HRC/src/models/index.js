@@ -23,8 +23,11 @@ const MarketingTeamMember = require('./MarketingTeamMember');
 const MarketingCampaignMetric = require('./MarketingCampaignMetric');
 const ChatSession = require('./ChatSession');
 const ChatMessage = require('./ChatMessage');
+const Notification = require('./Notification');
 
 // Associations
+User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications', onDelete: 'CASCADE' });
+Notification.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasMany(ChatSession, { foreignKey: 'userId', as: 'chatSessions', onDelete: 'CASCADE' });
 ChatSession.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
@@ -140,4 +143,5 @@ module.exports = {
   MarketingCampaignMetric,
   ChatSession,
   ChatMessage,
+  Notification,
 };

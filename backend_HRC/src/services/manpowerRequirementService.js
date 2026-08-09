@@ -3,6 +3,7 @@ const {
   ManpowerRequirement,
   HorecaRegistration,
   VendorRegistration,
+  Candidate,
 } = require('../models');
 
 const isUuid = (id) => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
@@ -149,10 +150,40 @@ exports.getPublicManpowerRequirements = async () => {
   }));
 };
 
-exports.updateManpowerRequirementStatus = async (requirementId, status) => {
+exports.updateManpowerRequirementStatus = async (requirementId, status, extraPayload = {}) => {
   const record = await ManpowerRequirement.findByPk(requirementId);
   if (!record) throw new Error('Manpower requirement not found');
   record.status = status;
+  if (extraPayload && extraPayload.submittedCandidates && Array.isArray(extraPayload.submittedCandidates)) {
+    const jsonTag = `\n[SUBMITTED_CANDIDATES:${JSON.stringify(extraPayload.submittedCandidates)}]`;
+    const existingDesc = record.description || '';
+    if (!existingDesc.includes('[SUBMITTED_CANDIDATES:')) {
+      record.description = existingDesc + jsonTag;
+    } else {
+      record.description = existingDesc.replace(/\[SUBMITTED_CANDIDATES:.*?\]/, `[SUBMITTED_CANDIDATES:${JSON.stringify(extraPayload.submittedCandidates)}]`);
+    }
+
+    try {
+      if (Candidate) {
+        const candIds = extraPayload.submittedCandidates.map(c => typeof c === 'object' ? (c.id || c.dbId || c.candidateCode) : c).filter(Boolean);
+        if (candIds.length > 0) {
+          await Candidate.update(
+            { status: 'Working' },
+            {
+              where: {
+                [Op.or]: [
+                  { id: { [Op.in]: candIds } },
+                  { candidateCode: { [Op.in]: candIds } }
+                ]
+              }
+            }
+          );
+        }
+      }
+    } catch (cErr) {
+      console.warn('Candidate status DB update note:', cErr.message);
+    }
+  }
   await record.save();
   return record;
 };

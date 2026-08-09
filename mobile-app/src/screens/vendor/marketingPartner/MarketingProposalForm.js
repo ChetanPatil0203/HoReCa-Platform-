@@ -150,23 +150,23 @@ export default function MarketingProposalForm({ setActivePage, requirement }) {
 
             <View style={styles.switchRow}>
               <Text style={styles.switchLabel}>Meta Ads Management</Text>
-              <Switch value={metaAds} onValueChange={setMetaAds} trackColor={{ true: '#071B3A' }} />
+              <Switch value={metaAds} onValueChange={setMetaAds} trackColor={{ true: '#0B2246' }} />
             </View>
             <View style={styles.switchRow}>
               <Text style={styles.switchLabel}>Google Ads Management</Text>
-              <Switch value={googleAds} onValueChange={setGoogleAds} trackColor={{ true: '#071B3A' }} />
+              <Switch value={googleAds} onValueChange={setGoogleAds} trackColor={{ true: '#0B2246' }} />
             </View>
             <View style={styles.switchRow}>
               <Text style={styles.switchLabel}>SEO Services</Text>
-              <Switch value={seo} onValueChange={setSeo} trackColor={{ true: '#071B3A' }} />
+              <Switch value={seo} onValueChange={setSeo} trackColor={{ true: '#0B2246' }} />
             </View>
             <View style={styles.switchRow}>
               <Text style={styles.switchLabel}>Influencer Collaboration</Text>
-              <Switch value={influencer} onValueChange={setInfluencer} trackColor={{ true: '#071B3A' }} />
+              <Switch value={influencer} onValueChange={setInfluencer} trackColor={{ true: '#0B2246' }} />
             </View>
             <View style={styles.switchRow}>
               <Text style={styles.switchLabel}>Content Calendar Prep</Text>
-              <Switch value={contentCalendar} onValueChange={setContentCalendar} trackColor={{ true: '#071B3A' }} />
+              <Switch value={contentCalendar} onValueChange={setContentCalendar} trackColor={{ true: '#0B2246' }} />
             </View>
             
             <View style={styles.row}>
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
     fontSize: 16, fontWeight: 'bold', color: '#0F172A',
   },
   totalVal: {
-    fontSize: 18, fontWeight: '900', color: '#071B3A',
+    fontSize: 18, fontWeight: '900', color: '#0B2246',
   },
   footer: {
     flexDirection: 'row', padding: 16, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#E2E8F0', gap: 12,
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
     fontSize: 14, fontWeight: 'bold', color: '#475569',
   },
   btnSubmit: {
-    flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#071B3A',
+    flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0B2246',
     borderRadius: 8, paddingVertical: 12, gap: 8,
   },
   btnSubmitText: {

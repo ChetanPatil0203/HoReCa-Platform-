@@ -5,7 +5,7 @@ import { colors } from '../../../theme/colors';
 import { REPLACEMENT_HISTORY } from '../../../constants/manpowerData';
 
 const GOLD = '#D97706';
-const BLUE = '#2563EB';
+const BLUE = '#071B3A';
 
 const STATUS_COLORS = {
   'Pending': { bg: '#FEF3C7', text: '#D97706' },

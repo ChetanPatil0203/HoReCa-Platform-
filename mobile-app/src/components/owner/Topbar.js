@@ -39,7 +39,7 @@ export default function Topbar({ activePage, title, user, onMobileMenuPress }) {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.iconBtn}>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => onNavigate && onNavigate('notifications')}>
           <Bell size={18} color={colors.muted} />
           <View style={styles.notificationDot} />
         </TouchableOpacity>

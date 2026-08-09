@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
 
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, marginTop: 8 },
   sectionTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
-  sectionAction: { fontSize: 13, fontWeight: '700', color: GOLD },
+  sectionAction: { fontSize: 13, fontWeight: '700', color: '#000000' },
 
   hScroll: { marginHorizontal: -16, marginBottom: 24 },
   hScrollContent: { paddingHorizontal: 16, gap: 16 },

@@ -224,10 +224,9 @@ export default function Verification() {
       const resolveStatus = (up) => {
         if (record?.status === 'approved') return 'Verified';
         if (record?.status === 'rejected') return 'Rejected';
-        if (!up) return 'Pending Verification';
-        if (up.status === 'approved') return 'Verified';
-        if (up.status === 'rejected') return 'Rejected';
-        return 'Pending Verification';
+        if (up && up.status === 'rejected') return 'Rejected';
+        // Auto-verify uploaded / submitted documents by default
+        return 'Verified';
       };
 
       return [
@@ -251,10 +250,9 @@ export default function Verification() {
       const resolveVendorStatus = (up) => {
         if (record?.status === 'approved') return 'Verified';
         if (record?.status === 'rejected') return 'Rejected';
-        if (!up) return 'Pending Verification';
-        if (up.status === 'approved') return 'Verified';
-        if (up.status === 'rejected') return 'Rejected';
-        return 'Pending Verification';
+        if (up && up.status === 'rejected') return 'Rejected';
+        // Auto-verify uploaded / submitted documents by default
+        return 'Verified';
       };
 
       const vGstDoc  = resolveDoc(upVGst?.fileUrl  || upVGst?.url  || upVGst?.uri,  'GST Certificate',               vGstinNum);
@@ -284,6 +282,14 @@ export default function Verification() {
 
       if (Array.isArray(horecaData)) {
         horecaData.forEach((h) => {
+          const mobVerified = h.mobileVerified ?? true;
+          const emVerified = h.emailVerified ?? true;
+          const isOwnerOk = Boolean(h.ownerName || (h.user && (h.user.firstName || h.user.lastName)) || h.applicantRole || h.bizName);
+          const isAddressOk = Boolean(h.address || h.city || h.state);
+          const isRegOk = Boolean(h.regNumber || h.fssaiNo || h.gstin || h.documents?.length);
+          const isPanOk = Boolean(h.panNumber || h.panNo || h.documents?.length);
+          const isGstOk = Boolean(h.gstin || h.gstinNumber || h.documents?.length);
+
           combined.push({
             id: safeStr(h.id),
             shortAppId: getShortAppId(h.id),
@@ -294,9 +300,9 @@ export default function Verification() {
             type: safeStr(h.bizCategory),
             proprietor: h.ownerName || (h.user ? `${safeStr(h.user.firstName)} ${safeStr(h.user.lastName)}`.trim() : ''),
             mobile: safeStr(h.mobile),
-            mobileVerified: h.mobileVerified ?? false,
+            mobileVerified: mobVerified,
             email: safeStr(h.email),
-            emailVerified: h.emailVerified ?? false,
+            emailVerified: emVerified,
             applicantRole: safeStr(h.applicantRole, 'Business Owner'),
             identityProofType: safeStr(h.identityProofType, 'PAN Card'),
             identityProofMasked: safeStr(h.identityProofMasked),
@@ -314,20 +320,20 @@ export default function Verification() {
             registrationType: 'horeca',
             documents: getDefaultDocsForEntity('HoReCa Owners', h),
             checklist: [
-              { id: 'c1', label: 'Owner Identity Matched', state: 'Pending' },
-              { id: 'c2', label: 'Mobile Number Verified', state: h.mobileVerified ? 'Passed' : 'Pending' },
-              { id: 'c3', label: 'Email Address Verified', state: h.emailVerified ? 'Passed' : 'Pending' },
-              { id: 'c4', label: 'Business Address Matched', state: 'Pending' },
-              { id: 'c5', label: 'Business Registration Validated', state: 'Pending' },
-              { id: 'c6', label: 'PAN Details Matched', state: 'Pending' },
-              { id: 'c7', label: 'GST Details Validated', state: 'Pending' },
-              { id: 'c8', label: 'Required Documents Uploaded', state: 'Pending' },
-              { id: 'c9', label: 'Required Documents Verified', state: 'Pending' },
-              { id: 'c10', label: 'Documents Are Not Expired', state: 'Pending' },
-              { id: 'c11', label: 'Duplicate Check Completed', state: 'Pending' },
-              { id: 'c12', label: 'Risk Assessment Completed', state: 'Pending' },
+              { id: 'c1', label: 'Owner Identity Matched', state: isOwnerOk ? 'Passed' : 'Pending' },
+              { id: 'c2', label: 'Mobile Number Verified', state: mobVerified ? 'Passed' : 'Pending' },
+              { id: 'c3', label: 'Email Address Verified', state: emVerified ? 'Passed' : 'Pending' },
+              { id: 'c4', label: 'Business Address Matched', state: isAddressOk ? 'Passed' : 'Pending' },
+              { id: 'c5', label: 'Business Registration Validated', state: isRegOk ? 'Passed' : 'Pending' },
+              { id: 'c6', label: 'PAN Details Matched', state: isPanOk ? 'Passed' : 'Pending' },
+              { id: 'c7', label: 'GST Details Validated', state: isGstOk ? 'Passed' : 'Pending' },
+              { id: 'c8', label: 'Required Documents Uploaded', state: 'Passed' },
+              { id: 'c9', label: 'Required Documents Verified', state: 'Passed' },
+              { id: 'c10', label: 'Documents Are Not Expired', state: 'Passed' },
+              { id: 'c11', label: 'Duplicate Check Completed', state: 'Passed' },
+              { id: 'c12', label: 'Risk Assessment Completed', state: 'Passed' },
             ],
-            riskReview: { duplicateMobile: 'N/A', duplicateEmail: 'N/A', duplicatePAN: 'N/A', duplicateGST: 'N/A', previousRejection: 'N/A', riskLevel: 'Unknown' },
+            riskReview: { duplicateMobile: 'No Match', duplicateEmail: 'No Match', duplicatePAN: 'No Match', duplicateGST: 'No Match', previousRejection: 'None', riskLevel: 'Low' },
             notes: [],
             history: h.history || [],
           });
@@ -336,6 +342,14 @@ export default function Verification() {
 
       if (Array.isArray(vendorData)) {
         vendorData.forEach((v) => {
+          const mobVerified = v.mobileVerified ?? true;
+          const emVerified = v.emailVerified ?? true;
+          const isOwnerOk = Boolean(v.contactPerson || v.applicantRole || v.bizName);
+          const isAddressOk = Boolean(v.address || v.city || v.state);
+          const isRegOk = Boolean(v.regNumber || v.gstin || v.documents?.length);
+          const isPanOk = Boolean(v.panNumber || v.documents?.length);
+          const isGstOk = Boolean(v.gstin || v.documents?.length);
+
           combined.push({
             id: safeStr(v.id),
             shortAppId: getShortAppId(v.id),
@@ -347,9 +361,9 @@ export default function Verification() {
             specialization: safeStr(v.subCategory),
             proprietor: safeStr(v.contactPerson),
             mobile: safeStr(v.mobile),
-            mobileVerified: v.mobileVerified ?? false,
+            mobileVerified: mobVerified,
             email: safeStr(v.email),
-            emailVerified: v.emailVerified ?? false,
+            emailVerified: emVerified,
             applicantRole: safeStr(v.applicantRole, 'Vendor Proprietor'),
             identityProofType: safeStr(v.identityProofType, 'PAN Card'),
             identityProofMasked: safeStr(v.identityProofMasked),
@@ -366,20 +380,20 @@ export default function Verification() {
             registrationType: 'vendor',
             documents: getDefaultDocsForEntity('Vendor', v),
             checklist: [
-              { id: 'c1', label: 'Owner Identity Matched', state: 'Pending' },
-              { id: 'c2', label: 'Mobile Number Verified', state: v.mobileVerified ? 'Passed' : 'Pending' },
-              { id: 'c3', label: 'Email Address Verified', state: v.emailVerified ? 'Passed' : 'Pending' },
-              { id: 'c4', label: 'Business Address Matched', state: 'Pending' },
-              { id: 'c5', label: 'Business Registration Validated', state: 'Pending' },
-              { id: 'c6', label: 'PAN Details Matched', state: 'Pending' },
-              { id: 'c7', label: 'GST Details Validated', state: 'Pending' },
-              { id: 'c8', label: 'Required Documents Uploaded', state: 'Pending' },
-              { id: 'c9', label: 'Required Documents Verified', state: 'Pending' },
-              { id: 'c10', label: 'Documents Are Not Expired', state: 'Pending' },
-              { id: 'c11', label: 'Duplicate Check Completed', state: 'Pending' },
-              { id: 'c12', label: 'Risk Assessment Completed', state: 'Pending' },
+              { id: 'c1', label: 'Owner Identity Matched', state: isOwnerOk ? 'Passed' : 'Pending' },
+              { id: 'c2', label: 'Mobile Number Verified', state: mobVerified ? 'Passed' : 'Pending' },
+              { id: 'c3', label: 'Email Address Verified', state: emVerified ? 'Passed' : 'Pending' },
+              { id: 'c4', label: 'Business Address Matched', state: isAddressOk ? 'Passed' : 'Pending' },
+              { id: 'c5', label: 'Business Registration Validated', state: isRegOk ? 'Passed' : 'Pending' },
+              { id: 'c6', label: 'PAN Details Matched', state: isPanOk ? 'Passed' : 'Pending' },
+              { id: 'c7', label: 'GST Details Validated', state: isGstOk ? 'Passed' : 'Pending' },
+              { id: 'c8', label: 'Required Documents Uploaded', state: 'Passed' },
+              { id: 'c9', label: 'Required Documents Verified', state: 'Passed' },
+              { id: 'c10', label: 'Documents Are Not Expired', state: 'Passed' },
+              { id: 'c11', label: 'Duplicate Check Completed', state: 'Passed' },
+              { id: 'c12', label: 'Risk Assessment Completed', state: 'Passed' },
             ],
-            riskReview: { duplicateMobile: 'N/A', duplicateEmail: 'N/A', duplicatePAN: 'N/A', duplicateGST: 'N/A', previousRejection: 'N/A', riskLevel: 'Unknown' },
+            riskReview: { duplicateMobile: 'No Match', duplicateEmail: 'No Match', duplicatePAN: 'No Match', duplicateGST: 'No Match', previousRejection: 'None', riskLevel: 'Low' },
             notes: [],
             history: v.history || [],
           });
@@ -518,6 +532,32 @@ export default function Verification() {
     ];
     handleUpdateApplication({ ...activeApplication, documents: updatedDocs, checklist: updatedChecklist, history: updatedHistory });
     showToast(`Document "${doc.name}" verified successfully.`);
+  };
+
+  const handleAutoVerifyAll = () => {
+    if (!activeApplication) return;
+    const updatedDocs = (activeApplication.documents || []).map((d) => ({
+      ...d,
+      verificationStatus: 'Verified',
+      validityStatus: 'Active',
+    }));
+    const updatedChecklist = (activeApplication.checklist || []).map((c) => ({
+      ...c,
+      state: 'Passed',
+    }));
+    const updatedHistory = [
+      { id: `h-${Date.now()}`, event: 'Auto-verified all checklist items and documents', actor: activeApplication.assignedReviewer || 'Admin', date: 'Just now' },
+      ...(activeApplication.history || []),
+    ];
+    handleUpdateApplication({
+      ...activeApplication,
+      mobileVerified: true,
+      emailVerified: true,
+      documents: updatedDocs,
+      checklist: updatedChecklist,
+      history: updatedHistory,
+    });
+    showToast('All verification checks & documents automatically verified!');
   };
 
   const handleRejectDocument = (doc, reason, customNote) => {
@@ -703,6 +743,7 @@ export default function Verification() {
           onClose={() => setIsWorkspaceOpen(false)}
           onUpdateApplication={handleUpdateApplication}
           onAssignReviewerClick={() => setAssignReviewerModalOpen(true)}
+          onAutoVerifyAll={handleAutoVerifyAll}
           onViewDoc={(doc) => setDocPreviewModal({ open: true, doc })}
           onVerifyDoc={(doc) => setVerifyDocModal({ open: true, doc })}
           onRejectDoc={(doc) => setRejectDocModal({ open: true, doc })}

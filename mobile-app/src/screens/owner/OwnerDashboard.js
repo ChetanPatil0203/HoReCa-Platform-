@@ -3,7 +3,7 @@ import { View, StyleSheet, SafeAreaView, useWindowDimensions, ScrollView, Toucha
 import { Menu, ArrowLeft, Bell, ChefHat, LayoutDashboard, Package, Users, Wrench, Megaphone, BarChart2, Clock, Truck, Settings, CircleHelp as HelpCircle, ChevronDown, LogOut, User, ShieldCheck, X, CircleCheck as CheckCircle2 } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { colors } from '../../theme/colors';
-import { fetchOwnerRequirements, fetchRawMaterialOrders } from '../../services/api.service';
+import { fetchOwnerRequirements, fetchRawMaterialOrders, fetchUserNotificationsApi, getOwnerOrdersApi } from '../../services/api.service';
 
 import RoleBasedMobileDrawer from '../../components/navigation/RoleBasedMobileDrawer';
 import Topbar from '../../components/owner/Topbar';
@@ -22,9 +22,9 @@ import SupplierMarketplace from './Raw material/SupplierMarketplace';
 import MarketplacePillarsPage from './Raw material/MarketplacePillarsPage';
 import ProfileSettingsPage from './ProfileSettingsPage';
 import CompliancePage from './compliance/CompliancePage';
-import HelpAndSupportScreen from '../../components/common/HelpAndSupportScreen';
 import DocumentsKycScreen from '../common/DocumentsKycScreen';
 import HRCSupportBot from '../../components/owner/chatbot/HRCSupportBot';
+import OwnerNotificationsPage from './OwnerNotificationsPage';
 
 // Placeholder for missing pages
 const PlaceholderPage = ({ title }) => (
@@ -128,6 +128,7 @@ export default function OwnerDashboard() {
   const user = ctxUser || { name: "", businessName: "", businessType: "" };
 
   const [activePage, setActivePage] = useState("dashboard");
+  const [unreadCount, setUnreadCount] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [notificationsModalOpen, setNotificationsModalOpen] = useState(false);
@@ -159,60 +160,57 @@ export default function OwnerDashboard() {
   }, []);
 
   useEffect(() => {
-    const loadLiveNotifications = async () => {
-      const ownerId = user?.id || user?.registration?.id || 'OWNER-DEMO-001';
+    const loadOwnerUnread = async () => {
+      const userId = user?.id || user?.registration?.userId || user?.userId;
+      const ownerId = user?.registration?.id || user?.id;
+
       try {
-        const [reqRes, ordRes] = await Promise.all([
-          fetchOwnerRequirements(ownerId).catch(() => []),
-          fetchRawMaterialOrders(ownerId).catch(() => [])
-        ]);
+        let readOverrides = {};
+        try {
+          if (typeof window !== 'undefined' && window.localStorage) {
+            const saved = window.localStorage.getItem('hrc_read_notifications_owner');
+            if (saved) readOverrides = JSON.parse(saved);
+          }
+        } catch (e) {}
 
-        const list = [];
-        const reqList = reqRes?.data || reqRes || [];
-        const ordList = ordRes?.data || ordRes || [];
-
-        if (Array.isArray(reqList)) {
-          reqList.forEach((req, idx) => {
-            const hasResponses = req.supplierId || (req.extraData && req.extraData.responseCount > 0);
-            list.push({
-              id: `req-${req.id || idx}`,
-              type: req.type ? req.type.toUpperCase() : 'REQUIREMENT',
-              title: `${hasResponses ? 'Response Received' : 'Requirement Active'}: ${req.title || 'Requirement'}`,
-              message: `Requirement "${req.title}" is in ${req.status || 'active'} state. Location: ${req.location || 'N/A'}.`,
-              time: req.createdAt ? new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
-              isRead: !hasResponses,
-              color: req.type === 'manpower' ? '#9333EA' : req.type === 'marketing' ? '#8B5CF6' : '#2563EB'
-            });
-          });
+        if (userId) {
+          const notifRes = await fetchUserNotificationsApi(userId);
+          if (notifRes?.success && Array.isArray(notifRes.data)) {
+            const unread = notifRes.data.filter(n => {
+              const isOverridden = readOverrides[n.id] !== undefined;
+              return isOverridden ? !readOverrides[n.id] : !n.isRead;
+            }).length;
+            setUnreadCount(unread);
+            return;
+          }
         }
 
-        if (Array.isArray(ordList)) {
-          ordList.forEach((ord, idx) => {
-            const statusText = ord.status === 'confirmed' ? 'Order Confirmed' : ord.status === 'shipped' ? 'Out for Delivery' : ord.status === 'delivered' ? 'Order Delivered' : `Order ${ord.status}`;
-            list.push({
-              id: `ord-${ord.id || idx}`,
-              type: 'RAW MATERIAL',
-              title: `Order Status: ${statusText}`,
-              message: `Order #${(ord.id || '').toString().slice(-4).toUpperCase()} from ${ord.supplier?.bizName || 'Supplier'} is ${ord.status}. Total: ₹${parseFloat(ord.totalAmount || 0).toLocaleString('en-IN')}.`,
-              time: ord.createdAt ? new Date(ord.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
-              isRead: ord.status === 'delivered',
-              color: '#D97706'
-            });
-          });
-        }
+        if (ownerId) {
+          let ordersList = [];
+          try {
+            const res = await getOwnerOrdersApi(ownerId);
+            ordersList = res?.data || res || [];
+          } catch (e) {}
 
-        setNotifications(list);
-      } catch (err) {
-        console.warn('Error loading live owner notifications:', err);
+          if (Array.isArray(ordersList)) {
+            const unread = ordersList.filter((o, idx) => {
+              const notifId = `own-${o.id || idx}`;
+              const isOverridden = readOverrides[notifId] !== undefined;
+              const defaultRead = o.status === 'delivered';
+              return isOverridden ? !readOverrides[notifId] : !defaultRead;
+            }).length;
+            setUnreadCount(unread);
+          }
+        }
+      } catch (e) {
+        console.log('Error fetching owner unread notifications:', e);
       }
     };
 
-    loadLiveNotifications();
-    const interval = setInterval(loadLiveNotifications, 4000);
+    loadOwnerUnread();
+    const interval = setInterval(loadOwnerUnread, 2000);
     return () => clearInterval(interval);
-  }, [user?.id]);
-
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  }, [user]);
 
   const renderActivePage = () => {
     switch (activePage) {
@@ -244,6 +242,8 @@ export default function OwnerDashboard() {
         return <ProfileSettingsPage user={user} onNavigate={setActivePage} />;
       case "support":
         return <HelpAndSupportScreen />;
+      case "notifications":
+        return <OwnerNotificationsPage />;
       default:
         return <PlaceholderPage title={PAGE_TITLES[activePage] || activePage} />;
     }
@@ -297,6 +297,7 @@ export default function OwnerDashboard() {
               activePage={activePage}
               title={PAGE_TITLES[activePage]}
               user={user}
+              onNavigate={setActivePage}
             />
           )}
 
@@ -323,7 +324,7 @@ export default function OwnerDashboard() {
 
               {/* RIGHT */}
               <View style={styles.headerRight}>
-                <TouchableOpacity style={styles.headerIconBtn} onPress={() => setNotificationsModalOpen(true)} accessibilityRole="button" accessibilityLabel="Notifications">
+                <TouchableOpacity style={styles.headerIconBtn} onPress={() => setActivePage('notifications')} accessibilityRole="button" accessibilityLabel="Notifications">
                   <Bell size={20} color="#fff" />
                   <NotificationBadge count={unreadCount} />
                 </TouchableOpacity>

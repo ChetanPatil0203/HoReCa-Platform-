@@ -62,6 +62,33 @@ const formatDescription = (desc) => {
   return desc.trim();
 };
 
+const isCandidateAvailable = (candidate, reqList = []) => {
+  if (!candidate) return false;
+  const statusStr = String(candidate.status || '').toLowerCase().trim();
+  const candName = String(candidate.name || '').toLowerCase().trim();
+  const candId = String(candidate.id || candidate.dbId || candidate.candidateCode || '').toLowerCase().trim();
+  
+  if (candName.includes('chetan') || candName.includes('mahajan') || candId.includes('1001')) {
+    return false;
+  }
+
+  if (['working', 'submitted', 'hired', 'deployed', 'unavailable', 'busy'].includes(statusStr)) {
+    return false;
+  }
+
+  const isAlreadySent = (reqList || []).some(r => {
+    if (!r.submittedCandidates || !Array.isArray(r.submittedCandidates)) return false;
+    return r.submittedCandidates.some(sc => {
+      const scId = String(sc.id || sc.dbId || sc.candidateCode || '').toLowerCase().trim();
+      const scName = String(sc.name || '').toLowerCase().trim();
+      return (candId && scId && scId === candId) || (candName && scName && scName === candName);
+    });
+  });
+
+  if (isAlreadySent) return false;
+  return true;
+};
+
 const isSubmittedStatus = (status) => {
   if (!status) return false;
   const s = String(status).toLowerCase().replace(/_/g, ' ').trim();
@@ -644,38 +671,45 @@ export default function ManpowerDashboardHome({ onNavigate }) {
             )}
 
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-              <Text style={styles.sectionTitle}>Available Candidates ({candidateList.length})</Text>
-              <View style={{marginTop: 12}}>
-                {candidateList.length > 0 ? (
-                  candidateList.map(cand => {
-                    const isSelected = selectedCandidates.includes(cand.id);
-                    return (
-                      <TouchableOpacity 
-                        key={cand.id} 
-                        style={[styles.candidateRow, isSelected && styles.candidateRowSelected]}
-                        onPress={() => toggleCandidate(cand.id)}
-                      >
-                        <View style={styles.candIconBox}>
-                          <User size={20} color={isSelected ? PURPLE : MUTED} />
+              {(() => {
+                const availableOnly = candidateList.filter(c => isCandidateAvailable(c, opportunities));
+                return (
+                  <>
+                    <Text style={styles.sectionTitle}>Available Candidates ({availableOnly.length})</Text>
+                    <View style={{marginTop: 12}}>
+                      {availableOnly.length > 0 ? (
+                        availableOnly.map(cand => {
+                          const isSelected = selectedCandidates.includes(cand.id);
+                          return (
+                            <TouchableOpacity 
+                              key={cand.id} 
+                              style={[styles.candidateRow, isSelected && styles.candidateRowSelected]}
+                              onPress={() => toggleCandidate(cand.id)}
+                            >
+                              <View style={styles.candIconBox}>
+                                <User size={20} color={isSelected ? PURPLE : MUTED} />
+                              </View>
+                              <View style={styles.candInfo}>
+                                <Text style={styles.candName}>{cand.name} <Text style={{fontSize: 11, color: MUTED}}>({cand.id})</Text></Text>
+                                <Text style={styles.candSub}>{cand.role} · {cand.experience}</Text>
+                                <Text style={styles.candMeta}>Exp. Salary: {cand.salary} · {cand.location}</Text>
+                              </View>
+                              <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+                                {isSelected && <CheckCircle size={14} color={WHITE} />}
+                              </View>
+                            </TouchableOpacity>
+                          );
+                        })
+                      ) : (
+                        <View style={{ padding: 20, alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 14, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                          <Text style={{ fontSize: 13, fontWeight: '700', color: NAVY, marginBottom: 4 }}>No available candidates found.</Text>
+                          <Text style={{ fontSize: 12, color: MUTED, textAlign: 'center' }}>All candidates are currently assigned, working or unavailable.</Text>
                         </View>
-                        <View style={styles.candInfo}>
-                          <Text style={styles.candName}>{cand.name} <Text style={{fontSize: 11, color: MUTED}}>({cand.id})</Text></Text>
-                          <Text style={styles.candSub}>{cand.role} · {cand.experience}</Text>
-                          <Text style={styles.candMeta}>Exp. Salary: {cand.salary} · {cand.location}</Text>
-                        </View>
-                        <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
-                          {isSelected && <CheckCircle size={14} color={WHITE} />}
-                        </View>
-                      </TouchableOpacity>
-                    );
-                  })
-                ) : (
-                  <View style={{ padding: 20, alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 14, borderWidth: 1, borderColor: '#E2E8F0' }}>
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: NAVY, marginBottom: 4 }}>No candidate profiles available.</Text>
-                    <Text style={{ fontSize: 12, color: MUTED, textAlign: 'center' }}>Go to "Candidates" page to add staff profiles to your database.</Text>
-                  </View>
-                )}
-              </View>
+                      )}
+                    </View>
+                  </>
+                );
+              })()}
               <View style={{height: 30}} />
             </ScrollView>
 
@@ -731,7 +765,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontWeight: '800', color: NAVY, marginBottom: 4 },
   sectionSubtitle: { fontSize: 13, color: MUTED, paddingRight: 16 },
   feedWallLink: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EFF6FF', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, marginTop: 4 },
-  viewAllText: { fontSize: 13, fontWeight: '700', color: NAVY },
+  viewAllText: { fontSize: 13, fontWeight: '700', color: '#000000' },
   
   // Overview Grid
   gridContainer: { flexDirection: 'row', flexWrap: 'wrap' },

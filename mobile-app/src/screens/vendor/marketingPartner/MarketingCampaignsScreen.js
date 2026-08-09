@@ -1,24 +1,86 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { 
   View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, 
   ScrollView, TextInput, KeyboardAvoidingView, Platform, Dimensions,
   TouchableWithoutFeedback, Switch
 } from 'react-native';
 import { Search, SlidersHorizontal, ChevronRight, EllipsisVertical as MoreVertical, X, CircleCheck as CheckCircle, CloudUpload as UploadCloud, CalendarDays, IndianRupee } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchVendorRequirements } from '../../../services/api.service';
 
 const { width, height } = Dimensions.get('window');
 
 const TABS = ["Active", "Scheduled", "Awaiting Approval", "Paused", "Completed"];
 
-const CAMPAIGNS = [];
+const mapCampaignStatus = (s) => {
+  if (!s) return 'Scheduled';
+  if (s === 'pending') return 'Scheduled';
+  if (s === 'accepted' || s === 'confirmed' || s === 'active' || s === 'running' || s === 'in_progress') return 'Active';
+  if (s === 'proposal_received' || s === 'submitted') return 'Awaiting Approval';
+  if (s === 'paused') return 'Paused';
+  if (s === 'completed' || s === 'finished' || s === 'closed') return 'Completed';
+  if (s === 'cancelled') return 'Paused';
+  return 'Scheduled';
+};
 
 const STAGES = ["Planning", "Content Production", "Client Review", "Publishing", "Optimisation", "Reporting"];
 const PAUSE_REASONS = ["Waiting for client content", "Waiting for client approval", "Payment pending", "Campaign assets unavailable", "Internal workload", "Other"];
 const DELIVERABLE_TYPES = ["Image", "Video", "Design", "Document", "Campaign Copy", "Website Link", "Social Media Post", "Other"];
 
 export default function MarketingCampaignsScreen({ setActivePage }) {
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.registration?.id || user?.id;
+
+  const [campaigns, setCampaigns] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("Active");
   const [searchQuery, setSearchQuery] = useState("");
+
+  const loadCampaigns = async () => {
+    if (!supplierId) { setLoading(false); return; }
+    try {
+      const res = await fetchVendorRequirements(supplierId);
+      const list = res?.data || res || [];
+      if (Array.isArray(list)) {
+        const mapped = list.map((r, idx) => ({
+          id: `CAMP-${r.id ? r.id.substring(0, 5).toUpperCase() : String(idx + 1).padStart(3, '0')}`,
+          rawId: r.id,
+          title: r.title || r.campaignType || 'Marketing Campaign',
+          client: r.owner?.bizName || 'HoReCa Partner',
+          category: r.extraData?.objective || r.extraData?.businessType || 'Marketing Campaign',
+          status: mapCampaignStatus(r.status),
+          startDate: r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—',
+          endDate: r.extraData?.duration ? `+${r.extraData.duration}` : '—',
+          budget: r.budget || 'Custom Budget',
+          progress: r.status === 'completed' || r.status === 'finished' ? 100 :
+                    r.status === 'active' || r.status === 'in_progress' || r.status === 'running' ? 50 :
+                    r.status === 'accepted' || r.status === 'confirmed' ? 30 : 10,
+          stage: r.status === 'active' || r.status === 'in_progress' ? 'Content Production' : 'Planning',
+          nextMilestone: 'Draft Submission',
+          milestoneDue: '—',
+          team: [],
+          details: {
+            objective: r.extraData?.objective || '—',
+            targetAudience: r.extraData?.audience || '—',
+            deliverables: r.extraData?.services || r.description || '—',
+            clientApprovalStatus: r.status === 'proposal_received' ? 'Awaiting Approval' : 'Not Required',
+            updates: r.description || 'No updates yet.',
+          },
+        }));
+        setCampaigns(mapped);
+      }
+    } catch (err) {
+      console.warn('Error loading campaigns:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCampaigns();
+    const interval = setInterval(loadCampaigns, 5000);
+    return () => clearInterval(interval);
+  }, [supplierId]);
   
   // Modals
   const [filterSheetVisible, setFilterSheetVisible] = useState(false);
@@ -56,11 +118,11 @@ export default function MarketingCampaignsScreen({ setActivePage }) {
   };
 
   const getFilteredCampaigns = () => {
-    return CAMPAIGNS.filter(c => c.status === activeTab);
+    return campaigns.filter(c => c.status === activeTab);
   };
 
   const getTabCount = (tabName) => {
-    return CAMPAIGNS.filter(c => c.status === tabName).length;
+    return campaigns.filter(c => c.status === tabName).length;
   };
 
   const getStatusStyle = (status) => {
@@ -194,7 +256,7 @@ export default function MarketingCampaignsScreen({ setActivePage }) {
         <View style={styles.actionRow}>
           <TouchableOpacity style={styles.textAction} onPress={() => { setSelectedCampaign(item); setDetailsModalVisible(true); }}>
             <Text style={styles.textActionLabel}>View Details</Text>
-            <ChevronRight size={16} color="#1E3A8A" />
+            <ChevronRight size={16} color="#0B2246" />
           </TouchableOpacity>
           <View style={styles.rightActions}>
             {item.status === 'Active' && (
@@ -305,9 +367,6 @@ export default function MarketingCampaignsScreen({ setActivePage }) {
                 onChangeText={setSearchQuery}
               />
             </View>
-            <TouchableOpacity style={styles.filterBtn} onPress={() => setFilterSheetVisible(true)}>
-              <SlidersHorizontal size={20} color="#1E3A8A" />
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -667,7 +726,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 2, elevation: 1,
   },
   tabActive: {
-    backgroundColor: '#1E3A8A', borderColor: '#1E3A8A',
+    backgroundColor: '#0B2246', borderColor: '#0B2246',
   },
   tabText: {
     fontSize: 14, fontWeight: '600', color: '#64748B',
@@ -794,13 +853,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', paddingVertical: 8,
   },
   textActionLabel: {
-    fontSize: 14, fontWeight: '600', color: '#1E3A8A', marginRight: 4,
+    fontSize: 14, fontWeight: '600', color: '#0B2246', marginRight: 4,
   },
   rightActions: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
   },
   btnPrimary: {
-    backgroundColor: '#1E3A8A', paddingHorizontal: 16, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: '#0B2246', paddingHorizontal: 16, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center',
   },
   btnPrimaryText: {
     color: '#fff', fontWeight: '600', fontSize: 14,
@@ -871,7 +930,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', padding: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9', gap: 12,
   },
   btnPrimaryModal: {
-    flex: 1, backgroundColor: '#1E3A8A', height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center',
+    flex: 1, backgroundColor: '#0B2246', height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center',
   },
   btnOutlineModal: {
     flex: 1, backgroundColor: '#fff', borderWidth: 1, borderColor: '#CBD5E1', height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center',
@@ -911,7 +970,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 4, borderRadius: 6, marginRight: 6,
   },
   selChipActive: {
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#0B2246',
   },
   selChipText: {
     fontSize: 13, color: '#475569',
@@ -939,10 +998,10 @@ const styles = StyleSheet.create({
     width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: '#CBD5E1', justifyContent: 'center', alignItems: 'center', marginRight: 12,
   },
   radioOuterSelected: {
-    borderColor: '#1E3A8A',
+    borderColor: '#0B2246',
   },
   radioInner: {
-    width: 10, height: 10, borderRadius: 5, backgroundColor: '#1E3A8A',
+    width: 10, height: 10, borderRadius: 5, backgroundColor: '#0B2246',
   },
   radioText: {
     fontSize: 14, color: '#1E293B',

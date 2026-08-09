@@ -142,7 +142,7 @@ export default function RawMaterialDashboardHome({ onNavigate, setActivePage }) 
                 <Text style={styles.sectionTitle}>Recent Orders</Text>
                 <TouchableOpacity onPress={() => onNavigate && onNavigate('requests')} style={styles.viewAllBtn}>
                   <Text style={styles.viewAllText}>View All</Text>
-                  <ChevronRight size={13} color={GOLD} />
+                  <ChevronRight size={13} color="#000000" />
                 </TouchableOpacity>
               </View>
               {loading ? (
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 3,
   },
-  viewAllText: { fontSize: 12, fontWeight: '700', color: GOLD },
+  viewAllText: { fontSize: 12, fontWeight: '700', color: '#000000' },
   
   overviewGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12 },
   overviewCard: { 

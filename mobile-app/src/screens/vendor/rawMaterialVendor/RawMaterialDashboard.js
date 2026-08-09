@@ -22,7 +22,7 @@ import CompliancePage from '../../owner/compliance/CompliancePage';
 import DocumentsKycScreen from '../../common/DocumentsKycScreen';
 import HRCSupportBot from '../../../components/owner/chatbot/HRCSupportBot';
 
-import { fetchVendorOrders } from '../../../services/api.service';
+import { fetchVendorOrders, fetchUserNotificationsApi } from '../../../services/api.service';
 
 const PRIMARY = '#0B1736';
 const ACCENT = '#0B1736';
@@ -118,16 +118,46 @@ export default function RawMaterialDashboard() {
     ).start();
   }, []);
 
-  const [unreadCount, setUnreadCount] = useState(3);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const loadVendorUnread = async () => {
-      const supplierId = user?.id || user?.registrationId || user?.supplierId || 'VEND-RM-001';
+      const userId = user?.id || user?.registration?.userId;
+      const supplierId = user?.registration?.id || user?.id;
+
       try {
-        const res = await fetchVendorOrders(supplierId);
-        if (res?.success && Array.isArray(res.data)) {
-          const pending = res.data.filter(o => o.status === 'pending' || o.status === 'confirmed').length;
-          setUnreadCount(pending > 0 ? pending : 3);
+        let readOverrides = {};
+        try {
+          if (typeof window !== 'undefined' && window.localStorage) {
+            const saved = window.localStorage.getItem('hrc_read_notifications_v1');
+            if (saved) readOverrides = JSON.parse(saved);
+          }
+        } catch (e) {}
+
+        if (userId) {
+          const notifRes = await fetchUserNotificationsApi(userId);
+          if (notifRes?.success && Array.isArray(notifRes.data)) {
+            const unread = notifRes.data.filter(n => {
+              const isOverridden = readOverrides[n.id] !== undefined;
+              return isOverridden ? !readOverrides[n.id] : !n.isRead;
+            }).length;
+            setUnreadCount(unread);
+            return;
+          }
+        }
+
+        if (supplierId) {
+          const res = await fetchVendorOrders(supplierId);
+          const ordersList = res?.data || res || [];
+          if (Array.isArray(ordersList)) {
+            const unread = ordersList.filter((o, idx) => {
+              const notifId = `ord-${o.id || idx}`;
+              const isOverridden = readOverrides[notifId] !== undefined;
+              const defaultRead = o.status === 'delivered';
+              return isOverridden ? !readOverrides[notifId] : !defaultRead;
+            }).length;
+            setUnreadCount(unread);
+          }
         }
       } catch (e) {
         console.log('Error fetching vendor unread notifications:', e);
@@ -135,9 +165,9 @@ export default function RawMaterialDashboard() {
     };
 
     loadVendorUnread();
-    const interval = setInterval(loadVendorUnread, 4000);
+    const interval = setInterval(loadVendorUnread, 2000);
     return () => clearInterval(interval);
-  }, [user?.id]);
+  }, [user]);
 
   const [imgError, setImgError] = useState(false);
   const userPhoto = user?.profilePhoto || user?.profileImage || user?.registration?.profilePhoto || user?.vendorRegistration?.profilePhoto;

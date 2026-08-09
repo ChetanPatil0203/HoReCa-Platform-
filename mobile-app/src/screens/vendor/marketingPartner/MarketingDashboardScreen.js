@@ -5,7 +5,7 @@ import { AuthContext } from '../../../context/AuthContext';
 
 
 const KPI_DATA = [
-  { label: "Active Campaigns", value: "0", delta: "0 this month", icon: Megaphone, color: "#071B3A" },
+  { label: "Active Campaigns", value: "0", delta: "0 this month", icon: Megaphone, color: "#0B2246" },
   { label: "Monthly Revenue", value: "₹0", delta: "0% vs last month", icon: TrendingUp, color: "#10B981" },
   { label: "Avg. Rating", value: "0 ★", delta: "From 0 reviews", icon: Star, color: "#F59E0B" },
   { label: "Client Retention", value: "0%", delta: "0% this month", icon: Zap, color: "#2563EB" },
@@ -45,16 +45,16 @@ export default function MarketingDashboardScreen() {
 
       {/* Welcome Banner */}
       <View style={[styles.welcomeBanner, { backgroundColor: "#E0F2FE", borderColor: "#B9E6FE" }]}>
-        <View style={[styles.bannerIconBox, { backgroundColor: "#E0F2FE", borderColor: "#B9E6FE", shadowColor: "#071B3A" }]}>
-          <Megaphone size={24} color="#071B3A" />
+        <View style={[styles.bannerIconBox, { backgroundColor: "#E0F2FE", borderColor: "#B9E6FE", shadowColor: "#0B2246" }]}>
+          <Megaphone size={24} color="#0B2246" />
         </View>
         <View style={styles.bannerContent}>
           <Text style={styles.bannerTitle}>Welcome back, Partner</Text>
           <Text style={styles.bannerSub}>Marketing Agency · BrandCraft Agency</Text>
         </View>
         <View style={[styles.activePill, { backgroundColor: "#E0F2FE", borderColor: "#B9E6FE" }]}>
-          <View style={[styles.activeDot, { backgroundColor: "#071B3A" }]} />
-          <Text style={[styles.activePillText, { color: "#071B3A" }]}>Active</Text>
+          <View style={[styles.activeDot, { backgroundColor: "#0B2246" }]} />
+          <Text style={[styles.activePillText, { color: "#0B2246" }]}>Active</Text>
         </View>
       </View>
 
@@ -85,7 +85,7 @@ export default function MarketingDashboardScreen() {
               <Text style={styles.cardTitle}>Revenue Trend</Text>
               <Text style={styles.cardSub}>Monthly (₹ Lakhs)</Text>
             </View>
-            <TouchableOpacity onPress={() => Alert.alert('Coming Soon', 'This feature is under development.')}><Text style={[styles.viewAllText, { color: "#071B3A" }]}>View All →</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => Alert.alert('Coming Soon', 'This feature is under development.')}><Text style={[styles.viewAllText, { color: "#000000" }]}>View All →</Text></TouchableOpacity>
           </View>
 
           <View style={styles.chartBars}>
@@ -94,7 +94,7 @@ export default function MarketingDashboardScreen() {
               const isLast = i === REVENUE_DATA.length - 1;
               return (
                 <View key={d.month} style={styles.barCol}>
-                  <View style={[styles.barFill, { height: `${pct}%`, backgroundColor: isLast ? "#071B3A" : "#071B3A28" }]} />
+                  <View style={[styles.barFill, { height: `${pct}%`, backgroundColor: isLast ? "#0B2246" : "#0B224628" }]} />
                 </View>
               )
             })}
@@ -106,7 +106,7 @@ export default function MarketingDashboardScreen() {
           <View style={styles.revFooter}>
             <View>
               <Text style={styles.revFooterLabel}>This Month</Text>
-              <Text style={[styles.revFooterVal, { color: "#071B3A" }]}>₹1.2L</Text>
+              <Text style={[styles.revFooterVal, { color: "#0B2246" }]}>₹1.2L</Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
               <Text style={styles.revFooterLabel}>Growth</Text>
@@ -119,20 +119,20 @@ export default function MarketingDashboardScreen() {
         <View style={styles.ordersCard}>
           <View style={[styles.cardHeaderRow, { borderBottomWidth: 1, borderBottomColor: '#F1F5F9', paddingBottom: 16 }]}>
             <Text style={styles.cardTitle}>Recent Orders</Text>
-            <TouchableOpacity><Text style={[styles.viewAllText, { color: "#071B3A" }]}>View Requests →</Text></TouchableOpacity>
+            <TouchableOpacity><Text style={[styles.viewAllText, { color: "#0B2246" }]}>View Requests →</Text></TouchableOpacity>
           </View>
           <View style={styles.ordersList}>
             {displayOrders.slice(0, 4).map(o => {
               const s = STATUS_STYLES[o.status] || STATUS_STYLES["Pending"];
               return (
                 <TouchableOpacity key={o.id} style={styles.orderItem}>
-                  <View style={[styles.orderItemLine, { backgroundColor: "#071B3A" }]} />
+                  <View style={[styles.orderItemLine, { backgroundColor: "#0B2246" }]} />
                   <View style={styles.orderItemInfo}>
                     <Text style={styles.orderItemTitle}>{o.title}</Text>
                     <Text style={styles.orderItemSub}>{o.client || 'HoReCa Client'} · {o.date}</Text>
                   </View>
                   <View style={styles.orderItemRight}>
-                    <Text style={[styles.orderItemVal, { color: "#071B3A" }]}>{o.amount || o.value}</Text>
+                    <Text style={[styles.orderItemVal, { color: "#0B2246" }]}>{o.amount || o.value}</Text>
                     <View style={[styles.statusBadge, { backgroundColor: s.bg }]}>
                       <Text style={[styles.statusText, { color: s.color }]}>{o.status}</Text>
                     </View>

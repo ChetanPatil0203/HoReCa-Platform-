@@ -9,9 +9,9 @@ import {
 import { AuthContext } from '../../../context/AuthContext';
 import { fetchPublicRequirements, fetchVendorRequirements } from '../../../services/api.service';
 
-const NAVY = '#071B3A';
+const NAVY = '#0B2246';
 const BG = '#F8FAFC';
-const PURPLE = '#071B3A';
+const PURPLE = '#0B2246';
 
 const CATEGORIES = ["All", "Social Media Marketing", "Content Creation", "SEO", "Performance Marketing", "Influencer Marketing"];
 

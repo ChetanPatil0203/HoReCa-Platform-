@@ -112,8 +112,8 @@ export default function RoleBasedMobileDrawer({
       <View style={[styles.bottomSection, isShortScreen && { paddingTop: 6 }]}>
         {bottomNavItems.map((item) => <NavBtn key={item.key} item={item} />)}
         <TouchableOpacity style={[styles.logoutBtn, isShortScreen && { paddingVertical: 8, height: 44 }]} onPress={onLogout}>
-          <LogOut size={20} color="#B8C6E3" strokeWidth={1.5} />
-          <Text style={styles.logoutText}>Logout</Text>
+          <LogOut size={20} color="#EF4444" strokeWidth={1.5} />
+          <Text style={[styles.logoutText, { color: '#EF4444' }]}>Logout</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -272,6 +272,6 @@ const styles = StyleSheet.create({
     height: 48,
   },
   logoutText: {
-    color: '#B8C6E3', fontSize: 14, fontWeight: '500', marginLeft: 12, letterSpacing: 0.2,
+    color: '#EF4444', fontSize: 14, fontWeight: '500', marginLeft: 12, letterSpacing: 0.2,
   }
 });

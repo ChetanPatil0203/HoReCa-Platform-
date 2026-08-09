@@ -22,6 +22,7 @@ router.patch('/:requirementId/status', marketingController.updateRequirementStat
 
 // Proposals Endpoints
 router.post('/proposals', marketingController.createProposal);
+router.get('/proposals/vendor/:supplierId', marketingController.getVendorProposals);
 router.get('/proposals/:requirementId', marketingController.getRequirementProposals);
 router.patch('/proposals/:proposalId/accept', marketingController.acceptProposal);
 

@@ -3,30 +3,30 @@ import {
   View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator
 } from 'react-native';
 import { Bell } from 'lucide-react-native';
-import { AuthContext } from '../../../context/AuthContext';
+import { AuthContext } from '../../context/AuthContext';
 import {
   fetchUserNotificationsApi,
   markAllNotificationsReadApi,
   toggleNotificationReadApi,
-  fetchVendorOrders
-} from '../../../services/api.service';
+  getOwnerOrdersApi
+} from '../../services/api.service';
 
 const NAVY = '#081A3A';
-const STORAGE_KEY = 'hrc_read_notifications_v1';
+const STORAGE_KEY = 'hrc_read_notifications_owner';
 
 const TABS = ['All', 'Unread', 'Marked as Read'];
 
-export default function RawMaterialNotificationsPage() {
+export default function OwnerNotificationsPage() {
   const { user } = useContext(AuthContext);
   const userId = user?.id || user?.registration?.userId || user?.userId;
-  const supplierId = user?.registration?.id || user?.id;
+  const ownerId = user?.registration?.id || user?.id;
 
   const [activeTab, setActiveTab] = useState('All');
   const [allNotifications, setAllNotifications] = useState([]);
   const [readOverrideMap, setReadOverrideMap] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // 1. Restore persistent read overrides from LocalStorage on mount
+  // Restore persistent read overrides from LocalStorage on mount
   useEffect(() => {
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
@@ -40,7 +40,6 @@ export default function RawMaterialNotificationsPage() {
     }
   }, []);
 
-  // Helper to update and persist read overrides
   const updateReadOverrides = (updater) => {
     setReadOverrideMap(prev => {
       const nextMap = typeof updater === 'function' ? updater(prev) : updater;
@@ -54,38 +53,37 @@ export default function RawMaterialNotificationsPage() {
   };
 
   const loadNotifications = useCallback(async () => {
-    if (!userId && !supplierId) return;
+    if (!userId && !ownerId) return;
 
     try {
       let dbRes = null;
       if (userId) {
         try {
           dbRes = await fetchUserNotificationsApi(userId, 'All');
-        } catch (e) {
-          // Fallback
-        }
+        } catch (e) {}
       }
 
       if (dbRes?.success && Array.isArray(dbRes.data) && dbRes.data.length > 0) {
         setAllNotifications(dbRes.data);
       } else {
-        // Fallback sync from Live Vendor Orders
-        const res = await fetchVendorOrders(supplierId);
-        const ordersList = res?.data || res || [];
-        const list = [];
+        // Fallback sync from Live Owner Procurement Orders
+        let ordersList = [];
+        try {
+          const res = await getOwnerOrdersApi(ownerId);
+          ordersList = res?.data || res || [];
+        } catch (err) {}
 
+        const list = [];
         if (Array.isArray(ordersList)) {
           ordersList.forEach((ord, idx) => {
-            const statusLabel = ord.status === 'confirmed' ? 'Order Confirmed' : ord.status === 'processing' ? 'Order processing' : ord.status === 'packed' ? 'Order packed' : ord.status === 'shipped' ? 'Out for Delivery' : ord.status === 'delivered' ? 'Order Delivered' : `Order ${ord.status}`;
-            const timeStr = ord.createdAt ? new Date(ord.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '07:05 PM';
+            const timeStr = ord.createdAt ? new Date(ord.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '11:00 AM';
             const shortId = (ord.id || '').toString().slice(-4).toUpperCase();
-            const notifId = `ord-${ord.id || idx}`;
             
             list.push({
-              id: notifId,
+              id: `own-${ord.id || idx}`,
               type: 'Orders',
-              title: `New Order Update: #${shortId}`,
-              message: `Customer ${ord.owner?.bizName || 'Chetan Cafe'} placed an order worth ₹${parseFloat(ord.totalAmount || 800).toLocaleString('en-IN')}. Status: ${statusLabel}.`,
+              title: `Order Status Update: #${shortId}`,
+              message: `Your procurement order #${shortId} with supplier ${ord.supplier?.bizName || 'Vendor'} is currently ${ord.status || 'Confirmed'}.`,
               createdAt: ord.createdAt || new Date().toISOString(),
               time: timeStr,
               isRead: ord.status === 'delivered',
@@ -95,11 +93,11 @@ export default function RawMaterialNotificationsPage() {
         setAllNotifications(list);
       }
     } catch (err) {
-      console.warn('Error loading notifications:', err);
+      console.warn('Error loading owner notifications:', err);
     } finally {
       setLoading(false);
     }
-  }, [userId, supplierId]);
+  }, [userId, ownerId]);
 
   useEffect(() => {
     loadNotifications();
@@ -107,7 +105,6 @@ export default function RawMaterialNotificationsPage() {
     return () => clearInterval(interval);
   }, [loadNotifications]);
 
-  // Compute processed notifications with persistent read overrides applied
   const processedNotifications = allNotifications.map(n => {
     const isOverridden = readOverrideMap[n.id] !== undefined;
     return {
@@ -138,19 +135,17 @@ export default function RawMaterialNotificationsPage() {
   };
 
   const handleNotificationPress = async (item) => {
-    if (item.isRead) return; // Already read, keep visible and read!
+    if (item.isRead) return;
 
     try {
-      // Persist read status locally & in state immediately
       updateReadOverrides(prev => ({
         ...prev,
         [item.id]: true,
       }));
 
-      // Optimistic update
       setAllNotifications(prev => prev.map(n => n.id === item.id ? { ...n, isRead: true } : n));
 
-      if (userId && !item.id.toString().startsWith('ord-') && !item.id.toString().startsWith('req-')) {
+      if (userId && !item.id.toString().startsWith('own-')) {
         toggleNotificationReadApi(item.id).catch(() => {});
       }
     } catch (err) {
@@ -158,11 +153,10 @@ export default function RawMaterialNotificationsPage() {
     }
   };
 
-  // Filter notifications based on active tab ('All', 'Unread', 'Marked as Read')
   const displayedNotifications = processedNotifications.filter(n => {
     if (activeTab === 'Unread') return !n.isRead;
     if (activeTab === 'Marked as Read') return n.isRead;
-    return true; // 'All'
+    return true;
   });
 
   const getTabLabel = (tabName) => {
@@ -195,7 +189,7 @@ export default function RawMaterialNotificationsPage() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        {/* Clean Header */}
+        {/* Header */}
         <View style={styles.header}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={styles.headerTitle}>Notifications</Text>
@@ -210,7 +204,7 @@ export default function RawMaterialNotificationsPage() {
           </TouchableOpacity>
         </View>
 
-        {/* 3 Tabs: All, Unread, Marked as Read */}
+        {/* 3 Tabs */}
         <View style={styles.filterContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
             {TABS.map(tab => (

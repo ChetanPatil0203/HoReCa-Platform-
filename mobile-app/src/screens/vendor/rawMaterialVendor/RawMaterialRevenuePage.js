@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
   },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', color: NAVY },
-  linkText: { color: '#3B82F6', fontSize: 14, fontWeight: '500' },
+  linkText: { color: '#000000', fontSize: 14, fontWeight: '500' },
   
   mockChartContainer: {
     flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end',

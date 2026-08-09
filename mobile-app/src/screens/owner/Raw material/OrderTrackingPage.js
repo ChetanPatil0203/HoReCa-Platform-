@@ -96,7 +96,8 @@ export default function OrderTrackingPage() {
     let isMounted = true;
     const loadTrackingRecords = async () => {
       try {
-        const ownerId = user?.id || user?.registrationId || 'OWNER-DEMO-001';
+        const ownerId = user?.id || user?.registration?.id || user?.userId;
+        if (!ownerId) return;
         const res = await fetchOwnerTrackingApi(ownerId);
         if (res && res.success && res.data) {
           const { orders = [], requirements = [] } = res.data;

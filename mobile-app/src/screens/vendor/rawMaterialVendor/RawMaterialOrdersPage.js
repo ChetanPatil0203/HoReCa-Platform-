@@ -612,15 +612,15 @@ export default function RawMaterialOrdersPage() {
           )}
 
           {/* Card Footer (Delivery Date & Main Action Buttons) */}
-          <View style={styles.cardFooterCompact}>
-            <View style={{ flex: 1 }}>
+          <View style={[styles.cardFooterCompact, isMobile && primaryText && { flexDirection: 'column', alignItems: 'stretch', gap: 10 }]}>
+            <View style={isMobile && primaryText ? { marginBottom: 2 } : { flex: 1 }}>
               <Text style={styles.deliveryLabelCompact}>Requested Delivery</Text>
               <Text style={styles.deliveryValCompact} numberOfLines={1}>{item.deliveryDate}</Text>
             </View>
             
-            <View style={styles.actionsContainer}>
+            <View style={[styles.actionsContainer, isMobile && primaryText && { width: '100%', justifyContent: 'space-between', gap: 8 }]}>
               <TouchableOpacity
-                style={styles.viewDetailsBtnCompact}
+                style={[styles.viewDetailsBtnCompact, isMobile && primaryText && { flex: 1, paddingVertical: 10 }]}// slightly more padding on mobile for better tap target when stacked
                 onPress={() => { orderRef.current = item; setSelectedOrder(item); setDetailsModalVisible(true); }}
                 activeOpacity={0.7}
               >
@@ -629,7 +629,7 @@ export default function RawMaterialOrdersPage() {
 
               {primaryText && (
                 <ScalePressable
-                  style={styles.primaryActionBtnCompact}
+                  style={[styles.primaryActionBtnCompact, isMobile && { flex: 1.6, paddingVertical: 10 }]}
                   onPress={() => handlePrimaryAction(item)}
                 >
                   <Text style={styles.primaryActionTextCompact}>{primaryText}</Text>

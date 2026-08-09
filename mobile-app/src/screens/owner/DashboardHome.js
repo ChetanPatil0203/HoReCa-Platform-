@@ -1,10 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions, Modal, TextInput, Image } from 'react-native';
 import { Package, Users, Wrench, Megaphone, ShoppingCart, MessageSquare, CalendarDays, TriangleAlert, ChevronRight, Star, Clock, X, ShieldCheck, Building2, Search } from 'lucide-react-native';
 import { fetchOwnerRequirements, fetchOwnerMainDashboardSummary } from '../../services/api.service';
 
 const NAVY = '#071B3A';
 const MUTED = '#64748B';
+
+const HERO_BANNERS = [
+  { id: 'b1', image: require('../../assets/hero_banner1.png'), bgColor: '#071629' },
+  { id: 'b2', image: require('../../assets/hero_banner2.png'), bgColor: '#022E13' },
+  { id: 'b3', image: require('../../assets/hero_banner3.png'), bgColor: '#171325' },
+];
 
 export default function DashboardHome({ user, onNavigate }) {
   const { width } = useWindowDimensions();
@@ -32,6 +38,72 @@ export default function DashboardHome({ user, onNavigate }) {
   const [partnersModalVisible, setPartnersModalVisible] = useState(false);
   const [activitySearch, setActivitySearch] = useState('');
   const [partnerSearch, setPartnerSearch] = useState('');
+
+  const [activeBannerIndex, setActiveBannerIndex] = useState(0);
+  const bannerScrollRef = useRef(null);
+  const heroCardWidth = width - (pagePadding * 2);
+  const heroCardHeight = Math.min(Math.round(heroCardWidth * 0.64), 225);
+
+  // Real-time live clock
+  const [currentTime, setCurrentTime] = useState(
+    new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  );
+
+  useEffect(() => {
+    const timeInterval = setInterval(() => {
+      setCurrentTime(
+        new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      );
+    }, 1000);
+    return () => clearInterval(timeInterval);
+  }, []);
+
+  const rawName =
+    user?.name ||
+    user?.firstName ||
+    user?.ownerName ||
+    user?.proprietor ||
+    user?.contactPerson ||
+    (user?.user ? `${user.user.firstName || ''} ${user.user.lastName || ''}`.trim() : '') ||
+    'Chetan';
+
+  const userName = rawName.split(' ')[0] || 'User';
+
+  const bizName =
+    user?.businessName ||
+    user?.bizName ||
+    user?.tradeName ||
+    user?.registration?.bizName ||
+    user?.horecaRegistration?.bizName ||
+    'Chetan Cafe';
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveBannerIndex((prevIndex) => {
+        const nextIndex = (prevIndex + 1) % HERO_BANNERS.length;
+        if (bannerScrollRef.current) {
+          bannerScrollRef.current.scrollTo({
+            x: nextIndex * heroCardWidth,
+            animated: true,
+          });
+        }
+        return nextIndex;
+      });
+    }, 2000);
+
+    return () => clearInterval(timer);
+  }, [heroCardWidth]);
+
+  const handleBannerScroll = (event) => {
+    const slideSize = event.nativeEvent.layoutMeasurement.width;
+    const offset = event.nativeEvent.contentOffset.x;
+    if (slideSize > 0) {
+      const activeIdx = Math.round(offset / slideSize);
+      if (activeIdx !== activeBannerIndex && activeIdx >= 0 && activeIdx < HERO_BANNERS.length) {
+        setActiveBannerIndex(activeIdx);
+      }
+    }
+  };
 
   useEffect(() => {
     const loadOwnerDashboard = async () => {
@@ -107,20 +179,53 @@ export default function DashboardHome({ user, onNavigate }) {
       showsVerticalScrollIndicator={false}
       contentContainerStyle={[styles.container, { paddingHorizontal: pagePadding, paddingBottom: 110, paddingTop: 16 }]}
     >
-      {/* 2. Welcome Hero Card */}
-      <View style={styles.heroCard}>
-        <Image
-          source={require('../../assets/bg.png')}
-          style={styles.heroBgImage}
-          resizeMode="cover"
-        />
+      {/* 2. Welcome Hero Carousel Card (Auto-scrolls every 2 seconds) */}
+      <View style={[styles.heroCardContainer, { width: heroCardWidth, height: heroCardHeight }]}>
+        <ScrollView
+          ref={bannerScrollRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onScroll={handleBannerScroll}
+          scrollEventThrottle={16}
+          style={{ width: '100%' }}
+        >
+          {HERO_BANNERS.map((banner) => (
+            <View
+              key={banner.id}
+              style={[
+                styles.heroSlide,
+                { width: heroCardWidth, height: heroCardHeight }
+              ]}
+            >
+              <Image
+                source={banner.image}
+                style={styles.heroSlideImage}
+                resizeMode="stretch"
+              />
+            </View>
+          ))}
+        </ScrollView>
+
+        {/* Carousel Pagination Dots */}
+        <View style={styles.paginationDots}>
+          {HERO_BANNERS.map((_, index) => (
+            <View
+              key={index}
+              style={[
+                styles.dot,
+                activeBannerIndex === index ? styles.activeDot : styles.inactiveDot,
+              ]}
+            />
+          ))}
+        </View>
       </View>
 
       {/* 3. Quick Access */}
       <View style={styles.sectionContainer}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Quick Access</Text>
-          <TouchableOpacity style={styles.viewAllBtn}><Text style={styles.viewAllText}>View All</Text><ChevronRight size={13} color="#F6B800" /></TouchableOpacity>
+          <TouchableOpacity style={styles.viewAllBtn}><Text style={styles.viewAllText}>View All</Text><ChevronRight size={13} color="#000000" /></TouchableOpacity>
         </View>
         <View style={[styles.gridContainer, { gap: gridGap }]}>
           {quickActions.map(action => (
@@ -148,7 +253,7 @@ export default function DashboardHome({ user, onNavigate }) {
       <View style={styles.sectionContainer}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Today at a Glance</Text>
-          <TouchableOpacity style={styles.viewAllBtn}><Text style={styles.viewAllText}>View All</Text><ChevronRight size={13} color="#F6B800" /></TouchableOpacity>
+          <TouchableOpacity style={styles.viewAllBtn}><Text style={styles.viewAllText}>View All</Text><ChevronRight size={13} color="#000000" /></TouchableOpacity>
         </View>
         <View style={[styles.gridContainer, { gap: gridGap }]}>
           {overviewStats.map((stat, idx) => (
@@ -340,6 +445,111 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
     width: '100%',
   },
+  realtimeHeaderCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#071B3A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  realtimeHeaderLeft: {
+    flex: 1,
+  },
+  realtimeGreetingText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#071B3A',
+    letterSpacing: -0.2,
+    fontFamily: Platform.OS === 'web' ? 'font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
+  },
+  realtimeBizText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#D97706',
+    marginTop: 2,
+    fontFamily: Platform.OS === 'web' ? 'font-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
+  },
+  realtimeClockBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  realtimeClockText: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#1D4ED8',
+    fontFamily: Platform.OS === 'web' ? 'monospace' : 'System',
+  },
+  heroCardContainer: {
+    marginBottom: 20,
+    minHeight: 185,
+    borderRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: '#071B3A',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    shadowColor: '#071B3A',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 10,
+    position: 'relative',
+  },
+  heroSlide: {
+    height: '100%',
+    overflow: 'hidden',
+  },
+  heroSlideImage: {
+    width: '100%',
+    height: '100%',
+  },
+  paginationDots: {
+    position: 'absolute',
+    bottom: 8,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(15, 23, 42, 0.82)',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    zIndex: 10,
+  },
+  dot: {
+    height: 7,
+    borderRadius: 3.5,
+  },
+  activeDot: {
+    width: 22,
+    backgroundColor: '#FFB800',
+    shadowColor: '#FFB800',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
+  },
+  inactiveDot: {
+    width: 7,
+    backgroundColor: 'rgba(255, 255, 255, 0.45)',
+  },
   heroCard: {
     marginBottom: 24,
     backgroundColor: '#071B3A',
@@ -407,7 +617,7 @@ const styles = StyleSheet.create({
   viewAllText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#F6B800',
+    color: '#000000',
     fontFamily: Platform.OS === 'web' ? 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'System',
   },
   gridContainer: {

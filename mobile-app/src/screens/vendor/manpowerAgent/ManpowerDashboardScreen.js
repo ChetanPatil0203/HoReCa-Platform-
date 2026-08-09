@@ -84,7 +84,7 @@ export default function ManpowerDashboardScreen() {
               <Text style={styles.cardTitle}>Revenue Trend</Text>
               <Text style={styles.cardSub}>Monthly (₹ Lakhs)</Text>
             </View>
-            <TouchableOpacity onPress={() => Alert.alert('Coming Soon', 'This feature is under development.')}><Text style={[styles.viewAllText, { color: "#2563EB" }]}>View All →</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => Alert.alert('Coming Soon', 'This feature is under development.')}><Text style={[styles.viewAllText, { color: "#000000" }]}>View All →</Text></TouchableOpacity>
           </View>
           
           <View style={styles.chartBars}>

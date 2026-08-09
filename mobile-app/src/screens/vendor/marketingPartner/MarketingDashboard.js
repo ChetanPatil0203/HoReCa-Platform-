@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Platform, useWindowDimensions, TouchableOpacity
 import { Menu, Bell, Search, LayoutDashboard, ClipboardList, Megaphone, FolderOpen, Users, DollarSign, CircleHelp as HelpCircle, Settings, LogOut, Home, Inbox, User, Plus, ImagePlus, UserPlus, FileText, Building2 } from 'lucide-react-native';
 import { AuthContext } from '../../../context/AuthContext';
 import { colors } from '../../../theme/colors';
+import { fetchVendorRequirements } from '../../../services/api.service';
 
 import RoleBasedMobileDrawer from '../../../components/navigation/RoleBasedMobileDrawer';
 import MarketingDashboardHome from './MarketingDashboardHome';
@@ -13,7 +14,6 @@ import MarketingCampaignsScreen from './MarketingCampaignsScreen';
 import MarketingCreativeApprovalScreen from './MarketingCreativeApprovalScreen';
 import MarketingTeamScreen from './MarketingTeamScreen';
 import MarketingProfileScreen from './MarketingProfileScreen';
-import MarketingRevenueScreen from './MarketingRevenueScreen';
 import MarketingNotificationsScreen from './MarketingNotificationsScreen';
 import MarketingSettingsScreen from './MarketingSettingsScreen';
 import MarketingSupportScreen from './MarketingSupportScreen';
@@ -22,6 +22,7 @@ import MarketingClientsScreen from './MarketingClientsScreen';
 import CompliancePage from '../../owner/compliance/CompliancePage';
 import DocumentsKycScreen from '../../common/DocumentsKycScreen';
 import HRCSupportBot from '../../../components/owner/chatbot/HRCSupportBot';
+import { fetchVendorOrders, fetchUserNotificationsApi } from '../../../services/api.service';
 
 const NAVY = '#071B3A';
 const PURPLE = '#071B3A';
@@ -103,6 +104,59 @@ export default function MarketingDashboard() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedRequirement, setSelectedRequirement] = useState(null);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
+  const [directReqsCount, setDirectReqsCount] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const loadMarketingUnread = async () => {
+      const userId = user?.id || user?.registration?.userId || user?.userId;
+      const supplierId = user?.registration?.id || user?.id;
+
+      try {
+        let readOverrides = {};
+        try {
+          if (typeof window !== 'undefined' && window.localStorage) {
+            const saved = window.localStorage.getItem('hrc_read_notifications_marketing');
+            if (saved) readOverrides = JSON.parse(saved);
+          }
+        } catch (e) { }
+
+        if (userId) {
+          const notifRes = await fetchUserNotificationsApi(userId);
+          if (notifRes?.success && Array.isArray(notifRes.data)) {
+            const unread = notifRes.data.filter(n => {
+              const isOverridden = readOverrides[n.id] !== undefined;
+              return isOverridden ? !readOverrides[n.id] : !n.isRead;
+            }).length;
+            setUnreadCount(unread);
+            setDirectReqsCount(unread);
+            return;
+          }
+        }
+
+        if (supplierId) {
+          const res = await fetchVendorOrders(supplierId);
+          const ordersList = res?.data || res || [];
+          if (Array.isArray(ordersList)) {
+            const unread = ordersList.filter((o, idx) => {
+              const notifId = `mkt-${o.id || idx}`;
+              const isOverridden = readOverrides[notifId] !== undefined;
+              const defaultRead = o.status === 'completed';
+              return isOverridden ? !readOverrides[notifId] : !defaultRead;
+            }).length;
+            setUnreadCount(unread);
+            setDirectReqsCount(unread);
+          }
+        }
+      } catch (e) {
+        console.log('Error fetching marketing unread notifications:', e);
+      }
+    };
+
+    loadMarketingUnread();
+    const interval = setInterval(loadMarketingUnread, 2000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const [imgError, setImgError] = useState(false);
   const userPhoto = user?.profilePhoto || user?.profileImage || user?.registration?.profilePhoto || user?.vendorRegistration?.profilePhoto;
@@ -139,11 +193,14 @@ export default function MarketingDashboard() {
       case "campaigns": return <MarketingCampaignsScreen setActivePage={setActivePage} handleUploadCreative={handleUploadCreative} />;
       case "upload_creative": return <MarketingCreativeApprovalScreen setActivePage={setActivePage} campaign={selectedCampaign} />;
       case "team": return <MarketingTeamScreen setActivePage={setActivePage} />;
-      case "revenue": return <MarketingRevenueScreen setActivePage={setActivePage} />;
       case "notifications": return <MarketingNotificationsScreen setActivePage={setActivePage} />;
       case "settings":
       case "profile": return <MarketingSettingsScreen onNavigate={setActivePage} />;
-      case "feed": return <MarketingFeedWallScreen setActivePage={setActivePage} />;
+      case "feed":
+      case "feedwall":
+      case "feedWall":
+      case "FeedWall":
+      case "feed_wall": return <MarketingFeedWallScreen setActivePage={setActivePage} />;
       case "clients": return <MarketingClientsScreen setActivePage={setActivePage} />;
       case "compliance": return <CompliancePage />;
       case "documentsKyc":
@@ -212,7 +269,7 @@ export default function MarketingDashboard() {
               <View style={styles.mobileRight}>
                 <TouchableOpacity style={styles.mobileIconBtn} onPress={() => setActivePage('notifications')}>
                   <Bell size={18} color="#fff" />
-                  <NotificationBadge count={3} />
+                  <NotificationBadge count={unreadCount} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.mobileAvatarBtn} onPress={() => setActivePage('profile')}>
                   {userPhoto && !imgError ? (
@@ -232,7 +289,7 @@ export default function MarketingDashboard() {
               <View style={styles.navRight}>
                 <TouchableOpacity style={styles.iconBtn} onPress={() => setActivePage('notifications')}>
                   <Bell size={20} color={colors.sub} />
-                  <NotificationBadge count={3} />
+                  <NotificationBadge count={unreadCount} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -264,7 +321,9 @@ export default function MarketingDashboard() {
                 <TouchableOpacity style={styles.navItem} onPress={() => { closeMenu(); setActivePage('requests'); }}>
                   <View style={{ position: 'relative' }}>
                     <Inbox size={24} color={activePage === 'requests' ? PURPLE : '#94A3B8'} />
-                    <View style={styles.navBadge}><Text style={styles.navBadgeText}>2</Text></View>
+                    {directReqsCount > 0 && (
+                      <View style={styles.navBadge}><Text style={styles.navBadgeText}>{directReqsCount > 9 ? '9+' : directReqsCount}</Text></View>
+                    )}
                   </View>
                   <Text style={[styles.navItemText, activePage === 'requests' && styles.navItemTextActive]}>Requests</Text>
                 </TouchableOpacity>

@@ -1,16 +1,18 @@
-import React, { useState, useRef } from 'react';
-import { 
-  View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, 
-  Modal, TextInput, KeyboardAvoidingView, Platform, Dimensions, 
-  TouchableWithoutFeedback 
+import React, { useState, useEffect, useContext } from 'react';
+import {
+  View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView,
+  Modal, TextInput, KeyboardAvoidingView, Platform, Dimensions,
+  TouchableWithoutFeedback
 } from 'react-native';
 import { UsersRound, UserRoundCheck, BriefcaseBusiness, UserPlus, Search, SlidersHorizontal, ChevronRight, EllipsisVertical as MoreVertical, Pencil, CalendarClock, UserRoundX, X, CloudUpload as UploadCloud } from 'lucide-react-native';
+import { AuthContext } from '../../../context/AuthContext';
+import { fetchMarketingTeamApi, saveMarketingTeamMemberApi, deleteMarketingTeamMemberApi } from '../../../services/api.service';
 
 const { width, height } = Dimensions.get('window');
 const isMobile = width < 768;
 
-const NAVY = '#071B3A';
-const PURPLE = '#071B3A';
+const NAVY = '#0B2246';
+const PURPLE = '#0B2246';
 const BLUE = '#3B82F6';
 const GREEN = '#10B981';
 const GRAY = '#64748B';
@@ -19,20 +21,83 @@ const WHITE = '#FFFFFF';
 const MUTED = '#94A3B8';
 const LIGHT_BG = '#F8FAFC';
 
-const MOCK_TEAM = [];
-
 const ROLES = [
-  "Campaign Manager", "Social Media Manager", "Graphic Designer", 
-  "Content Writer", "Photographer", "Videographer", 
+  "Campaign Manager", "Social Media Manager", "Graphic Designer",
+  "Content Writer", "Photographer", "Videographer",
   "Performance Marketer", "Web Developer", "Brand Strategist", "Account Manager"
 ];
 
-const ACTIVE_CAMPAIGNS = [];
-
 export default function MarketingTeamScreen() {
+  const { user } = useContext(AuthContext);
+  const supplierId = user?.registration?.id || user?.id;
+
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
-  
+
+  const loadTeam = async () => {
+    if (!supplierId) { setLoading(false); return; }
+    try {
+      const res = await fetchMarketingTeamApi(supplierId);
+      const list = res?.data || res || [];
+      if (Array.isArray(list)) {
+        const mapped = list.map(m => ({
+          id: m.id,
+          name: m.name || 'Team Member',
+          role: m.role || 'Team Member',
+          initials: (m.name || 'TM').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase(),
+          availability: m.status === 'Active' ? 'Available' : m.status === 'Assigned' ? 'Assigned' : 'Unavailable',
+          skills: m.skills ? (Array.isArray(m.skills) ? m.skills : JSON.parse(m.skills || '[]')) : [],
+          activeCampaigns: m.activeCampaigns ? (Array.isArray(m.activeCampaigns) ? m.activeCampaigns : JSON.parse(m.activeCampaigns || '[]')) : [],
+          email: m.email || '',
+          phone: m.phone || '',
+        }));
+        setTeamMembers(mapped);
+      }
+    } catch (err) {
+      console.warn('Error loading team members:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTeam();
+    const interval = setInterval(loadTeam, 5000);
+    return () => clearInterval(interval);
+  }, [supplierId]);
+
+  const handleSaveTeamMember = async () => {
+    if (!formName.trim()) return;
+    try {
+      await saveMarketingTeamMemberApi({
+        id: modalMode === 'Edit' ? selectedEmp?.id : undefined,
+        supplierId,
+        name: formName,
+        role: formRole,
+        status: 'Active',
+      });
+      setAddModalVisible(false);
+      setFormName('');
+      setFormRole('Campaign Manager');
+      loadTeam();
+    } catch (err) {
+      console.warn('Error saving team member:', err);
+    }
+  };
+
+  const handleDeleteTeamMember = async () => {
+    if (!selectedEmp?.id) return;
+    try {
+      await deleteMarketingTeamMemberApi(selectedEmp.id);
+      setRemoveModalVisible(false);
+      loadTeam();
+    } catch (err) {
+      console.warn('Error deleting team member:', err);
+    }
+  };
+
   // Modals visibility
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
@@ -42,7 +107,7 @@ export default function MarketingTeamScreen() {
   const [manageModalVisible, setManageModalVisible] = useState(false);
   const [availModalVisible, setAvailModalVisible] = useState(false);
   const [removeModalVisible, setRemoveModalVisible] = useState(false);
-  
+
   const [selectedEmp, setSelectedEmp] = useState(null);
   const [modalMode, setModalMode] = useState('Add'); // Add or Edit
 
@@ -79,7 +144,7 @@ export default function MarketingTeamScreen() {
     const avail = getAvailColor(item.availability);
     const visibleSkills = item.skills.slice(0, 3);
     const extraSkillsCount = item.skills.length - 3;
-    
+
     return (
       <View style={[styles.card, !isMobile && { width: '48%', marginRight: '2%' }]}>
         <View style={styles.cardHeader}>
@@ -130,7 +195,7 @@ export default function MarketingTeamScreen() {
             <Text style={styles.textActionText}>View Profile</Text>
             <ChevronRight size={16} color={NAVY} />
           </TouchableOpacity>
-          
+
           {item.availability === 'Assigned' ? (
             <TouchableOpacity style={styles.primaryActionBtn} onPress={() => openManage(item)}>
               <Text style={styles.primaryActionText}>Manage Assignment</Text>
@@ -159,21 +224,21 @@ export default function MarketingTeamScreen() {
                 <Pencil size={18} color={NAVY} />
                 <Text style={styles.menuText}>Edit Member</Text>
               </TouchableOpacity>
-              
+
               {selectedEmp?.availability === 'Assigned' && (
                 <TouchableOpacity style={styles.menuItem} onPress={() => { setMoreMenuVisible(false); openManage(selectedEmp); }}>
                   <BriefcaseBusiness size={18} color={NAVY} />
                   <Text style={styles.menuText}>Manage Assignment</Text>
                 </TouchableOpacity>
               )}
-              
+
               <TouchableOpacity style={styles.menuItem} onPress={() => { setMoreMenuVisible(false); setAvailModalVisible(true); }}>
                 <CalendarClock size={18} color={NAVY} />
                 <Text style={styles.menuText}>Change Availability</Text>
               </TouchableOpacity>
-              
+
               <View style={styles.menuDivider} />
-              
+
               <TouchableOpacity style={styles.menuItem} onPress={() => { setMoreMenuVisible(false); setRemoveModalVisible(true); }}>
                 <UserRoundX size={18} color={RED} />
                 <Text style={[styles.menuText, { color: RED }]}>Remove Member</Text>
@@ -198,8 +263,8 @@ export default function MarketingTeamScreen() {
           </View>
           <ScrollView style={styles.modalScroll}>
             <Text style={styles.inputLabel}>Full Name *</Text>
-            <TextInput style={styles.input} placeholder="e.g. Rahul Sharma" />
-            
+            <TextInput style={styles.input} placeholder="e.g. Rahul Sharma" value={formName} onChangeText={setFormName} />
+
             <View style={isMobile ? null : styles.row}>
               <View style={isMobile ? null : styles.col}>
                 <Text style={styles.inputLabel}>Email Address *</Text>
@@ -224,7 +289,7 @@ export default function MarketingTeamScreen() {
             <TouchableOpacity style={styles.btnOutlineModal} onPress={() => setAddModalVisible(false)}>
               <Text style={styles.btnOutlineTextBlack}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.btnPrimaryModal} onPress={() => setAddModalVisible(false)}>
+            <TouchableOpacity style={styles.btnPrimaryModal} onPress={handleSaveTeamMember}>
               <Text style={styles.btnPrimaryText}>{modalMode === 'Add' ? 'Add Team Member' : 'Save Changes'}</Text>
             </TouchableOpacity>
           </View>
@@ -243,8 +308,8 @@ export default function MarketingTeamScreen() {
               <Text style={styles.dialogTitle}>{hasDependencies ? 'Cannot remove this team member' : 'Remove this team member?'}</Text>
             </View>
             <Text style={styles.dialogText}>
-              {hasDependencies 
-                ? 'This member is currently assigned to active campaign work. Reassign or remove their campaign assignments first.' 
+              {hasDependencies
+                ? 'This member is currently assigned to active campaign work. Reassign or remove their campaign assignments first.'
                 : 'The member will no longer have access to the agency workspace.'}
             </Text>
             <View style={styles.modalFooterActions}>
@@ -256,7 +321,7 @@ export default function MarketingTeamScreen() {
                   <Text style={styles.btnPrimaryText}>Manage Assignments</Text>
                 </TouchableOpacity>
               ) : (
-                <TouchableOpacity style={[styles.btnPrimaryModal, { backgroundColor: RED }]} onPress={() => setRemoveModalVisible(false)}>
+                <TouchableOpacity style={[styles.btnPrimaryModal, { backgroundColor: RED }]} onPress={handleDeleteTeamMember}>
                   <Text style={styles.btnPrimaryText}>Remove Member</Text>
                 </TouchableOpacity>
               )}
@@ -277,7 +342,7 @@ export default function MarketingTeamScreen() {
           </View>
           <ScrollView style={styles.modalScroll}>
             <View style={styles.profTop}>
-              <View style={[styles.avatarBox, { width: 64, height: 64, borderRadius: 32 }]}><Text style={{fontSize: 24, color: WHITE, fontWeight: 'bold'}}>{selectedEmp?.initials}</Text></View>
+              <View style={[styles.avatarBox, { width: 64, height: 64, borderRadius: 32 }]}><Text style={{ fontSize: 24, color: WHITE, fontWeight: 'bold' }}>{selectedEmp?.initials}</Text></View>
               <Text style={styles.profName}>{selectedEmp?.name}</Text>
               <Text style={styles.profRole}>{selectedEmp?.role}</Text>
               <View style={[styles.badge, { backgroundColor: getAvailColor(selectedEmp?.availability).bg, marginTop: 8 }]}>
@@ -304,11 +369,10 @@ export default function MarketingTeamScreen() {
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingHorizontal: isMobile ? (width < 340 ? 12 : 16) : 24 }]}>
-        
+
         <View style={[styles.header, width < 340 && { flexDirection: 'column', alignItems: 'flex-start' }]}>
           <View style={{ flex: 1, paddingRight: width < 340 ? 0 : 12, marginBottom: width < 340 ? 12 : 0 }}>
-            <Text style={styles.pageTitle}>Team</Text>
-            <Text style={styles.pageSubtitle}>Manage team members, skills and campaign assignments</Text>
+            <Text style={styles.pageTitle}>Team Member</Text>
           </View>
           <TouchableOpacity style={styles.addBtn} onPress={() => { setModalMode('Add'); setAddModalVisible(true); }}>
             <UserPlus size={18} color={WHITE} />
@@ -321,19 +385,19 @@ export default function MarketingTeamScreen() {
           <View style={styles.overviewCols}>
             <TouchableOpacity style={styles.overviewCol}>
               <UsersRound size={20} color={BLUE} />
-              <Text style={styles.overviewVal}>14</Text>
+              <Text style={styles.overviewVal}>{teamMembers.length}</Text>
               <Text style={styles.overviewLabel}>Total Members</Text>
             </TouchableOpacity>
             <View style={styles.overviewDivider} />
             <TouchableOpacity style={styles.overviewCol}>
               <UserRoundCheck size={20} color={GREEN} />
-              <Text style={styles.overviewVal}>8</Text>
+              <Text style={styles.overviewVal}>{teamMembers.filter(m => m.availability === 'Available').length}</Text>
               <Text style={styles.overviewLabel}>Available</Text>
             </TouchableOpacity>
             <View style={styles.overviewDivider} />
             <TouchableOpacity style={styles.overviewCol}>
               <BriefcaseBusiness size={20} color={PURPLE} />
-              <Text style={styles.overviewVal}>4</Text>
+              <Text style={styles.overviewVal}>{teamMembers.filter(m => m.availability === 'Assigned').length}</Text>
               <Text style={styles.overviewLabel}>Assigned</Text>
             </TouchableOpacity>
           </View>
@@ -344,9 +408,6 @@ export default function MarketingTeamScreen() {
             <Search size={18} color={MUTED} />
             <TextInput style={styles.searchInput} placeholder="Search by member, role, or skill..." />
           </View>
-          <TouchableOpacity style={styles.filterBtn} onPress={() => setFilterModalVisible(true)}>
-            <SlidersHorizontal size={20} color={NAVY} />
-          </TouchableOpacity>
         </View>
 
         <View style={styles.pillsWrap}>
@@ -360,13 +421,24 @@ export default function MarketingTeamScreen() {
         </View>
 
         <FlatList
-          data={MOCK_TEAM}
+          data={teamMembers.filter(m => {
+            const matchesFilter = activeFilter === 'All' || m.availability === activeFilter;
+            const matchesSearch = !searchQuery || m.name.toLowerCase().includes(searchQuery.toLowerCase()) || m.role.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchesFilter && matchesSearch;
+          })}
           keyExtractor={item => item.id}
           renderItem={renderTeamCard}
           scrollEnabled={false}
           numColumns={isMobile ? 1 : 2}
           key={isMobile ? 'mobile' : 'desktop'}
           columnWrapperStyle={!isMobile && styles.cardRow}
+          ListEmptyComponent={
+            <View style={{ alignItems: 'center', paddingVertical: 40 }}>
+              <UsersRound size={32} color="#CBD5E1" />
+              <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#0F172A', marginTop: 12 }}>No team members yet</Text>
+              <Text style={{ fontSize: 13, color: '#64748B', marginTop: 4, textAlign: 'center' }}>Add your first team member using the button above.</Text>
+            </View>
+          }
         />
 
       </ScrollView>
@@ -387,7 +459,7 @@ const styles = StyleSheet.create({
   pageSubtitle: { fontSize: 13, color: GRAY },
   addBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: NAVY, paddingHorizontal: 16, height: 42, borderRadius: 10, gap: 8, justifyContent: 'center' },
   addBtnText: { color: WHITE, fontWeight: 'bold', fontSize: 14 },
-  
+
   scrollContent: { paddingBottom: 115, maxWidth: 1320, alignSelf: 'center', width: '100%' },
 
   overviewCard: { backgroundColor: WHITE, borderRadius: 18, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 2, elevation: 1 },

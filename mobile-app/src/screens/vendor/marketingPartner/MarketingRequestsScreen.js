@@ -161,7 +161,7 @@ export default function MarketingRequestsScreen({ setActivePage, handleSendPropo
     const statusStyle = getStatusStyle(item.status);
     const isMenuOpen = activeMenuId === item.id;
     return (
-      <View style={[styles.card, { borderLeftColor: statusStyle.accent || statusStyle.text, borderLeftWidth: 5 }]}>
+      <View style={styles.card}>
         <View style={styles.cardHeaderRow}>
           <View style={styles.cardHeaderLeft}>
             <Text style={styles.idText}>{item.id}</Text>
@@ -170,7 +170,7 @@ export default function MarketingRequestsScreen({ setActivePage, handleSendPropo
             </TouchableOpacity>
             <View style={styles.badgeDirect}><Text style={styles.badgeDirectText}>DIRECT REQUEST</Text></View>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+          <View style={[styles.statusBadge, { backgroundColor: 'transparent', paddingHorizontal: 0, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
             <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: statusStyle.accent || statusStyle.text }} />
             <Text style={[styles.statusText, { color: statusStyle.text }]}>{item.status.toUpperCase()}</Text>
           </View>
@@ -178,17 +178,9 @@ export default function MarketingRequestsScreen({ setActivePage, handleSendPropo
 
         <Text style={styles.cardTitle}>{item.campaign}</Text>
         
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-          <View style={{ flex: 1, marginRight: 8 }}>
-            <Text style={styles.clientName}>{item.client}</Text>
-            <Text style={styles.categoryText}>{item.category}</Text>
-          </View>
-          <TouchableOpacity 
-            onPress={() => Alert.alert('Call Customer', `Dialing ${item.client}...`)}
-            style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' }}
-          >
-            <Phone size={14} color="#3B82F6" />
-          </TouchableOpacity>
+        <View style={{ marginBottom: 4 }}>
+          <Text style={styles.clientName}>{item.client}</Text>
+          <Text style={styles.categoryText}>{item.category}</Text>
         </View>
 
         <View style={styles.detailsGrid}>
@@ -215,7 +207,7 @@ export default function MarketingRequestsScreen({ setActivePage, handleSendPropo
         <View style={styles.actionRow}>
           <TouchableOpacity style={styles.textAction} onPress={() => openDetails(item)}>
             <Text style={styles.textActionLabel}>View Details</Text>
-            <ChevronRight size={16} color="#1E3A8A" />
+            <ChevronRight size={16} color="#0B2246" />
           </TouchableOpacity>
           <View style={styles.rightActions}>
             {(item.status === 'New' || item.status === 'Viewed') && (
@@ -286,9 +278,6 @@ export default function MarketingRequestsScreen({ setActivePage, handleSendPropo
                 onChangeText={setSearchQuery}
               />
             </View>
-            <TouchableOpacity style={styles.filterBtn} onPress={() => setFilterSheetVisible(true)}>
-              <SlidersHorizontal size={20} color="#1E3A8A" />
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -560,7 +549,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: '#E2E8F0',
   },
   filterChipActive: {
-    backgroundColor: '#1E3A8A', borderColor: '#1E3A8A',
+    backgroundColor: '#0B2246', borderColor: '#0B2246',
   },
   filterChipText: {
     fontSize: 13, color: '#64748B', fontWeight: '500',
@@ -588,7 +577,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3E8FF', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6,
   },
   badgeDirectText: {
-    color: '#071B3A', fontSize: 10, fontWeight: '700',
+    color: '#0B2246', fontSize: 10, fontWeight: '700',
   },
   statusBadge: {
     paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6,
@@ -627,13 +616,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', paddingVertical: 8,
   },
   textActionLabel: {
-    fontSize: 14, fontWeight: '600', color: '#1E3A8A', marginRight: 4,
+    fontSize: 14, fontWeight: '600', color: '#0B2246', marginRight: 4,
   },
   rightActions: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
   },
   btnPrimary: {
-    backgroundColor: '#071B3A', paddingHorizontal: 16, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', flexDirection: 'row',
+    backgroundColor: '#0B2246', paddingHorizontal: 16, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', flexDirection: 'row',
   },
   btnPrimaryText: {
     color: '#fff', fontWeight: '600', fontSize: 14,
@@ -704,7 +693,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', padding: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9', gap: 12,
   },
   btnPrimaryModal: {
-    flex: 1, backgroundColor: '#071B3A', height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center',
+    flex: 1, backgroundColor: '#0B2246', height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center',
   },
   btnOutlineModal: {
     flex: 1, backgroundColor: '#fff', borderWidth: 1, borderColor: '#CBD5E1', height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center',
@@ -757,10 +746,10 @@ const styles = StyleSheet.create({
     width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: '#CBD5E1', justifyContent: 'center', alignItems: 'center', marginRight: 12,
   },
   radioOuterSelected: {
-    borderColor: '#071B3A',
+    borderColor: '#0B2246',
   },
   radioInner: {
-    width: 10, height: 10, borderRadius: 5, backgroundColor: '#071B3A',
+    width: 10, height: 10, borderRadius: 5, backgroundColor: '#0B2246',
   },
   radioText: {
     fontSize: 14, color: '#1E293B',

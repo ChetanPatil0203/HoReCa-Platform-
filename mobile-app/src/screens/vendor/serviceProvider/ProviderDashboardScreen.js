@@ -85,7 +85,7 @@ export default function ProviderDashboardScreen() {
               <Text style={styles.cardTitle}>Revenue Trend</Text>
               <Text style={styles.cardSub}>Monthly (₹ Lakhs)</Text>
             </View>
-            <TouchableOpacity onPress={() => Alert.alert('Coming Soon', 'This feature is under development.')}><Text style={[styles.viewAllText, { color: "#10B981" }]}>View All →</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => Alert.alert('Coming Soon', 'This feature is under development.')}><Text style={[styles.viewAllText, { color: "#000000" }]}>View All →</Text></TouchableOpacity>
           </View>
           
           <View style={styles.chartBars}>
