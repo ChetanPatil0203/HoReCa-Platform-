@@ -203,7 +203,7 @@ exports.getOwnerOrdersService = async (ownerId) => {
   return await Order.findAll({
     where: { ownerId },
     include: [
-      { model: VendorRegistration, as: 'supplier', attributes: ['id', 'bizName', 'city'] },
+      { model: VendorRegistration, as: 'supplier', attributes: ['id', 'bizName', 'city', 'mobile', 'email', 'contactPerson'] },
       { 
         model: OrderItem, 
         as: 'items',

@@ -46,6 +46,7 @@ export default function RawMaterialOrdersPage({ user, onBack, onTrackOrder, onQu
           vendor: order.supplier?.bizName || 'Unknown Vendor',
           vendorCity: order.supplier?.city || '',
           supplierId: order.supplierId,
+          supplierPhone: order.supplier?.mobile || order.supplier?.phone || order.supplier?.user?.mobile || order.supplier?.user?.phone || null,
           amount: parseFloat(order.totalAmount),
           status: order.status,
           date: new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
@@ -58,7 +59,7 @@ export default function RawMaterialOrdersPage({ user, onBack, onTrackOrder, onQu
             qty: oi.quantity,
             price: parseFloat(oi.priceAtPurchase),
             unit: oi.product?.unit || 'kg',
-            image: oi.product?.imageUrl || null
+            image: oi.product?.imageUrl || oi.product?.image || oi.image || oi.imageUrl || null
           }))
         }));
         setOrders(mapped);

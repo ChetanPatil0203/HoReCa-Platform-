@@ -18,7 +18,7 @@ const WHITE = '#FFFFFF';
 const MOCK_CANDIDATES = [];
 
 const formatReqId = (id) => {
-  if (!id) return 'REQ-310';
+  if (!id) return 'REQ-000';
   if (typeof id === 'string' && id.includes('-') && id.length > 20) {
     return `REQ-${id.slice(0, 5).toUpperCase()}`;
   }
@@ -26,13 +26,13 @@ const formatReqId = (id) => {
 };
 
 const toTitleCase = (str) => {
-  if (!str) return 'Head Chef';
+  if (!str) return 'Staff Requirement';
   if (str.toLowerCase() === 'chef') return 'Head Chef';
   return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
 };
 
 const formatSalaryDisplay = (salary) => {
-  if (!salary) return '₹15,000 / month';
+  if (!salary) return 'Not specified';
   let s = String(salary).trim();
   if (s === '15000') return '₹15,000 / month';
   if (s.match(/^\d+$/)) {
@@ -46,18 +46,18 @@ const formatSalaryDisplay = (salary) => {
 };
 
 const formatExperienceDisplay = (exp) => {
-  if (!exp || exp === '0' || exp === 0) return '1–3 Years';
+  if (!exp || exp === '0' || exp === 0) return 'Not specified';
   return String(exp);
 };
 
 const formatJoiningDisplay = (joining) => {
-  if (!joining || joining === 'As scheduled' || joining === 'as scheduled') return 'Flexible Joining Date';
+  if (!joining) return 'Flexible Joining Date';
   return String(joining);
 };
 
 const formatDescription = (desc) => {
-  if (!desc || desc === 'saihavyg' || desc.trim().length < 5) {
-    return 'Looking for an experienced staff member to manage daily kitchen operations, food preparation and hygiene standards.';
+  if (!desc || desc === 'saihavyg' || desc.trim().length < 3) {
+    return 'No description provided.';
   }
   return desc.trim();
 };
@@ -236,9 +236,9 @@ export default function ManpowerDashboardHome({ onNavigate }) {
   const [submittedListToView, setSubmittedListToView] = useState([]);
 
   const handleOpenSubmittedCandidates = (req) => {
-    const list = req?.submittedCandidates && req.submittedCandidates.length > 0
+    const list = req?.submittedCandidates && Array.isArray(req.submittedCandidates)
       ? req.submittedCandidates
-      : candidateList.slice(0, 3);
+      : [];
     setSubmittedListToView(list);
     setViewSubmittedVisible(true);
   };
@@ -430,13 +430,13 @@ export default function ManpowerDashboardHome({ onNavigate }) {
               <View style={{ flex: 1, paddingRight: 12 }}>
                 <Text style={styles.reqModalHeaderTag}>REQUIREMENT DETAILS</Text>
                 <Text style={styles.reqModalRoleTitle}>
-                  {toTitleCase(selectedReq?.role || selectedReq?.title || 'Head Chef')}
+                  {toTitleCase(selectedReq?.role || selectedReq?.title || 'Staff Requirement')}
                 </Text>
                 <Text style={styles.reqModalSubHeader}>
-                  {selectedReq?.businessName || 'Chetan Cafe'} · {selectedReq?.location || 'Jalgaon'}
+                  {selectedReq?.businessName || 'Business Partner'} · {selectedReq?.location || 'Location Not Specified'}
                 </Text>
                 <Text style={styles.reqModalMetaSub}>
-                  {formatReqId(selectedReq?.reqId || selectedReq?.id)} · Posted {selectedReq?.postedTime || '2 hours ago'}
+                  {formatReqId(selectedReq?.reqId || selectedReq?.id)} · Posted {selectedReq?.postedTime || selectedReq?.postedDate || 'Recently'}
                 </Text>
               </View>
               <TouchableOpacity onPress={() => setDetailsVisible(false)} style={styles.reqModalCloseBtnNavy}>
@@ -466,7 +466,7 @@ export default function ManpowerDashboardHome({ onNavigate }) {
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.gridLabelMuted}>Staff Required</Text>
-                        <Text style={styles.gridValueStrong}>{selectedReq.count || selectedReq.staffRequired || '5'} Staff</Text>
+                        <Text style={styles.gridValueStrong}>{selectedReq.count || selectedReq.staffRequired || '1'} Staff</Text>
                       </View>
                     </View>
 
@@ -522,17 +522,17 @@ export default function ManpowerDashboardHome({ onNavigate }) {
 
                   <View style={styles.detailsRowItem}>
                     <Text style={styles.detailsRowLabel}>Workplace</Text>
-                    <Text style={styles.detailsRowValue}>{selectedReq.businessName || 'Chetan Cafe'}</Text>
+                    <Text style={styles.detailsRowValue}>{selectedReq.businessName || 'Business Partner'}</Text>
                   </View>
 
                   <View style={styles.detailsRowItem}>
                     <Text style={styles.detailsRowLabel}>Location</Text>
-                    <Text style={styles.detailsRowValue}>{selectedReq.location || 'Jalgaon'}</Text>
+                    <Text style={styles.detailsRowValue}>{selectedReq.location || 'Location Not Specified'}</Text>
                   </View>
 
                   <View style={styles.detailsRowItem}>
                     <Text style={styles.detailsRowLabel}>Open Positions</Text>
-                    <Text style={styles.detailsRowValue}>{selectedReq.count || '5'}</Text>
+                    <Text style={styles.detailsRowValue}>{selectedReq.count || '1'}</Text>
                   </View>
                 </View>
 
@@ -548,17 +548,11 @@ export default function ManpowerDashboardHome({ onNavigate }) {
                 <View style={styles.compactDetailsCard}>
                   <Text style={styles.cardHeaderHeading}>Required Skills</Text>
                   <View style={styles.skillChipsContainer}>
-                    {Array.isArray(selectedReq.skills) ? selectedReq.skills.map((skill, idx) => (
+                    {(Array.isArray(selectedReq.skills) && selectedReq.skills.length > 0 ? selectedReq.skills : ['General Staffing']).map((skill, idx) => (
                       <View key={idx} style={styles.skillTagBadge}>
                         <Text style={styles.skillTagLabel}>{skill}</Text>
                       </View>
-                    )) : (
-                      ['Indian Cuisine', 'Kitchen Management', 'Food Safety', 'Team Handling'].map((skill, idx) => (
-                        <View key={idx} style={styles.skillTagBadge}>
-                          <Text style={styles.skillTagLabel}>{skill}</Text>
-                        </View>
-                      ))
-                    )}
+                    ))}
                   </View>
                 </View>
 
@@ -566,10 +560,10 @@ export default function ManpowerDashboardHome({ onNavigate }) {
                 <View style={styles.candSubmissionStrip}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.candStripTitle}>
-                      {selectedReq.status === 'candidates_sent' ? 'Candidates Submitted' : 'No candidates submitted yet'}
+                      {isSubmittedStatus(selectedReq.status) ? 'Candidates Submitted' : 'No candidates submitted yet'}
                     </Text>
                     <Text style={styles.candStripSub}>
-                      {selectedReq.status === 'candidates_sent' ? '3 candidates sent on 28 Jul 2026' : 'Select candidates to send for this requirement'}
+                      {isSubmittedStatus(selectedReq.status) ? `${selectedReq.submittedCandidates?.length || 0} candidate(s) submitted` : 'Select candidates to send for this requirement'}
                     </Text>
                   </View>
                 </View>

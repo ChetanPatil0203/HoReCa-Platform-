@@ -13,7 +13,8 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
-  Linking
+  Linking,
+  Image
 } from 'react-native';
 import {
   ShieldCheck, FilePlus2, EllipsisVertical as MoreVertical, CircleCheck, Clock3,
@@ -24,6 +25,7 @@ import {
 import * as DocumentPicker from 'expo-document-picker';
 import { AuthContext } from '../../../context/AuthContext';
 import { fetchUserComplianceDocuments, saveComplianceDocument, uploadComplianceApi } from '../../../services/api.service';
+import { API_BASE_URL } from '../../../config/api';
 
 const NAVY = '#071B3A';
 const SECONDARY_NAVY = '#102A4C';
@@ -51,7 +53,7 @@ export default function CompliancePage() {
   const isMobile = width < 768;
   const isTinyScreen = width < 340;
   const { user, userToken } = useContext(AuthContext);
-  const userId = user?.id;
+  const userId = user?.id || user?.registration?.id || user?.horecaRegistration?.id || user?.vendorRegistration?.id || user?.userId;
 
   const [documents, setDocuments] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -87,11 +89,17 @@ export default function CompliancePage() {
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
 
   const loadDocuments = useCallback(async () => {
+    if (!userId) {
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
     try {
       setLoading(true);
       const res = await fetchUserComplianceDocuments(userId);
-      if (res.success && res.data && Array.isArray(res.data.documents)) {
-        setDocuments(res.data.documents);
+      const docsList = res?.data?.documents || res?.documents || res?.data || (Array.isArray(res) ? res : []);
+      if (Array.isArray(docsList)) {
+        setDocuments(docsList);
       }
     } catch (err) {
       console.warn('Error loading compliance documents:', err);
@@ -117,8 +125,21 @@ export default function CompliancePage() {
 
   const handleViewDocument = (doc) => {
     if (!doc) return;
-    setPreviewDoc(doc);
-    setViewModalVisible(true);
+    const rawUrl = doc.fileUrl || doc.secureUrl || doc.url;
+    if (rawUrl && typeof rawUrl === 'string' && rawUrl.trim().length > 0) {
+      setPreviewDoc(doc);
+      setViewModalVisible(true);
+    } else {
+      setAddForm({
+        docType: doc.type || doc.name || 'FSSAI Licence',
+        docNumber: doc.licenseNumber || '',
+        issueDate: doc.issueDate || '',
+        expiryDate: doc.expiryDate || '',
+        notes: '',
+        fileName: ''
+      });
+      setAddModalVisible(true);
+    }
   };
 
   const handlePickDocument = async () => {
@@ -495,7 +516,7 @@ export default function CompliancePage() {
               let badgeBg = '#DCFCE7';
               let badgeText = '#15803D';
               let badgeLabel = 'VALID';
-              let primaryBtnText = 'View Document';
+              let primaryBtnText = (doc.fileUrl || doc.secureUrl || doc.url) ? 'Replace / Update' : 'Upload File';
 
               if (doc.status === 'Expiring Soon') {
                 badgeBg = '#FFEDD5';
@@ -569,8 +590,17 @@ export default function CompliancePage() {
                       onPress={() => handleViewDocument(doc)}
                       activeOpacity={0.8}
                     >
-                      <Eye size={14} color={NAVY} style={{ marginRight: 4 }} />
-                      <Text style={[styles.primaryActionText, { color: NAVY, fontSize: 12 }]} numberOfLines={1}>View Document</Text>
+                      {(doc.fileUrl || doc.secureUrl || doc.url) ? (
+                        <>
+                          <Eye size={14} color={NAVY} style={{ marginRight: 4 }} />
+                          <Text style={[styles.primaryActionText, { color: NAVY, fontSize: 12 }]} numberOfLines={1}>View Document</Text>
+                        </>
+                      ) : (
+                        <>
+                          <UploadCloud size={14} color={NAVY} style={{ marginRight: 4 }} />
+                          <Text style={[styles.primaryActionText, { color: NAVY, fontSize: 12 }]} numberOfLines={1}>Upload Document</Text>
+                        </>
+                      )}
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -870,75 +900,114 @@ export default function CompliancePage() {
             <ScrollView style={styles.modalScroll} contentContainerStyle={{ paddingBottom: 20 }}>
               {previewDoc && (
                 <View style={styles.docSheetContainer}>
+                  {(() => {
+                    const rawUrl = previewDoc.fileUrl || previewDoc.secureUrl || previewDoc.url;
+                    const hasFile = rawUrl && typeof rawUrl === 'string' && rawUrl.trim().length > 0;
 
-                  {/* Top Certificate Header Bar */}
-                  <View style={styles.docSheetHeader}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Award size={18} color={GOLD} />
-                      <Text style={styles.docSheetHeaderTitle}>HORECA COMPLIANCE CERTIFICATE</Text>
-                    </View>
-                    <View style={styles.docSheetBadge}>
-                      <CircleCheck size={12} color="#15803D" style={{ marginRight: 4 }} />
-                      <Text style={styles.docSheetBadgeText}>{previewDoc.verification || 'VERIFIED'}</Text>
-                    </View>
-                  </View>
+                    if (hasFile) {
+                      const fullUri = (rawUrl.startsWith('http://') || rawUrl.startsWith('https://') || rawUrl.startsWith('data:'))
+                        ? rawUrl
+                        : `${(API_BASE_URL || 'http://localhost:5000').replace(/\/api\/?$/, '')}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
 
-                  {/* Certificate Body Content */}
-                  <View style={styles.docSheetBody}>
-                    <Text style={styles.docSheetDocTitle}>{previewDoc.name}</Text>
-                    <Text style={styles.docSheetSubtitle}>Government / Business License Record</Text>
+                      return (
+                        <>
+                          <View style={styles.docSheetHeader}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                              <Award size={18} color={GOLD} />
+                              <Text style={styles.docSheetHeaderTitle}>HORECA COMPLIANCE CERTIFICATE</Text>
+                            </View>
+                            <View style={styles.docSheetBadge}>
+                              <CircleCheck size={12} color="#15803D" style={{ marginRight: 4 }} />
+                              <Text style={styles.docSheetBadgeText}>{previewDoc.verification || 'VERIFIED'}</Text>
+                            </View>
+                          </View>
 
-                    <View style={styles.docSheetDivider} />
+                          <View style={styles.docSheetBody}>
+                            <Text style={styles.docSheetDocTitle}>{previewDoc.name}</Text>
+                            <Text style={styles.docSheetSubtitle}>Government / Business License Record</Text>
+                            <View style={styles.docSheetDivider} />
 
-                    <View style={styles.docSheetGrid}>
-                      <View style={styles.docSheetField}>
-                        <Text style={styles.docSheetLabel}>LICENCE / REF NUMBER</Text>
-                        <Text style={styles.docSheetValue}>{previewDoc.licenseNumber || '27AAAAA0000A1Z5'}</Text>
+                            <View style={styles.docSheetGrid}>
+                              <View style={styles.docSheetField}>
+                                <Text style={styles.docSheetLabel}>LICENCE / REF NUMBER</Text>
+                                <Text style={styles.docSheetValue}>{previewDoc.licenseNumber || 'N/A'}</Text>
+                              </View>
+                              <View style={styles.docSheetField}>
+                                <Text style={styles.docSheetLabel}>DOCUMENT STATUS</Text>
+                                <Text style={[styles.docSheetValue, { color: previewDoc.status === 'Valid' ? '#15803D' : '#C2410C' }]}>{previewDoc.status || 'Valid'}</Text>
+                              </View>
+                              <View style={styles.docSheetField}>
+                                <Text style={styles.docSheetLabel}>HOLDER / BUSINESS</Text>
+                                <Text style={styles.docSheetValue}>{user?.name || user?.email || 'HoReCa Business Partner'}</Text>
+                              </View>
+                              <View style={styles.docSheetField}>
+                                <Text style={styles.docSheetLabel}>ATTACHED FILE</Text>
+                                <Text style={styles.docSheetValue} numberOfLines={1}>{previewDoc.uploadedFile || 'Document File'}</Text>
+                              </View>
+                            </View>
+
+                            <View style={{ marginTop: 16, alignItems: 'center' }}>
+                              <Text style={{ fontSize: 10, fontWeight: '800', color: TEXT_MUTED, marginBottom: 8, letterSpacing: 0.5, textTransform: 'uppercase' }}>Attached Document Preview</Text>
+                              <Image source={{ uri: fullUri }} style={{ width: '100%', height: 240, borderRadius: 12, borderWidth: 1, borderColor: '#E3E9F1', backgroundColor: '#FFFFFF' }} resizeMode="contain" />
+                            </View>
+                          </View>
+                        </>
+                      );
+                    }
+
+                    // No File Attached - Render Clean Registration Record Info
+                    return (
+                      <View style={{ padding: 18, backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}>
+                          <View style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: '#FEF3C7', justifyContent: 'center', alignItems: 'center' }}>
+                            <FileText size={22} color="#D97706" />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ fontSize: 16, fontWeight: '900', color: NAVY }}>{previewDoc.name}</Text>
+                            <Text style={{ fontSize: 12, color: '#64748B' }}>Saved from Registration Signup</Text>
+                          </View>
+                        </View>
+
+                        <View style={{ marginVertical: 14, gap: 12 }}>
+                          <View style={{ backgroundColor: '#F8FAFC', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                            <Text style={{ fontSize: 10, fontWeight: '800', color: '#64748B', textTransform: 'uppercase' }}>Licence Number</Text>
+                            <Text style={{ fontSize: 16, fontWeight: '900', color: NAVY, marginTop: 2 }}>{previewDoc.licenseNumber || 'Not Entered'}</Text>
+                          </View>
+
+                          <View style={{ backgroundColor: '#F8FAFC', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                            <Text style={{ fontSize: 10, fontWeight: '800', color: '#64748B', textTransform: 'uppercase' }}>Account Holder</Text>
+                            <Text style={{ fontSize: 14, fontWeight: '700', color: NAVY, marginTop: 2 }}>{user?.name || user?.email || 'Registered Business User'}</Text>
+                          </View>
+
+                          <View style={{ padding: 14, backgroundColor: '#FFFBEB', borderRadius: 12, borderWidth: 1, borderColor: '#FDE68A', alignItems: 'center' }}>
+                            <UploadCloud size={24} color="#D97706" style={{ marginBottom: 6 }} />
+                            <Text style={{ fontSize: 13, fontWeight: '800', color: '#B45309', textAlign: 'center' }}>No Document File Uploaded Yet</Text>
+                            <Text style={{ fontSize: 11, color: '#D97706', textAlign: 'center', marginTop: 4, marginBottom: 12 }}>
+                              This licence number was entered during account registration. Attach your certificate file (PDF/Image) to view it here.
+                            </Text>
+                            <TouchableOpacity
+                              style={{ backgroundColor: '#D97706', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                              onPress={() => {
+                                setViewModalVisible(false);
+                                setAddForm({
+                                  docType: previewDoc.type || previewDoc.name || 'FSSAI Licence',
+                                  docNumber: previewDoc.licenseNumber || '',
+                                  issueDate: previewDoc.issueDate || '',
+                                  expiryDate: previewDoc.expiryDate || '',
+                                  notes: '',
+                                  fileName: ''
+                                });
+                                setAddModalVisible(true);
+                              }}
+                            >
+                              <UploadCloud size={16} color="#FFFFFF" />
+                              <Text style={{ fontSize: 13, fontWeight: '800', color: '#FFFFFF' }}>Upload File Now</Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
                       </View>
-
-                      <View style={styles.docSheetField}>
-                        <Text style={styles.docSheetLabel}>DOCUMENT STATUS</Text>
-                        <Text style={[styles.docSheetValue, { color: previewDoc.status === 'Valid' ? '#15803D' : '#C2410C' }]}>
-                          {previewDoc.status || 'Valid'}
-                        </Text>
-                      </View>
-
-                      <View style={styles.docSheetField}>
-                        <Text style={styles.docSheetLabel}>HOLDER / BUSINESS</Text>
-                        <Text style={styles.docSheetValue}>{user?.name || user?.email || 'HoReCa Business Partner'}</Text>
-                      </View>
-
-                      <View style={styles.docSheetField}>
-                        <Text style={styles.docSheetLabel}>ATTACHED FILE</Text>
-                        <Text style={styles.docSheetValue} numberOfLines={1}>{previewDoc.uploadedFile || 'document.pdf'}</Text>
-                      </View>
-
-                      <View style={styles.docSheetField}>
-                        <Text style={styles.docSheetLabel}>ISSUE DATE</Text>
-                        <Text style={styles.docSheetValue}>{previewDoc.issueDate || '2025-01-01'}</Text>
-                      </View>
-
-                      <View style={styles.docSheetField}>
-                        <Text style={styles.docSheetLabel}>EXPIRY DATE</Text>
-                        <Text style={styles.docSheetValue}>{previewDoc.expiryDate || '2028-12-31'}</Text>
-                      </View>
-                    </View>
-
-                    {/* Seal and Verification Stamp Footer */}
-                    <View style={styles.docSheetSealRow}>
-                      <View style={{ alignItems: 'center' }}>
-                        <QrCode size={44} color={NAVY} />
-                        <Text style={{ fontSize: 9, color: TEXT_MUTED, marginTop: 4, fontWeight: '700' }}>SCAN TO VERIFY</Text>
-                      </View>
-
-                      <View style={styles.docSheetStamp}>
-                        <ShieldCheck size={26} color="#15803D" />
-                        <Text style={styles.docSheetStampText}>HRC VERIFIED</Text>
-                        <Text style={{ fontSize: 9, color: '#15803D', fontWeight: '700' }}>AUTHENTIC RECORD</Text>
-                      </View>
-                    </View>
-
-                  </View>
+                    );
+                  })()}
                 </View>
               )}
             </ScrollView>
@@ -955,11 +1024,36 @@ export default function CompliancePage() {
               <TouchableOpacity
                 style={styles.modalPrimaryBtn}
                 onPress={() => {
-                  showToast(`Downloading ${previewDoc?.uploadedFile || 'document'}...`);
+                  const fileUrl = previewDoc?.fileUrl || previewDoc?.secureUrl || previewDoc?.url;
+                  if (fileUrl) {
+                    const fullUri = (fileUrl.startsWith('http://') || fileUrl.startsWith('https://') || fileUrl.startsWith('data:'))
+                      ? fileUrl
+                      : `${(API_BASE_URL || 'http://localhost:5000').replace(/\/api\/?$/, '')}${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
+                    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+                      window.open(fullUri, '_blank');
+                    } else {
+                      Linking.openURL(fullUri).catch(() => {
+                        Alert.alert('Download Link', fullUri);
+                      });
+                    }
+                  } else {
+                    setViewModalVisible(false);
+                    setAddForm({
+                      docType: previewDoc?.type || previewDoc?.name || 'FSSAI Licence',
+                      docNumber: previewDoc?.licenseNumber || '',
+                      issueDate: previewDoc?.issueDate || '',
+                      expiryDate: previewDoc?.expiryDate || '',
+                      notes: '',
+                      fileName: ''
+                    });
+                    setAddModalVisible(true);
+                  }
                 }}
               >
                 <Download size={15} color="#fff" style={{ marginRight: 6 }} />
-                <Text style={styles.modalPrimaryText}>Download Document</Text>
+                <Text style={styles.modalPrimaryText}>
+                  {(previewDoc?.fileUrl || previewDoc?.secureUrl || previewDoc?.url) ? 'Open / Download File' : 'Upload File'}
+                </Text>
               </TouchableOpacity>
             </View>
 

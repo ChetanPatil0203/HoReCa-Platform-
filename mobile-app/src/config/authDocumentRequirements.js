@@ -11,34 +11,26 @@ export const getDocumentRequirements = (businessCategory, specializedCategory, s
   const isFoodSubCategory = selectedSubcategories.some(sub => ['Dairy', 'Vegetables', 'Fruits', 'Grocery', 'Meat', 'Bakery', 'Beverages', 'Spices'].includes(sub));
 
   // 1. Common required documents for all business types (always required)
-  addDoc('pan_card', 'PAN Card', 'Business or proprietor PAN document.', 'Required');
-  addDoc('business_reg', 'Business Registration / Trade Licence', 'Registered proof of the business registration.', 'Required');
-  addDoc('address_proof', 'Business Address Proof', 'Electricity bill, utility bill, or rent agreement of registered address.', 'Required');
+  addDoc('pan_card', 'PAN Card Document File', 'Upload official PAN card photo or PDF.', 'Required');
+  addDoc('business_reg', 'Business Registration / Trade Licence File', 'Upload registered proof of business registration.', 'Required');
+  addDoc('address_proof', 'Business Address Proof File', 'Upload utility bill or rent agreement.', 'Required');
 
-  // 2. Category-specific required document (max 1 per role/category, making total required docs = 4)
-  if (businessCategory === 'Hotel') {
-    addDoc('fssai', 'FSSAI Licence', 'Required for hotel business operations.', 'Required');
-  }
-  else if (businessCategory === 'Restaurant') {
-    addDoc('fssai', 'FSSAI Licence', 'Food business registration or licence.', 'Required');
-  }
-  else if (businessCategory === 'Cafe') {
-    addDoc('fssai', 'FSSAI Licence', 'Food business registration or licence.', 'Required');
+  // 2. Category-specific required document (mandatory per role/category)
+  if (['Hotel', 'Restaurant', 'Cafe'].includes(businessCategory)) {
+    addDoc('fssai', 'FSSAI Licence Certificate File', 'Upload official FSSAI licence certificate PDF or photo.', 'Required');
   }
   else if (businessCategory === 'Vendor / Supplier') {
     if (specializedCategory === 'Raw Material') {
-      if (isFoodSubCategory) {
-        addDoc('fssai', 'FSSAI Licence', 'Required when supplying food or beverages.', 'Required');
-      }
+      addDoc('fssai', 'FSSAI Licence Certificate File', 'Upload official FSSAI licence certificate PDF or photo.', 'Required');
     }
     else if (specializedCategory === 'Manpower') {
-      addDoc('labour_licence', 'Labour Licence', 'Labour supply operations licence.', 'Required');
+      addDoc('labour_licence', 'Labour Licence Certificate File', 'Upload labour supply licence document.', 'Required');
     }
     else if (specializedCategory === 'Service Provider') {
-      addDoc('trade_licence', 'Professional Certificate / Trade Licence', 'Relevant professional licence or trade certificate.', 'Required');
+      addDoc('trade_licence', 'Professional / Trade Licence File', 'Upload relevant professional licence certificate.', 'Required');
     }
     else if (specializedCategory === 'Marketing Agency') {
-      addDoc('portfolio', 'Portfolio / Work Sample', 'Agency portfolio or proof of previous campaign work.', 'Required');
+      addDoc('portfolio', 'Agency Portfolio / Work Proof File', 'Upload agency portfolio or campaign work proof.', 'Required');
     }
   }
 

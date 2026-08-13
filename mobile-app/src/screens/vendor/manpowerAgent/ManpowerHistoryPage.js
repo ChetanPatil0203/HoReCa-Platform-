@@ -8,13 +8,13 @@ const NAVY = '#081A3A';
 const BG = '#F8FAFC';
 
 const toTitleCase = (str) => {
-  if (!str) return 'Head Chef';
+  if (!str) return 'Staff Requirement';
   if (str.toLowerCase() === 'chef') return 'Head Chef';
   return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
 };
 
 const formatReqId = (id) => {
-  if (!id) return 'REQ-310';
+  if (!id) return 'REQ-000';
   if (typeof id === 'string' && id.includes('-') && id.length > 20) {
     return `REQ-${id.slice(0, 5).toUpperCase()}`;
   }
@@ -46,11 +46,11 @@ export default function ManpowerHistoryPage() {
       const reqItems = Array.isArray(reqs) ? reqs.map(r => ({
         id: formatReqId(r.id),
         type: 'Requirement',
-        name: `${toTitleCase(r.role || r.title || 'Head Chef')} (${r.count || r.staffRequired || 1} Staff)`,
-        business: `${r.businessName || 'Chetan Cafe'} · ${r.location || 'Jalgaon'}`,
+        name: `${toTitleCase(r.role || r.title || 'Staff Requirement')} (${r.count || r.staffRequired || 1} Staff)`,
+        business: `${r.businessName || 'Business Partner'} · ${r.location || 'Location Not Specified'}`,
         date: r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-IN') : 'Recent',
         status: (r.status === 'candidates_sent' || r.status === 'Candidates Sent') ? 'Candidates Sent' : (r.status || 'Open'),
-        details: `Requirement posted for ${r.role} at ${r.businessName || 'Chetan Cafe'}. Salary: ${r.salary || '₹15,000 / month'}. Status: ${r.status || 'Open'}.`,
+        details: `Requirement posted for ${r.role || 'Staffing'} at ${r.businessName || 'Business Partner'}. Salary: ${r.salary || 'Not specified'}. Status: ${r.status || 'Open'}.`,
         notes: r.description || 'No extra notes provided.'
       })) : [];
 

@@ -85,7 +85,7 @@ export default function RawMaterialNotificationsPage() {
               id: notifId,
               type: 'Orders',
               title: `New Order Update: #${shortId}`,
-              message: `Customer ${ord.owner?.bizName || 'Chetan Cafe'} placed an order worth ₹${parseFloat(ord.totalAmount || 800).toLocaleString('en-IN')}. Status: ${statusLabel}.`,
+              message: `Customer ${ord.owner?.bizName || 'Partner'} placed an order worth ₹${parseFloat(ord.totalAmount || 0).toLocaleString('en-IN')}. Status: ${statusLabel}.`,
               createdAt: ord.createdAt || new Date().toISOString(),
               time: timeStr,
               isRead: ord.status === 'delivered',

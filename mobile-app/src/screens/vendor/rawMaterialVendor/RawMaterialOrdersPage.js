@@ -427,6 +427,128 @@ export default function RawMaterialOrdersPage() {
     }
   };
 
+  const triggerInvoiceDownload = (order) => {
+    if (!order) return;
+    const invId = order.id || 'INV-001';
+    const customer = order.client || 'Customer';
+    const amount = order.totalAmount ? `₹${parseFloat(order.totalAmount).toLocaleString('en-IN')}` : (order.amount || '₹0');
+    const date = order.date || new Date().toLocaleDateString('en-IN');
+    const status = order.status || 'Delivered';
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Tax Invoice ${invId}</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; margin: 0; padding: 32px; background: #F8FAFC; }
+          .invoice-box { max-width: 750px; margin: auto; padding: 36px; background: #FFFFFF; border-radius: 16px; border: 1px solid #E2E8F0; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+          .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #081A3A; padding-bottom: 20px; margin-bottom: 28px; }
+          .brand { font-size: 24px; font-weight: 900; color: #081A3A; letter-spacing: -0.5px; }
+          .brand span { color: #D97706; }
+          .inv-title { font-size: 22px; font-weight: 900; color: #081A3A; text-align: right; }
+          .inv-sub { font-size: 13px; color: #64748B; margin-top: 2px; }
+          .grid { display: flex; justify-content: space-between; margin-bottom: 28px; gap: 20px; }
+          .col { flex: 1; }
+          .col-title { font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+          .col-val { font-size: 14px; font-weight: 700; color: #0F172A; line-height: 20px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 28px; }
+          th { background: #F1F5F9; color: #475569; font-size: 11px; font-weight: 800; text-transform: uppercase; text-align: left; padding: 12px 16px; border-radius: 6px; }
+          td { padding: 14px 16px; font-size: 14px; color: #0F172A; border-bottom: 1px solid #F1F5F9; }
+          .total-box { display: flex; justify-content: flex-end; }
+          .total-card { width: 280px; background: #F8FAFC; padding: 16px; border-radius: 12px; border: 1px solid #E2E8F0; }
+          .total-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: #64748B; }
+          .total-final { display: flex; justify-content: space-between; font-size: 18px; font-weight: 900; color: #081A3A; border-top: 2px solid #081A3A; padding-top: 10px; margin-top: 8px; }
+          .status-badge { display: inline-block; background: #DCFCE7; color: #15803D; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; text-transform: uppercase; }
+          .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #E2E8F0; text-align: center; font-size: 12px; color: #94A3B8; }
+          @media print {
+            body { background: none; padding: 0; }
+            .invoice-box { border: none; box-shadow: none; padding: 0; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="invoice-box">
+          <div class="header">
+            <div>
+              <div class="brand">HORECA<span>HUB</span></div>
+              <div class="inv-sub">Official Tax Invoice & Order Receipt</div>
+            </div>
+            <div>
+              <div class="inv-title">TAX INVOICE</div>
+              <div class="inv-sub">Ref: ${invId}</div>
+            </div>
+          </div>
+
+          <div class="grid">
+            <div class="col">
+              <div class="col-title">Customer / Client</div>
+              <div class="col-val">${customer}</div>
+            </div>
+            <div class="col" style="text-align: right;">
+              <div class="col-title">Invoice Date</div>
+              <div class="col-val">${date}</div>
+              <div style="margin-top: 8px;"><span class="status-badge">${status}</span></div>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Status</th>
+                <th style="text-align: right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>${invId}</strong></td>
+                <td>${status}</td>
+                <td style="text-align: right;"><strong>${amount}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="total-box">
+            <div class="total-card">
+              <div class="total-row"><span>Subtotal</span><span>${amount}</span></div>
+              <div class="total-row"><span>Taxes & Delivery</span><span>Included</span></div>
+              <div class="total-final"><span>Total Amount</span><span>${amount}</span></div>
+            </div>
+          </div>
+
+          <div class="footer">
+            Thank you for using HoReCa Platform. Verified Vendor Tax Invoice.
+          </div>
+        </div>
+        <script>
+          window.onload = function() {
+            setTimeout(function() { window.print(); }, 500);
+          };
+        </script>
+      </body>
+      </html>
+    `;
+
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+      } else {
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Invoice_${invId}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    }
+  };
+
   // Actions for dots dropdown context menu
   const renderMoreMenuOptions = (order) => {
     const options = [];
@@ -451,7 +573,7 @@ export default function RawMaterialOrdersPage() {
       options.push({ label: 'Mark as Delivered', color: '#16A34A', action: () => { updateOrderStatus(order.id, 'Delivered'); showToast('Order marked as delivered successfully.'); } });
       options.push({ label: 'Report Delay', color: '#D97706', action: () => showToast('Delay alert sent.') });
     } else if (order.status === 'Delivered') {
-      options.push({ label: 'Download Invoice', color: NAVY, action: () => showToast('Downloading invoice PDF...') });
+      options.push({ label: 'Download Invoice', color: NAVY, action: () => { triggerInvoiceDownload(order); showToast('Invoice generated.'); } });
       options.push({ label: 'View Delivery Proof', color: NAVY, action: () => showToast('Loading delivery image...') });
     }
     return options;

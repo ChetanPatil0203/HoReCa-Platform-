@@ -5,7 +5,7 @@ const cloudinaryService = require('./cloudinary.service');
 const isUuid = (id) => typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
 exports.getUserComplianceDocuments = async (userId) => {
-  if (!userId || !isUuid(userId)) {
+  if (!userId) {
     return {
       documents: [],
       counts: { valid: 0, expiring: 0, expired: 0, missing: 0, total: 0 }
@@ -106,7 +106,7 @@ exports.getUserComplianceDocuments = async (userId) => {
         status: 'Valid',
         issueDate: '',
         expiryDate: '',
-        uploadedFile: 'fssai_licence.pdf',
+        uploadedFile: '',
         fileUrl: '',
         verification: 'Verified',
         uploadedDate: regCreated ? new Date(regCreated).toISOString().split('T')[0] : '',
@@ -125,7 +125,7 @@ exports.getUserComplianceDocuments = async (userId) => {
         status: 'Valid',
         issueDate: '',
         expiryDate: '',
-        uploadedFile: 'gst_registration.pdf',
+        uploadedFile: '',
         fileUrl: '',
         verification: 'Verified',
         uploadedDate: regCreated ? new Date(regCreated).toISOString().split('T')[0] : '',
@@ -144,7 +144,7 @@ exports.getUserComplianceDocuments = async (userId) => {
         status: 'Valid',
         issueDate: '',
         expiryDate: '',
-        uploadedFile: 'business_registration.pdf',
+        uploadedFile: '',
         fileUrl: '',
         verification: 'Verified',
         uploadedDate: regCreated ? new Date(regCreated).toISOString().split('T')[0] : '',

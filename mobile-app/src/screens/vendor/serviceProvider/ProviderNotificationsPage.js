@@ -80,7 +80,7 @@ export default function ProviderNotificationsPage() {
               id: `prov-${ord.id || idx}`,
               type: 'Orders',
               title: `Service Booking Update: #${shortId}`,
-              message: `Client ${ord.owner?.bizName || 'Cafe Royale'} booked service request. Status: ${ord.status || 'Confirmed'}.`,
+              message: `Client ${ord.owner?.bizName || 'Partner'} booked service request. Status: ${ord.status || 'Confirmed'}.`,
               createdAt: ord.createdAt || new Date().toISOString(),
               time: timeStr,
               isRead: ord.status === 'completed',

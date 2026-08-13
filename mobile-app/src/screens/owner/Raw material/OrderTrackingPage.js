@@ -1,12 +1,13 @@
 import React, { useState, useMemo, useEffect, useContext } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
-  Platform, useWindowDimensions, SafeAreaView, Modal
+  Platform, useWindowDimensions, SafeAreaView, Modal, Linking, Alert
 } from 'react-native';
 import {
   Truck, Search, CircleCheck as CheckCircle, Clock, MapPin, MessageSquare,
   Package, ArrowLeft, UsersRound, Wrench, Megaphone, ChevronRight, X,
-  RotateCcw, Activity, ShieldCheck, CircleAlert, Phone, User, SlidersHorizontal
+  RotateCcw, Activity, ShieldCheck, CircleAlert, Phone, User, SlidersHorizontal,
+  Copy, PhoneCall
 } from 'lucide-react-native';
 import { fetchOwnerActivityHistoryApi, fetchOwnerTrackingApi } from '../../../services/api.service';
 import { AuthContext } from '../../../context/AuthContext';
@@ -15,6 +16,25 @@ const NAVY = '#0E2042';
 const GOLD = '#D97706';
 const LIGHT_BG = '#F8FAFC';
 const BORDER = '#E2E8F0';
+
+const formatPhoneNumber = (phone) => {
+  if (!phone) return 'Not available';
+  const str = String(phone).trim();
+  const clean = str.replace(/[^0-9]/g, '');
+  if (!clean) return str;
+
+  if (clean.length === 10) {
+    return `+91 ${clean.slice(0, 5)} ${clean.slice(5)}`;
+  }
+  if (clean.length === 12 && clean.startsWith('91')) {
+    const main = clean.slice(2);
+    return `+91 ${main.slice(0, 5)} ${main.slice(5)}`;
+  }
+  if (str.startsWith('+')) {
+    return str;
+  }
+  return `+91 ${clean}`;
+};
 
 // ── Pillars Definition ──
 const PILLARS = [
@@ -83,9 +103,34 @@ export default function OrderTrackingPage() {
   const [detailRecord, setDetailRecord] = useState(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
 
-  // Toast
+  // Contact support modal state
+  const [supportModalVisible, setSupportModalVisible] = useState(false);
+  const [supportSupplierName, setSupportSupplierName] = useState('');
+  const [supportSupplierPhone, setSupportSupplierPhone] = useState('');
   const [toastMsg, setToastMsg] = useState('');
 
+  const handleCallNow = () => {
+    setSupportModalVisible(false);
+    const phoneToCall = supportSupplierPhone || '9876543210';
+    if (Platform.OS === 'web') {
+      window.location.href = `tel:${phoneToCall}`;
+    } else {
+      Linking.openURL(`tel:${phoneToCall}`).catch(() => {
+        Alert.alert('Unable to place call', `Please call ${phoneToCall}`);
+      });
+    }
+  };
+
+  const handleCopyPhone = () => {
+    const phoneToCopy = supportSupplierPhone || '9876543210';
+    if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(phoneToCopy);
+    }
+    setToastMsg('Phone number copied to clipboard!');
+    setTimeout(() => setToastMsg(''), 2500);
+  };
+
+  // Toast
   const showToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3000);
@@ -126,6 +171,7 @@ export default function OrderTrackingPage() {
               pillar: 'raw-material',
               title: ord.items && ord.items[0] ? `${ord.items[0].product?.name || 'Raw Material'} x ${ord.items[0].quantity}` : 'Raw Material Order',
               vendor: ord.supplier?.bizName || 'Supplier Wholesaler',
+              supplierPhone: ord.supplier?.mobile || ord.supplier?.phone || ord.supplier?.user?.mobile || ord.supplier?.user?.phone || null,
               status,
               date: new Date(ord.createdAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
               amount: `₹${parseFloat(ord.totalAmount || 0).toLocaleString('en-IN')}`,
@@ -173,6 +219,7 @@ export default function OrderTrackingPage() {
               pillar,
               title: r.title || 'Requirement Post',
               vendor: r.supplier?.bizName || 'Verified Provider',
+              supplierPhone: r.supplier?.mobile || r.supplier?.phone || r.supplier?.user?.mobile || r.supplier?.user?.phone || null,
               status,
               date: new Date(r.createdAt || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
               amount: r.budget ? (r.budget.toString().startsWith('₹') ? r.budget : `₹${r.budget}`) : null,
@@ -579,13 +626,76 @@ export default function OrderTrackingPage() {
                 style={styles.modalContactFooterBtn}
                 onPress={() => {
                   setDetailModalVisible(false);
-                  showToast(`Connecting to ${detailRecord?.vendor || 'vendor'}...`);
+                  setSupportSupplierName(detailRecord?.vendor || 'Supplier / Provider');
+                  setSupportSupplierPhone(detailRecord?.supplierPhone || detailRecord?.phone || null);
+                  setSupportModalVisible(true);
                 }}
               >
                 <MessageSquare size={15} color="#fff" style={{ marginRight: 6 }} />
                 <Text style={styles.modalContactFooterText}>Contact</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Contact Support Custom Modal Popup ── */}
+      <Modal visible={supportModalVisible} transparent animationType="fade" onRequestClose={() => setSupportModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { width: '92%', maxWidth: 440, padding: 0, overflow: 'hidden' }]}>
+
+            {/* Modal Header */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, paddingRight: 8 }}>
+                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#FEF3C7', justifyContent: 'center', alignItems: 'center', flexShrink: 0 }}>
+                  <PhoneCall size={20} color="#D97706" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 17, fontWeight: '800', color: NAVY }} numberOfLines={1}>Contact Support</Text>
+                  <Text style={{ fontSize: 12, color: '#64748B' }} numberOfLines={1}>Direct supplier assistance</Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={() => setSupportModalVisible(false)} style={styles.modalCloseBtn}>
+                <X size={18} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Modal Body */}
+            <View style={{ padding: 16, gap: 12 }}>
+              <View style={{ backgroundColor: '#F8FAFC', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5 }}>Supplier Name</Text>
+                <Text style={{ fontSize: 15, fontWeight: '800', color: NAVY, marginTop: 4 }} numberOfLines={2}>{supportSupplierName || 'Supplier Wholesaler'}</Text>
+              </View>
+
+              <View style={{ backgroundColor: '#F8FAFC', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: 0.5 }}>Support Contact</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6, flexWrap: 'wrap', gap: 8 }}>
+                  <Text style={{ fontSize: 17, fontWeight: '900', color: NAVY, flexShrink: 1 }}>{formatPhoneNumber(supportSupplierPhone)}</Text>
+                  <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FEF3C7', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }} onPress={handleCopyPhone}>
+                    <Copy size={14} color="#D97706" />
+                    <Text style={{ fontSize: 12, fontWeight: '800', color: '#D97706' }}>Copy</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {toastMsg ? (
+                <View style={{ backgroundColor: '#102A4C', padding: 10, borderRadius: 8 }}>
+                  <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700', textAlign: 'center' }}>{toastMsg}</Text>
+                </View>
+              ) : null}
+            </View>
+
+            {/* Modal Footer */}
+            <View style={{ flexDirection: 'row', gap: 10, padding: 16, borderTopWidth: 1, borderTopColor: '#F1F5F9', backgroundColor: '#FFFFFF' }}>
+              <TouchableOpacity style={{ flex: 1, height: 44, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center' }} onPress={() => setSupportModalVisible(false)}>
+                <Text style={{ fontSize: 14, fontWeight: '700', color: NAVY }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={{ flex: 1.3, height: 44, borderRadius: 12, backgroundColor: '#D97706', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 }} onPress={handleCallNow}>
+                <Phone size={16} color="#FFFFFF" />
+                <Text style={{ fontSize: 14, fontWeight: '800', color: '#FFFFFF' }}>Call Now</Text>
+              </TouchableOpacity>
+            </View>
+
           </View>
         </View>
       </Modal>
@@ -877,5 +987,8 @@ const styles = StyleSheet.create({
   modalCloseFooterBtn: { flex: 1, height: 42, borderRadius: 10, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
   modalCloseFooterText: { fontSize: 13, fontWeight: '700', color: '#475569' },
   modalContactFooterBtn: { flex: 1.5, flexDirection: 'row', height: 42, borderRadius: 10, backgroundColor: NAVY, alignItems: 'center', justifyContent: 'center' },
-  modalContactFooterText: { fontSize: 13, fontWeight: '700', color: '#fff' }
+  modalContactFooterText: { fontSize: 13, fontWeight: '700', color: '#fff' },
+
+  toastContainer: { position: 'absolute', top: 20, alignSelf: 'center', backgroundColor: '#102A4C', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, flexDirection: 'row', alignItems: 'center', zIndex: 999 },
+  toastText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' }
 });

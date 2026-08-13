@@ -21,7 +21,7 @@ const DECLINE_REASONS = [
 ];
 
 const formatReqId = (id) => {
-  if (!id) return 'REQ-310';
+  if (!id) return 'REQ-000';
   if (typeof id === 'string' && id.includes('-') && id.length > 20) {
     return `REQ-${id.slice(0, 5).toUpperCase()}`;
   }
@@ -29,13 +29,13 @@ const formatReqId = (id) => {
 };
 
 const toTitleCase = (str) => {
-  if (!str) return 'Head Chef';
+  if (!str) return 'Staff Requirement';
   if (str.toLowerCase() === 'chef') return 'Head Chef';
   return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
 };
 
 const formatSalaryDisplay = (salary) => {
-  if (!salary) return '₹15,000 / month';
+  if (!salary) return 'Not specified';
   let s = String(salary).trim();
   if (s === '15000') return '₹15,000 / month';
   if (s.match(/^\d+$/)) {
@@ -49,18 +49,18 @@ const formatSalaryDisplay = (salary) => {
 };
 
 const formatExperienceDisplay = (exp) => {
-  if (!exp || exp === '0' || exp === 0) return '1–3 Years';
+  if (!exp || exp === '0' || exp === 0) return 'Not specified';
   return String(exp);
 };
 
 const formatJoiningDisplay = (joining) => {
-  if (!joining || joining === 'As scheduled' || joining === 'as scheduled') return 'Flexible Joining Date';
+  if (!joining) return 'Flexible Joining Date';
   return String(joining);
 };
 
 const formatDescription = (desc) => {
-  if (!desc || desc === 'saihavyg' || desc.trim().length < 5) {
-    return 'Looking for an experienced staff member to manage daily kitchen operations, food preparation and hygiene standards.';
+  if (!desc || desc === 'saihavyg' || desc.trim().length < 3) {
+    return 'No description provided.';
   }
   return desc.trim();
 };
@@ -202,9 +202,9 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
   const [submittedListToView, setSubmittedListToView] = useState([]);
 
   const handleViewSubmittedCandidates = (req) => {
-    const list = req?.submittedCandidates && req.submittedCandidates.length > 0
+    const list = req?.submittedCandidates && Array.isArray(req.submittedCandidates)
       ? req.submittedCandidates
-      : candidates.slice(0, 3);
+      : [];
     setSubmittedListToView(list);
     setViewSubmittedVisible(true);
   };
@@ -550,13 +550,13 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
                     REQUIREMENT DETAILS
                   </Text>
                   <Text style={{ fontSize: 20, fontWeight: '800', color: '#FFFFFF' }} numberOfLines={1}>
-                    {toTitleCase(selectedReq?.role || selectedReq?.title || 'Head Chef')}
+                    {toTitleCase(selectedReq?.role || selectedReq?.title || 'Staff Requirement')}
                   </Text>
                   <Text style={{ fontSize: 13, color: '#E2E8F0', marginTop: 2, fontWeight: '600' }} numberOfLines={1}>
-                    {selectedReq?.businessName || 'Chetan Cafe'} · {selectedReq?.location || 'Jalgaon'}
+                    {selectedReq?.businessName || 'Business Partner'} · {selectedReq?.location || 'Location Not Specified'}
                   </Text>
                   <Text style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>
-                    {formatReqId(selectedReq?.reqId || selectedReq?.id)} · Posted {selectedReq?.postedTime || '2 hours ago'}
+                    {formatReqId(selectedReq?.reqId || selectedReq?.id)} · Posted {selectedReq?.postedTime || selectedReq?.postedDate || 'Recently'}
                   </Text>
                 </View>
                 <TouchableOpacity onPress={() => setDetailsVisible(false)} style={{ backgroundColor: 'rgba(255,255,255,0.12)', padding: 6, borderRadius: 18 }}>
@@ -588,7 +588,7 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
                         </View>
                         <View style={{ flex: 1 }}>
                           <Text style={{ fontSize: 11, fontWeight: '600', color: '#64748B', marginBottom: 1 }}>Staff Required</Text>
-                          <Text style={{ fontSize: 13, fontWeight: '800', color: NAVY }}>{selectedReq.count || selectedReq.staffRequired || '5'} Staff</Text>
+                          <Text style={{ fontSize: 13, fontWeight: '800', color: NAVY }}>{selectedReq.count || selectedReq.staffRequired || '1'} Staff</Text>
                         </View>
                       </View>
 
@@ -647,17 +647,17 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
 
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#F8FAFC' }}>
                       <Text style={{ fontSize: 13, color: '#64748B', fontWeight: '500' }}>Workplace</Text>
-                      <Text style={{ fontSize: 13, color: NAVY, fontWeight: '700' }}>{selectedReq.businessName || 'Chetan Cafe'}</Text>
+                      <Text style={{ fontSize: 13, color: NAVY, fontWeight: '700' }}>{selectedReq.businessName || 'Business Partner'}</Text>
                     </View>
 
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#F8FAFC' }}>
                       <Text style={{ fontSize: 13, color: '#64748B', fontWeight: '500' }}>Location</Text>
-                      <Text style={{ fontSize: 13, color: NAVY, fontWeight: '700' }}>{selectedReq.location || 'Jalgaon'}</Text>
+                      <Text style={{ fontSize: 13, color: NAVY, fontWeight: '700' }}>{selectedReq.location || 'Location Not Specified'}</Text>
                     </View>
 
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 }}>
                       <Text style={{ fontSize: 13, color: '#64748B', fontWeight: '500' }}>Open Positions</Text>
-                      <Text style={{ fontSize: 13, color: NAVY, fontWeight: '700' }}>{selectedReq.count || '5'}</Text>
+                      <Text style={{ fontSize: 13, color: NAVY, fontWeight: '700' }}>{selectedReq.count || '1'}</Text>
                     </View>
                   </View>
 
@@ -673,7 +673,7 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
                   <View style={{ backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E2E8F0', padding: 14, marginBottom: 14 }}>
                     <Text style={{ fontSize: 12, fontWeight: '800', color: NAVY, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Required Skills</Text>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                      {(selectedReq?.skills || ['Indian Cuisine', 'Kitchen Management', 'Food Safety', 'Team Handling']).map((s, idx) => (
+                      {(selectedReq?.skills?.length ? selectedReq.skills : ['General Staffing']).map((s, idx) => (
                         <View key={idx} style={{ backgroundColor: '#EFF6FF', borderWidth: 1, borderColor: '#BFDBFE', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 14 }}>
                           <Text style={{ fontSize: 12, color: '#1E40AF', fontWeight: '700' }}>{s}</Text>
                         </View>
@@ -684,10 +684,10 @@ export default function ManpowerDirectRequestsPage({ initialAction }) {
                   {/* Candidate Status Strip */}
                   <View style={{ backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 14, padding: 12, marginBottom: 12 }}>
                     <Text style={{ fontSize: 13, fontWeight: '800', color: NAVY, marginBottom: 2 }}>
-                      {selectedReq.status === 'Candidates Sent' ? 'Candidates Submitted' : 'No candidates submitted yet'}
+                      {isSubmittedStatus(selectedReq.status) ? 'Candidates Submitted' : 'No candidates submitted yet'}
                     </Text>
                     <Text style={{ fontSize: 11, color: '#64748B' }}>
-                      {selectedReq.status === 'Candidates Sent' ? '3 candidates sent on 28 Jul 2026' : 'Select candidates to send for this requirement'}
+                      {isSubmittedStatus(selectedReq.status) ? `${selectedReq.submittedCandidates?.length || 0} candidate(s) submitted` : 'Select candidates to send for this requirement'}
                     </Text>
                   </View>
 

@@ -431,7 +431,7 @@ exports.getOwnerHistoryService = async (ownerId) => {
       rawMaterialOrders = await Order.findAll({
         where: { ownerId: { [Op.or]: [ownerId, ownerIdToUse] } },
         include: [
-          { model: VendorRegistration, as: 'supplier', attributes: ['id', 'bizName', 'city'] },
+          { model: VendorRegistration, as: 'supplier', attributes: ['id', 'bizName', 'city', 'mobile', 'email', 'contactPerson'] },
           {
             model: OrderItem,
             as: 'items',
@@ -451,7 +451,7 @@ exports.getOwnerHistoryService = async (ownerId) => {
         exports.getPublicRequirementsService().catch(() => []),
         Order ? Order.findAll({
           include: [
-            { model: VendorRegistration, as: 'supplier', attributes: ['id', 'bizName', 'city'] },
+            { model: VendorRegistration, as: 'supplier', attributes: ['id', 'bizName', 'city', 'mobile', 'email', 'contactPerson'] },
             {
               model: OrderItem,
               as: 'items',
@@ -486,7 +486,7 @@ exports.getOwnerTrackingService = async (ownerId) => {
         Order ? Order.findAll({
           limit: 10,
           include: [
-            { model: VendorRegistration, as: 'supplier', attributes: ['id', 'bizName', 'city'] },
+            { model: VendorRegistration, as: 'supplier', attributes: ['id', 'bizName', 'city', 'mobile', 'email', 'contactPerson'] },
             { 
               model: OrderItem, 
               as: 'items',

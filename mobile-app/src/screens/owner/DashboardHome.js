@@ -65,7 +65,7 @@ export default function DashboardHome({ user, onNavigate }) {
     user?.proprietor ||
     user?.contactPerson ||
     (user?.user ? `${user.user.firstName || ''} ${user.user.lastName || ''}`.trim() : '') ||
-    'Chetan';
+    'User';
 
   const userName = rawName.split(' ')[0] || 'User';
 
@@ -75,7 +75,7 @@ export default function DashboardHome({ user, onNavigate }) {
     user?.tradeName ||
     user?.registration?.bizName ||
     user?.horecaRegistration?.bizName ||
-    'Chetan Cafe';
+    'Your Business';
 
   useEffect(() => {
     const timer = setInterval(() => {
